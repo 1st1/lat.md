@@ -1,5 +1,7 @@
 # Lattice
 
+[![CI](https://github.com/1st1/lat.md/actions/workflows/ci.yml/badge.svg)](https://github.com/1st1/lat.md/actions/workflows/ci.yml)
+
 Anchor source code to high-level concepts defined in markdown. 
 See [lattice.md](lattice.md) for the full spec.
 
