@@ -62,4 +62,4 @@ GitHub Actions workflow at `.github/workflows/publish.yml`. Runs on every push t
 3. **Publish to npm** — `pnpm publish --no-git-checks` using the `NPM_TOKEN` repository secret
 4. **Create GitHub release** — tags `vX.Y.Z` and creates a GitHub release with auto-generated notes
 
-Uses npm trusted publishing with OIDC provenance — the `--provenance` flag signs the package with the GitHub Actions identity. Requires an `NPM_TOKEN` secret in the repository settings (automation token from npmjs.com). The package is linked to the `1st1/lat.md` repo on npmjs.com under Settings → Publishing Access.
+Uses npm trusted publishing (OIDC) — no secrets needed. The `--provenance` flag signs and publishes the package using the GitHub Actions identity. The `lat.md` package is linked to the `1st1/lat.md` repo on npmjs.com under Settings → Publishing Access.
