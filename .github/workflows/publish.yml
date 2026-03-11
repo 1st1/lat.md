@@ -37,7 +37,10 @@ jobs:
         with:
           node-version: '22'
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for trusted publishing
+        if: steps.version.outputs.changed == 'true'
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         if: steps.version.outputs.changed == 'true'
