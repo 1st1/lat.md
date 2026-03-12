@@ -29,7 +29,13 @@ npm install -g lat.md
 
 Or use directly with `npx lat.md@latest <command>`.
 
-For semantic search (`lat search`), set the `LAT_LLM_KEY` environment variable with an OpenAI (`sk-...`) or Vercel AI Gateway (`vck_...`) API key.
+For semantic search (`lat search`), provide an OpenAI (`sk-...`) or Vercel AI Gateway (`vck_...`) API key via one of:
+
+```bash
+export LAT_LLM_KEY=sk-...                # direct value
+export LAT_LLM_KEY_FILE=~/.secrets/lat    # path to a file containing the key
+export LAT_LLM_KEY_HELPER='security find-generic-password -a "$USER" -s "LAT_LLM_KEY" -w'  # command that prints the key
+```
 
 ## How it works
 

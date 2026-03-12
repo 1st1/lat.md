@@ -4,13 +4,18 @@
  * Runs the search test in capture mode — proxies to the real embedding API
  * (via LAT_LLM_KEY) and records all vectors to tests/cases/rag/replay-data/.
  *
- * Usage: pnpm cook-test-rag  (requires LAT_LLM_KEY in env)
+ * Usage: pnpm cook-test-rag  (requires LAT_LLM_KEY, LAT_LLM_KEY_FILE, or LAT_LLM_KEY_HELPER)
  */
 
 import { execSync } from 'node:child_process';
+import { resolveApiKey } from '../src/resolve-key.js';
 
-if (!process.env.LAT_LLM_KEY) {
-  console.error('LAT_LLM_KEY must be set to a real API key');
+try {
+  // Resolve once up front so capture mode has a direct key value.
+  const key = resolveApiKey();
+  process.env.LAT_LLM_KEY = key;
+} catch (err) {
+  console.error((err as Error).message);
   process.exit(1);
 }
 

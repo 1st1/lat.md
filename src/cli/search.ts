@@ -6,19 +6,18 @@ import { indexSections } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import { loadAllSections, flattenSections } from '../lattice.js';
 import { formatResultList } from '../format.js';
+import { resolveApiKey } from '../resolve-key.js';
 
 export async function searchCmd(
   ctx: CliContext,
   query: string | undefined,
   opts: { limit: number; reindex?: boolean },
 ): Promise<void> {
-  const key = process.env.LAT_LLM_KEY;
-  if (!key) {
-    console.error(
-      chalk.red(
-        'LAT_LLM_KEY is not set. Set it to an OpenAI (sk-...) or Vercel AI (vck_...) key.',
-      ),
-    );
+  let key: string;
+  try {
+    key = resolveApiKey();
+  } catch (err) {
+    console.error(chalk.red((err as Error).message));
     process.exit(1);
   }
 

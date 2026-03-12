@@ -114,13 +114,19 @@ Implementation: `src/cli/search.ts`, core logic in `src/search/`
 
 ### Provider Detection
 
-Requires `LAT_LLM_KEY` env var. Provider is auto-detected from key prefix:
+Requires an API key. The key is resolved in priority order by `resolveApiKey()` (`src/resolve-key.ts`):
+
+1. `LAT_LLM_KEY` env var — direct value
+2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key (read and trimmed)
+3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key to stdout (10 s timeout)
+
+Provider is auto-detected from the resolved key prefix:
 - `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims)
 - `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims)
 - `sk-ant-...` — Anthropic (not supported, errors with guidance)
 - `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for offline testing
 
-Implementation: `src/search/provider.ts`
+Implementation: `src/search/provider.ts`, `src/resolve-key.ts`
 
 ### Embeddings
 
