@@ -139,7 +139,10 @@ function mcpCommand(): { command: string; args: string[] } {
 
 // ── MCP config helpers ───────────────────────────────────────────────
 
-type McpConfig = Record<string, Record<string, { command: string; args: string[] }>>;
+type McpConfig = Record<
+  string,
+  Record<string, { command: string; args: string[] }>
+>;
 
 function hasMcpServer(configPath: string, key: string): boolean {
   if (!existsSync(configPath)) return false;
