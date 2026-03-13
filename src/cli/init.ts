@@ -139,33 +139,31 @@ function mcpCommand(): { command: string; args: string[] } {
 
 // ── MCP config helpers ───────────────────────────────────────────────
 
-type McpConfig = {
-  mcpServers: Record<string, { command: string; args: string[] }>;
-};
+type McpConfig = Record<string, Record<string, { command: string; args: string[] }>>;
 
-function hasMcpServer(configPath: string): boolean {
+function hasMcpServer(configPath: string, key: string): boolean {
   if (!existsSync(configPath)) return false;
   try {
     const cfg = JSON.parse(readFileSync(configPath, 'utf-8'));
-    return !!cfg?.mcpServers?.lat;
+    return !!cfg?.[key]?.lat;
   } catch {
     return false;
   }
 }
 
-function addMcpServer(configPath: string): void {
-  let cfg: McpConfig = { mcpServers: {} };
+function addMcpServer(configPath: string, key: string): void {
+  let cfg: McpConfig = { [key]: {} };
   if (existsSync(configPath)) {
     const raw = readFileSync(configPath, 'utf-8');
     try {
       cfg = JSON.parse(raw);
-      if (!cfg.mcpServers) cfg.mcpServers = {};
+      if (!cfg[key]) cfg[key] = {};
     } catch (e) {
       throw new Error(`Cannot parse ${configPath}: ${(e as Error).message}`);
     }
   }
 
-  cfg.mcpServers.lat = mcpCommand();
+  cfg[key].lat = mcpCommand();
 
   mkdirSync(join(configPath, '..'), { recursive: true });
   writeFileSync(configPath, JSON.stringify(cfg, null, 2) + '\n');
@@ -243,10 +241,10 @@ async function setupClaudeCode(
   );
 
   const mcpPath = join(root, '.mcp.json');
-  if (hasMcpServer(mcpPath)) {
+  if (hasMcpServer(mcpPath, 'mcpServers')) {
     console.log(chalk.green('  MCP server') + ' already configured');
   } else {
-    addMcpServer(mcpPath);
+    addMcpServer(mcpPath, 'mcpServers');
     console.log(chalk.green('  MCP server') + ' registered in .mcp.json');
     created.push('.mcp.json');
   }
@@ -286,10 +284,10 @@ async function setupCursor(root: string): Promise<string[]> {
   );
 
   const mcpPath = join(root, '.cursor', 'mcp.json');
-  if (hasMcpServer(mcpPath)) {
+  if (hasMcpServer(mcpPath, 'mcpServers')) {
     console.log(chalk.green('  MCP server') + ' already configured');
   } else {
-    addMcpServer(mcpPath);
+    addMcpServer(mcpPath, 'mcpServers');
     console.log(
       chalk.green('  MCP server') + ' registered in .cursor/mcp.json',
     );
@@ -340,10 +338,10 @@ async function setupCopilot(root: string): Promise<string[]> {
   );
 
   const mcpPath = join(root, '.vscode', 'mcp.json');
-  if (hasMcpServer(mcpPath)) {
+  if (hasMcpServer(mcpPath, 'servers')) {
     console.log(chalk.green('  MCP server') + ' already configured');
   } else {
-    addMcpServer(mcpPath);
+    addMcpServer(mcpPath, 'servers');
     console.log(
       chalk.green('  MCP server') + ' registered in .vscode/mcp.json',
     );
