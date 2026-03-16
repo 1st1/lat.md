@@ -51,7 +51,7 @@ Published to npm as `lat.md`. The `bin` entry exposes the `lat` command. Only `d
 
 ### Release Process
 
-How to publish a new version:
+Step-by-step procedure for cutting a release: version bump, changelog, PR, and npm publish.
 
 1. **Compile changelog** — run `git log --oneline` since the last version bump commit (look for commits matching `Bump to X.Y.Z`) and summarize notable changes as bullet points. Only include user-facing features, fixes, and behavioral changes — skip doc-only updates, refactors, and other commits that don't affect functionality
 2. **Sync main** — `git fetch` and rebase/merge to ensure local `main` is up to date with the remote before branching
