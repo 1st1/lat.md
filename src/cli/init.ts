@@ -55,19 +55,16 @@ async function prompt(
 
 /** Derive the hook command prefix from the currently running binary. */
 function latHookCommand(event: string): string {
-  return `${resolve(process.argv[1])} hook claude ${event}`;
+  return `lat hook claude ${event}`;
 }
 
 type HookEntry = { hooks?: { type?: string; command?: string }[] };
 
 /** True if any command in this entry looks like it was installed by lat. */
 function isLatHookEntry(entry: HookEntry): boolean {
-  const bin = resolve(process.argv[1]);
   return (
     entry.hooks?.some(
-      (h) =>
-        typeof h.command === 'string' &&
-        (/\blat\b/.test(h.command) || h.command.startsWith(bin + ' ')),
+      (h) => typeof h.command === 'string' && /\blat\b/.test(h.command),
     ) ?? false
   );
 }
@@ -325,9 +322,6 @@ async function setupClaudeCode(
   mkdirSync(claudeDir, { recursive: true });
   syncLatHooks(settingsPath);
   console.log(chalk.green('  Hooks') + ' synced (UserPromptSubmit + Stop)');
-
-  // Ensure .claude is gitignored (settings contain local absolute paths)
-  ensureGitignored(root, '.claude');
 
   // MCP server → .mcp.json at project root
   console.log('');
