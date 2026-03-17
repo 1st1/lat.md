@@ -1,6 +1,6 @@
 {
   "name": "lat.md",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "A knowledge graph for your codebase, written in markdown",
   "type": "module",
   "packageManager": "pnpm@10.30.2",
