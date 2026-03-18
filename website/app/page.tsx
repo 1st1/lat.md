@@ -184,6 +184,7 @@ export default function Home() {
             }}
           >
             {[
+              { v: '0.10', text: <><Cmd>lat section</Cmd> shows code back-references with snippets; <Cmd>lat refs</Cmd> accepts source file queries; ripgrep-accelerated scanning</> },
               { v: '0.9', text: <><Cmd>lat init</Cmd> creates a lat skill for supported agents</> },
               { v: '0.8', text: <>Pi coding agent integration; interactive arrow-key menus in <Cmd>lat init</Cmd></> },
               { v: '0.7', text: <>Multi-language source links (Rust, Go, C); <Cmd>lat section</Cmd> and <Cmd>lat expand</Cmd> commands; section structure validation</> },
