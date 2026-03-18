@@ -181,8 +181,8 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(text).toContain('Performance');
   });
 
-  // @lat: [[tests/mcp#lat_search returns no results message]]
-  it('lat_search returns no results message when key is missing', async () => {
+  // @lat: [[tests/mcp#lat_search works without an API key]]
+  it('lat_search works without an API key using local embeddings', async () => {
     // Spin up a separate MCP server without LAT_LLM_KEY and without XDG config
     const transport2 = new StdioClientTransport({
       command: 'node',
@@ -198,8 +198,8 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
       arguments: { query: 'anything' },
     });
     const text = (result.content as { type: string; text: string }[])[0].text;
-    expect(text).toContain('No API key configured');
-    expect(result.isError).toBe(true);
+    expect(result.isError).toBeFalsy();
+    expect(text).toContain('Search results');
 
     await client2.close();
   });

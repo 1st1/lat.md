@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   detectProvider,
+  type ApiProvider,
   type EmbeddingProvider,
 } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
@@ -17,6 +18,17 @@ import type { Server } from 'node:http';
 
 // @lat: [[search#Provider Detection]]
 describe('detectProvider', () => {
+  it('returns local provider when no key given', () => {
+    const p = detectProvider();
+    expect(p.kind).toBe('local');
+    expect(p.name).toBe('local');
+  });
+
+  it('returns local provider for undefined key', () => {
+    const p = detectProvider(undefined);
+    expect(p.kind).toBe('local');
+  });
+
   it('detects OpenAI key', () => {
     const p = detectProvider('sk-abc123');
     expect(p.name).toBe('openai');
@@ -63,7 +75,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
       // Capture mode: proxy to real API, record vectors
       const realKey = process.env.LAT_LLM_KEY;
       if (!realKey) throw new Error('LAT_LLM_KEY must be set in capture mode');
-      const realProvider = detectProvider(realKey);
+      const realProvider = detectProvider(realKey) as ApiProvider;
 
       const replay = await startReplayServer(replayDir, {
         capture: true,

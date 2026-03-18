@@ -1,16 +1,48 @@
-import type { EmbeddingProvider } from './provider.js';
+import type { EmbeddingProvider, ApiProvider } from './provider.js';
 
-const MAX_BATCH = 2048;
+const API_MAX_BATCH = 2048;
+const LOCAL_BATCH = 32;
 
-export async function embed(
+// Module-level pipeline cache — avoids reloading the model on each call.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _localPipeline: any = null;
+let _localPipelineModel: string | null = null;
+
+async function getLocalPipeline(model: string) {
+  if (_localPipeline && _localPipelineModel === model) return _localPipeline;
+  if (!_localPipeline) {
+    process.stderr.write(
+      'Loading local embedding model (first run downloads ~25 MB)...\n',
+    );
+  }
+  const { pipeline } = await import('@huggingface/transformers');
+  _localPipeline = await pipeline('feature-extraction', model, {
+    dtype: 'fp32',
+    progress_callback: () => {},
+  });
+  _localPipelineModel = model;
+  return _localPipeline;
+}
+
+async function embedLocal(texts: string[], model: string): Promise<number[][]> {
+  const extractor = await getLocalPipeline(model);
+  const results: number[][] = [];
+  for (let i = 0; i < texts.length; i += LOCAL_BATCH) {
+    const batch = texts.slice(i, i + LOCAL_BATCH);
+    const output = await extractor(batch, { pooling: 'mean', normalize: true });
+    results.push(...output.tolist());
+  }
+  return results;
+}
+
+async function embedApi(
   texts: string[],
-  provider: EmbeddingProvider,
+  provider: ApiProvider,
   key: string,
 ): Promise<number[][]> {
   const results: number[][] = [];
-
-  for (let i = 0; i < texts.length; i += MAX_BATCH) {
-    const batch = texts.slice(i, i + MAX_BATCH);
+  for (let i = 0; i < texts.length; i += API_MAX_BATCH) {
+    const batch = texts.slice(i, i + API_MAX_BATCH);
     const resp = await fetch(`${provider.apiBase}/embeddings`, {
       method: 'POST',
       headers: provider.headers(key),
@@ -35,6 +67,16 @@ export async function embed(
       results.push(item.embedding);
     }
   }
-
   return results;
+}
+
+export async function embed(
+  texts: string[],
+  provider: EmbeddingProvider,
+  key?: string,
+): Promise<number[][]> {
+  if (provider.kind === 'local') {
+    return embedLocal(texts, provider.model);
+  }
+  return embedApi(texts, provider, key!);
 }

@@ -12,7 +12,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
-import type { EmbeddingProvider } from '../src/search/provider.js';
+import type { ApiProvider } from '../src/search/provider.js';
 
 type Manifest = {
   dimensions: number;
@@ -74,7 +74,7 @@ function createReplayHandler(replayDir: string) {
 
 function createCaptureHandler(
   replayDir: string,
-  realProvider: EmbeddingProvider,
+  realProvider: ApiProvider,
   realKey: string,
 ) {
   const captured = new Map<string, number[]>();
@@ -149,7 +149,7 @@ function createCaptureHandler(
 
 export function startReplayServer(
   replayDir: string,
-  opts?: { capture: true; provider: EmbeddingProvider; key: string },
+  opts?: { capture: true; provider: ApiProvider; key: string },
 ): Promise<ReplayServerResult> {
   let handler: (input: string[]) => any;
   let flush = () => {};

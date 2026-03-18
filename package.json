@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@folder/xdg": "^4.0.1",
+    "@huggingface/transformers": "^3.8.1",
     "@libsql/client": "^0.17.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@repomix/tree-sitter-wasms": "^0.1.16",

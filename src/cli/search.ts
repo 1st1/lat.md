@@ -24,7 +24,7 @@ export type IndexProgress = {
 
 async function withDb<T>(
   latDir: string,
-  key: string,
+  key: string | undefined,
   progress: IndexProgress | undefined,
   fn: (
     db: Awaited<ReturnType<typeof openDb>>,
@@ -57,7 +57,7 @@ async function withDb<T>(
 export async function runSearch(
   latDir: string,
   query: string,
-  key: string,
+  key: string | undefined,
   limit: number,
   progress?: IndexProgress,
 ): Promise<SearchResult> {
@@ -85,7 +85,7 @@ export async function runSearch(
  */
 export async function runIndex(
   latDir: string,
-  key: string,
+  key: string | undefined,
   progress?: IndexProgress,
 ): Promise<void> {
   await withDb(latDir, key, progress, async () => {});
@@ -123,26 +123,12 @@ export async function searchCommand(
   opts: { limit: number; reindex?: boolean },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
-  const { getLlmKey, getConfigPath } = await import('../config.js');
+  const { getLlmKey } = await import('../config.js');
   let key: string | undefined;
   try {
     key = getLlmKey();
   } catch (err) {
     return { output: (err as Error).message, isError: true };
-  }
-  if (!key) {
-    const s = ctx.styler;
-    return {
-      output:
-        s.red('No API key configured.') +
-        ' Provide a key via LAT_LLM_KEY, LAT_LLM_KEY_FILE, LAT_LLM_KEY_HELPER, or run ' +
-        s.cyan('lat init') +
-        (ctx.mode === 'cli'
-          ? ' to save one in ' + s.dim(getConfigPath())
-          : '') +
-        '.',
-      isError: true,
-    };
   }
 
   if (!query) {
