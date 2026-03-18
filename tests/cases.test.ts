@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'child_process';
 import { dirname, join } from 'node:path';
 import {
@@ -1136,5 +1136,72 @@ describe('error-non-md-file', () => {
     for (const err of indexErrors) {
       expect(err.snippet ?? '').not.toContain('README');
     }
+  });
+});
+
+// --- scanCodeRefs TS fallback (no rg) ---
+// Re-runs a representative subset of code-ref tests with ripgrep disabled
+// to ensure the pure-TypeScript scanner produces identical results.
+
+describe('scanCodeRefs TS fallback (_LAT_DISABLE_RG)', () => {
+  let origEnv: string | undefined;
+
+  beforeAll(() => {
+    origEnv = process.env._LAT_DISABLE_RG;
+    process.env._LAT_DISABLE_RG = '1';
+  });
+
+  afterAll(() => {
+    if (origEnv === undefined) {
+      delete process.env._LAT_DISABLE_RG;
+    } else {
+      process.env._LAT_DISABLE_RG = origEnv;
+    }
+  });
+
+  // @lat: [[tests/ts-fallback#scanCodeRefs finds refs without rg]]
+  it('scanCodeRefs finds refs without rg', async () => {
+    const { refs } = await scanCodeRefs(caseDir('python-code-ref'));
+    expect(refs).toHaveLength(2);
+    expect(refs[0].target).toBe('Specs#Feature A');
+    expect(refs[0].file).toContain('app.py');
+    expect(refs[1].target).toBe('Specs#Nonexistent');
+  });
+
+  // @lat: [[tests/ts-fallback#checkCodeRefs detects dangling ref without rg]]
+  it('checkCodeRefs detects dangling ref without rg', async () => {
+    const { errors } = await checkCodeRefs(latDir('error-dangling-code-ref'));
+    const dangling = errors.filter((e) => e.target === 'Alpha#Nonexistent');
+    expect(dangling).toHaveLength(1);
+    expect(dangling[0].message).toContain('no matching section found');
+  });
+
+  // @lat: [[tests/ts-fallback#gitignore filtering works without rg]]
+  it('gitignore filtering works without rg', async () => {
+    const { refs, files } = await scanCodeRefs(caseDir('gitignore-filtering'));
+    expect(refs).toHaveLength(1);
+    expect(refs[0].file).toContain('src/app.ts');
+    expect(files).toHaveLength(1);
+  });
+
+  // @lat: [[tests/ts-fallback#findRefs with code scope works without rg]]
+  it('findRefs with code scope works without rg', async () => {
+    const result = await findRefs(
+      testCtx('short-ref'),
+      'setup#Configure',
+      'code',
+    );
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+    expect(result.codeRefs.length).toBeGreaterThan(0);
+  });
+
+  // @lat: [[tests/ts-fallback#getSection includes code back-refs without rg]]
+  it('getSection includes code back-refs without rg', async () => {
+    const result = await getSection(testCtx('short-ref'), 'setup#Configure');
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+    expect(result.codeRefs.length).toBeGreaterThan(0);
+    expect(result.codeRefs[0].file).toContain('app.ts');
   });
 });

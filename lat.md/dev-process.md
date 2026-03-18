@@ -39,7 +39,7 @@ It wraps the `ignore-walk` npm package to ensure `.gitignore` rules are consiste
 
 [[src/code-refs.ts#walkFiles]] calls `walkEntries()` then additionally skips `.md` files, `lat.md/`, `.claude/`, and sub-projects (directories containing their own `lat.md/`).
 
-[[src/code-refs.ts#scanCodeRefs]] uses a two-tier strategy for finding `@lat:` comments: it first tries `rg` (ripgrep), falling back to a pure TypeScript implementation. When rg is available, it handles both searching and file listing — `walkFiles` is not called. Exclusions for `lat.md/`, `.claude/`, `*.md`, and sub-projects are passed as `--glob` args to rg. Sub-projects are detected upfront via `rg --files` (directories containing a nested `lat.md/`). The TS fallback uses `walkFiles` for both file discovery and exclusion filtering. `CodeRef.file` is always stored as a projectRoot-relative path; consumers convert to cwd-relative only at display time.
+[[src/code-refs.ts#scanCodeRefs]] uses a two-tier strategy for finding `@lat:` comments: it first tries `rg` (ripgrep), falling back to a pure TypeScript implementation. When rg is available, it handles both searching and file listing — `walkFiles` is not called. Exclusions for `lat.md/`, `.claude/`, `*.md`, and sub-projects are passed as `--glob` args to rg. Sub-projects are detected upfront via `rg --files` (directories containing a nested `lat.md/`). The TS fallback uses `walkFiles` for both file discovery and exclusion filtering. `CodeRef.file` is always stored as a projectRoot-relative path; consumers convert to cwd-relative only at display time. Setting `_LAT_DISABLE_RG=1` forces the TS fallback; used in tests to cover both paths.
 
 [[src/cli/check.ts#checkIndex]] calls `walkEntries()` on the `lat.md/` directory itself to discover visible entries for index validation.
 
@@ -71,7 +71,8 @@ Version numbers follow semver. While pre-1.0, bump the patch for fixes and the m
 GitHub Actions workflow at `.github/workflows/publish.yml`. Runs on every push to `main`:
 
 1. **Detect version change** — compares `version` in `package.json` against the previous commit. If unchanged, skips all publish steps
-2. **Run tests** — `pnpm install`, `pnpm build`, `pnpm vitest run`
+2. **Install ripgrep** — `apt-get install ripgrep` so both rg and TS-fallback code paths are exercised
+3. **Run tests** — `pnpm install`, `pnpm build`, `pnpm vitest run`
 3. **Publish to npm** — `pnpm publish --no-git-checks` using the `NPM_TOKEN` repository secret
 4. **Create GitHub release** — tags `vX.Y.Z` and creates a GitHub release with auto-generated notes
 

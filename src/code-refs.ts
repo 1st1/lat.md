@@ -251,9 +251,12 @@ async function scanWithTs(
 
 export async function scanCodeRefs(projectRoot: string): Promise<ScanResult> {
   // Fast path: use rg for both searching and file listing
-  const rgResult = await tryRipgrep(projectRoot);
-  if (rgResult !== null) {
-    return { refs: rgResult.refs, files: rgResult.files };
+  // _LAT_DISABLE_RG is a test-only escape hatch to force the TS fallback
+  if (!process.env._LAT_DISABLE_RG) {
+    const rgResult = await tryRipgrep(projectRoot);
+    if (rgResult !== null) {
+      return { refs: rgResult.refs, files: rgResult.files };
+    }
   }
 
   // Fallback: walk files ourselves and scan with TS

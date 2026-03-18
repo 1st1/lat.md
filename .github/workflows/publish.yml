@@ -42,6 +42,10 @@ jobs:
         if: steps.version.outputs.changed == 'true'
         run: npm install -g npm@latest
 
+      - name: Install ripgrep
+        if: steps.version.outputs.changed == 'true'
+        run: sudo apt-get install -y ripgrep
+
       - name: Install dependencies
         if: steps.version.outputs.changed == 'true'
         run: pnpm install --frozen-lockfile
