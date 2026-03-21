@@ -22,7 +22,8 @@ export function getLocalProvider(): LocalProvider {
   return { kind: 'local', name: 'local', model };
 }
 
-const openai: Omit<ApiProvider, 'kind'> = {
+const openai: ApiProvider = {
+  kind: 'api',
   name: 'openai',
   apiBase: 'https://api.openai.com/v1',
   model: 'text-embedding-3-small',
@@ -33,7 +34,8 @@ const openai: Omit<ApiProvider, 'kind'> = {
   }),
 };
 
-const vercel: Omit<ApiProvider, 'kind'> = {
+const vercel: ApiProvider = {
+  kind: 'api',
   name: 'vercel',
   apiBase: 'https://ai-gateway.vercel.sh/v1',
   model: 'openai/text-embedding-3-small',
@@ -63,9 +65,25 @@ export function detectProvider(key?: string): EmbeddingProvider {
       "Anthropic doesn't offer an embedding model. Set LAT_LLM_KEY to an OpenAI (sk-...) or Vercel AI Gateway (vck_...) key, or omit it to use local embeddings.",
     );
   }
-  if (key.startsWith('vck_')) return { kind: 'api', ...vercel };
-  if (key.startsWith('sk-')) return { kind: 'api', ...openai };
+  if (key.startsWith('vck_')) return vercel;
+  if (key.startsWith('sk-')) return openai;
   throw new Error(
     `Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...). Omit LAT_LLM_KEY to use local embeddings.`,
   );
+}
+
+/**
+ * Resolve the embedding dimensions for a provider. API providers declare
+ * dimensions statically; local providers read model.config.hidden_size
+ * from the loaded pipeline (which must be loaded anyway for embedding).
+ */
+export async function getProviderDimensions(
+  provider: EmbeddingProvider,
+): Promise<number> {
+  if (provider.kind === 'api') return provider.dimensions;
+  // Delegate to embeddings module — loads the pipeline and reads model
+  // config. Dynamic import avoids a static circular dependency (embeddings
+  // imports types from this module).
+  const { getLocalDimensions } = await import('./embeddings.js');
+  return getLocalDimensions(provider.model);
 }

@@ -324,9 +324,9 @@ Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
 ### Local Embeddings
 
-When no API key is configured, search uses a local model via `@huggingface/transformers` (`Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download).
+When no API key is configured, search uses a local model via `@huggingface/transformers` (optional dependency; `Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download).
 
-Override with `LAT_LOCAL_MODEL` env var for a different HuggingFace model — dimensions are probed automatically from the model's output. The pipeline is cached at module level as a `Promise` so concurrent callers share a single model load. Texts are batched in groups of 32 (CPU-bound; keeps peak memory reasonable on laptops).
+If the package is not installed, a clear error directs the user to install it or set an API key instead. Override with `LAT_LOCAL_MODEL` env var for a different HuggingFace model — dimensions are read from the model's config after the pipeline loads (`hidden_size`, `n_embd`, or `d_model` depending on architecture). The pipeline is cached at module level as a `Promise` so concurrent callers share a single model load. Texts are batched in groups of 32 (CPU-bound; keeps peak memory reasonable on laptops).
 
 ### API Embeddings
 

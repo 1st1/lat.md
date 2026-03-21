@@ -16,7 +16,10 @@ export async function searchSections(
   key?: string,
   limit = 5,
 ): Promise<SearchResult[]> {
-  const [queryVec] = await embed([query], provider, key);
+  const [queryVec] =
+    provider.kind === 'local'
+      ? await embed([query], provider)
+      : await embed([query], provider, key!);
   const vecJson = JSON.stringify(queryVec);
 
   const rows = await db.execute({

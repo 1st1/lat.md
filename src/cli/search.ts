@@ -1,7 +1,6 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { openDb, ensureSchema, closeDb } from '../search/db.js';
-import { detectProvider } from '../search/provider.js';
-import { getDimensions } from '../search/embeddings.js';
+import { detectProvider, getProviderDimensions } from '../search/provider.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -36,7 +35,7 @@ async function withDb<T>(
   const db = openDb(latDir);
 
   try {
-    const dimensions = await getDimensions(provider);
+    const dimensions = await getProviderDimensions(provider);
     await ensureSchema(db, dimensions);
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');

@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   detectProvider,
+  getProviderDimensions,
   type ApiProvider,
   type EmbeddingProvider,
 } from '../src/search/provider.js';
-import { getDimensions } from '../src/search/embeddings.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
@@ -60,27 +60,53 @@ describe('ensureSchema dimension mismatch', () => {
     rmSync(tmp, { recursive: true, force: true });
   });
 
-  it('rebuilds table when dimensions change', async () => {
+  it('rebuilds table and logs diagnostic when dimensions change', async () => {
     db = openDb(tmp);
 
     // Create with 1536 dimensions
     await ensureSchema(db, 1536);
     await db.execute({
-      sql: `INSERT INTO sections (id, file, heading, content, content_hash, embedding, updated_at)
+      sql: `INSERT INTO sections
+            (id, file, heading, content, content_hash, embedding, updated_at)
             VALUES (?, ?, ?, ?, ?, vector(?), ?)`,
-      args: ['test-id', 'test.md', 'Test', 'content', 'hash123', JSON.stringify(new Array(1536).fill(0)), Date.now()],
+      args: [
+        'test-id',
+        'test.md',
+        'Test',
+        'content',
+        'hash123',
+        JSON.stringify(new Array(1536).fill(0)),
+        Date.now(),
+      ],
     });
     const before = await db.execute('SELECT COUNT(*) as n FROM sections');
     expect(before.rows[0].n).toBe(1);
 
     // Re-init with 384 dimensions — should drop and recreate
-    await ensureSchema(db, 384);
+    const messages: string[] = [];
+    const origWrite = process.stderr.write;
+    process.stderr.write = ((chunk: string) => {
+      messages.push(chunk);
+      return true;
+    }) as typeof process.stderr.write;
+
+    try {
+      await ensureSchema(db, 384);
+    } finally {
+      process.stderr.write = origWrite;
+    }
+
     const after = await db.execute('SELECT COUNT(*) as n FROM sections');
     expect(after.rows[0].n).toBe(0);
 
     // Verify new dimension is stored in meta
-    const meta = await db.execute("SELECT value FROM meta WHERE key = 'embedding_dimensions'");
+    const meta = await db.execute(
+      "SELECT value FROM meta WHERE key = 'embedding_dimensions'",
+    );
     expect(meta.rows[0].value).toBe('384');
+
+    // Verify diagnostic was printed to stderr
+    expect(messages.some((m) => m.includes('dimensions changed'))).toBe(true);
   });
 });
 
@@ -139,7 +165,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
     });
 
     db = openDb(latDir);
-    const dimensions = await getDimensions(provider);
+    const dimensions = await getProviderDimensions(provider);
     await ensureSchema(db, dimensions);
   });
 
