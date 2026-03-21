@@ -34,6 +34,9 @@ export async function ensureSchema(
   if (metaRows.rows.length > 0) {
     const stored = parseInt(metaRows.rows[0].value as string, 10);
     if (stored !== dimensions) {
+      process.stderr.write(
+        `Embedding dimensions changed (${stored} → ${dimensions}), rebuilding index...\n`,
+      );
       await db.execute('DROP INDEX IF EXISTS sections_vec_idx');
       await db.execute('DROP TABLE IF EXISTS sections');
     }

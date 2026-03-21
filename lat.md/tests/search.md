@@ -10,6 +10,12 @@ Tests in `tests/search.test.ts`.
 
 Unit tests (always run). Verify `detectProvider` correctly identifies OpenAI (`sk-`), Vercel (`vck_`), returns the local provider when no key is given, rejects Anthropic (`sk-ant-`) with a helpful message, and rejects unknown prefixes.
 
+## Schema Dimension Mismatch
+
+Verify that `ensureSchema` rebuilds the sections table when stored dimensions differ from the provider's.
+
+Creates a DB at 1536 dimensions with a row, re-inits at 384, asserts the table is empty and the new dimension is stored in meta.
+
 ## RAG Replay Tests
 
 Functional tests that exercise the full RAG pipeline using a replay server instead of a real embedding API.

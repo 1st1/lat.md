@@ -7,6 +7,7 @@ import {
   type ApiProvider,
   type EmbeddingProvider,
 } from '../src/search/provider.js';
+import { getDimensions } from '../src/search/embeddings.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
@@ -22,11 +23,6 @@ describe('detectProvider', () => {
     const p = detectProvider();
     expect(p.kind).toBe('local');
     expect(p.name).toBe('local');
-  });
-
-  it('returns local provider for undefined key', () => {
-    const p = detectProvider(undefined);
-    expect(p.kind).toBe('local');
   });
 
   it('detects OpenAI key', () => {
@@ -45,6 +41,46 @@ describe('detectProvider', () => {
 
   it('rejects unknown key', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
+  });
+});
+
+// --- Schema tests ---
+
+// @lat: [[search#Schema Dimension Mismatch]]
+describe('ensureSchema dimension mismatch', () => {
+  let tmp: string;
+  let db: Client;
+
+  beforeAll(() => {
+    tmp = mkdtempSync(join(tmpdir(), 'lat-dim-'));
+  });
+
+  afterAll(async () => {
+    if (db) await closeDb(db);
+    rmSync(tmp, { recursive: true, force: true });
+  });
+
+  it('rebuilds table when dimensions change', async () => {
+    db = openDb(tmp);
+
+    // Create with 1536 dimensions
+    await ensureSchema(db, 1536);
+    await db.execute({
+      sql: `INSERT INTO sections (id, file, heading, content, content_hash, embedding, updated_at)
+            VALUES (?, ?, ?, ?, ?, vector(?), ?)`,
+      args: ['test-id', 'test.md', 'Test', 'content', 'hash123', JSON.stringify(new Array(1536).fill(0)), Date.now()],
+    });
+    const before = await db.execute('SELECT COUNT(*) as n FROM sections');
+    expect(before.rows[0].n).toBe(1);
+
+    // Re-init with 384 dimensions — should drop and recreate
+    await ensureSchema(db, 384);
+    const after = await db.execute('SELECT COUNT(*) as n FROM sections');
+    expect(after.rows[0].n).toBe(0);
+
+    // Verify new dimension is stored in meta
+    const meta = await db.execute("SELECT value FROM meta WHERE key = 'embedding_dimensions'");
+    expect(meta.rows[0].value).toBe('384');
   });
 });
 
@@ -103,7 +139,8 @@ describe.skipIf(!canRun)('search (rag)', () => {
     });
 
     db = openDb(latDir);
-    await ensureSchema(db, provider.dimensions);
+    const dimensions = await getDimensions(provider);
+    await ensureSchema(db, dimensions);
   });
 
   afterAll(async () => {

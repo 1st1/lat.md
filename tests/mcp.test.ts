@@ -195,11 +195,12 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
 
     const result = await client2.callTool({
       name: 'lat_search',
-      arguments: { query: 'anything' },
+      arguments: { query: 'how do we run tests?' },
     });
     const text = (result.content as { type: string; text: string }[])[0].text;
     expect(result.isError).toBeFalsy();
     expect(text).toContain('Search results');
+    expect(text).toMatch(/Testing|Running Tests/);
 
     await client2.close();
   });

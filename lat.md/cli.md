@@ -303,7 +303,9 @@ Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections),
 
 ### Provider Detection
 
-Requires an LLM key resolved by [[src/config.ts#getLlmKey]] in priority order:
+Resolves an embedding provider from the LLM key (or lack thereof). When no key is configured, falls back to a local embedding model so search works out of the box without any API key.
+
+Key resolution order (via [[src/config.ts#getLlmKey]]):
 
 1. `LAT_LLM_KEY` env var — direct value
 2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key (read and trimmed)
@@ -312,6 +314,7 @@ Requires an LLM key resolved by [[src/config.ts#getLlmKey]] in priority order:
 
 Provider is auto-detected from the resolved key prefix:
 
+- *(no key)* — local embeddings via `@huggingface/transformers` (see [[cli#search#Local Embeddings]])
 - `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims)
 - `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims)
 - `sk-ant-...` — Anthropic (not supported, errors with guidance)
@@ -319,7 +322,13 @@ Provider is auto-detected from the resolved key prefix:
 
 Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
-### Embeddings
+### Local Embeddings
+
+When no API key is configured, search uses a local model via `@huggingface/transformers` (`Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download).
+
+Override with `LAT_LOCAL_MODEL` env var for a different HuggingFace model — dimensions are probed automatically from the model's output. The pipeline is cached at module level as a `Promise` so concurrent callers share a single model load. Texts are batched in groups of 32 (CPU-bound; keeps peak memory reasonable on laptops).
+
+### API Embeddings
 
 Direct `fetch()` calls to the provider's OpenAI-compatible `/v1/embeddings` endpoint. No LangChain or other framework — keeps the dependency tree minimal. Batches up to 2048 texts per request.
 
@@ -329,7 +338,7 @@ Implementation: [[src/search/embeddings.ts]]
 
 Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed.
+Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. A `meta` table tracks the current embedding dimensions; on schema init, if the stored dimensions differ from the provider's (e.g. switching from API at 1536 to local at 384), the sections table is dropped and rebuilt, with a diagnostic message to stderr.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 

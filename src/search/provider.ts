@@ -11,17 +11,16 @@ export type LocalProvider = {
   kind: 'local';
   name: 'local';
   model: string;
-  dimensions: number;
 };
 
 export type EmbeddingProvider = ApiProvider | LocalProvider;
 
-export const localProvider: LocalProvider = {
-  kind: 'local',
-  name: 'local',
-  model: 'Xenova/all-MiniLM-L6-v2',
-  dimensions: 384,
-};
+const DEFAULT_LOCAL_MODEL = 'Xenova/all-MiniLM-L6-v2';
+
+export function getLocalProvider(): LocalProvider {
+  const model = process.env.LAT_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
+  return { kind: 'local', name: 'local', model };
+}
 
 const openai: Omit<ApiProvider, 'kind'> = {
   name: 'openai',
@@ -46,7 +45,7 @@ const vercel: Omit<ApiProvider, 'kind'> = {
 };
 
 export function detectProvider(key?: string): EmbeddingProvider {
-  if (!key) return localProvider;
+  if (!key) return getLocalProvider();
 
   if (key.startsWith('REPLAY_LAT_LLM_KEY::')) {
     const replayUrl = key.slice('REPLAY_LAT_LLM_KEY::'.length);
