@@ -132,6 +132,15 @@ export async function searchCommand(
     return { output: (err as Error).message, isError: true };
   }
 
+  // Validate the provider is usable before starting work.
+  if (!key) {
+    try {
+      await getProviderDimensions(detectProvider());
+    } catch (err) {
+      return { output: (err as Error).message, isError: true };
+    }
+  }
+
   if (!query) {
     await runIndex(ctx.latDir, key, progress);
     return { output: '' };

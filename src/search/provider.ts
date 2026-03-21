@@ -1,3 +1,5 @@
+import { getLocalDimensions } from './local.js';
+
 export type ApiProvider = {
   kind: 'api';
   name: string;
@@ -11,6 +13,7 @@ export type LocalProvider = {
   kind: 'local';
   name: 'local';
   model: string;
+  readonly dimensions: Promise<number>;
 };
 
 export type EmbeddingProvider = ApiProvider | LocalProvider;
@@ -19,7 +22,16 @@ const DEFAULT_LOCAL_MODEL = 'Xenova/all-MiniLM-L6-v2';
 
 export function getLocalProvider(): LocalProvider {
   const model = process.env.LAT_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
-  return { kind: 'local', name: 'local', model };
+  let _dims: Promise<number> | null = null;
+  return {
+    kind: 'local',
+    name: 'local',
+    model,
+    get dimensions() {
+      if (!_dims) _dims = getLocalDimensions(model);
+      return _dims;
+    },
+  };
 }
 
 const openai: ApiProvider = {
@@ -73,17 +85,11 @@ export function detectProvider(key?: string): EmbeddingProvider {
 }
 
 /**
- * Resolve the embedding dimensions for a provider. API providers declare
- * dimensions statically; local providers read model.config.hidden_size
- * from the loaded pipeline (which must be loaded anyway for embedding).
+ * Resolve embedding dimensions. API providers know theirs statically;
+ * local providers read from the loaded model config.
  */
 export async function getProviderDimensions(
   provider: EmbeddingProvider,
 ): Promise<number> {
-  if (provider.kind === 'api') return provider.dimensions;
-  // Delegate to embeddings module — loads the pipeline and reads model
-  // config. Dynamic import avoids a static circular dependency (embeddings
-  // imports types from this module).
-  const { getLocalDimensions } = await import('./embeddings.js');
-  return getLocalDimensions(provider.model);
+  return provider.dimensions;
 }

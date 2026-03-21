@@ -41,4 +41,4 @@ Semantic search via `lat_search` for a login/security query returns results cont
 Semantic search for a latency/response-times query returns results containing the Performance section.
 
 ## lat_search works without an API key
-When `LAT_LLM_KEY` is not set, `lat_search` falls back to local embeddings and returns results without error.
+When `LAT_LLM_KEY` is not set, `lat_search` handles the no-key case gracefully. If `@huggingface/transformers` is installed, returns search results via local embeddings. If not, returns a clean error with install guidance. Either way, no crash.

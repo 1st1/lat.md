@@ -6,7 +6,6 @@ import {
   detectProvider,
   getProviderDimensions,
   type ApiProvider,
-  type EmbeddingProvider,
 } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
@@ -110,6 +109,49 @@ describe('ensureSchema dimension mismatch', () => {
   });
 });
 
+// --- Local embedding tests (requires @huggingface/transformers) ---
+
+let hasTransformers = false;
+try {
+  await import('@huggingface/transformers');
+  hasTransformers = true;
+} catch {}
+
+// @lat: [[search#Local Embedding]]
+describe.skipIf(!hasTransformers)('local embedding', () => {
+  it('produces normalized vectors with correct dimensions', async () => {
+    const { embedLocal } = await import('../src/search/local.js');
+    const { getLocalDimensions } = await import('../src/search/local.js');
+    const model = 'Xenova/all-MiniLM-L6-v2';
+
+    const dims = await getLocalDimensions(model);
+    expect(dims).toBe(384);
+
+    const [vec] = await embedLocal(['hello world'], model);
+    expect(vec.length).toBe(dims);
+
+    // Mean-pooled + normalized vectors should have unit length.
+    const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
+    expect(norm).toBeCloseTo(1.0, 2);
+  });
+
+  it('ranks semantically similar texts closer', async () => {
+    const { embedLocal } = await import('../src/search/local.js');
+    const model = 'Xenova/all-MiniLM-L6-v2';
+
+    const [a, b, c] = await embedLocal(
+      ['how to authenticate users', 'user login and security', 'banana split recipe'],
+      model,
+    );
+
+    const dot = (x: number[], y: number[]) =>
+      x.reduce((s, v, i) => s + v * y[i], 0);
+
+    // auth↔login should be more similar than auth↔banana
+    expect(dot(a, b)).toBeGreaterThan(dot(a, c));
+  });
+});
+
 // --- RAG functional tests ---
 //
 // Two modes:
@@ -128,7 +170,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
   let latDir: string;
   let db: Client;
   let server: Server;
-  let provider: EmbeddingProvider;
+  let provider: ReturnType<typeof detectProvider>;
   let replayKey: string;
   let flushCapture: () => void;
 

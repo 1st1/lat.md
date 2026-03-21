@@ -16,6 +16,10 @@ Verify that `ensureSchema` rebuilds the sections table when stored dimensions di
 
 Creates a DB at 1536 dimensions with a row, re-inits at 384, asserts the table is empty and the new dimension is stored in meta.
 
+## Local Embedding
+
+Gated on `@huggingface/transformers` availability. Verifies that `embedLocal` produces normalized vectors with correct dimensions (384 for `Xenova/all-MiniLM-L6-v2`) and that semantically similar texts rank closer than unrelated ones.
+
 ## RAG Replay Tests
 
 Functional tests that exercise the full RAG pipeline using a replay server instead of a real embedding API.

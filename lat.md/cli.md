@@ -324,9 +324,11 @@ Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
 ### Local Embeddings
 
-When no API key is configured, search uses a local model via `@huggingface/transformers` (optional dependency; `Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download).
+When no API key is configured, search uses a local model via `@huggingface/transformers` (optional dependency; `Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download). Override model with `LAT_LOCAL_MODEL` env var.
 
-If the package is not installed, a clear error directs the user to install it or set an API key instead. Override with `LAT_LOCAL_MODEL` env var for a different HuggingFace model — dimensions are read from the model's config after the pipeline loads (`hidden_size`, `n_embd`, or `d_model` depending on architecture). The pipeline is cached at module level as a `Promise` so concurrent callers share a single model load. Texts are batched in groups of 32 (CPU-bound; keeps peak memory reasonable on laptops).
+Dimensions are read from the loaded model's config. The pipeline is cached as a `Promise` so concurrent callers share a single load. Errors (missing package, bad model) are surfaced early in `searchCommand` before any indexing work begins.
+
+Implementation: [[src/search/local.ts]]
 
 ### API Embeddings
 
@@ -338,7 +340,7 @@ Implementation: [[src/search/embeddings.ts]]
 
 Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. A `meta` table tracks the current embedding dimensions; on schema init, if the stored dimensions differ from the provider's (e.g. switching from API at 1536 to local at 384), the sections table is dropped and rebuilt, with a diagnostic message to stderr.
+Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. A `meta` table tracks the current embedding dimensions; on dimension mismatch (e.g. switching from API at 1536 to local at 384), the table is dropped and rebuilt inside a transaction so the drop, recreate, and meta update are atomic.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 

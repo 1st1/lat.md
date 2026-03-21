@@ -72,13 +72,7 @@ export async function indexSections(
   // Embed new/changed sections
   if (toEmbed.length > 0) {
     const texts = toEmbed.map((e) => e.content);
-    // Narrow provider to satisfy embed() overloads. By construction,
-    // API providers always have a key (detectProvider only returns
-    // ApiProvider when key is defined).
-    const vectors =
-      provider.kind === 'local'
-        ? await embed(texts, provider)
-        : await embed(texts, provider, key!);
+    const vectors = await embed(texts, provider, key);
     const now = Date.now();
 
     for (let i = 0; i < toEmbed.length; i++) {
