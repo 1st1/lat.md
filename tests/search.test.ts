@@ -2,7 +2,10 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { detectProvider } from '../src/search/provider.js';
+import {
+  detectProvider,
+  type EmbeddingProvider,
+} from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
@@ -161,7 +164,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
   let latDir: string;
   let db: Client;
   let server: Server;
-  let provider: ReturnType<typeof detectProvider>;
+  let provider: EmbeddingProvider;
   let replayKey: string;
   let flushCapture: () => void;
 

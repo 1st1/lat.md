@@ -15,9 +15,7 @@ async function requireTransformers() {
     return await import('@huggingface/transformers');
   } catch {
     throw new Error(
-      'Local embeddings require the @huggingface/transformers package.\n' +
-        'Install with: pnpm install @huggingface/transformers\n' +
-        '(It is an optional dependency — your package manager may have skipped it.)\n' +
+      'Local embeddings require @huggingface/transformers — install it alongside lat.md.\n' +
         'Or set LAT_LLM_KEY to use an API provider instead.',
     );
   }
