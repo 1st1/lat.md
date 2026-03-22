@@ -183,6 +183,12 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
 
   // @lat: [[tests/mcp#lat_search works without an API key]]
   it('lat_search works without an API key', async () => {
+    let hasTransformers = false;
+    try {
+      await import('@huggingface/transformers');
+      hasTransformers = true;
+    } catch {}
+
     // Spin up a separate MCP server without LAT_LLM_KEY and without XDG config
     const transport2 = new StdioClientTransport({
       command: 'node',
@@ -198,13 +204,12 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
       arguments: { query: 'how do we run tests?' },
     });
     const text = (result.content as { type: string; text: string }[])[0].text;
-    // If @huggingface/transformers is installed, local embeddings produce results.
-    // If not, searchCommand returns a clean error with install guidance.
-    // Either way, no crash — MCP transport handles it gracefully.
-    if (result.isError) {
-      expect(text).toContain('@huggingface/transformers');
-    } else {
+    if (hasTransformers) {
+      expect(result.isError).toBeFalsy();
       expect(text).toContain('Search results');
+    } else {
+      expect(result.isError).toBe(true);
+      expect(text).toContain('@huggingface/transformers');
     }
 
     await client2.close();

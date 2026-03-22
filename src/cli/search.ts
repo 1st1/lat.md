@@ -32,7 +32,6 @@ async function withDb<T>(
   ) => Promise<T>,
 ): Promise<T> {
   const provider = detectProvider(key);
-
   const db = openDb(latDir);
 
   try {

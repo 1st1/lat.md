@@ -9,7 +9,7 @@ export type ApiProvider = {
 
 export type LocalProvider = {
   kind: 'local';
-  name: 'local';
+  name: string;
   model: string;
   dimensions: number;
 };
@@ -32,13 +32,13 @@ const LOCAL_MODELS: Record<LocalModelSize, LocalModelEntry> = {
 function parseModelSize(): LocalModelSize {
   const raw = process.env.LAT_LOCAL_MODEL_SIZE;
   if (!raw) return 'small';
-  const normalized = raw.toLowerCase().trim() as LocalModelSize;
+  const normalized = raw.toLowerCase().trim();
   if (!(normalized in LOCAL_MODELS)) {
     throw new Error(
       `Invalid LAT_LOCAL_MODEL_SIZE "${raw}". Valid sizes: ${Object.keys(LOCAL_MODELS).join(', ')}.`,
     );
   }
-  return normalized;
+  return normalized as LocalModelSize;
 }
 
 export function getLocalProvider(): LocalProvider {
