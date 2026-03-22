@@ -348,7 +348,7 @@ Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no n
 
 Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed.
 
-A `meta` table tracks the current embedding dimensions. On dimension mismatch (e.g. switching from API at 1536 to local at 384), the table is dropped and rebuilt atomically via `db.batch()`.
+A `meta` table tracks the current embedding dimensions. On dimension mismatch (e.g. switching from API at 1536 to local at 384), the table is dropped and rebuilt in a single `db.batch()` call.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 

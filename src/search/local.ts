@@ -33,7 +33,11 @@ async function loadPipeline(model: string): Promise<Extractor> {
 function getLocalPipeline(model: string): Promise<Extractor> {
   if (_pipeline && _pipelineModel === model) return _pipeline;
   _pipelineModel = model;
-  _pipeline = loadPipeline(model);
+  _pipeline = loadPipeline(model).catch((err) => {
+    _pipeline = null;
+    _pipelineModel = null;
+    throw err;
+  });
   return _pipeline;
 }
 

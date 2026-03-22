@@ -21,16 +21,13 @@ export type LocalModelSize = 'small' | 'medium' | 'large';
 type LocalModelEntry = {
   model: string;
   dimensions: number;
-  approxMb: number;
 };
 
 const LOCAL_MODELS: Record<LocalModelSize, LocalModelEntry> = {
-  small: { model: 'Xenova/all-MiniLM-L6-v2', dimensions: 384, approxMb: 45 },
-  medium: { model: 'Xenova/bge-base-en-v1.5', dimensions: 768, approxMb: 130 },
-  large: { model: 'Xenova/bge-large-en-v1.5', dimensions: 1024, approxMb: 330 },
+  small: { model: 'Xenova/all-MiniLM-L6-v2', dimensions: 384 },
+  medium: { model: 'Xenova/bge-base-en-v1.5', dimensions: 768 },
+  large: { model: 'Xenova/bge-large-en-v1.5', dimensions: 1024 },
 };
-
-const VALID_SIZES = Object.keys(LOCAL_MODELS).join(', ');
 
 function parseModelSize(): LocalModelSize {
   const raw = process.env.LAT_LOCAL_MODEL_SIZE;
@@ -38,7 +35,7 @@ function parseModelSize(): LocalModelSize {
   const normalized = raw.toLowerCase().trim() as LocalModelSize;
   if (!(normalized in LOCAL_MODELS)) {
     throw new Error(
-      `Invalid LAT_LOCAL_MODEL_SIZE "${raw}". Valid sizes: ${VALID_SIZES}.`,
+      `Invalid LAT_LOCAL_MODEL_SIZE "${raw}". Valid sizes: ${Object.keys(LOCAL_MODELS).join(', ')}.`,
     );
   }
   return normalized;
