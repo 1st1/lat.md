@@ -1,5 +1,3 @@
-import { getLocalDimensions } from './local.js';
-
 export type ApiProvider = {
   kind: 'api';
   name: string;
@@ -13,30 +11,48 @@ export type LocalProvider = {
   kind: 'local';
   name: 'local';
   model: string;
+  dimensions: number;
 };
 
 export type EmbeddingProvider = ApiProvider | LocalProvider;
 
-const DEFAULT_LOCAL_MODEL = 'Xenova/all-MiniLM-L6-v2';
+export type LocalModelSize = 'small' | 'medium' | 'large';
 
-let _localDims: Promise<number> | null = null;
-let _localDimsModel: string | null = null;
+type LocalModelEntry = {
+  model: string;
+  dimensions: number;
+  approxMb: number;
+};
 
-export function getLocalProvider(): LocalProvider {
-  const model = process.env.LAT_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
-  return { kind: 'local', name: 'local', model };
+const LOCAL_MODELS: Record<LocalModelSize, LocalModelEntry> = {
+  small: { model: 'Xenova/all-MiniLM-L6-v2', dimensions: 384, approxMb: 45 },
+  medium: { model: 'Xenova/bge-base-en-v1.5', dimensions: 768, approxMb: 130 },
+  large: { model: 'Xenova/bge-large-en-v1.5', dimensions: 1024, approxMb: 330 },
+};
+
+const VALID_SIZES = Object.keys(LOCAL_MODELS).join(', ');
+
+function parseModelSize(): LocalModelSize {
+  const raw = process.env.LAT_LOCAL_MODEL_SIZE;
+  if (!raw) return 'small';
+  const normalized = raw.toLowerCase().trim() as LocalModelSize;
+  if (!(normalized in LOCAL_MODELS)) {
+    throw new Error(
+      `Invalid LAT_LOCAL_MODEL_SIZE "${raw}". Valid sizes: ${VALID_SIZES}.`,
+    );
+  }
+  return normalized;
 }
 
-export async function getDimensions(
-  provider: EmbeddingProvider,
-): Promise<number> {
-  if (provider.kind === 'api') return provider.dimensions;
-  // Cache the promise so concurrent callers share a single load.
-  if (!_localDims || _localDimsModel !== provider.model) {
-    _localDimsModel = provider.model;
-    _localDims = getLocalDimensions(provider.model);
-  }
-  return _localDims;
+export function getLocalProvider(): LocalProvider {
+  const size = parseModelSize();
+  const entry = LOCAL_MODELS[size];
+  return {
+    kind: 'local',
+    name: 'local',
+    model: entry.model,
+    dimensions: entry.dimensions,
+  };
 }
 
 const openai: ApiProvider = {

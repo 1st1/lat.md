@@ -1,6 +1,6 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { openDb, ensureSchema, closeDb } from '../search/db.js';
-import { detectProvider, getDimensions } from '../search/provider.js';
+import { detectProvider } from '../search/provider.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -33,13 +33,10 @@ async function withDb<T>(
 ): Promise<T> {
   const provider = detectProvider(key);
 
-  // Resolve dimensions before opening the DB so a local-model failure
-  // doesn't leave behind an empty cache directory.
-  const dimensions = await getDimensions(provider);
   const db = openDb(latDir);
 
   try {
-    await ensureSchema(db, dimensions);
+    await ensureSchema(db, provider.dimensions);
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
     const isEmpty = (countResult.rows[0].n as number) === 0;

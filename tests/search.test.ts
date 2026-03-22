@@ -4,7 +4,6 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   detectProvider,
-  getDimensions,
   type ApiProvider,
 } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
@@ -22,6 +21,7 @@ describe('detectProvider', () => {
     const p = detectProvider();
     expect(p.kind).toBe('local');
     expect(p.name).toBe('local');
+    expect(p.dimensions).toBe(384);
   });
 
   it('detects OpenAI key', () => {
@@ -115,14 +115,10 @@ try {
 describe.skipIf(!hasTransformers)('local embedding', () => {
   it('produces normalized vectors with correct dimensions', async () => {
     const { embedLocal } = await import('../src/search/local.js');
-    const { getLocalDimensions } = await import('../src/search/local.js');
     const model = 'Xenova/all-MiniLM-L6-v2';
 
-    const dims = await getLocalDimensions(model);
-    expect(dims).toBe(384);
-
     const [vec] = await embedLocal(['hello world'], model);
-    expect(vec.length).toBe(dims);
+    expect(vec.length).toBe(384);
 
     // Mean-pooled + normalized vectors should have unit length.
     const norm = Math.sqrt(vec.reduce((sum, v) => sum + v * v, 0));
@@ -201,8 +197,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
     });
 
     db = openDb(latDir);
-    const dimensions = await getDimensions(provider);
-    await ensureSchema(db, dimensions);
+    await ensureSchema(db, provider.dimensions);
   });
 
   afterAll(async () => {

@@ -326,9 +326,15 @@ Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
 Falls back to a local model when no API key is configured. Uses `@huggingface/transformers` (optional dep).
 
-Default model is `Xenova/all-MiniLM-L6-v2` (~45 MB first-run download). Override with `LAT_LOCAL_MODEL` env var. Dimensions are read from the loaded model's config. The pipeline promise is cached so concurrent callers share a single load. Errors (missing package, bad model) surface before any indexing work begins.
+Three pre-defined model sizes, selected via `LAT_LOCAL_MODEL_SIZE` env var (default `small`):
 
-Implementation: [[src/search/local.ts]]
+- `small` — `Xenova/all-MiniLM-L6-v2`, 384 dims, ~45 MB download
+- `medium` — `Xenova/bge-base-en-v1.5`, 768 dims, ~130 MB download
+- `large` — `Xenova/bge-large-en-v1.5`, 1024 dims, ~330 MB download
+
+Dimensions are known statically from the model table — no need to load the model to discover them. The pipeline promise is cached so concurrent callers share a single load. Errors (missing package, invalid size) surface before any indexing work begins.
+
+Implementation: [[src/search/local.ts#embedLocal]]
 
 ### API Embeddings
 

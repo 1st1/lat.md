@@ -8,7 +8,9 @@ Tests in `tests/search.test.ts`.
 
 ## Provider Detection
 
-Unit tests (always run). Verify `detectProvider` correctly identifies OpenAI (`sk-`), Vercel (`vck_`), returns the local provider when no key is given, rejects Anthropic (`sk-ant-`) with a helpful message, and rejects unknown prefixes.
+Unit tests (always run). Verify `detectProvider` identifies providers by key prefix and returns local with correct dimensions when no key is given.
+
+Covers OpenAI (`sk-`), Vercel (`vck_`), local (no key, 384 dims), Anthropic rejection (`sk-ant-`), and unknown prefix rejection.
 
 ## Schema Dimension Mismatch
 
