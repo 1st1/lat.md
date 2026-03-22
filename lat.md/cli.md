@@ -324,9 +324,9 @@ Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
 ### Local Embeddings
 
-When no API key is configured, search uses a local model via `@huggingface/transformers` (optional dependency; `Xenova/all-MiniLM-L6-v2`, ~45 MB first-run download). Override model with `LAT_LOCAL_MODEL` env var.
+Falls back to a local model when no API key is configured. Uses `@huggingface/transformers` (optional dep).
 
-Dimensions are read from the loaded model's config. The pipeline is cached as a `Promise` so concurrent callers share a single load. Errors (missing package, bad model) are surfaced early in `searchCommand` before any indexing work begins.
+Default model is `Xenova/all-MiniLM-L6-v2` (~45 MB first-run download). Override with `LAT_LOCAL_MODEL` env var. Dimensions are read from the loaded model's config. The pipeline promise is cached so concurrent callers share a single load. Errors (missing package, bad model) surface before any indexing work begins.
 
 Implementation: [[src/search/local.ts]]
 
@@ -340,7 +340,9 @@ Implementation: [[src/search/embeddings.ts]]
 
 Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. A `meta` table tracks the current embedding dimensions; on dimension mismatch (e.g. switching from API at 1536 to local at 384), the table is dropped and rebuilt inside a transaction so the drop, recreate, and meta update are atomic.
+Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed.
+
+A `meta` table tracks the current embedding dimensions. On dimension mismatch (e.g. switching from API at 1536 to local at 384), the table is dropped and rebuilt atomically via `db.batch()`.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 

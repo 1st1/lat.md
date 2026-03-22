@@ -46,8 +46,10 @@ export async function embed(
   if (provider.kind === 'local') {
     return embedLocal(texts, provider.model);
   }
-  if (!key) {
-    throw new Error('API embedding provider requires a key');
+  if (provider.kind === 'api') {
+    if (!key) throw new Error('API embedding provider requires a key');
+    return embedApi(texts, provider, key);
   }
-  return embedApi(texts, provider, key);
+  const _: never = provider;
+  throw new Error(`Unknown provider kind: ${(_ as EmbeddingProvider).kind}`);
 }

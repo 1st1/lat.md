@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   detectProvider,
-  getProviderDimensions,
+  getDimensions,
   type ApiProvider,
 } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
@@ -82,18 +82,12 @@ describe('ensureSchema dimension mismatch', () => {
     expect(before.rows[0].n).toBe(1);
 
     // Re-init with 384 dimensions — should drop and recreate
-    const messages: string[] = [];
-    const origWrite = process.stderr.write;
-    process.stderr.write = ((chunk: string) => {
-      messages.push(chunk);
-      return true;
-    }) as typeof process.stderr.write;
+    const spy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
 
-    try {
-      await ensureSchema(db, 384);
-    } finally {
-      process.stderr.write = origWrite;
-    }
+    await ensureSchema(db, 384);
+
+    const calls = spy.mock.calls.map((c) => String(c[0]));
+    spy.mockRestore();
 
     const after = await db.execute('SELECT COUNT(*) as n FROM sections');
     expect(after.rows[0].n).toBe(0);
@@ -105,7 +99,7 @@ describe('ensureSchema dimension mismatch', () => {
     expect(meta.rows[0].value).toBe('384');
 
     // Verify diagnostic was printed to stderr
-    expect(messages.some((m) => m.includes('dimensions changed'))).toBe(true);
+    expect(calls.some((m) => m.includes('dimensions changed'))).toBe(true);
   });
 });
 
@@ -207,7 +201,7 @@ describe.skipIf(!canRun)('search (rag)', () => {
     });
 
     db = openDb(latDir);
-    const dimensions = await getProviderDimensions(provider);
+    const dimensions = await getDimensions(provider);
     await ensureSchema(db, dimensions);
   });
 

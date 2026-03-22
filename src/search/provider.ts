@@ -13,25 +13,30 @@ export type LocalProvider = {
   kind: 'local';
   name: 'local';
   model: string;
-  readonly dimensions: Promise<number>;
 };
 
 export type EmbeddingProvider = ApiProvider | LocalProvider;
 
 const DEFAULT_LOCAL_MODEL = 'Xenova/all-MiniLM-L6-v2';
 
+let _localDims: Promise<number> | null = null;
+let _localDimsModel: string | null = null;
+
 export function getLocalProvider(): LocalProvider {
   const model = process.env.LAT_LOCAL_MODEL || DEFAULT_LOCAL_MODEL;
-  let _dims: Promise<number> | null = null;
-  return {
-    kind: 'local',
-    name: 'local',
-    model,
-    get dimensions() {
-      if (!_dims) _dims = getLocalDimensions(model);
-      return _dims;
-    },
-  };
+  return { kind: 'local', name: 'local', model };
+}
+
+export async function getDimensions(
+  provider: EmbeddingProvider,
+): Promise<number> {
+  if (provider.kind === 'api') return provider.dimensions;
+  // Cache the promise so concurrent callers share a single load.
+  if (!_localDims || _localDimsModel !== provider.model) {
+    _localDimsModel = provider.model;
+    _localDims = getLocalDimensions(provider.model);
+  }
+  return _localDims;
 }
 
 const openai: ApiProvider = {
@@ -82,14 +87,4 @@ export function detectProvider(key?: string): EmbeddingProvider {
   throw new Error(
     `Unrecognized LAT_LLM_KEY prefix. Supported: OpenAI (sk-...), Vercel AI Gateway (vck_...). Omit LAT_LLM_KEY to use local embeddings.`,
   );
-}
-
-/**
- * Resolve embedding dimensions. API providers know theirs statically;
- * local providers read from the loaded model config.
- */
-export async function getProviderDimensions(
-  provider: EmbeddingProvider,
-): Promise<number> {
-  return provider.dimensions;
 }

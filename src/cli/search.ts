@@ -1,6 +1,6 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { openDb, ensureSchema, closeDb } from '../search/db.js';
-import { detectProvider, getProviderDimensions } from '../search/provider.js';
+import { detectProvider, getDimensions } from '../search/provider.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -32,10 +32,13 @@ async function withDb<T>(
   ) => Promise<T>,
 ): Promise<T> {
   const provider = detectProvider(key);
+
+  // Resolve dimensions before opening the DB so a local-model failure
+  // doesn't leave behind an empty cache directory.
+  const dimensions = await getDimensions(provider);
   const db = openDb(latDir);
 
   try {
-    const dimensions = await getProviderDimensions(provider);
     await ensureSchema(db, dimensions);
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
@@ -132,29 +135,33 @@ export async function searchCommand(
     return { output: (err as Error).message, isError: true };
   }
 
-  // Validate the provider is usable before starting work.
-  if (!key) {
-    try {
-      await getProviderDimensions(detectProvider());
-    } catch (err) {
-      return { output: (err as Error).message, isError: true };
+  try {
+    if (!query) {
+      await runIndex(ctx.latDir, key, progress);
+      return { output: '' };
     }
+
+    const result = await runSearch(
+      ctx.latDir,
+      query,
+      key,
+      opts.limit,
+      progress,
+    );
+
+    if (result.matches.length === 0) {
+      return { output: 'No results found.' };
+    }
+
+    return {
+      output:
+        formatResultList(
+          ctx,
+          `Search results for "${query}":`,
+          result.matches,
+        ) + formatNavHints(ctx),
+    };
+  } catch (err) {
+    return { output: (err as Error).message, isError: true };
   }
-
-  if (!query) {
-    await runIndex(ctx.latDir, key, progress);
-    return { output: '' };
-  }
-
-  const result = await runSearch(ctx.latDir, query, key, opts.limit, progress);
-
-  if (result.matches.length === 0) {
-    return { output: 'No results found.' };
-  }
-
-  return {
-    output:
-      formatResultList(ctx, `Search results for "${query}":`, result.matches) +
-      formatNavHints(ctx),
-  };
 }

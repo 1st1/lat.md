@@ -19,7 +19,8 @@ async function requireTransformers() {
   } catch {
     throw new Error(
       'Local embeddings require the @huggingface/transformers package.\n' +
-        'Install with: npm install @huggingface/transformers\n' +
+        'Install with: pnpm install @huggingface/transformers\n' +
+        '(It is an optional dependency — your package manager may have skipped it.)\n' +
         'Or set LAT_LLM_KEY to use an API provider instead.',
     );
   }
