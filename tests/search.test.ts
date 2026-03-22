@@ -2,10 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import {
-  detectProvider,
-  type ApiProvider,
-} from '../src/search/provider.js';
+import { detectProvider } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
@@ -130,7 +127,11 @@ describe.skipIf(!hasTransformers)('local embedding', () => {
     const model = 'Xenova/all-MiniLM-L6-v2';
 
     const [a, b, c] = await embedLocal(
-      ['how to authenticate users', 'user login and security', 'banana split recipe'],
+      [
+        'how to authenticate users',
+        'user login and security',
+        'banana split recipe',
+      ],
       model,
     );
 
@@ -169,7 +170,9 @@ describe.skipIf(!canRun)('search (rag)', () => {
       // Capture mode: proxy to real API, record vectors
       const realKey = process.env.LAT_LLM_KEY;
       if (!realKey) throw new Error('LAT_LLM_KEY must be set in capture mode');
-      const realProvider = detectProvider(realKey) as ApiProvider;
+      const realProvider = detectProvider(realKey);
+      if (realProvider.kind !== 'api')
+        throw new Error('Capture mode requires an API provider');
 
       const replay = await startReplayServer(replayDir, {
         capture: true,

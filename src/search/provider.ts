@@ -16,7 +16,7 @@ export type LocalProvider = {
 
 export type EmbeddingProvider = ApiProvider | LocalProvider;
 
-export type LocalModelSize = 'small' | 'medium' | 'large';
+type LocalModelSize = 'small' | 'medium' | 'large';
 
 type LocalModelEntry = {
   model: string;
