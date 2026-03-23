@@ -26,6 +26,7 @@ import {
 import { writeInitMeta, readFileHash, contentHash } from '../init-version.js';
 import { getLocalVersion, fetchLatestVersion } from '../version.js';
 import { selectMenu, type SelectOption } from './select-menu.js';
+import { checklistMenu } from './checklist-menu.js';
 
 async function confirm(
   rl: ReturnType<typeof createInterface>,
@@ -481,6 +482,129 @@ async function writeTemplateFile(
   return null;
 }
 
+// ── Marker-based append for shared files ─────────────────────────────
+
+const MARKER_BEGIN = '%% lat:begin %%';
+const MARKER_END = '%% lat:end %%';
+
+/**
+ * Extract the content between lat markers in a file's text.
+ * Returns null if markers are not found.
+ */
+function extractMarkerSection(content: string): string | null {
+  const beginIdx = content.indexOf(MARKER_BEGIN);
+  const endIdx = content.indexOf(MARKER_END);
+  if (beginIdx === -1 || endIdx === -1 || endIdx <= beginIdx) return null;
+  return content.slice(beginIdx + MARKER_BEGIN.length + 1, endIdx);
+}
+
+/**
+ * Wrap template content with lat markers.
+ */
+function wrapWithMarkers(template: string): string {
+  return `${MARKER_BEGIN}\n${template}${template.endsWith('\n') ? '' : '\n'}${MARKER_END}\n`;
+}
+
+/**
+ * Write a template into a marker-fenced section of a file, preserving
+ * any user content outside the markers.
+ *
+ * Returns the hash of the written template content, or null if skipped.
+ */
+async function appendTemplateSection(
+  root: string,
+  latDir: string,
+  relPath: string,
+  template: string,
+  label: string,
+  indent: string,
+  ask: (message: string) => Promise<boolean>,
+): Promise<string | null> {
+  const absPath = join(root, relPath);
+  const templateHash = contentHash(template);
+  const wrapped = wrapWithMarkers(template);
+
+  if (!existsSync(absPath)) {
+    mkdirSync(join(absPath, '..'), { recursive: true });
+    writeFileSync(absPath, wrapped);
+    console.log(chalk.green(`${indent}Created ${label}`));
+    return templateHash;
+  }
+
+  const currentContent = readFileSync(absPath, 'utf-8');
+  const existingSection = extractMarkerSection(currentContent);
+
+  if (existingSection !== null) {
+    // File has markers — compare the section content
+    const existingSectionHash = contentHash(existingSection);
+
+    if (existingSectionHash === templateHash) {
+      console.log(chalk.green(`${indent}${label}`) + ' already up to date');
+      return templateHash;
+    }
+
+    // Check if section matches stored hash (unmodified by user)
+    const storedHash = readFileHash(latDir, relPath);
+    if (storedHash && existingSectionHash === storedHash) {
+      // User hasn't edited the section — safe to replace
+      const beginIdx = currentContent.indexOf(MARKER_BEGIN);
+      const endIdx = currentContent.indexOf(MARKER_END) + MARKER_END.length;
+      // Include trailing newline if present
+      const endWithNl = currentContent[endIdx] === '\n' ? endIdx + 1 : endIdx;
+      const updated =
+        currentContent.slice(0, beginIdx) +
+        wrapped +
+        currentContent.slice(endWithNl);
+      writeFileSync(absPath, updated);
+      console.log(chalk.green(`${indent}Updated ${label}`));
+      return templateHash;
+    }
+
+    // User edited the section — ask before replacing
+    console.log(
+      chalk.yellow(`${indent}${label}`) + ' lat section has been modified.',
+    );
+    if (await ask(`${indent}Replace lat section with latest template?`)) {
+      const beginIdx = currentContent.indexOf(MARKER_BEGIN);
+      const endIdx = currentContent.indexOf(MARKER_END) + MARKER_END.length;
+      const endWithNl = currentContent[endIdx] === '\n' ? endIdx + 1 : endIdx;
+      const updated =
+        currentContent.slice(0, beginIdx) +
+        wrapped +
+        currentContent.slice(endWithNl);
+      writeFileSync(absPath, updated);
+      console.log(chalk.green(`${indent}Updated ${label}`));
+      return templateHash;
+    }
+
+    console.log(chalk.dim(`${indent}Kept existing section.`));
+    return null;
+  }
+
+  // No markers — file exists from old init or user-created
+  // Check if full file matches stored hash (old full-overwrite init, unedited)
+  const currentHash = contentHash(currentContent);
+  const storedHash = readFileHash(latDir, relPath);
+
+  if (storedHash && currentHash === storedHash) {
+    // Unmodified old-style file — migrate: wrap existing content with markers
+    writeFileSync(absPath, wrapWithMarkers(currentContent));
+    console.log(
+      chalk.green(`${indent}Migrated ${label}`) + ' to marker format',
+    );
+    // Return hash of what's now in the section (the old content)
+    return currentHash;
+  }
+
+  // File has user content and no markers — append section
+  let content = currentContent;
+  if (!content.endsWith('\n')) content += '\n';
+  content += '\n' + wrapped;
+  writeFileSync(absPath, content);
+  console.log(chalk.green(`${indent}Appended lat section to ${label}`));
+  return templateHash;
+}
+
 // ── Shared skill setup ───────────────────────────────────────────────
 
 async function writeAgentsSkill(
@@ -519,12 +643,11 @@ async function setupAgentsMd(
   hashes: Record<string, string>,
   ask: (message: string) => Promise<boolean>,
 ): Promise<void> {
-  const hash = await writeTemplateFile(
+  const hash = await appendTemplateSection(
     root,
     latDir,
     'AGENTS.md',
     template,
-    'agents.md',
     'AGENTS.md',
     '',
     ask,
@@ -540,13 +663,12 @@ async function setupClaudeCode(
   ask: (message: string) => Promise<boolean>,
   style: LatCommandStyle,
 ): Promise<void> {
-  // CLAUDE.md — written directly (not a symlink)
-  const hash = await writeTemplateFile(
+  // CLAUDE.md — append-mode with markers (preserves user content)
+  const hash = await appendTemplateSection(
     root,
     latDir,
     'CLAUDE.md',
     template,
-    'claude.md',
     'CLAUDE.md',
     '  ',
     ask,
@@ -706,13 +828,12 @@ async function setupCopilot(
   ask: (message: string) => Promise<boolean>,
   style: LatCommandStyle,
 ): Promise<void> {
-  // .github/copilot-instructions.md
-  const hash = await writeTemplateFile(
+  // .github/copilot-instructions.md — append-mode with markers
+  const hash = await appendTemplateSection(
     root,
     latDir,
     '.github/copilot-instructions.md',
     readAgentsTemplate(),
-    'agents.md',
     'Instructions (.github/copilot-instructions.md)',
     '  ',
     ask,
@@ -1021,6 +1142,44 @@ async function setupLlmKey(
   console.log(chalk.green('  Key saved') + ' to ' + chalk.dim(getConfigPath()));
 }
 
+// ── Post-onboarding guidance ─────────────────────────────────────────
+
+const NEXT_STEP_PROMPT =
+  'Read through this codebase and set up lat.md/ to document its architecture, key design decisions, and domain concepts. Run `lat check` when done.';
+
+function printNextSteps(selectedAgents: string[]): void {
+  const hasClaudeCode = selectedAgents.includes('claude');
+  const ideAgents = selectedAgents.filter((a) => a !== 'claude');
+
+  const ideLabels: Record<string, string> = {
+    cursor: 'Cursor',
+    copilot: 'VS Code Copilot',
+    pi: 'Pi',
+    opencode: 'OpenCode',
+    codex: 'Codex',
+  };
+
+  if (!hasClaudeCode && ideAgents.length === 0) return;
+
+  console.log('');
+  console.log(
+    chalk.bold('Next step') + ' — have your agent document this codebase:',
+  );
+
+  if (hasClaudeCode) {
+    console.log('');
+    console.log('  ' + chalk.bold('Claude Code:'));
+    console.log('    ' + chalk.cyan(`claude "${NEXT_STEP_PROMPT}"`));
+  }
+
+  if (ideAgents.length > 0) {
+    const names = ideAgents.map((a) => ideLabels[a] || a).join(' / ');
+    console.log('');
+    console.log('  ' + chalk.bold(`${names}`) + ' — paste into agent chat:');
+    console.log('    ' + chalk.cyan(NEXT_STEP_PROMPT));
+  }
+}
+
 // ── Main init flow ───────────────────────────────────────────────────
 
 export function readLogo(): string {
@@ -1096,7 +1255,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
     // Step 2: Which coding agents do you use? (interactive select menu)
     console.log('');
 
-    const allAgents: SelectOption[] = [
+    const allAgents = [
       { label: 'Claude Code', value: 'claude' },
       { label: 'Pi', value: 'pi' },
       { label: 'Cursor', value: 'cursor' },
@@ -1105,37 +1264,10 @@ export async function initCmd(targetDir?: string): Promise<void> {
       { label: 'Codex', value: 'codex' },
     ];
 
-    const selectedAgents: string[] = [];
-
-    // Iterative selection: pick agents one at a time until "done"
-    while (true) {
-      const remaining = allAgents.filter(
-        (a) => !selectedAgents.includes(a.value),
-      );
-      const options: SelectOption[] = [
-        {
-          label:
-            selectedAgents.length === 0
-              ? "I don't use any of these"
-              : 'This is it: continue',
-          value: '__done__',
-          accent: true,
-        },
-        ...remaining,
-      ];
-
-      const isFirst = selectedAgents.length === 0;
-      const choice = await selectMenu(
-        options,
-        isFirst ? 'Which coding agent do you use?' : 'Add another agent?',
-        isFirst ? 1 : 0,
-      );
-
-      if (!choice || choice === '__done__') break;
-      selectedAgents.push(choice);
-
-      if (remaining.length === 1) break; // all agents selected
-    }
+    const selectedAgents = await checklistMenu(
+      allAgents,
+      'Which coding agents do you use?',
+    );
 
     const useClaudeCode = selectedAgents.includes('claude');
     const usePi = selectedAgents.includes('pi');
@@ -1276,6 +1408,9 @@ export async function initCmd(targetDir?: string): Promise<void> {
           chalk.underline('https://github.com/BurntSushi/ripgrep#installation'),
       );
     }
+
+    // Post-onboarding: suggest having the agent document the codebase
+    printNextSteps(selectedAgents);
   } finally {
     rl?.close();
   }

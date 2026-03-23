@@ -148,12 +148,13 @@ Usage: `lat init [dir]`
 Steps:
 
 1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead.
-2. **Agent selection** — interactive arrow-key select menu ([[src/cli/select-menu.ts#selectMenu]]). Users pick agents one at a time; after each selection, the menu reappears without that agent and with a "This is it: continue" option (green background accent) at the top. On the first prompt the cursor defaults to the first agent; on subsequent prompts it defaults to "This is it: continue". Supports up/down arrows, j/k, Enter to confirm, Ctrl+C to abort. **Important:** the persistent readline interface is created _after_ this step — `selectMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
+2. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
 3. **Command style** — if any selected agent needs a lat command reference (all except Codex), a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
-4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file.
+4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file. Uses marker-based append mode (see below).
 5. **Per-agent setup** — configures each selected agent (see subsections below). Each step prints a brief explanation of _why_ it's needed (e.g. why a hook is used instead of CLAUDE.md, why MCP is registered alongside CLI access).
 6. **LLM key setup** — checks for an existing key (env var or [[cli#Configuration File]]), and if missing, interactively prompts the user to paste one. Explains what semantic search is and why a key is needed before asking.
 7. **Version stamp + file hashes** — writes `INIT_VERSION` and SHA-256 hashes of all template-generated files to `lat.md/.cache/lat_init.json`. On re-run, compares current file content against stored hashes: unmodified files are silently updated to the latest template; user-modified files trigger a Y/n prompt offering to overwrite with the latest template, declining suggests [[cli#gen]].
+8. **Next steps** — after all setup completes, prints agent-specific guidance for having the agent document the codebase. For Claude Code, shows a runnable `claude "..."` command. For IDE agents (Cursor, Copilot, Pi, OpenCode, Codex), shows the prompt to paste into agent chat. Both suggest running `lat check` when done.
 
 At the very end, after all steps complete, init checks whether ripgrep (`rg`) is available. If missing, prints a tip suggesting the user install it for faster code scanning, with a link to the ripgrep installation guide.
 
@@ -163,7 +164,7 @@ At the very start, before any steps, init prints the ASCII `lat.md` logo (cyan, 
 
 Sets up `CLAUDE.md` and two agent hooks for the Claude Code coding agent.
 
-- `CLAUDE.md` — written directly from the template (not a symlink)
+- `CLAUDE.md` — written using marker-based append mode (see below), preserving any user content outside the `%% lat:begin %%` / `%% lat:end %%` markers
 - Hooks synced in `.claude/settings.json` — on every run, all existing lat-owned hook entries are removed, then fresh entries are added for both events. Detection uses three heuristics: `/\blat\b/` in the command string, `hook claude ` substring (catches any install path), or command starting with the current binary path. Non-lat hooks are preserved. Both hooks call [[cli#hook]]:
   - `UserPromptSubmit` → `lat hook claude UserPromptSubmit` — injects lat.md workflow reminders, auto-resolves `[[refs]]` in the prompt
   - `Stop` → `lat hook claude Stop` — reminds the agent to update `lat.md/` before finishing
@@ -195,7 +196,7 @@ The `.cursor` directory is added to `.gitignore` because its hooks and MCP confi
 
 Sets up `copilot-instructions.md` and registers the MCP server for VS Code Copilot.
 
-- `.github/copilot-instructions.md` — static instructions file
+- `.github/copilot-instructions.md` — instructions file written using marker-based append mode, preserving any user content outside the markers
 - [[cli#mcp]] server registered in `.vscode/mcp.json`
 - `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory
 
@@ -222,7 +223,13 @@ All setup steps are idempotent — existing configuration is detected and skippe
 
 `.gitignore` entries are only added if the target path is not already tracked in git (`git ls-files`); if tracked, the step prints a warning and skips to avoid a no-op ignore rule.
 
-Implementation: [[src/cli/init.ts]], interactive menu in [[src/cli/select-menu.ts]], version tracking in [[src/init-version.ts]]
+### Marker-based append mode
+
+Shared files use `appendTemplateSection` to preserve user content outside lat's managed section.
+
+Template content is wrapped in visible `%% lat:begin %%` / `%% lat:end %%` markers. Applies to CLAUDE.md, AGENTS.md, and `.github/copilot-instructions.md`. On re-run: if markers exist and the section matches, it's skipped ("already up to date"); if the section matches the stored hash (unmodified by user), it's replaced in-place; if the user edited the section, init asks before replacing. If the file exists but has no markers (old full-overwrite init), and the full-file hash matches the stored hash, the existing content is migrated to marker format in-place. If the file has user content and no markers, the section is appended to the end. All other agent files (rules, skills, hooks, extensions, plugins) still use full-file `writeTemplateFile` since lat owns those entirely.
+
+Implementation: [[src/cli/init.ts]], checklist menu in [[src/cli/checklist-menu.ts]], single-select menu in [[src/cli/select-menu.ts]], version tracking in [[src/init-version.ts]]
 
 ## Configuration File
 
