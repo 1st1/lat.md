@@ -1168,6 +1168,11 @@ async function setupLlmKey(
       styleText('yellow', '  Unrecognized key prefix.') +
         ' Expected sk-... (OpenAI) or vck_... (Vercel AI Gateway).',
     );
+    console.log(
+      '  For a custom endpoint (e.g. local llama-server), set ' +
+        styleText('cyan', 'LAT_LLM_BASE') +
+        ' instead.',
+    );
     console.log('  Saving anyway — you can update it later.');
   }
 

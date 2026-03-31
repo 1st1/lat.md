@@ -1,6 +1,6 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { openDb, ensureSchema, closeDb } from '../search/db.js';
-import { detectProvider } from '../search/provider.js';
+import type { EmbeddingProvider } from '../search/provider.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -24,14 +24,11 @@ export type IndexProgress = {
 
 async function withDb<T>(
   latDir: string,
-  key: string,
+  provider: EmbeddingProvider,
+  key: string | undefined,
   progress: IndexProgress | undefined,
-  fn: (
-    db: Awaited<ReturnType<typeof openDb>>,
-    provider: ReturnType<typeof detectProvider>,
-  ) => Promise<T>,
+  fn: (db: Awaited<ReturnType<typeof openDb>>) => Promise<T>,
 ): Promise<T> {
-  const provider = detectProvider(key);
   const db = openDb(latDir);
 
   try {
@@ -44,7 +41,7 @@ async function withDb<T>(
     const stats = await indexSections(latDir, db, provider, key);
     progress?.afterIndex?.(stats, isEmpty);
 
-    return await fn(db, provider);
+    return await fn(db);
   } finally {
     await closeDb(db);
   }
@@ -57,11 +54,12 @@ async function withDb<T>(
 export async function runSearch(
   latDir: string,
   query: string,
-  key: string,
+  provider: EmbeddingProvider,
+  key: string | undefined,
   limit: number,
   progress?: IndexProgress,
 ): Promise<SearchResult> {
-  return withDb(latDir, key, progress, async (db, provider) => {
+  return withDb(latDir, provider, key, progress, async (db) => {
     const results = await searchSections(db, query, provider, key, limit);
     if (results.length === 0) {
       return { query, matches: [] };
@@ -85,10 +83,11 @@ export async function runSearch(
  */
 export async function runIndex(
   latDir: string,
-  key: string,
+  provider: EmbeddingProvider,
+  key: string | undefined,
   progress?: IndexProgress,
 ): Promise<void> {
-  await withDb(latDir, key, progress, async () => {});
+  await withDb(latDir, provider, key, progress, async () => {});
 }
 
 export function cliProgress(reindex: boolean, s: Styler): IndexProgress {
@@ -123,18 +122,25 @@ export async function searchCommand(
   opts: { limit: number; reindex?: boolean },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
-  const { getLlmKey, getConfigPath } = await import('../config.js');
+  const { getLlmKey, readConfig, getConfigPath } = await import('../config.js');
+  const { detectProvider } = await import('../search/provider.js');
+
+  const config = readConfig();
   let key: string | undefined;
   try {
     key = getLlmKey();
   } catch (err) {
     return { output: (err as Error).message, isError: true };
   }
-  if (!key) {
+
+  let provider: Awaited<ReturnType<typeof detectProvider>>;
+  try {
+    provider = detectProvider(key, config);
+  } catch (err) {
     const s = ctx.styler;
     return {
       output:
-        s.red('No API key configured.') +
+        s.red((err as Error).message) +
         ' Provide a key via LAT_LLM_KEY, LAT_LLM_KEY_FILE, LAT_LLM_KEY_HELPER, or run ' +
         s.cyan('lat init') +
         (ctx.mode === 'cli'
@@ -146,11 +152,18 @@ export async function searchCommand(
   }
 
   if (!query) {
-    await runIndex(ctx.latDir, key, progress);
+    await runIndex(ctx.latDir, provider, key, progress);
     return { output: '' };
   }
 
-  const result = await runSearch(ctx.latDir, query, key, opts.limit, progress);
+  const result = await runSearch(
+    ctx.latDir,
+    query,
+    provider,
+    key,
+    opts.limit,
+    progress,
+  );
 
   if (result.matches.length === 0) {
     return { output: 'No results found.' };

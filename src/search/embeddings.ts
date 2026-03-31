@@ -5,7 +5,7 @@ const MAX_BATCH = 2048;
 export async function embed(
   texts: string[],
   provider: EmbeddingProvider,
-  key: string,
+  key?: string,
 ): Promise<number[][]> {
   const results: number[][] = [];
 
