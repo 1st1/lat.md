@@ -150,11 +150,11 @@ Steps:
 1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead.
 2. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
 3. **Command style** — if any selected agent needs a lat command reference (all except Codex), a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
-4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file. Uses marker-based append mode (see below).
+4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex, Antigravity). Shared instruction file. Uses marker-based append mode (see below).
 5. **Per-agent setup** — configures each selected agent (see subsections below). Each step prints a brief explanation of _why_ it's needed (e.g. why a hook is used instead of CLAUDE.md, why MCP is registered alongside CLI access).
 6. **LLM key setup** — checks for an existing key (env var or [[cli#Configuration File]]), and if missing, interactively prompts the user to paste one. Explains what semantic search is and why a key is needed before asking.
 7. **Version stamp + file hashes** — writes `INIT_VERSION` and SHA-256 hashes of all template-generated files to `lat.md/.cache/lat_init.json`. On re-run, compares current file content against stored hashes: unmodified files are silently updated to the latest template; user-modified files trigger a Y/n prompt offering to overwrite with the latest template, declining suggests [[cli#gen]].
-8. **Next steps** — after all setup completes, prints agent-specific guidance for having the agent document the codebase. For Claude Code, shows a runnable `claude "..."` command. For IDE agents (Cursor, Copilot, Pi, OpenCode, Codex), shows the prompt to paste into agent chat. Both suggest running `lat check` when done.
+8. **Next steps** — after all setup completes, prints agent-specific guidance for having the agent document the codebase. For Claude Code, shows a runnable `claude "..."` command. For IDE agents (Cursor, Copilot, Pi, OpenCode, Codex, Antigravity), shows the prompt to paste into agent chat. Both suggest running `lat check` when done.
 
 At the very end, after all steps complete, init checks whether ripgrep (`rg`) is available. If missing, prints a tip suggesting the user install it for faster code scanning, with a link to the ripgrep installation guide.
 
@@ -218,6 +218,16 @@ Sets up AGENTS.md, registers the MCP server, and installs skills for the Codex C
 - `.codex` directory added to `.gitignore` (config contains local absolute paths)
 - `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory
 - `.codex/skills/lat-md/SKILL.md` — same skill spec in Codex's native skills directory
+
+### Antigravity
+
+Sets up AGENTS.md, workspace rules, and registers the MCP server for Google's Antigravity IDE.
+
+- `AGENTS.md` — shared instruction file (created in the shared step). Antigravity uses AGENTS.md as its primary config.
+- `GEMINI.md` — legacy fallback. If the file already exists in the project root, init updates its lat section using marker-based append mode. Not created if absent.
+- `.agents/rules/lat.md` — workspace rules file generated from the AGENTS.md template, references CLI commands (not MCP tools, since Antigravity has no per-workspace MCP config). Antigravity discovers workspace rules from `.agents/rules/` and can activate them as always-on or model-decision based.
+- `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory (Antigravity discovers skills from `.agents/skills/`)
+- No per-workspace MCP server is registered — Antigravity does not support per-project MCP configuration (MCP is global only).
 
 All setup steps are idempotent — existing configuration is detected and skipped.
 
