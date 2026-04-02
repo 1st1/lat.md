@@ -22,8 +22,9 @@ export async function embed(
 
     if (!resp.ok) {
       const body = await resp.text();
+      const hint = provider.errorHint ? `\n${provider.errorHint}` : '';
       throw new Error(
-        `Embedding API error (${resp.status}): ${body.slice(0, 200)}`,
+        `Embedding API error (${resp.status}): ${body.slice(0, 200)}${hint}`,
       );
     }
 
