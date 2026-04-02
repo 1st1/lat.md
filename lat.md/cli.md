@@ -321,6 +321,7 @@ Provider is auto-detected from the resolved key prefix:
 
 - `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims)
 - `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims)
+- `ghp_...` / `gho_...` / `github_pat_...` — GitHub Models API (uses `openai/text-embedding-3-small`, 1536 dims; requires Copilot subscription)
 - `sk-ant-...` — Anthropic (not supported, errors with guidance)
 - `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for offline testing
 

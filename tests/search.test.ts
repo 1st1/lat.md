@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -27,12 +27,88 @@ describe('detectProvider', () => {
     expect(p.name).toBe('vercel');
   });
 
-  it('rejects Anthropic key with helpful message', () => {
-    expect(() => detectProvider('sk-ant-abc123')).toThrow(/Anthropic/);
+  it('detects GitHub classic PAT', () => {
+    const p = detectProvider('ghp_abc123');
+    expect(p.name).toBe('github');
+    expect(p.apiBase).toBe('https://models.github.ai/inference');
+    expect(p.model).toBe('openai/text-embedding-3-small');
+    expect(p.dimensions).toBe(1536);
+    expect(p.errorHint).toBeDefined();
   });
 
-  it('rejects unknown key', () => {
+  it('detects GitHub fine-grained PAT', () => {
+    const p = detectProvider('github_pat_abc123');
+    expect(p.name).toBe('github');
+    expect(p.apiBase).toBe('https://models.github.ai/inference');
+    expect(p.model).toBe('openai/text-embedding-3-small');
+    expect(p.dimensions).toBe(1536);
+  });
+
+  it('detects GitHub OAuth token (gh CLI)', () => {
+    const p = detectProvider('gho_abc123');
+    expect(p.name).toBe('github');
+    expect(p.apiBase).toBe('https://models.github.ai/inference');
+  });
+
+  it('rejects Anthropic key with helpful message', () => {
+    expect(() => detectProvider('sk-ant-abc123')).toThrow(/Anthropic/);
+    expect(() => detectProvider('sk-ant-abc123')).toThrow(/ghp_/);
+  });
+
+  it('rejects unknown key with provider list', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
+    expect(() => detectProvider('xyz_abc123')).toThrow(/GitHub/);
+  });
+
+  it('rejects GitHub App token (ghs_)', () => {
+    expect(() => detectProvider('ghs_abc123')).toThrow(/Unrecognized/);
+  });
+});
+
+// --- errorHint tests ---
+
+import { embed } from '../src/search/embeddings.js';
+
+describe('embed errorHint', () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('appends errorHint to API error when provider has one', async () => {
+    const mockProvider: EmbeddingProvider = {
+      name: 'test',
+      apiBase: 'http://localhost:99999',
+      model: 'test-model',
+      dimensions: 1536,
+      headers: () => ({ 'Content-Type': 'application/json' }),
+      errorHint: 'Check your token permissions.',
+    };
+
+    globalThis.fetch = (async () =>
+      new Response('Unauthorized', { status: 401 })) as typeof fetch;
+
+    await expect(embed(['hello'], mockProvider, 'fake-key')).rejects.toThrow(
+      /Check your token permissions/,
+    );
+  });
+
+  it('does not append hint when provider has no errorHint', async () => {
+    const mockProvider: EmbeddingProvider = {
+      name: 'test',
+      apiBase: 'http://localhost:99999',
+      model: 'test-model',
+      dimensions: 1536,
+      headers: () => ({ 'Content-Type': 'application/json' }),
+    };
+
+    globalThis.fetch = (async () =>
+      new Response('Unauthorized', { status: 401 })) as typeof fetch;
+
+    await expect(embed(['hello'], mockProvider, 'fake-key')).rejects.toThrow(
+      /Embedding API error \(401\): Unauthorized$/,
+    );
   });
 });
 

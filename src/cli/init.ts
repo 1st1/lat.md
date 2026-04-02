@@ -1099,7 +1099,7 @@ async function setupLlmKey(
     '  relevant documentation by meaning, not just keywords. This requires an',
   );
   console.log(
-    '  embedding API key (OpenAI or Vercel AI Gateway). Without it, agents can still',
+    '  embedding API key (OpenAI, Vercel AI Gateway, or GitHub). Without it, agents can still',
   );
   console.log(
     '  use ' +
@@ -1127,9 +1127,23 @@ async function setupLlmKey(
   console.log(
     '  Supported: OpenAI (' +
       styleText('dim', 'sk-...') +
-      ') or Vercel AI Gateway (' +
+      '), Vercel AI Gateway (' +
       styleText('dim', 'vck_...') +
+      '), or GitHub (' +
+      styleText('dim', 'ghp_... / gho_... / github_pat_...') +
       ')',
+  );
+  console.log(
+    styleText(
+      'dim',
+      '  GitHub: requires a token with models:read scope and a Copilot subscription.',
+    ),
+  );
+  console.log(
+    styleText(
+      'dim',
+      '  Tip: set LAT_LLM_KEY_HELPER="gh auth token" if you use the GitHub CLI.',
+    ),
   );
   console.log('');
 
@@ -1156,17 +1170,25 @@ async function setupLlmKey(
     console.log(
       '  lat.md needs an OpenAI (' +
         styleText('dim', 'sk-...') +
-        ') or Vercel AI Gateway (' +
+        '), Vercel AI Gateway (' +
         styleText('dim', 'vck_...') +
+        '), or GitHub (' +
+        styleText('dim', 'ghp_...') +
         ') key.',
     );
     return;
   }
 
-  if (!key.startsWith('sk-') && !key.startsWith('vck_')) {
+  if (
+    !key.startsWith('sk-') &&
+    !key.startsWith('vck_') &&
+    !key.startsWith('ghp_') &&
+    !key.startsWith('gho_') &&
+    !key.startsWith('github_pat_')
+  ) {
     console.log(
       styleText('yellow', '  Unrecognized key prefix.') +
-        ' Expected sk-... (OpenAI) or vck_... (Vercel AI Gateway).',
+        ' Expected sk-... (OpenAI), vck_... (Vercel AI Gateway), or ghp_.../gho_.../github_pat_... (GitHub).',
     );
     console.log('  Saving anyway — you can update it later.');
   }
