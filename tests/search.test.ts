@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   detectProvider,
+  customProvider,
   type EmbeddingProvider,
 } from '../src/search/provider.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
@@ -33,6 +34,55 @@ describe('detectProvider', () => {
 
   it('rejects unknown key', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
+  });
+
+  it('detects Gemini key', () => {
+    const p = detectProvider('AIzaSyExampleKey123');
+    expect(p.name).toBe('gemini');
+    expect(p.apiBase).toContain('generativelanguage.googleapis.com');
+  });
+
+  it('uses LAT_LLM_ENDPOINT when set', () => {
+    const prev = process.env.LAT_LLM_ENDPOINT;
+    const prevModel = process.env.LAT_LLM_MODEL;
+    try {
+      process.env.LAT_LLM_ENDPOINT = 'http://localhost:11434/v1';
+      process.env.LAT_LLM_MODEL = 'nomic-embed-text';
+      const p = detectProvider('sk-abc123'); // key prefix ignored when endpoint set
+      expect(p.name).toBe('custom');
+      expect(p.apiBase).toBe('http://localhost:11434/v1');
+      expect(p.model).toBe('nomic-embed-text');
+    } finally {
+      if (prev === undefined) delete process.env.LAT_LLM_ENDPOINT;
+      else process.env.LAT_LLM_ENDPOINT = prev;
+      if (prevModel === undefined) delete process.env.LAT_LLM_MODEL;
+      else process.env.LAT_LLM_MODEL = prevModel;
+    }
+  });
+
+  it('LAT_LLM_ENDPOINT strips trailing slashes', () => {
+    const prev = process.env.LAT_LLM_ENDPOINT;
+    try {
+      process.env.LAT_LLM_ENDPOINT = 'http://localhost:8080/v1/';
+      const p = detectProvider('sk-abc123');
+      expect(p.apiBase).toBe('http://localhost:8080/v1');
+    } finally {
+      if (prev === undefined) delete process.env.LAT_LLM_ENDPOINT;
+      else process.env.LAT_LLM_ENDPOINT = prev;
+    }
+  });
+});
+
+describe('customProvider', () => {
+  it('builds provider with custom model', () => {
+    const p = customProvider('http://localhost:11434/v1', 'nomic-embed-text');
+    expect(p.name).toBe('custom');
+    expect(p.model).toBe('nomic-embed-text');
+  });
+
+  it('defaults model when not specified', () => {
+    const p = customProvider('http://localhost:11434/v1');
+    expect(p.model).toBe('text-embedding-3-small');
   });
 });
 

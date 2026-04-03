@@ -17,6 +17,7 @@ export async function embed(
       body: JSON.stringify({
         model: provider.model,
         input: batch,
+        ...(provider.dimensions ? { dimensions: provider.dimensions } : {}),
       }),
     });
 
