@@ -13,7 +13,7 @@ export async function searchSections(
   db: Client,
   query: string,
   provider: EmbeddingProvider,
-  key: string,
+  key: string | undefined,
   limit = 5,
 ): Promise<SearchResult[]> {
   const [queryVec] = await embed([query], provider, key);

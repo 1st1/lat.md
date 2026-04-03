@@ -17,6 +17,21 @@ export async function ensureSchema(
   db: Client,
   dimensions: number,
 ): Promise<void> {
+  const embeddingType = `F32_BLOB(${dimensions})`;
+
+  // Detect dimension change from the column type in the existing schema
+  const schema = await db.execute(
+    `SELECT sql FROM sqlite_master WHERE type='table' AND name='sections'`,
+  );
+  if (
+    schema.rows.length > 0 &&
+    !String(schema.rows[0].sql).includes(embeddingType)
+  ) {
+    await db.execute('DROP INDEX IF EXISTS sections_vec_idx');
+    await db.execute('DROP TABLE IF EXISTS sections');
+    process.stderr.write(`Embedding type changed, re-indexing...\n`);
+  }
+
   await db.execute(
     `CREATE TABLE IF NOT EXISTS sections (
       id TEXT PRIMARY KEY,
@@ -24,7 +39,7 @@ export async function ensureSchema(
       heading TEXT NOT NULL,
       content TEXT NOT NULL,
       content_hash TEXT NOT NULL,
-      embedding F32_BLOB(${dimensions}),
+      embedding ${embeddingType},
       updated_at INTEGER NOT NULL
     )`,
   );

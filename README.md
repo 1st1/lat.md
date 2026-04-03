@@ -79,6 +79,47 @@ Semantic search (`lat search`) requires an OpenAI (`sk-...`) or Vercel AI Gatewa
 3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key (10s timeout)
 4. Config file — saved by `lat init`. Run `lat config` to see its location.
 
+### Other providers
+
+You can point `lat search` at a local embedding server with OpenAI-compatible `/v1/embeddings` endpoint.
+
+Example for [OpenRouter](https://openrouter.ai) configured via environment variables:
+
+```bash
+LAT_LLM_BASE=https://openrouter.ai/api/v1
+LAT_LLM_MODEL=qwen/qwen3-embedding-8b
+LAT_LLM_DIMENSIONS=4096                    # must match model output dimensions
+LAT_LLM_KEY=sk-or-v1-xyz
+```
+
+Or via the config file (run `lat config` to see its location):
+
+```json
+{
+  "llm_base": "https://openrouter.ai/api/v1",
+  "llm_model": "qwen/qwen3-embedding-8b",
+  "llm_dimensions": 4096
+}
+```
+Environment variables take precedence over config file values.
+
+### Local models
+
+For example using `llama-server` from [llama.cpp](https://github.com/ggerganov/llama.cpp), start a local server with an embedding model with:
+
+```bash
+llama-server -hf Qwen/Qwen3-Embedding-0.6B-GGUF --embedding --gpu-layers 99
+```
+
+Configure like:
+
+```bash
+export LAT_LLM_BASE=http://localhost:8080/v1
+export LAT_LLM_DIMENSIONS=1024
+```
+
+When `LAT_LLM_BASE` is set, the API key is optional. If your server doesn't require authentication, you can omit `LAT_LLM_KEY` entirely.
+
 ## Development
 
 Requires Node.js 22+ and pnpm.

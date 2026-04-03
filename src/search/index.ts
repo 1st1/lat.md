@@ -31,7 +31,7 @@ export async function indexSections(
   latDir: string,
   db: Client,
   provider: EmbeddingProvider,
-  key: string,
+  key?: string,
 ): Promise<IndexStats> {
   const projectRoot = dirname(latDir);
   const allSections = await loadAllSections(latDir);

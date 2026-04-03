@@ -17,6 +17,9 @@ export function getConfigPath(): string {
 
 export type LatConfig = {
   llm_key?: string;
+  llm_base?: string;
+  llm_model?: string;
+  llm_dimensions?: number;
 };
 
 export function readConfig(): LatConfig {

@@ -34,6 +34,39 @@ describe('detectProvider', () => {
   it('rejects unknown key', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
   });
+
+  it('uses custom provider when LAT_LLM_BASE is set', () => {
+    process.env.LAT_LLM_BASE = 'http://localhost:8080/v1';
+    process.env.LAT_LLM_MODEL = 'qwen3-embedding';
+    process.env.LAT_LLM_DIMENSIONS = '1024';
+    try {
+      const p = detectProvider('sk-abc123');
+      expect(p).toMatchObject({
+        name: 'custom',
+        apiBase: 'http://localhost:8080/v1',
+        model: 'qwen3-embedding',
+        dimensions: 1024,
+      });
+    } finally {
+      delete process.env.LAT_LLM_BASE;
+      delete process.env.LAT_LLM_MODEL;
+      delete process.env.LAT_LLM_DIMENSIONS;
+    }
+  });
+
+  it('custom provider omits Authorization when key is undefined', () => {
+    process.env.LAT_LLM_BASE = 'http://localhost:8080/v1';
+    process.env.LAT_LLM_DIMENSIONS = '1024';
+    try {
+      const p = detectProvider(undefined);
+      expect(p.headers()).not.toHaveProperty('Authorization');
+      expect(p.headers('sk-real')).toHaveProperty('Authorization');
+    } finally {
+      delete process.env.LAT_LLM_BASE;
+      delete process.env.LAT_LLM_DIMENSIONS;
+    }
+  });
+
 });
 
 // --- RAG functional tests ---
