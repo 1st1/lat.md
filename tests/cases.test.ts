@@ -900,6 +900,42 @@ describe('error-source-ref-go-missing', () => {
   });
 });
 
+describe('source-ref-dart-valid', () => {
+  it('resolves Dart function, class, method, mixin, enum, and variable refs without errors', async () => {
+    // docs.md links: greet (func), Greeter (class), Greeter#greet (method),
+    // createGreeter (func), Greeting (mixin), defaultName (var), Color (enum)
+    const { errors } = await checkMd(latDir('source-ref-dart-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('error-source-ref-dart-missing', () => {
+  it('check md reports all missing Dart symbols', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-dart-missing'));
+    expect(errors).toHaveLength(4);
+
+    const byTarget = new Map(errors.map((e) => [e.target, e]));
+
+    const fn = byTarget.get('src/app.dart#nonexistent')!;
+    expect(fn).toBeDefined();
+    expect(fn.message).toContain('symbol "nonexistent" not found');
+
+    const cls = byTarget.get('src/app.dart#MissingClass')!;
+    expect(cls).toBeDefined();
+    expect(cls.message).toContain('symbol "MissingClass" not found');
+
+    const cnst = byTarget.get('src/app.dart#MISSING_CONST')!;
+    expect(cnst).toBeDefined();
+    expect(cnst.message).toContain('symbol "MISSING_CONST" not found');
+
+    const method = byTarget.get('src/app.dart#Greeter#missingMethod')!;
+    expect(method).toBeDefined();
+    expect(method.message).toContain(
+      'symbol "Greeter#missingMethod" not found',
+    );
+  });
+});
+
 describe('source-ref-c-valid', () => {
   // @lat: [[tests/check-md#Passes with valid links#Passes with C enum value links]]
   it('resolves C function, struct, struct field, enum, typedef, define, variable, pointer-returning, and array refs without errors', async () => {
