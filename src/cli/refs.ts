@@ -43,6 +43,7 @@ const SOURCE_EXTS = new Set([
   '.go',
   '.c',
   '.h',
+  '.dart',
 ]);
 
 /**

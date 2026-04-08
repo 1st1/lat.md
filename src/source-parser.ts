@@ -60,6 +60,7 @@ const grammarMap: Record<string, string> = {
   '.go': 'tree-sitter-go.wasm',
   '.c': 'tree-sitter-c.wasm',
   '.h': 'tree-sitter-c.wasm',
+  '.dart': 'tree-sitter-dart.wasm',
 };
 
 /** All source file extensions that lat can parse (derived from grammarMap). */
@@ -518,6 +519,165 @@ function extractGoSymbols(tree: Tree): SourceSymbol[] {
 }
 
 /**
+ * Extract the name from a Dart node. The tree-sitter-dart grammar doesn't
+ * always expose a `name` field — for mixin_declaration the name is a plain
+ * `identifier` child. For method_signature the name lives inside a nested
+ * function_signature. This helper tries the field first, then falls back
+ * to the first `identifier` named child.
+ */
+function dartName(node: SyntaxNode): string | null {
+  const field = node.childForFieldName('name');
+  if (field) return field.text;
+  const ident = node.namedChildren.find((c) => c.type === 'identifier');
+  return ident ? ident.text : null;
+}
+
+function extractDartSymbols(tree: Tree): SourceSymbol[] {
+  const symbols: SourceSymbol[] = [];
+  const root = tree.rootNode;
+
+  for (let i = 0; i < root.childCount; i++) {
+    const node = root.child(i)!;
+    const startLine = node.startPosition.row + 1;
+    const endLine = node.endPosition.row + 1;
+
+    if (node.type === 'function_signature') {
+      const name = dartName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'function',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (node.type === 'class_definition') {
+      const name = dartName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'class',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.childForFieldName('body');
+        if (body) {
+          extractDartClassMembers(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'mixin_declaration') {
+      const name = dartName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'interface',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.namedChildren.find((c) => c.type === 'class_body');
+        if (body) {
+          extractDartClassMembers(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'extension_declaration') {
+      const name = dartName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'class',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.namedChildren.find((c) => c.type === 'class_body');
+        if (body) {
+          extractDartClassMembers(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'enum_declaration') {
+      const name = dartName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'class',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.namedChildren.find(
+          (c) => c.type === 'enum_body' || c.type === 'class_body',
+        );
+        if (body) {
+          extractDartClassMembers(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'static_final_declaration_list') {
+      // Top-level `final x = ...` or `const x = ...` — the list contains
+      // static_final_declaration children, each with an identifier.
+      for (let j = 0; j < node.namedChildCount; j++) {
+        const decl = node.namedChild(j)!;
+        if (decl.type === 'static_final_declaration') {
+          const name = dartName(decl);
+          if (name) {
+            symbols.push({
+              name,
+              kind: 'variable',
+              startLine: decl.startPosition.row + 1,
+              endLine: decl.endPosition.row + 1,
+              signature: firstLine(decl.text),
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return symbols;
+}
+
+function extractDartClassMembers(
+  body: SyntaxNode,
+  className: string,
+  symbols: SourceSymbol[],
+): void {
+  for (let i = 0; i < body.namedChildCount; i++) {
+    const member = body.namedChild(i)!;
+    if (member.type === 'method_signature') {
+      // method_signature wraps a function_signature child that holds the name
+      const funcSig = member.namedChildren.find(
+        (c) => c.type === 'function_signature',
+      );
+      const name = funcSig ? dartName(funcSig) : null;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'method',
+          parent: className,
+          startLine: member.startPosition.row + 1,
+          endLine: member.endPosition.row + 1,
+          signature: firstLine(member.text),
+        });
+      }
+    } else if (member.type === 'function_signature') {
+      const name = dartName(member);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'method',
+          parent: className,
+          startLine: member.startPosition.row + 1,
+          endLine: member.endPosition.row + 1,
+          signature: firstLine(member.text),
+        });
+      }
+    }
+  }
+}
+
+/**
  * Extract the declarator name from a C function_declarator node.
  * Handles plain identifiers and pointer declarators (*name).
  */
@@ -861,6 +1021,9 @@ export async function parseSourceSymbols(
     }
     if (ext === '.c' || ext === '.h') {
       return extractCSymbols(tree);
+    }
+    if (ext === '.dart') {
+      return extractDartSymbols(tree);
     }
     return extractTsSymbols(tree);
   } finally {
