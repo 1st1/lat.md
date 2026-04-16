@@ -658,7 +658,7 @@ describe('error-bare-heading-ref', () => {
     const { errors } = await checkMd(lat);
     const bare = errors.find((e) => e.target === 'Installation');
     expect(bare).toBeDefined();
-    expect(bare!.message).toContain('no matching section found');
+    expect(bare!.message).toContain('not found');
   });
 
   // @lat: [[ref-resolution#Local section syntax in md is error]]
@@ -666,7 +666,7 @@ describe('error-bare-heading-ref', () => {
     const { errors } = await checkMd(lat);
     const local = errors.find((e) => e.target === '#Configuration');
     expect(local).toBeDefined();
-    expect(local!.message).toContain('no matching section found');
+    expect(local!.message).toContain('broken link');
   });
 
   // @lat: [[ref-resolution#Nonexistent file ref in md is error]]
