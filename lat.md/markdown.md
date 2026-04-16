@@ -41,8 +41,10 @@ Wiki links can reference symbols in TypeScript, JavaScript, Python, Rust, Go, an
 - **`[[src/app.h#Greeter]]`** — the `Greeter` struct in a C header
 - **`[[src/app.h#Greeter#prefix]]`** — the `prefix` field of struct `Greeter` in C
 - **`[[src/config.ts]]`** — link to the file itself (no symbol)
+- **`[[src/components]]`** — link to a folder (validated to exist)
+- **`[[src/schema.sql]]`** — link to a file with any extension (validated to exist)
 
-Supported extensions: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rs`, `.go`, `.c`, `.h`.
+Symbol references (`#`) require a supported extension: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rs`, `.go`, `.c`, `.h`. File-only and folder links work with any path.
 
 Python symbols: functions, classes, methods, module-level variables. Decorated definitions (`@decorator`) are unwrapped transparently — `[[file.py#my_func]]` resolves whether or not `my_func` has decorators, and `# @lat:` comments placed between decorators and the `def`/`class` line are scanned normally.
 
