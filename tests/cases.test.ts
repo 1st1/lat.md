@@ -909,6 +909,18 @@ describe('source-ref-dart-valid', () => {
   });
 });
 
+describe('source-ref-dart-error-recovery', () => {
+  it('recovers class names from Dart files with parse errors', async () => {
+    // app.dart uses Dart 3.7 dot shorthand (.start) which tree-sitter-dart
+    // cannot parse — the class becomes an ERROR node. The fallback regex
+    // should still extract the class name so the wiki link resolves.
+    const { errors } = await checkMd(
+      latDir('source-ref-dart-error-recovery'),
+    );
+    expect(errors).toHaveLength(0);
+  });
+});
+
 describe('error-source-ref-dart-missing', () => {
   it('check md reports all missing Dart symbols', async () => {
     const { errors } = await checkMd(latDir('error-source-ref-dart-missing'));

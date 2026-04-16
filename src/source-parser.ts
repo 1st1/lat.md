@@ -614,6 +614,40 @@ function extractDartSymbols(tree: Tree): SourceSymbol[] {
           extractDartClassMembers(body, name, symbols);
         }
       }
+    } else if (node.type === 'ERROR') {
+      // Graceful degradation: when the grammar cannot fully parse a node
+      // (e.g. Dart 3.7+ dot shorthand), extract at least the top-level
+      // declaration name from the raw text so code refs still resolve.
+      const text = node.text;
+      const m = text.match(
+        /^(?:abstract\s+)?(?:class|mixin|enum|extension(?:\s+type)?)\s+(\w+)/,
+      );
+      if (m) {
+        const kind =
+          text.match(/^(?:abstract\s+)?class\s/) || text.match(/^enum\s/)
+            ? 'class'
+            : text.match(/^mixin\s/)
+              ? 'interface'
+              : 'class';
+        symbols.push({
+          name: m[1],
+          kind,
+          startLine,
+          endLine,
+          signature: firstLine(text),
+        });
+      } else {
+        const fm = text.match(/^(?:\w+\s+)*(\w+)\s*\(/);
+        if (fm) {
+          symbols.push({
+            name: fm[1],
+            kind: 'function',
+            startLine,
+            endLine,
+            signature: firstLine(text),
+          });
+        }
+      }
     } else if (node.type === 'static_final_declaration_list') {
       // Top-level `final x = ...` or `const x = ...` — the list contains
       // static_final_declaration children, each with an identifier.
