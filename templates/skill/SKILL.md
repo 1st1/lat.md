@@ -85,9 +85,11 @@ Reference functions, classes, constants, and methods in source files:
 [[src/lib.rs#Greeter#greet]]            — Rust impl method
 [[src/app.go#Greeter#Greet]]            — Go method
 [[src/app.h#Greeter]]                   — C struct
+[[src/components]]                      — folder (existence check)
+[[schema.sql]]                          — any file extension (existence check)
 ```
 
-`lat check` validates that all targets exist.
+Symbol references (`#`) only work for supported extensions. File-only and folder links work with any path. `lat check` validates that all targets exist.
 
 ## Code refs
 
