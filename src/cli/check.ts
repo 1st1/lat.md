@@ -1,22 +1,21 @@
-import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative } from 'node:path';
-import {
-  listLatticeFiles,
-  loadAllSections,
-  extractRefs,
-  flattenSections,
-  parseFrontmatter,
-  parseSections,
-  buildFileIndex,
-  resolveRef,
-  type Section,
-} from '../lattice.js';
 import { scanCodeRefs } from '../code-refs.js';
-import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
-import { walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
+import {
+  buildFileIndex,
+  extractRefs,
+  flattenSections,
+  listLatticeFiles,
+  loadAllSections,
+  parseFrontmatter,
+  parseSections,
+  resolveRef,
+} from '../lattice.js';
+import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
+import { walkEntries } from '../walk.js';
 
 export type CheckError = {
   file: string;
@@ -92,14 +91,28 @@ async function tryResolveSourceRef(
   projectRoot: string,
 ): Promise<string | null> {
   if (!isSourcePath(target)) {
-    // Check if it looks like a file path with an unsupported extension
     const hashIdx = target.indexOf('#');
     const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
     const ext = extname(filePart);
-    if (ext && hashIdx !== -1) {
+
+    const targetHasHash = hashIdx !== -1;
+
+    // Unsupported extension with # — can't validate symbols
+    if (ext && targetHasHash) {
       const supported = [...SOURCE_EXTENSIONS].sort().join(', ');
-      return `broken link [[${target}]] — unsupported file extension "${ext}". Supported: ${supported}`;
+      return `broken link [[${target}]] — unsupported file extension "${ext}". Symbol references (#) only supported for: ${supported}`;
     }
+
+    // File or folder without # — validate existence
+    if (!targetHasHash) {
+      const absPath = join(projectRoot, filePart);
+      if (existsSync(absPath)) {
+        return null;
+      }
+
+      return `broken link [[${target}]] — file or folder "${filePart}" not found`;
+    }
+
     return `broken link [[${target}]] — no matching section found`;
   }
 

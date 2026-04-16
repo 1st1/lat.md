@@ -951,10 +951,55 @@ describe('error-source-ref-unsupported-ext', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].target).toBe('src/app.blah#spam');
     expect(errors[0].message).toContain('unsupported file extension ".blah"');
-    expect(errors[0].message).toContain('Supported:');
+    expect(errors[0].message).toContain('Symbol references (#) only supported for:');
     expect(errors[0].message).toContain('.ts');
     expect(errors[0].message).toContain('.rs');
     expect(errors[0].message).toContain('.go');
+  });
+});
+
+describe('source-ref-folder-valid', () => {
+  it('check md accepts wiki link to existing folder', async () => {
+    const { errors } = await checkMd(latDir('source-ref-folder-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('error-source-ref-bad-folder', () => {
+  it('check md reports broken link for nonexistent folder and folder with symbol ref', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-bad-folder'));
+    expect(errors).toHaveLength(2);
+    const byTarget = new Map(errors.map((e) => [e.target, e]));
+    expect(byTarget.get('src/nonexistent')!.message).toContain('file or folder "src/nonexistent" not found');
+    expect(byTarget.get('src/components#something')!.message).toContain('no matching section found');
+  });
+});
+
+describe('source-ref-unsupported-ext-valid', () => {
+  it('check md accepts wiki link to existing file with unsupported extension', async () => {
+    const { errors } = await checkMd(latDir('source-ref-unsupported-ext-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('source-ref-unsupported-ext-root-valid', () => {
+  it('check md accepts wiki link to root-level file with unsupported extension', async () => {
+    const { errors } = await checkMd(latDir('source-ref-unsupported-ext-root-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('error-source-ref-unsupported-ext-missing', () => {
+  it('check md reports broken link for missing unsupported-ext files and folders', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-unsupported-ext-missing'));
+    expect(errors).toHaveLength(3);
+    const targets = errors.map((e) => e.target);
+    expect(targets).toContain('nope.sql');
+    expect(targets).toContain('src/missing.sql');
+    expect(targets).toContain('src/missing/');
+    for (const e of errors) {
+      expect(e.message).toContain('not found');
+    }
   });
 });
 
