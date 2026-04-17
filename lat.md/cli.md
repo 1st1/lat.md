@@ -205,7 +205,7 @@ Sets up `copilot-instructions.md` and registers the MCP server for VS Code Copil
 Sets up an OpenCode plugin that registers lat tools as native OpenCode tools and hooks into the session lifecycle.
 
 - `AGENTS.md` — shared instruction file (created in the shared step)
-- `.opencode/plugins/lat.ts` — TypeScript plugin generated from `templates/opencode-plugin.ts` with the lat invocation command injected. Uses `@opencode-ai/plugin` to register six tools (`lat_search`, `lat_section`, `lat_locate`, `lat_check`, `lat_expand`, `lat_refs`) that shell out to the `lat` CLI. Hooks into `session.idle` (runs `lat check` + diff analysis, logs a warning via `client.app.log` if something needs fixing).
+- `.opencode/plugins/lat.ts` — TypeScript plugin generated from `templates/opencode-plugin.ts` with the lat invocation command injected. Uses `@opencode-ai/plugin` to register six tools (`lat_search`, `lat_section`, `lat_locate`, `lat_check`, `lat_expand`, `lat_refs`) that shell out to the `lat` CLI with piped stdio so subprocess output does not pollute the OpenCode TUI. It watches `session.idle` via the plugin `event` hook, runs `lat check` plus diff analysis, and logs a warning via `client.app.log` if something needs fixing.
 - `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory
 - `.opencode` directory added to `.gitignore` (plugin contains local absolute paths)
 

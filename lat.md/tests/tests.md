@@ -28,4 +28,5 @@ Shared patterns for writing and organizing tests in this project.
 - [[check-sections]] — Validating section leading paragraphs
 - [[section]] — getSection core function and formatSectionOutput formatter
 - [[hook]] — Stop hook conditional blocking and diff analysis
+- [[gen]] — Built-in template generation regression checks
 - [[ts-fallback]] — Pure-TypeScript code-ref scanner fallback without ripgrep
