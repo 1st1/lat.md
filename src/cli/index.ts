@@ -83,22 +83,40 @@ program
     handleResult(await refsCommand(ctx, query, scope));
   });
 
+program
+  .command('get-source')
+  .description('Show the active location for a configured external source')
+  .argument('<external-source>', 'external source handle to look up')
+  .action(async (externalSource: string) => {
+    const ctx = resolveContext(program.opts());
+    const { getSourceCommand } = await import('./get-source.js');
+    handleResult(await getSourceCommand(ctx, externalSource));
+  });
+
 const check = program
   .command('check')
   .description('Validate links and code references')
-  .action(async () => {
+  .option(
+    '--ignore-local-overrides',
+    'ignore local external source overrides from lat.md/config.local.json',
+  )
+  .action(async (opts: { ignoreLocalOverrides?: boolean }) => {
     const ctx = resolveContext(program.opts());
     const { checkAllCommand } = await import('./check.js');
-    handleResult(await checkAllCommand(ctx));
+    handleResult(await checkAllCommand(ctx, opts));
   });
 
 check
   .command('md')
   .description('Validate wiki links in lat.md markdown files')
-  .action(async () => {
+  .option(
+    '--ignore-local-overrides',
+    'ignore local external source overrides from lat.md/config.local.json',
+  )
+  .action(async (opts: { ignoreLocalOverrides?: boolean }) => {
     const ctx = resolveContext(program.opts());
     const { checkMdCommand } = await import('./check.js');
-    handleResult(await checkMdCommand(ctx));
+    handleResult(await checkMdCommand(ctx, opts));
   });
 
 check
@@ -246,9 +264,21 @@ program
   .description('Show configuration file path')
   .action(async () => {
     const { getConfigPath } = await import('../config.js');
+    const { findProjectRoot } = await import('../lattice.js');
+    const { getProjectLocalConfigPath } =
+      await import('../external-sources.js');
     const configPath = getConfigPath();
     const exists = existsSync(configPath);
     console.log(`Config file: ${configPath}${exists ? '' : ' (not found)'}`);
+
+    const projectRoot = findProjectRoot(program.opts().dir);
+    if (projectRoot) {
+      const localConfigPath = getProjectLocalConfigPath(projectRoot);
+      const localExists = existsSync(localConfigPath);
+      console.log(
+        `Project local config: ${localConfigPath}${localExists ? '' : ' (not found)'}`,
+      );
+    }
   });
 
 await program.parseAsync();

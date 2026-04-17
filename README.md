@@ -15,11 +15,11 @@
 
 ## The idea
 
-Compress the knowledge about your program domain into a **graph** — a set of interconnected markdown files that live in a `lat.md/` directory at the root of your project. Sections link to each other with `[[wiki links]]`, markdown files link into the codebase (`[[src/auth.ts#validateToken]]`), source files link back with `// @lat: [[section-id]]` comments, and `lat check` ensures nothing drifts out of sync.
+Compress the knowledge about your program domain into a **graph** — a set of interconnected markdown files that live in a `lat.md/` directory at the root of your project. Sections link to each other with `[[wiki links]]`, markdown files link into the codebase (`[[src/auth.ts#validateToken]]`) or pinned external sources (`[[architecture-docs:docs/system/request-flow.md#L123]]`), source files link back with `// @lat: [[section-id]]` comments, and `lat check` ensures nothing drifts out of sync.
 
 - **Faster coding for agents** — instead of grepping through your codebase, agents search the knowledge graph to discover key design decisions, constraints, and domain context fast and consistently.
 
-- **Faster workflow for humans** — your agents maintain lat files for you. When you review a diff, start with the semantic changes in `lat.md/` to understand *what* changed and *why*. Reviewing code becomes the secondary task.
+- **Faster workflow for humans** — your agents maintain lat files for you. When you review a diff, start with the semantic changes in `lat.md/` to understand _what_ changed and _why_. Reviewing code becomes the secondary task.
 
 - **Knowledge retention** — the context and reasoning behind your prompts is usually lost after a session ends. With lat, agents capture that knowledge into the graph as they work, so future sessions start with full context instead of rediscovering it from scratch.
 
@@ -43,7 +43,7 @@ Then run `lat init` in the repo you want to use lat in.
 
 ## How it works
 
-Run `lat init` to scaffold a `lat.md/` directory, then write markdown files describing your architecture, business logic, test specs — whatever matters. Link between sections using `[[file#Section#Subsection]]` syntax. Link to source code symbols with `[[src/auth.ts#validateToken]]`. Annotate source code with `// @lat: [[section-id]]` (or `# @lat: [[section-id]]` in Python) comments to tie implementation back to concepts.
+Run `lat init` to scaffold a `lat.md/` directory, then write markdown files describing your architecture, business logic, test specs — whatever matters. Link between sections using `[[file#Section#Subsection]]` syntax. Link to source code symbols with `[[src/auth.ts#validateToken]]`. You can also define external source handles in `lat.md/lat.md` frontmatter and link to them with `[[handle:path#fragment]]`. Annotate source code with `// @lat: [[section-id]]` (or `# @lat: [[section-id]]` in Python) comments to tie implementation back to concepts.
 
 ```
 my-project/
@@ -65,6 +65,7 @@ lat check                       # validate all wiki links and code refs
 lat locate "OAuth Flow"         # find sections by name (exact, fuzzy)
 lat section "auth#OAuth Flow"   # show a section with its links and refs
 lat refs "auth#OAuth Flow"      # find what references a section
+lat get-source architecture-docs # show repo URL or local checkout for a handle
 lat search "how do we auth?"    # semantic search via embeddings
 lat expand "fix [[OAuth Flow]]" # expand [[refs]] in a prompt for agents
 lat mcp                         # start MCP server for editor integration
@@ -78,6 +79,38 @@ Semantic search (`lat search`) requires an OpenAI (`sk-...`) or Vercel AI Gatewa
 2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key
 3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key (10s timeout)
 4. Config file — saved by `lat init`. Run `lat config` to see its location.
+
+External source handles are configured per project:
+
+- Canonical handle definitions live in `lat.md/lat.md` frontmatter under `lat.external-sources`
+- Machine-local checkout overrides live in `lat.md/config.local.json` under the same `lat.external-sources` key path, using `path`
+
+Example:
+
+```yaml
+---
+lat:
+  external-sources:
+    architecture-docs:
+      repo: https://example.com/architecture-docs.git
+      rev: v6.9
+      browse: https://example.com/architecture-docs/tree/{path}?h={rev}#{fragment}
+---
+```
+
+```json
+{
+  "lat": {
+    "external-sources": {
+      "architecture-docs": {
+        "path": "~/src/architecture-docs"
+      }
+    }
+  }
+}
+```
+
+Local override `path` values may start with `~/`; `lat` expands that to the current user's home directory before validating or navigating the checkout.
 
 ## Development
 

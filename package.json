@@ -60,6 +60,7 @@
     "unified": "^11.0.0",
     "unist-util-visit": "^5.0.0",
     "web-tree-sitter": "^0.26.6",
+    "yaml": "^2.8.3",
     "zod": "^4.3.6"
   }
 }

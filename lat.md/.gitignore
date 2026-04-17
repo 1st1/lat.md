@@ -1,3 +1,4 @@
 .obsidian
 .cache
 *.canvas
+config.local.json

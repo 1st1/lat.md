@@ -10,6 +10,7 @@ import { searchCommand } from '../cli/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
+import { getSourceCommand } from '../cli/get-source.js';
 
 function toMcp(result: CmdResult) {
   const content = [{ type: 'text' as const, text: result.output }];
@@ -93,6 +94,18 @@ export async function startMcpServer(): Promise<void> {
     },
     async ({ query, scope }) =>
       toMcp(await refsCommand(ctx, query, scope as Scope)),
+  );
+
+  server.tool(
+    'lat_get_source',
+    'Return the active location for a configured external source handle',
+    {
+      externalSource: z
+        .string()
+        .describe('External source handle (e.g. "architecture-docs")'),
+    },
+    async ({ externalSource }) =>
+      toMcp(await getSourceCommand(ctx, externalSource)),
   );
 
   const transport = new StdioServerTransport();

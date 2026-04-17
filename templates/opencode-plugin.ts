@@ -105,6 +105,23 @@ export const LatPlugin: Plugin = async (ctx) => {
           return output || "No references found."
         },
       }),
+
+      lat_get_source: tool({
+        description:
+          'Return the active location for a configured external source handle',
+        args: {
+          externalSource: tool.schema.string(
+            'External source handle (e.g. "architecture-docs")',
+          ),
+        },
+        async execute(args, context) {
+          const output = tryRun(
+            ['get-source', args.externalSource],
+            projectRoot(context.directory, context.worktree),
+          );
+          return output || 'External source not found.';
+        },
+      }),
     },
 
     hooks: {

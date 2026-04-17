@@ -41,6 +41,7 @@ describe('mcp', () => {
     expect(names).toEqual([
       'lat_check',
       'lat_expand',
+      'lat_get_source',
       'lat_locate',
       'lat_refs',
       'lat_search',
@@ -184,11 +185,20 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
   // @lat: [[tests/mcp#lat_search returns no results message]]
   it('lat_search returns no results message when key is missing', async () => {
     // Spin up a separate MCP server without LAT_LLM_KEY and without XDG config
+    const env = Object.fromEntries(
+      Object.entries(process.env).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string',
+      ),
+    );
+    env.LAT_LLM_KEY = '';
+    env.XDG_CONFIG_HOME = tmp;
+    delete env.LAT_LLM_KEY_FILE;
+    delete env.LAT_LLM_KEY_HELPER;
     const transport2 = new StdioClientTransport({
       command: 'node',
       args: [cliPath, 'mcp'],
       cwd: tmp,
-      env: { ...process.env, LAT_LLM_KEY: '', XDG_CONFIG_HOME: tmp },
+      env,
     });
     const client2 = new Client({ name: 'test2', version: '0.1' });
     await client2.connect(transport2);
@@ -202,5 +212,34 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(result.isError).toBe(true);
 
     await client2.close();
+  });
+});
+
+describe('mcp external sources', () => {
+  let client: Client;
+
+  beforeAll(async () => {
+    const transport = new StdioClientTransport({
+      command: 'node',
+      args: [cliPath, 'mcp'],
+      cwd: join(casesDir, 'external-project'),
+    });
+    client = new Client({ name: 'test-external', version: '0.1' });
+    await client.connect(transport);
+  });
+
+  afterAll(async () => {
+    await client.close();
+  });
+
+  // @lat: [[tests/mcp#lat_get_source returns canonical repo URL]]
+  it('lat_get_source returns the canonical repo URL for a configured handle', async () => {
+    const result = await client.callTool({
+      name: 'lat_get_source',
+      arguments: { externalSource: 'architecture-docs' },
+    });
+    const text = (result.content as { type: string; text: string }[])[0].text;
+    expect(text.trim()).toBe('https://example.com/architecture-docs.git');
+    expect(result.isError).toBeFalsy();
   });
 });

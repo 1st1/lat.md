@@ -6,6 +6,8 @@ import { walkEntries } from './walk.js';
 import { visit } from 'unist-util-visit';
 import type { Heading, RootContent, Text } from 'mdast';
 import type { WikiLink } from './extensions/wiki-link/types.js';
+import { parse as parseYaml } from 'yaml';
+import type { ExternalSource } from './external-sources.js';
 
 export type Section = {
   id: string;
@@ -28,17 +30,45 @@ export type Ref = {
 
 export type LatFrontmatter = {
   requireCodeMention?: boolean;
+  externalSources?: Record<string, ExternalSource>;
 };
 
 export function parseFrontmatter(content: string): LatFrontmatter {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
-  const yaml = match[1];
-  const result: LatFrontmatter = {};
-  if (/require-code-mention:\s*true/i.test(yaml)) {
-    result.requireCodeMention = true;
+  try {
+    const parsed = parseYaml(match[1]);
+    if (!parsed || typeof parsed !== 'object' || !('lat' in parsed)) return {};
+
+    const lat = (parsed as { lat?: Record<string, unknown> }).lat;
+    if (!lat || typeof lat !== 'object') return {};
+
+    const result: LatFrontmatter = {};
+    if (lat['require-code-mention'] === true) {
+      result.requireCodeMention = true;
+    }
+
+    const rawExternalSources = lat['external-sources'];
+    if (rawExternalSources && typeof rawExternalSources === 'object') {
+      const externalSources: Record<string, ExternalSource> = {};
+      for (const [handle, value] of Object.entries(rawExternalSources)) {
+        if (!value || typeof value !== 'object') continue;
+        const source: ExternalSource = {};
+        if (typeof value.repo === 'string') source.repo = value.repo;
+        if (typeof value.rev === 'string') source.rev = value.rev;
+        if (typeof value.browse === 'string') source.browse = value.browse;
+        if (typeof value.path === 'string') source.path = value.path;
+        externalSources[handle] = source;
+      }
+      if (Object.keys(externalSources).length > 0) {
+        result.externalSources = externalSources;
+      }
+    }
+
+    return result;
+  } catch {
+    return {};
   }
-  return result;
 }
 
 export function findLatticeDir(from?: string): string | null {

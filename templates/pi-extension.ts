@@ -219,6 +219,32 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  pi.registerTool({
+    name: "lat_get_source",
+    label: "lat get source",
+    description:
+      "Return the active location for a configured external source handle",
+    promptSnippet: "Resolve an external source handle to its active location",
+    parameters: Type.Object({
+      externalSource: Type.String({
+        description: 'External source handle (e.g. "architecture-docs")',
+      }),
+    }),
+    async execute(_id, params) {
+      const output = tryRun(["get-source", JSON.stringify(params.externalSource)]);
+      return {
+        content: [{ type: "text", text: output || "External source not found." }],
+      };
+    },
+    renderCall(args, theme) {
+      return new Text(
+        theme.fg("toolTitle", theme.bold("lat get source ")) +
+        theme.fg("dim", `"${args.externalSource}"`),
+        0, 0,
+      );
+    },
+  });
+
   // ── Message renderers ────────────────────────────────────────────
 
   pi.registerMessageRenderer("lat-reminder", (message, { expanded }, theme) => {

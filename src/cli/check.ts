@@ -17,6 +17,15 @@ import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
 import { walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
+import {
+  loadExternalSources,
+  parseExternalTarget,
+  validateExternalSources,
+} from '../external-sources.js';
+
+export type CheckMdOptions = {
+  ignoreLocalOverrides?: boolean;
+};
 
 export type CheckError = {
   file: string;
@@ -136,16 +145,29 @@ async function tryResolveSourceRef(
   }
 }
 
-export async function checkMd(latticeDir: string): Promise<CheckResult> {
+export async function checkMd(
+  latticeDir: string,
+  opts: CheckMdOptions = {},
+): Promise<CheckResult> {
   clearSymbolCache();
   const projectRoot = dirname(latticeDir);
   const files = await listLatticeFiles(latticeDir);
   const allSections = await loadAllSections(latticeDir);
+  const externalSources = loadExternalSources(projectRoot, {
+    ignoreLocalOverrides: opts.ignoreLocalOverrides,
+  });
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
 
-  const errors: CheckError[] = [];
+  const errors: CheckError[] = validateExternalSources(externalSources).map(
+    (err) => ({
+      file: relative(process.cwd(), err.file),
+      line: 1,
+      target: err.handle ?? '',
+      message: err.message,
+    }),
+  );
 
   for (const file of files) {
     const content = await readFile(file, 'utf-8');
@@ -153,6 +175,9 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
     const relPath = relative(process.cwd(), file);
 
     for (const ref of refs) {
+      const external = parseExternalTarget(ref.target, externalSources.sources);
+      if (external) continue;
+
       const { resolved, ambiguous, suggested } = resolveRef(
         ref.target,
         sectionIds,
@@ -189,12 +214,16 @@ export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const externalSources = loadExternalSources(projectRoot);
 
   const scan = await scanCodeRefs(projectRoot);
   const errors: CheckError[] = [];
 
   const mentionedSections = new Set<string>();
   for (const ref of scan.refs) {
+    const external = parseExternalTarget(ref.target, externalSources.sources);
+    if (external) continue;
+
     const { resolved, ambiguous, suggested } = resolveRef(
       ref.target,
       sectionIds,
@@ -295,6 +324,7 @@ export async function checkIndex(latticeDir: string): Promise<IndexError[]> {
   // Flag non-.md files — only markdown belongs in lat.md/
   for (const p of allPaths) {
     const name = p.includes('/') ? p.slice(p.lastIndexOf('/') + 1) : p;
+    if (p === 'config.local.json') continue;
     if (!name.endsWith('.md')) {
       const relDir = basename(latticeDir) + '/';
       errors.push({
@@ -483,9 +513,16 @@ function formatErrorCount(count: number, s: Styler): string {
 
 // --- Unified command functions ---
 
-export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
+type CheckCommandOptions = {
+  ignoreLocalOverrides?: boolean;
+};
+
+export async function checkAllCommand(
+  ctx: CmdContext,
+  opts: CheckCommandOptions = {},
+): Promise<CmdResult> {
   const startTime = Date.now();
-  const md = await checkMd(ctx.latDir);
+  const md = await checkMd(ctx.latDir, opts);
   const code = await checkCodeRefs(ctx.latDir);
   const indexErrors = await checkIndex(ctx.latDir);
   const sectionErrors = await checkSections(ctx.latDir);
@@ -575,8 +612,11 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   return { output: lines.join('\n') };
 }
 
-export async function checkMdCommand(ctx: CmdContext): Promise<CmdResult> {
-  const { errors, files } = await checkMd(ctx.latDir);
+export async function checkMdCommand(
+  ctx: CmdContext,
+  opts: CheckCommandOptions = {},
+): Promise<CmdResult> {
+  const { errors, files } = await checkMd(ctx.latDir, opts);
   const s = ctx.styler;
   const lines: string[] = [formatFileStats(files, s)];
 
