@@ -30,7 +30,7 @@ Output:
 
 1. Section header with id and file location
 2. Section content blockquoted (`>`) from `startLine` through the end of the last descendant subsection
-3. **This section references** — all wiki link targets found within the section, including both lat.md section refs (with body descriptions) and source code refs (with file path and line range, e.g. `file.ts:10-25`, plus a 5-line snippet centered on the symbol)
+3. **This section references** — all wiki link targets found within the section, including lat.md section refs (with body descriptions), source code refs (with file path and line range, e.g. `file.ts:10-25`, plus a 5-line snippet centered on the symbol), and external source refs (with the active local or canonical destination, plus resolved line ranges when a local checkout can map a line fragment or AsciiDoc heading fragment)
 4. **Referenced by** — other sections in `lat.md/` that contain wiki links pointing to this section
 5. **Referenced by code** — source files containing `@lat:` comments that reference this section, each shown with file path, line number, and a 5-line snippet centered on the reference
 6. **Navigation hints** — same footer as [[cli#search]], suggesting `lat section` and `lat search` as next steps
@@ -41,11 +41,13 @@ Core logic in [[src/cli/section.ts#getSection]] (returns structured result), use
 
 ## refs
 
-Find sections that reference a given target via [[parser#Wiki Links]]. The query can be a section id or a source file path.
+Find sections that reference a given target via [[parser#Wiki Links]]. The query can be a section id, a source file path, or an exact external source target.
 
 **Section queries** (e.g. `section-parsing#Heading`) are resolved via `findSections` when `resolveRef` doesn't produce an exact match, as long as the result is unambiguous (exact, stem-expanded, or section-name match). If no confident match exists, shows "Did you mean:" suggestions and exits.
 
 **Source file queries** (e.g. `src/app.rs#greet`, `src/app.ts`) are detected when the file part has a recognized source extension and exists on disk. File-level queries (no `#`) match all wiki links targeting that file or any symbol in it. Symbol-level queries match exactly.
+
+**External source queries** (e.g. `architecture-docs:docs/system/request-flow.md#L123`) are matched exactly against configured external targets from [[markdown#Frontmatter#external-sources]]. They return markdown sections that reference that exact handle/path/fragment.
 
 Outputs a [[cli#Section Preview]] for each referring section.
 
@@ -59,13 +61,23 @@ Usage: `lat refs <query> [--scope=md|code|md+code]`
 
 Core logic in [[src/cli/refs.ts#findRefs]] (returns structured result), used by both the CLI command and [[cli#mcp]] `lat_refs` tool.
 
+## get-source
+
+Resolve a configured external source handle to its active location, preferring a valid local checkout path and otherwise falling back to the canonical repository URL.
+
+Usage: `lat get-source <handle>`
+
+This is for handle-level lookup, not file-level deep links. For example, `lat get-source architecture-docs` returns either the pinned local checkout root from `lat.md/config.local.json` or the canonical `repo` URL from `lat.md/lat.md` frontmatter.
+
+Implementation: [[src/cli/get-source.ts#getSourceCommand]]
+
 ## check
 
 Validation command group. Without a subcommand it runs every check against the
 discovered `lat.md/`; an explicit `-- <directory>` suffix validates any
 Markdown directory instead.
 
-Usage: `lat check [md|links|code-refs|index|sections] [-- <directory>]`
+Usage: `lat check [md|links|code-refs|index|sections] [--ignore-local-overrides] [-- <directory>]`
 
 The separator is required. It keeps directory names distinct from subcommands:
 `lat check links` runs the relative-link subcommand against the discovered
@@ -90,12 +102,18 @@ Validate that all [[parser#Wiki Links]] in the checked markdown files point to e
 
 Validate that ordinary markdown links in the checked files point to existing files, Markdown fragments use GitHub heading ids, and full or collapsed reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
 
+Configured external refs in `[[handle:path#fragment]]` form are also accepted here. `check md` validates the handle definition, required canonical fields (`repo`, `rev`, `browse`), and any local override path from `lat.md/config.local.json`.
+
+`--ignore-local-overrides` treats `lat.md/config.local.json` as absent for that check run. Use it when you want a portable check that validates only checked-in canonical config and ignores machine-specific local override errors.
+
 ### code-refs
 
 Two validations:
 
 1. Every `// @lat: [[...]]` or `# @lat: [[...]]` comment in source code must point to a real section in `lat.md/`
 2. For files with [[markdown#Frontmatter#require-code-mention]], every leaf section must be referenced by at least one `// @lat:` comment in the codebase
+
+Configured external refs in `[[handle:path#fragment]]` form are also accepted here. `check code-refs` treats them as valid when the handle exists in `lat.external-sources`.
 
 ### sections
 
@@ -114,7 +132,7 @@ Each index file must contain a bullet list covering every visible file and subdi
 
 Four checks:
 
-1. **Non-markdown files** — any file without a `.md` extension is flagged as an error (only markdown belongs in the checked directory)
+1. **Non-markdown files** — any file without a `.md` extension is flagged as an error (only markdown belongs in the checked directory), except for `config.local.json` at its root
 2. **Missing index file** — errors with a ready-to-copy bullet list snippet
 3. **Missing entries** — index file exists but doesn't list all visible entries
 4. **Stale entries** — index file lists an entry that doesn't exist on disk
@@ -133,6 +151,8 @@ For each `[[ref]]` in the input, uses `findSections()` directly (no `resolveRef`
 
 1. **Best match** — resolves to the top result from `findSections` (exact > file stem > subsection > subsequence > fuzzy)
 2. **No match** — errors out, tells the agent to ask the user to correct the reference
+
+Configured external refs are not rewritten inline. Instead, `lat expand` keeps `[[handle:path#fragment]]` as authored and appends context describing the external handle, pinned revision, and active local or canonical destination.
 
 Output replaces `[[ref]]` with `[[resolved-id]]` inline and appends a `<lat-context>` block as a nested outliner. For exact matches: `is referring to:`. For non-exact: `might be referring to either of the following:` with all candidates, match reasons, locations, and body text.
 
@@ -164,7 +184,7 @@ Usage: `lat init [dir]`
 
 Steps:
 
-1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead.
+1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead. Re-runs also ensure `lat.md/.gitignore` includes `config.local.json` for local external source overrides.
 2. **Embedding setup** — fresh and outdated setups default to a per-repository local preference before agent selection, unless the repo already has a _working_ hosted setup (a hosted `meta.embedding_model` plus a resolvable key for the same provider and model). That exception matters because the outdated check re-fires on every `INIT_VERSION` bump, so pinning local unconditionally would keep undoing a deliberate hosted choice; a hosted index with no compatible key is unusable, so it does fall back to local. In a TTY, if a key resolves from `LAT_LLM_KEY`, `LAT_LLM_KEY_FILE`, `LAT_LLM_KEY_HELPER`, or user config, init asks whether to stay local or use hosted embeddings; fresh repos default local, while re-runs default to their existing backend. When that choice differs from `meta.embedding_model`, including a change between hosted providers, interactive init offers to reindex immediately. Non-interactive init never chooses: it applies the local default only where no working hosted setup exists, and prints the required command for any mismatch.
 3. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
 4. **Command style** — if any agent is selected, a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local invocation, or `npx lat.md@latest` (slow but zero-install). Local JavaScript builds retain the exact Node executable that launched init, and TypeScript entry points also retain their loader flags; wrapper scripts and standalone binaries remain direct commands. The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
@@ -185,6 +205,7 @@ Sets up `CLAUDE.md` and two agent hooks for the Claude Code coding agent.
 - Hooks synced in `.claude/settings.json` — on every run, all existing lat-owned hook entries are removed, then fresh entries are added for both events. Detection uses three heuristics: `/\blat\b/` in the command string, `hook claude ` substring (catches any install path), or command starting with the current binary path. Non-lat hooks are preserved. Both hooks call [[cli#hook]]:
   - `UserPromptSubmit` → `lat hook claude UserPromptSubmit` — injects lat.md workflow reminders, auto-resolves `[[refs]]` in the prompt
   - `Stop` → `lat hook claude Stop` — reminds the agent to update `lat.md/` before finishing
+- `.claude/settings.local.json` — if `lat.md/config.local.json` defines external source paths, `lat init` adds them to Claude's `additionalDirectories` list so the local checkout is readable without extra approval prompts
 - `.claude/skills/lat-md/SKILL.md` — skill spec generated from `templates/skill/SKILL.md`. Teaches the agent how to author and maintain `lat.md/` files. Claude Code discovers it automatically from `.claude/skills/`.
 - `.claude` directory added to `.gitignore` (settings contain local absolute paths in hook commands)
 - [[cli#mcp]] server registered in `.mcp.json` at the project root (added to `.gitignore` since it contains absolute paths)
@@ -223,6 +244,7 @@ Sets up an OpenCode plugin that registers lat tools as native OpenCode tools and
 
 - `AGENTS.md` — shared instruction file (created in the shared step)
 - `.opencode/plugins/lat.ts` — TypeScript plugin generated from `templates/opencode-plugin.ts` with the lat invocation command injected. Uses `@opencode-ai/plugin` to register six tools (`lat_search`, `lat_section`, `lat_locate`, `lat_check`, `lat_expand`, `lat_refs`) that shell out to the `lat` CLI. Hooks into `session.idle` (runs `lat check` + diff analysis, logs a warning via `client.app.log` if something needs fixing).
+- `opencode.json` — if `lat.md/config.local.json` defines external source paths, `lat init` can add `permission.external_directory` allow rules for those checkouts. When `opencode.json` does not yet exist, init first adds it to the root `.gitignore` before writing local-only permissions. If the file already exists and is not gitignored, init leaves it untouched.
 - `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory
 - `.opencode` directory added to `.gitignore` (plugin contains local absolute paths)
 
@@ -258,7 +280,9 @@ Currently supports:
 - `repos` — per-repository embedding preferences keyed by absolute `lat.md/` path; `lat init` records `embedding: "local"` unless the user explicitly selects hosted embeddings
 - `llm_key` — optional hosted embedding API key, set manually by power users and used when `LAT_LLM_KEY` is not set
 
-Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies to `lat search`, `lat reindex`, `lat init`, and the MCP `lat_search` tool.
+Project-local external source overrides live separately in `lat.md/config.local.json`. Run `lat config` to see both the user config path and, when inside a project, the project-local config path.
+
+Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies to `lat search`, `lat reindex`, `lat init`, `lat check`, and the MCP `lat_search` tool.
 
 Implementation: [[src/config.ts]]
 
@@ -305,7 +329,7 @@ Start the MCP (Model Context Protocol) server over stdio. Exposes lat.md tools t
 
 Usage: `lat mcp`
 
-Clients invoke this as `lat mcp`. The `lat init` wizard registers the MCP server using the absolute path to the current `lat` binary, so it works regardless of how `lat` was installed. The server exposes six tools:
+Clients invoke this as `lat mcp`. The `lat init` wizard registers the MCP server using the absolute path to the current `lat` binary, so it works regardless of how `lat` was installed. The server exposes seven tools:
 
 - **lat_locate** — find sections by name (wraps [[cli#locate]])
 - **lat_section** — show section content with outgoing/incoming refs (wraps [[cli#section]])
@@ -313,6 +337,7 @@ Clients invoke this as `lat mcp`. The `lat init` wizard registers the MCP server
 - **lat_expand** — expand `[[refs]]` in text (wraps [[cli#expand]])
 - **lat_check** — validate links and code refs (wraps [[cli#check]])
 - **lat_refs** — find references to a section (wraps [[cli#refs]])
+- **lat_get_source** — resolve an external source handle to its active location (wraps [[cli#get-source]])
 
 Each MCP tool calls the same command function as the CLI (e.g. `locateCommand`, `refsCommand`, `searchCommand`), passing a `CmdContext` with `plainStyler` and `mode: 'mcp'`. The `toMcp()` helper converts `CmdResult` to MCP response format. Uses `@modelcontextprotocol/sdk` with stdio transport. Resolves `lat.md/` from cwd.
 

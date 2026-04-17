@@ -16,6 +16,12 @@ import { scanCodeRefs } from '../code-refs.js';
 import { SOURCE_EXTENSIONS, resolveSourceSymbol } from '../source-parser.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import { formatSectionId, formatNavHints } from '../format.js';
+import {
+  loadExternalSources,
+  parseExternalTarget,
+  resolveExternalTarget,
+  type ExternalResolution,
+} from '../external-sources.js';
 
 export type CodeBackRef = {
   file: string;
@@ -37,6 +43,7 @@ export type SectionFound = {
   content: string;
   outgoingRefs: { target: string; resolved: Section }[];
   outgoingSourceRefs: SourceRef[];
+  outgoingExternalRefs: ExternalResolution[];
   incomingRefs: SectionMatch[];
   codeRefs: CodeBackRef[];
 };
@@ -87,14 +94,26 @@ export async function getSection(
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
   const slugIndex = buildSectionSlugIndex(allSections);
+  const externalSources = loadExternalSources(ctx.projectRoot);
   const sectionRefs = extractRefs(absPath, fileContent, ctx.projectRoot);
   const sectionId = section.id.toLowerCase();
 
   const outgoingRefs: { target: string; resolved: Section }[] = [];
   const outgoingSourceRefs: SourceRef[] = [];
+  const outgoingExternalRefs: ExternalResolution[] = [];
   const seen = new Set<string>();
   for (const ref of sectionRefs) {
     if (ref.fromSection.toLowerCase() !== sectionId) continue;
+    const external = parseExternalTarget(ref.target, externalSources.sources);
+    if (external) {
+      const targetLower = ref.target.toLowerCase();
+      if (!seen.has(targetLower)) {
+        seen.add(targetLower);
+        outgoingExternalRefs.push(resolveExternalTarget(external));
+      }
+      continue;
+    }
+
     // Detect source code references by file extension
     const hashIdx = ref.target.indexOf('#');
     const filePart = hashIdx === -1 ? ref.target : ref.target.slice(0, hashIdx);
@@ -229,6 +248,7 @@ export async function getSection(
     content,
     outgoingRefs,
     outgoingSourceRefs,
+    outgoingExternalRefs,
     incomingRefs,
     codeRefs,
   };
@@ -256,6 +276,7 @@ export function formatSectionOutput(
     content,
     outgoingRefs,
     outgoingSourceRefs,
+    outgoingExternalRefs,
     incomingRefs,
     codeRefs,
   } = result;
@@ -276,7 +297,11 @@ export function formatSectionOutput(
     quoted,
   ];
 
-  if (outgoingRefs.length > 0 || outgoingSourceRefs.length > 0) {
+  if (
+    outgoingRefs.length > 0 ||
+    outgoingSourceRefs.length > 0 ||
+    outgoingExternalRefs.length > 0
+  ) {
     parts.push('', '## This section references:', '');
     for (const ref of outgoingRefs) {
       const body = ref.resolved.firstParagraph
@@ -299,6 +324,26 @@ export function formatSectionOutput(
           parts.push(`  ${s.dim('|')} ${line}`);
         }
       }
+    }
+    for (const ref of outgoingExternalRefs) {
+      const localLoc = ref.localPath
+        ? ref.line
+          ? ref.endLine && ref.endLine !== ref.line
+            ? `${ref.localPath}:${ref.line}-${ref.endLine}`
+            : `${ref.localPath}:${ref.line}`
+          : ref.localPath
+        : null;
+      const active =
+        ref.activeKind === 'local'
+          ? `${s.dim(' -> ')}${s.cyan(ref.activeTarget)}`
+          : `${s.dim(' -> ')}${s.cyan(ref.browseUrl)}`;
+      const detail =
+        ref.activeKind === 'local' && localLoc
+          ? `${s.dim(` (${localLoc})`)}`
+          : ref.rev
+            ? `${s.dim(` (rev ${ref.rev})`)}`
+            : '';
+      parts.push(`${s.dim('*')} [[${s.cyan(ref.target)}]]${detail}${active}`);
     }
   }
 

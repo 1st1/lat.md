@@ -33,6 +33,7 @@ import {
 import { getLocalVersion, fetchLatestVersion } from '../version.js';
 import { selectMenu, type SelectOption } from './select-menu.js';
 import { checklistMenu } from './checklist-menu.js';
+import { getConfiguredExternalPaths } from '../external-sources.js';
 
 async function confirm(
   rl: ReturnType<typeof createInterface>,
@@ -287,6 +288,36 @@ function ensureGitignored(root: string, entry: string): void {
   }
 }
 
+function ensureLocalIgnored(dir: string, entry: string): void {
+  const gitignorePath = join(dir, '.gitignore');
+
+  if (existsSync(gitignorePath)) {
+    const content = readFileSync(gitignorePath, 'utf-8');
+    const lines = content.split('\n').map((line) => line.trim());
+    if (lines.includes(entry)) return;
+    let updated = content;
+    if (!updated.endsWith('\n')) updated += '\n';
+    writeFileSync(gitignorePath, updated + entry + '\n');
+    return;
+  }
+
+  writeFileSync(gitignorePath, entry + '\n');
+}
+
+function isGitignored(root: string, entry: string): boolean {
+  const gitDir = join(root, '.git');
+  if (!existsSync(gitDir)) return false;
+  try {
+    execSync(`git check-ignore -q -- "${entry}"`, {
+      cwd: root,
+      stdio: ['ignore', 'ignore', 'ignore'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── MCP command detection ────────────────────────────────────────────
 
 /**
@@ -311,6 +342,107 @@ type McpConfig = Record<
   string,
   Record<string, { command: string; args: string[] }>
 >;
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+export function mergeClaudeAdditionalDirectories(
+  settings: Record<string, unknown>,
+  paths: string[],
+): Record<string, unknown> {
+  const next = { ...settings };
+  const existing = Array.isArray(next.additionalDirectories)
+    ? next.additionalDirectories.filter(
+        (value): value is string => typeof value === 'string',
+      )
+    : [];
+  next.additionalDirectories = [...new Set([...existing, ...paths])];
+  return next;
+}
+
+export function mergeOpenCodeExternalDirectoryPermissions(
+  config: Record<string, unknown>,
+  paths: string[],
+): Record<string, unknown> {
+  const next = { ...config };
+  if (!next.$schema) {
+    next.$schema = 'https://opencode.ai/config.json';
+  }
+
+  const permission = asRecord(next.permission) ?? {};
+  const externalDirectory = asRecord(permission.external_directory) ?? {};
+  for (const dir of paths) {
+    const pattern = join(resolve(dir), '**');
+    if (externalDirectory[pattern] === undefined) {
+      externalDirectory[pattern] = 'allow';
+    }
+  }
+  permission.external_directory = externalDirectory;
+  next.permission = permission;
+  return next;
+}
+
+function syncClaudeAdditionalDirectories(
+  settingsPath: string,
+  paths: string[],
+): 'created' | 'updated' | 'already' | 'skipped' | 'invalid' {
+  if (paths.length === 0) return 'skipped';
+
+  const existedBefore = existsSync(settingsPath);
+  let settings: Record<string, unknown> = {};
+  if (existedBefore) {
+    try {
+      settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    } catch {
+      return 'invalid';
+    }
+  }
+
+  const next = mergeClaudeAdditionalDirectories(settings, paths);
+  const before = JSON.stringify(settings, null, 2);
+  const after = JSON.stringify(next, null, 2);
+  if (before === after && existsSync(settingsPath)) return 'already';
+
+  mkdirSync(join(settingsPath, '..'), { recursive: true });
+  writeFileSync(settingsPath, after + '\n');
+  return existedBefore ? 'updated' : 'created';
+}
+
+function syncOpenCodeExternalDirectories(
+  root: string,
+  paths: string[],
+): 'created' | 'updated' | 'already' | 'shared-skip' | 'invalid' | 'skipped' {
+  if (paths.length === 0) return 'skipped';
+
+  const configPath = join(root, 'opencode.json');
+  if (!existsSync(configPath)) {
+    const next = mergeOpenCodeExternalDirectoryPermissions({}, paths);
+    writeFileSync(configPath, JSON.stringify(next, null, 2) + '\n');
+    return 'created';
+  }
+
+  if (!isGitignored(root, 'opencode.json')) {
+    return 'shared-skip';
+  }
+
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(readFileSync(configPath, 'utf-8'));
+  } catch {
+    return 'invalid';
+  }
+
+  const next = mergeOpenCodeExternalDirectoryPermissions(config, paths);
+  const before = JSON.stringify(config, null, 2);
+  const after = JSON.stringify(next, null, 2);
+  if (before === after) return 'already';
+
+  writeFileSync(configPath, after + '\n');
+  return 'updated';
+}
 
 function hasMcpServer(configPath: string, key: string): boolean {
   if (!existsSync(configPath)) return false;
@@ -712,6 +844,29 @@ async function setupClaudeCode(
   // Ensure .claude is gitignored (settings contain local absolute paths)
   ensureGitignored(root, '.claude');
 
+  const externalPaths = getConfiguredExternalPaths(root);
+  const localSettingsPath = join(claudeDir, 'settings.local.json');
+  const extraDirsResult = syncClaudeAdditionalDirectories(
+    localSettingsPath,
+    externalPaths,
+  );
+  if (extraDirsResult === 'created') {
+    console.log(
+      styleText('green', '  Additional directories') +
+        ' added to .claude/settings.local.json',
+    );
+  } else if (extraDirsResult === 'updated') {
+    console.log(
+      styleText('green', '  Additional directories') +
+        ' updated in .claude/settings.local.json',
+    );
+  } else if (extraDirsResult === 'invalid') {
+    console.log(
+      styleText('yellow', '  Warning:') +
+        ' could not parse .claude/settings.local.json — skipped external directories',
+    );
+  }
+
   // MCP server → .mcp.json at project root
   console.log('');
   console.log(
@@ -989,6 +1144,31 @@ async function setupOpenCode(
 
   // Ensure .opencode is gitignored (plugin contains local absolute paths)
   ensureGitignored(root, '.opencode');
+
+  const externalPaths = getConfiguredExternalPaths(root);
+  if (!existsSync(join(root, 'opencode.json'))) {
+    ensureGitignored(root, 'opencode.json');
+  }
+  const openCodeResult = syncOpenCodeExternalDirectories(root, externalPaths);
+  if (openCodeResult === 'created') {
+    console.log(
+      styleText('green', '  Local permissions') + ' written to opencode.json',
+    );
+  } else if (openCodeResult === 'updated') {
+    console.log(
+      styleText('green', '  Local permissions') + ' updated in opencode.json',
+    );
+  } else if (openCodeResult === 'shared-skip') {
+    console.log(
+      styleText('yellow', '  Local permissions skipped') +
+        ' because opencode.json exists and is not gitignored',
+    );
+  } else if (openCodeResult === 'invalid') {
+    console.log(
+      styleText('yellow', '  Warning:') +
+        ' could not parse opencode.json — skipped external directory permissions',
+    );
+  }
 }
 
 async function setupCodex(
@@ -1395,6 +1575,8 @@ export async function initCmd(targetDir?: string): Promise<void> {
       cpSync(templateDir, latDir, { recursive: true });
       console.log(styleText('green', 'Created lat.md/'));
     }
+
+    ensureLocalIgnored(latDir, 'config.local.json');
 
     // Step 2: Configure fresh/outdated setups, ask interactive users about an
     // available key, and offer to rebuild an index whose backend differs. This

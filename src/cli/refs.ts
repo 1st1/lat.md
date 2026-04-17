@@ -16,6 +16,10 @@ import {
 import { formatResultList } from '../format.js';
 import { scanCodeRefs } from '../code-refs.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import {
+  loadExternalSources,
+  parseExternalTarget,
+} from '../external-sources.js';
 
 export type Scope = 'md' | 'code' | 'md+code';
 
@@ -173,6 +177,70 @@ async function findSourceRefs(
   return { kind: 'found', target, mdRefs, codeRefs };
 }
 
+async function findExternalRefs(
+  latDir: string,
+  projectRoot: string,
+  query: string,
+  scope: Scope,
+): Promise<RefsResult> {
+  const colonIdx = query.indexOf(':');
+  const target: Section = {
+    id: query,
+    heading: colonIdx === -1 ? query : query.slice(colonIdx + 1),
+    depth: 0,
+    file: query,
+    filePath: query,
+    children: [],
+    startLine: 0,
+    endLine: 0,
+    firstParagraph: '',
+  };
+
+  const allSections = await loadAllSections(latDir);
+  const flat = flattenSections(allSections);
+  const mdRefs: SectionMatch[] = [];
+  const codeRefs: string[] = [];
+  const queryLower = query.toLowerCase();
+
+  if (scope === 'md' || scope === 'md+code') {
+    const files = await listLatticeFiles(latDir);
+    const matchingFromSections = new Set<string>();
+    for (const file of files) {
+      const content = await readFile(file, 'utf-8');
+      const fileRefs = extractRefs(file, content, projectRoot);
+      for (const ref of fileRefs) {
+        if (ref.target.toLowerCase() === queryLower) {
+          matchingFromSections.add(ref.fromSection.toLowerCase());
+        }
+      }
+    }
+
+    if (matchingFromSections.size > 0) {
+      const referrers = flat.filter((s) =>
+        matchingFromSections.has(s.id.toLowerCase()),
+      );
+      for (const s of referrers) {
+        mdRefs.push({ section: s, reason: 'wiki link' });
+      }
+    }
+  }
+
+  if (scope === 'code' || scope === 'md+code') {
+    const { refs: scannedRefs } = await scanCodeRefs(projectRoot);
+    for (const ref of scannedRefs) {
+      if (ref.target.toLowerCase() === queryLower) {
+        const displayPath = relative(
+          process.cwd(),
+          join(projectRoot, ref.file),
+        );
+        codeRefs.push(`${displayPath}:${ref.line}`);
+      }
+    }
+  }
+
+  return { kind: 'found', target, mdRefs, codeRefs };
+}
+
 /**
  * Find all sections and code locations that reference a given section or
  * source file. Accepts section ids (full-path, short-form) and source file
@@ -185,6 +253,11 @@ export async function findRefs(
   scope: Scope,
 ): Promise<RefsResult> {
   query = query.replace(/^\[\[|\]\]$/g, '');
+  const externalSources = loadExternalSources(ctx.projectRoot);
+
+  if (parseExternalTarget(query, externalSources.sources)) {
+    return findExternalRefs(ctx.latDir, ctx.projectRoot, query, scope);
+  }
 
   // Source file queries bypass section resolution
   if (isSourceQuery(query, ctx.projectRoot)) {

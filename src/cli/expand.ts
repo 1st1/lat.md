@@ -6,6 +6,12 @@ import {
   type SectionMatch,
 } from '../lattice.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import {
+  loadExternalSources,
+  parseExternalTarget,
+  resolveExternalTarget,
+  type ExternalResolution,
+} from '../external-sources.js';
 
 const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
 
@@ -20,6 +26,10 @@ type ResolvedRef = {
   alternatives: SectionMatch[];
 };
 
+type ExpandedRef =
+  | { kind: 'section'; data: ResolvedRef }
+  | { kind: 'external'; data: ExternalResolution };
+
 /**
  * Resolve [[refs]] in text and return the expanded output.
  * Returns null if there are no wiki links, or if resolution fails.
@@ -32,19 +42,32 @@ export async function expandPrompt(
   if (refs.length === 0) return null;
 
   const allSections = await loadAllSections(ctx.latDir);
-  const resolved = new Map<string, ResolvedRef>();
+  const externalSources = loadExternalSources(ctx.projectRoot);
+  const resolved = new Map<string, ExpandedRef>();
   const errors: string[] = [];
 
   for (const match of refs) {
     const target = match[1];
     if (resolved.has(target)) continue;
 
+    const external = parseExternalTarget(target, externalSources.sources);
+    if (external) {
+      resolved.set(target, {
+        kind: 'external',
+        data: resolveExternalTarget(external),
+      });
+      continue;
+    }
+
     const matches = findSections(allSections, target);
     if (matches.length >= 1) {
       resolved.set(target, {
-        target,
-        best: matches[0],
-        alternatives: matches.slice(1),
+        kind: 'section',
+        data: {
+          target,
+          best: matches[0],
+          alternatives: matches.slice(1),
+        },
       });
     } else {
       errors.push(`No section found for [[${target}]]`);
@@ -56,21 +79,46 @@ export async function expandPrompt(
   // Replace [[refs]] inline
   let output = text.replace(WIKI_LINK_RE, (_match, target: string) => {
     const ref = resolved.get(target)!;
-    return `[[${ref.best.section.id}]]`;
+    if (ref.kind === 'external') {
+      return `[[${target}]]`;
+    }
+    return `[[${ref.data.best.section.id}]]`;
   });
 
   // Append context block as nested outliner
   output += '\n\n<lat-context>\n';
   for (const ref of resolved.values()) {
+    if (ref.kind === 'external') {
+      output += `* \`[[${ref.data.target}]]\` is referring to:\n`;
+      output += `  * external source ${ref.data.handle}\n`;
+      if (ref.data.rev) {
+        output += `    * pinned rev: ${ref.data.rev}\n`;
+      }
+      if (ref.data.activeKind === 'local' && ref.data.localPath) {
+        const localLoc = ref.data.line
+          ? ref.data.endLine && ref.data.endLine !== ref.data.line
+            ? `${ref.data.localPath}:${ref.data.line}-${ref.data.endLine}`
+            : `${ref.data.localPath}:${ref.data.line}`
+          : ref.data.localPath;
+        output += `    * local: ${ref.data.localFileUrl}\n`;
+        output += `    * path: ${localLoc}\n`;
+      } else {
+        output += `    * canonical: ${ref.data.browseUrl}\n`;
+      }
+      continue;
+    }
+
     const isExact =
-      ref.best.reason === 'exact match' ||
-      ref.best.reason.startsWith('file stem expanded');
-    const all = isExact ? [ref.best] : [ref.best, ...ref.alternatives];
+      ref.data.best.reason === 'exact match' ||
+      ref.data.best.reason.startsWith('file stem expanded');
+    const all = isExact
+      ? [ref.data.best]
+      : [ref.data.best, ...ref.data.alternatives];
 
     if (isExact) {
-      output += `* \`[[${ref.target}]]\` is referring to:\n`;
+      output += `* \`[[${ref.data.target}]]\` is referring to:\n`;
     } else {
-      output += `* \`[[${ref.target}]]\` might be referring to either of the following:\n`;
+      output += `* \`[[${ref.data.target}]]\` might be referring to either of the following:\n`;
     }
 
     for (const m of all) {
@@ -101,8 +149,10 @@ export async function expandCommand(
 
     // Resolution failed — find which ref is broken
     const allSections = await loadAllSections(ctx.latDir);
+    const externalSources = loadExternalSources(ctx.projectRoot);
     for (const match of refs) {
       const target = match[1];
+      if (parseExternalTarget(target, externalSources.sources)) continue;
       const matches = findSections(allSections, target);
       if (matches.length === 0) {
         const s = ctx.styler;

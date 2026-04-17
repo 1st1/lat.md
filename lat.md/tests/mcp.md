@@ -9,7 +9,7 @@ Functional tests for the MCP server. Spawns `lat mcp` against the `basic-project
 Tests in `tests/mcp.test.ts`.
 
 ## Lists all tools
-Server exposes exactly `lat_check`, `lat_expand`, `lat_locate`, `lat_refs`, `lat_search`, `lat_section`.
+Server exposes exactly `lat_check`, `lat_expand`, `lat_get_source`, `lat_locate`, `lat_refs`, `lat_search`, `lat_section`.
 
 ## lat_locate finds a section
 Calling `lat_locate` with query `"Testing"` returns a result containing `dev-process#Testing`.
@@ -42,3 +42,7 @@ Semantic search for a latency/response-times query returns results containing th
 
 ## lat_search works offline without a key
 When no key source is set, `lat_search` falls back to the bundled local MiniLM model and still returns results (no error) — verified by finding the Authentication section for a login/security query.
+
+## lat_get_source returns canonical repo URL
+
+Calling `lat_get_source` with a configured external handle returns the canonical repository URL when no local override is active.

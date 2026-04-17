@@ -17,6 +17,7 @@ This skill covers the syntax, structure rules, and conventions for writing `lat.
 Treat `lat.md/` as a focused snapshot of the current state of affairs or planned features. Do not use it as a journal or changelog, and do not grow it just to record insignificant implementation details.
 
 Good candidates for sections:
+
 - Architecture decisions and their rationale
 - Domain concepts and business rules
 - API contracts and protocols
@@ -24,6 +25,7 @@ Good candidates for sections:
 - Non-obvious constraints or invariants
 
 Bad candidates:
+
 - Step-by-step code walkthroughs (the code itself is the walkthrough)
 - Auto-generated API docs (use tools for that)
 - Journal/changelog entries for each change
@@ -83,15 +85,88 @@ The parser validates [[parser#Wiki Links|wiki link syntax]].
 Reference functions, classes, constants, and methods in source files:
 
 ```markdown
-[[src/config.ts#getConfigDir]]          — function
-[[src/server.ts#App#listen]]            — class method
-[[lib/utils.py#parse_args]]             — Python function
-[[src/lib.rs#Greeter#greet]]            — Rust impl method
-[[src/app.go#Greeter#Greet]]            — Go method
-[[src/app.h#Greeter]]                   — C struct
+[[src/config.ts#getConfigDir]] — function
+[[src/server.ts#App#listen]] — class method
+[[lib/utils.py#parse_args]] — Python function
+[[src/lib.rs#Greeter#greet]] — Rust impl method
+[[src/app.go#Greeter#Greet]] — Go method
+[[src/app.h#Greeter]] — C struct
 ```
 
 `lat check` validates that all targets exist.
+
+### External source links
+
+Reference pinned external repositories through short handles defined in frontmatter:
+
+```markdown
+[[architecture-docs:docs/system/request-flow.md#L123]]
+```
+
+Define canonical handles in `lat.md/lat.md` frontmatter:
+
+```yaml
+---
+lat:
+  external-sources:
+    architecture-docs:
+      repo: https://example.com/architecture-docs.git
+      rev: v6.9
+      browse: https://example.com/architecture-docs/tree/{path}?h={rev}#{fragment}
+---
+```
+
+Machine-local overrides belong in `lat.md/config.local.json` under the same `lat.external-sources` key path:
+
+```json
+{
+  "lat": {
+    "external-sources": {
+      "architecture-docs": {
+        "path": "/Users/alice/src/architecture-docs"
+      }
+    }
+  }
+}
+```
+
+Only `path` is supported in `config.local.json`. It must point to a checkout of the same repository at the pinned `rev`. A leading `~/` is expanded to the current user's home directory. When present and valid, `lat` prefers the local path for navigation; otherwise it falls back to the canonical `browse` URL.
+
+Use `lat get-source <handle>` or the `lat_get_source` tool to see which root location is currently active for a configured handle.
+
+If the user says `read <handle> for <stuff>`, treat `<handle>` as an external source handle: resolve it with `lat_get_source`, then inspect the returned repo URL or local checkout for the requested material.
+
+When the user asks you to add an external source, update both places as needed:
+
+- `lat.md/lat.md` frontmatter for the canonical checked-in handle definition
+- `lat.md/config.local.json` for the machine-local `path` override when the user supplied one
+
+For example, a prompt like `lat.md: add external reference config for architecture docs at v7.0 tag and configure local override pointing to ~/src/architecture-docs` should result in:
+
+```yaml
+---
+lat:
+  external-sources:
+    architecture-docs:
+      repo: https://example.com/architecture-docs.git
+      rev: v7.0
+      browse: https://example.com/architecture-docs/tree/{path}?h={rev}#{fragment}
+---
+```
+
+```json
+{
+  "lat": {
+    "external-sources": {
+      "architecture-docs": {
+        "path": "~/src/architecture-docs"
+      }
+    }
+  }
+}
+```
+
+Preserve any existing frontmatter fields and existing external source entries; merge the new handle instead of replacing the whole map.
 
 ## Code refs
 
@@ -121,6 +196,7 @@ Describe tests as sections in `lat.md/` files. Add frontmatter to require that e
 lat:
   require-code-mention: true
 ---
+
 # Tests
 
 Authentication test specifications.
@@ -147,6 +223,7 @@ def test_rejects_expired_tokens():
 ```
 
 Rules:
+
 - Every leaf section under `require-code-mention: true` must be referenced by exactly one `@lat:` comment
 - Every section MUST have a description — at least one sentence explaining what the test verifies and why
 - `lat check` flags unreferenced specs and dangling code refs
@@ -162,14 +239,20 @@ lat:
 ---
 ```
 
-Currently the only supported field is `require-code-mention` for test spec enforcement.
+Supported fields:
+
+- `require-code-mention` — require each leaf section in the file to be referenced by code
+- `external-sources` — define canonical external source handles in the root `lat.md/lat.md` file
 
 ## Validation
 
 Always run `lat check` after editing `lat.md/` files. It validates:
+
 - All wiki links point to existing sections or source code symbols
 - All relative markdown links point to existing files
 - Full and collapsed reference-style links have definitions
+- All configured external source handles are well-formed
+- Any local external source override path points to a git checkout at the pinned revision
 - All `@lat:` code refs point to existing sections
 - Every section has a leading paragraph (≤250 chars)
 - All `require-code-mention` leaf sections are referenced in code
