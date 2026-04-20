@@ -32,19 +32,25 @@ Resolution is handled by [[src/lattice.ts#resolveRef]]. See [[parser#Short Ref R
 
 ### Source Code Links
 
-Wiki links can reference symbols in TypeScript, JavaScript, Python, Rust, Go, and C source files:
+Wiki links can point to any file or folder in the project, and — for supported languages — to individual symbols within a source file.
+
+**Symbol targets** (use `#` to select a symbol inside a file):
 
 - **`[[src/config.ts#getConfigDir]]`** — the `getConfigDir` function in `src/config.ts`
-- **`[[src/server.ts#App#listen]]`** — the `listen` method on class `App` in `src/server.ts`
+- **`[[src/server.ts#App#listen]]`** — the `listen` method on class `App`
 - **`[[src/lib.rs#Greeter#greet]]`** — the `greet` method on struct `Greeter` in Rust
 - **`[[src/app.go#Greeter#Greet]]`** — the `Greet` method on type `Greeter` in Go
 - **`[[src/app.h#Greeter]]`** — the `Greeter` struct in a C header
 - **`[[src/app.h#Greeter#prefix]]`** — the `prefix` field of struct `Greeter` in C
-- **`[[src/config.ts]]`** — link to the file itself (no symbol)
-- **`[[src/components]]`** — link to a folder (validated to exist)
-- **`[[src/schema.sql]]`** — link to a file with any extension (validated to exist)
 
-Symbol references (`#`) require a supported extension: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rs`, `.go`, `.c`, `.h`. File-only and folder links work with any path.
+**Path targets** (no `#` — any file or folder in the project):
+
+- **`[[src/config.ts]]`** — a source file, linked without picking a symbol
+- **`[[src/schema.sql]]`** — a file with any extension
+- **`[[docs/CHANGELOG]]`** — a file with no extension
+- **`[[src/components]]`** — a folder
+
+`lat check` verifies path targets exist on disk and symbol targets resolve to a real definition. Symbol targets (`#`) are only supported for these extensions: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rs`, `.go`, `.c`, `.h`. Using `#` with any other extension (e.g. `[[schema.sql#foo]]`) is an error.
 
 Python symbols: functions, classes, methods, module-level variables. Decorated definitions (`@decorator`) are unwrapped transparently — `[[file.py#my_func]]` resolves whether or not `my_func` has decorators, and `# @lat:` comments placed between decorators and the `def`/`class` line are scanned normally.
 
