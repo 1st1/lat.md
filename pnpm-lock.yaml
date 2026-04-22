@@ -18,8 +18,8 @@ importers:
         specifier: ^1.27.1
         version: 1.27.1(zod@4.3.6)
       '@repomix/tree-sitter-wasms':
-        specifier: ^0.1.16
-        version: 0.1.16
+        specifier: ^0.1.17
+        version: 0.1.17
       commander:
         specifier: ^14.0.3
         version: 14.0.3
@@ -316,8 +316,8 @@ packages:
   '@neon-rs/load@0.0.4':
     resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
-  '@repomix/tree-sitter-wasms@0.1.16':
-    resolution: {integrity: sha512-CIINozBWFwjhH4DQALN/b4n1S08fHhXQOdjX2G7s4w+Urew37aLU0AHVyCjHM5Pbnh63tDYt4YyUkS6vRUV38A==}
+  '@repomix/tree-sitter-wasms@0.1.17':
+    resolution: {integrity: sha512-tc3HnFqdMF1pXhIMzG3aTaBDpIiHK2tPfn3fwqA6P3WTbHa+1EuuTubbKshvmN7xCHP5Ojz0/VW4R+XvR88KOw==}
 
   '@rollup/rollup-android-arm-eabi@4.59.0':
     resolution: {integrity: sha512-upnNBkA6ZH2VKGcBj9Fyl9IGNPULcjXRlg0LLeaioQWueH30p6IXtJEbKAgvyv+mJaMxSm1l6xwDXYjpEMiLMg==}
@@ -1547,7 +1547,7 @@ snapshots:
 
   '@neon-rs/load@0.0.4': {}
 
-  '@repomix/tree-sitter-wasms@0.1.16': {}
+  '@repomix/tree-sitter-wasms@0.1.17': {}
 
   '@rollup/rollup-android-arm-eabi@4.59.0':
     optional: true

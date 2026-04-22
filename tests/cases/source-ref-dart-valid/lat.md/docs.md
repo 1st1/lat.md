@@ -11,3 +11,5 @@ The [[src/app.dart#Greeting]] mixin defines shared behavior.
 Default name is [[src/app.dart#defaultName]].
 
 The [[src/app.dart#Color]] enum lists available colors.
+
+The [[src/app.dart#DotShorthand]] class exercises Dart 3.7 dot shorthand via [[src/app.dart#DotShorthand#pick]].

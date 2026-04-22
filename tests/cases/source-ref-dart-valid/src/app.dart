@@ -23,3 +23,7 @@ mixin Greeting {
 final defaultName = 'World';
 
 enum Color { red, green, blue }
+
+class DotShorthand {
+  Color pick() => .red;
+}

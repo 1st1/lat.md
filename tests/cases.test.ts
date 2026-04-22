@@ -903,20 +903,9 @@ describe('error-source-ref-go-missing', () => {
 describe('source-ref-dart-valid', () => {
   it('resolves Dart function, class, method, mixin, enum, and variable refs without errors', async () => {
     // docs.md links: greet (func), Greeter (class), Greeter#greet (method),
-    // createGreeter (func), Greeting (mixin), defaultName (var), Color (enum)
+    // createGreeter (func), Greeting (mixin), defaultName (var), Color (enum),
+    // DotShorthand (class using Dart 3.7 dot shorthand), DotShorthand#pick (method)
     const { errors } = await checkMd(latDir('source-ref-dart-valid'));
-    expect(errors).toHaveLength(0);
-  });
-});
-
-describe('source-ref-dart-error-recovery', () => {
-  it('recovers class names from Dart files with parse errors', async () => {
-    // app.dart uses Dart 3.7 dot shorthand (.start) which tree-sitter-dart
-    // cannot parse — the class becomes an ERROR node. The fallback regex
-    // should still extract the class name so the wiki link resolves.
-    const { errors } = await checkMd(
-      latDir('source-ref-dart-error-recovery'),
-    );
     expect(errors).toHaveLength(0);
   });
 });
