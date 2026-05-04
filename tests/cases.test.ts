@@ -846,6 +846,43 @@ describe('source-ref-go-valid', () => {
   });
 });
 
+describe('source-ref-rb-valid', () => {
+  it('resolves Ruby function, class, module, method, singleton method, and constant refs without errors', async () => {
+    // docs.md links: greet (function), Greeter (class), Greeter#greet (method),
+    // Greeter#create (singleton method), Helpers (module), Helpers#assist (method),
+    // DEFAULT_NAME (constant)
+    const { errors } = await checkMd(latDir('source-ref-rb-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('error-source-ref-rb-missing', () => {
+  it('check md reports all missing Ruby symbols', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-rb-missing'));
+    expect(errors).toHaveLength(4);
+
+    const byTarget = new Map(errors.map((e) => [e.target, e]));
+
+    const fn = byTarget.get('src/app.rb#nonexistent')!;
+    expect(fn).toBeDefined();
+    expect(fn.message).toContain('symbol "nonexistent" not found');
+
+    const cls = byTarget.get('src/app.rb#MissingClass')!;
+    expect(cls).toBeDefined();
+    expect(cls.message).toContain('symbol "MissingClass" not found');
+
+    const cnst = byTarget.get('src/app.rb#MISSING_CONST')!;
+    expect(cnst).toBeDefined();
+    expect(cnst.message).toContain('symbol "MISSING_CONST" not found');
+
+    const method = byTarget.get('src/app.rb#Greeter#missing_method')!;
+    expect(method).toBeDefined();
+    expect(method.message).toContain(
+      'symbol "Greeter#missing_method" not found',
+    );
+  });
+});
+
 describe('error-source-ref-rs-missing', () => {
   it('check md reports all missing Rust symbols', async () => {
     const { errors } = await checkMd(latDir('error-source-ref-rs-missing'));

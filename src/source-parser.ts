@@ -60,6 +60,7 @@ const grammarMap: Record<string, string> = {
   '.go': 'tree-sitter-go.wasm',
   '.c': 'tree-sitter-c.wasm',
   '.h': 'tree-sitter-c.wasm',
+  '.rb': 'tree-sitter-ruby.wasm',
 };
 
 /** All source file extensions that lat can parse (derived from grammarMap). */
@@ -517,6 +518,119 @@ function extractGoSymbols(tree: Tree): SourceSymbol[] {
   return symbols;
 }
 
+function extractRubySymbols(tree: Tree): SourceSymbol[] {
+  const symbols: SourceSymbol[] = [];
+  const root = tree.rootNode;
+
+  for (let i = 0; i < root.childCount; i++) {
+    const node = root.child(i)!;
+    const startLine = node.startPosition.row + 1;
+    const endLine = node.endPosition.row + 1;
+
+    if (node.type === 'method') {
+      const name = node.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'function',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (node.type === 'singleton_method') {
+      const name = node.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'function',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (node.type === 'class') {
+      const name = node.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'class',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.childForFieldName('body');
+        if (body) {
+          extractRubyMethods(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'module') {
+      const name = node.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'class',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+        const body = node.childForFieldName('body');
+        if (body) {
+          extractRubyMethods(body, name, symbols);
+        }
+      }
+    } else if (node.type === 'assignment') {
+      const left = node.childForFieldName('left');
+      if (left && left.type === 'constant') {
+        symbols.push({
+          name: left.text,
+          kind: 'const',
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    }
+  }
+
+  return symbols;
+}
+
+function extractRubyMethods(
+  body: SyntaxNode,
+  className: string,
+  symbols: SourceSymbol[],
+): void {
+  for (let i = 0; i < body.namedChildCount; i++) {
+    const member = body.namedChild(i)!;
+    if (member.type === 'method') {
+      const name = member.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'method',
+          parent: className,
+          startLine: member.startPosition.row + 1,
+          endLine: member.endPosition.row + 1,
+          signature: firstLine(member.text),
+        });
+      }
+    } else if (member.type === 'singleton_method') {
+      const name = member.childForFieldName('name')?.text;
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'method',
+          parent: className,
+          startLine: member.startPosition.row + 1,
+          endLine: member.endPosition.row + 1,
+          signature: firstLine(member.text),
+        });
+      }
+    }
+  }
+}
+
 /**
  * Extract the declarator name from a C function_declarator node.
  * Handles plain identifiers and pointer declarators (*name).
@@ -861,6 +975,9 @@ export async function parseSourceSymbols(
     }
     if (ext === '.c' || ext === '.h') {
       return extractCSymbols(tree);
+    }
+    if (ext === '.rb') {
+      return extractRubySymbols(tree);
     }
     return extractTsSymbols(tree);
   } finally {

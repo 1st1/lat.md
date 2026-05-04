@@ -32,7 +32,7 @@ Resolution is handled by [[src/lattice.ts#resolveRef]]. See [[parser#Short Ref R
 
 ### Source Code Links
 
-Wiki links can reference symbols in TypeScript, JavaScript, Python, Rust, Go, and C source files:
+Wiki links can reference symbols in TypeScript, JavaScript, Python, Ruby, Rust, Go, and C source files:
 
 - **`[[src/config.ts#getConfigDir]]`** — the `getConfigDir` function in `src/config.ts`
 - **`[[src/server.ts#App#listen]]`** — the `listen` method on class `App` in `src/server.ts`
@@ -42,13 +42,15 @@ Wiki links can reference symbols in TypeScript, JavaScript, Python, Rust, Go, an
 - **`[[src/app.h#Greeter#prefix]]`** — the `prefix` field of struct `Greeter` in C
 - **`[[src/config.ts]]`** — link to the file itself (no symbol)
 
-Supported extensions: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rs`, `.go`, `.c`, `.h`.
+Supported extensions: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.rb`, `.rs`, `.go`, `.c`, `.h`.
 
 Python symbols: functions, classes, methods, module-level variables. Decorated definitions (`@decorator`) are unwrapped transparently — `[[file.py#my_func]]` resolves whether or not `my_func` has decorators, and `# @lat:` comments placed between decorators and the `def`/`class` line are scanned normally.
 
 Rust symbols: functions, structs, enums, traits, impl methods, consts, statics, type aliases. Methods are resolved via `impl` blocks — `[[file.rs#Type#method]]` matches any `impl Type { fn method() }` or `impl Trait for Type { fn method() }`.
 
 Go symbols: functions, types (structs, interfaces, type aliases), methods (with receiver), consts, vars. Methods are resolved via receiver type — `[[file.go#Type#Method]]` matches `func (t *Type) Method()`.
+
+Ruby symbols: methods (def), classes, modules, singleton methods (def self.foo), constants. Methods inside classes/modules are resolved via the parent — `[[file.rb#Greeter#greet]]` matches `def greet` inside `class Greeter`. `# @lat:` comments are supported for code refs.
 
 C symbols: functions (including pointer-returning like `char *func()`), structs, struct fields/members, enums, enum values (including anonymous enums and `typedef enum` members), typedefs, `#define` macros (both object-like and function-like), variables (including arrays). Struct fields are resolved via the parent struct — `[[file.h#Struct#field]]` matches any `field_declaration` inside `struct Struct { ... }`, including fields nested inside anonymous unions and structs. Enum values can be referenced standalone (`[[file.h#GREEN]]`) or qualified by their enum name (`[[file.h#Color#GREEN]]`); both forms work for named enums, `typedef enum`, and named `typedef enum`. Both `.c` and `.h` files are supported — include guards (`#ifndef`/`#endif`) are walked through transparently.
 
