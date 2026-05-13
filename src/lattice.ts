@@ -99,7 +99,7 @@ export function parseSections(
 ): Section[] {
   const tree = parse(content);
   const file = projectRoot
-    ? relative(projectRoot, filePath).replace(/\.md$/, '')
+    ? relative(projectRoot, filePath).replace(/\.md$/, '').replace(/\\/g, '/')
     : basename(filePath, '.md');
   const sectionFilePath = projectRoot
     ? relative(projectRoot, filePath)
@@ -619,7 +619,7 @@ export function extractRefs(
 ): Ref[] {
   const tree = parse(content);
   const file = projectRoot
-    ? relative(projectRoot, filePath).replace(/\.md$/, '')
+    ? relative(projectRoot, filePath).replace(/\.md$/, '').replace(/\\/g, '/')
     : basename(filePath, '.md');
   const refs: Ref[] = [];
 
