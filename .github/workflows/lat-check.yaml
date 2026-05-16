@@ -4,7 +4,7 @@ on:
   pull_request_target:
     # Use `pull_request_target` so fork PRs run without maintainer approval.
     # Note: do NOT execute PR code in any step below.
-    types: [ opened, synchronize, reopened ]
+    types: [opened, synchronize, reopened]
 
 # Minimal token. Mitigation against the `pull_request_target` foot-gun.
 permissions:
@@ -14,11 +14,11 @@ jobs:
   lat-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           # `pull_request_target` checks out the base by default.
           # Pin to the PR head SHA so we actually check the PR's changes.
           # `push` has no PR payload, so fall through to `github.sha`,
           # i.e. the pushed commit.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: lars20070/lat-check-action@v1
+      - uses: lars20070/lat-check-action@94f09a73ede7899a2bb3acbda2d3ea1455bbddf9
