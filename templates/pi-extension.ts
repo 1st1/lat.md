@@ -230,7 +230,7 @@ export default function (pi: ExtensionAPI) {
       const hint = keyHint("expandTools", "to expand");
       box.addChild(new Text(
         theme.fg("accent", "lat.md") + " " +
-        theme.fg("dim", `Search lat.md before starting work. Keep lat.md/ in sync. (${hint})`),
+        theme.fg("dim", `Search lat.md before starting work. Keep lat.md/ focused. (${hint})`),
         0, 0,
       ));
     }
@@ -268,7 +268,7 @@ export default function (pi: ExtensionAPI) {
       "Use `lat_section` to read the full content of relevant matches.",
       "Do not read files, write code, or run commands until you have searched.",
       "",
-      "Remember: `lat.md/` must stay in sync with the codebase. If you change code, update the relevant sections in `lat.md/` and run `lat_check` before finishing.",
+      "Remember: `lat.md/` must stay in sync with meaningful codebase state. If you change behavior, architecture, tests, or planned work, update the relevant current-state sections and run `lat_check` before finishing. Do not use `lat.md/` as a journal/changelog or add notes for insignificant details.",
     ].join("\n");
 
     return {
@@ -335,7 +335,7 @@ export default function (pi: ExtensionAPI) {
       parts.push(
         `\`lat check\` found errors AND the codebase has changes (${codeLines} lines) with no updates to \`lat.md/\`. Before finishing:`,
         "",
-        "1. Update `lat.md/` to reflect your code changes — run `lat_search` to find relevant sections.",
+        "1. Update relevant current-state `lat.md/` sections if the changes affect behavior, architecture, tests, or plans; do not add journal/changelog notes.",
         "2. Run `lat_check` until it passes.",
       );
     } else if (checkFailed) {
@@ -344,7 +344,7 @@ export default function (pi: ExtensionAPI) {
       );
     } else {
       parts.push(
-        `The codebase has changes (${codeLines} lines) but \`lat.md/\` was not updated. Update \`lat.md/\` to be in sync with the changes — run \`lat_search\` to find relevant sections. Run \`lat_check\` at the end.`,
+        `The codebase has changes (${codeLines} lines) but \`lat.md/\` was not updated. Review whether current-state \`lat.md/\` sections need updates; do not add journal/changelog notes just to satisfy this reminder. Run \`lat_search\` to find relevant sections and \`lat_check\` at the end.`,
       );
     }
 
