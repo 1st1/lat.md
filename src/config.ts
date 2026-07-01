@@ -17,6 +17,10 @@ export function getConfigPath(): string {
 
 export type LatConfig = {
   llm_key?: string;
+  llm_base_url?: string;
+  llm_provider?: string;
+  llm_model?: string;
+  llm_anthropic_version?: string;
 };
 
 export function readConfig(): LatConfig {
@@ -78,4 +82,67 @@ export function getLlmKey(): string | undefined {
   if (config.llm_key) return config.llm_key;
 
   return undefined;
+}
+
+/**
+ * Returns a custom OpenAI/Anthropic-compatible embeddings API base URL from
+ * (in priority order): LAT_LLM_BASE_URL env var, then `llm_base_url` in the
+ * config file. Returns undefined if none is set (built-in providers apply).
+ */
+export function getLlmBaseUrl(): string | undefined {
+  const envVal = process.env.LAT_LLM_BASE_URL;
+  if (envVal) return envVal;
+  return readConfig().llm_base_url;
+}
+
+/**
+ * Returns the embedding request format ('openai' or 'anthropic') from (in
+ * priority order): LAT_LLM_PROVIDER env var, then `llm_provider` in the
+ * config file. Returns undefined if none is set (defaults to 'openai' when
+ * LAT_LLM_BASE_URL is set, or is ignored otherwise).
+ */
+export function getLlmProvider(): string | undefined {
+  const envVal = process.env.LAT_LLM_PROVIDER;
+  if (envVal) return envVal;
+  return readConfig().llm_provider;
+}
+
+/**
+ * Returns an embedding model override from (in priority order):
+ * LAT_LLM_MODEL env var, then `llm_model` in the config file. Returns
+ * undefined if none is set (the provider's default model applies).
+ */
+export function getLlmModel(): string | undefined {
+  const envVal = process.env.LAT_LLM_MODEL;
+  if (envVal) return envVal;
+  return readConfig().llm_model;
+}
+
+/**
+ * Returns the `anthropic-version` header value to send when
+ * LAT_LLM_PROVIDER=anthropic, from (in priority order):
+ * LAT_LLM_ANTHROPIC_VERSION env var, then `llm_anthropic_version` in the
+ * config file. Returns undefined if none is set (a default applies).
+ */
+export function getLlmAnthropicVersion(): string | undefined {
+  const envVal = process.env.LAT_LLM_ANTHROPIC_VERSION;
+  if (envVal) return envVal;
+  return readConfig().llm_anthropic_version;
+}
+
+export type LlmProviderOptions = {
+  baseUrl?: string;
+  providerName?: string;
+  model?: string;
+  anthropicVersion?: string;
+};
+
+/** Bundles the custom-endpoint resolvers above for `detectProvider()`. */
+export function getLlmProviderOptions(): LlmProviderOptions {
+  return {
+    baseUrl: getLlmBaseUrl(),
+    providerName: getLlmProvider(),
+    model: getLlmModel(),
+    anthropicVersion: getLlmAnthropicVersion(),
+  };
 }

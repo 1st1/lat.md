@@ -30,7 +30,7 @@ lat check                      # validate all links and code refs
 
 Run `lat --help` when in doubt about available commands or options.
 
-If `lat search` fails because no API key is configured, explain to the user that semantic search requires a key provided via `LAT_LLM_KEY` (direct value), `LAT_LLM_KEY_FILE` (path to key file), or `LAT_LLM_KEY_HELPER` (command that prints the key). Supported key prefixes: `sk-...` (OpenAI) or `vck_...` (Vercel). If the user doesn't want to set it up, use `lat locate` for direct lookups instead.
+If `lat search` fails because no API key is configured, explain to the user that semantic search requires a key provided via `LAT_LLM_KEY` (direct value), `LAT_LLM_KEY_FILE` (path to key file), or `LAT_LLM_KEY_HELPER` (command that prints the key). Supported key prefixes: `sk-...` (OpenAI) or `vck_...` (Vercel). For self-hosted or 3rd-party endpoints (Ollama, LM Studio, Azure OpenAI, an Anthropic-compatible proxy, etc.), set `LAT_LLM_BASE_URL` and `LAT_LLM_MODEL` (and optionally `LAT_LLM_PROVIDER=anthropic` for `x-api-key`-style auth) instead of relying on a key prefix. If the user doesn't want to set it up, use `lat locate` for direct lookups instead.
 
 # Syntax primer
 

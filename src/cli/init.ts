@@ -1107,6 +1107,24 @@ async function setupLlmKey(
       ' for exact lookups, but will miss semantic matches.',
   );
   console.log('');
+  console.log(
+    '  Advanced: to use a self-hosted or 3rd-party endpoint (Ollama, LM Studio,',
+  );
+  console.log(
+    '  Azure OpenAI, an Anthropic-compatible proxy, etc.), set ' +
+      styleText('cyan', 'LAT_LLM_BASE_URL') +
+      ' (and optionally',
+  );
+  console.log(
+    '  ' +
+      styleText('cyan', 'LAT_LLM_PROVIDER') +
+      ', ' +
+      styleText('cyan', 'LAT_LLM_MODEL') +
+      ', ' +
+      styleText('cyan', 'LAT_LLM_ANTHROPIC_VERSION') +
+      ') instead of a key prefix below.',
+  );
+  console.log('');
 
   // Interactive prompt
   if (!rl) {

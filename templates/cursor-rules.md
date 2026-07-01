@@ -27,7 +27,7 @@ You have access to the following MCP tools from the `lat` server:
 - **lat_check** — validate all wiki links and code refs
 - **lat_refs** — find what references a section
 
-If `lat_search` fails because `LAT_LLM_KEY` is not set, explain to the user that semantic search requires an API key (`export LAT_LLM_KEY=sk-...` for OpenAI or `export LAT_LLM_KEY=vck_...` for Vercel). If the user doesn't want to set it up, use `lat_locate` for direct lookups instead.
+If `lat_search` fails because `LAT_LLM_KEY` is not set, explain to the user that semantic search requires an API key (`export LAT_LLM_KEY=sk-...` for OpenAI or `export LAT_LLM_KEY=vck_...` for Vercel). For self-hosted or 3rd-party endpoints (Ollama, LM Studio, Azure OpenAI, an Anthropic-compatible proxy, etc.), set `LAT_LLM_BASE_URL` and `LAT_LLM_MODEL` (and optionally `LAT_LLM_PROVIDER=anthropic` for `x-api-key`-style auth) instead of relying on a key prefix. If the user doesn't want to set it up, use `lat_locate` for direct lookups instead.
 
 # Syntax primer
 

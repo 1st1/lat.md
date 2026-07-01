@@ -235,11 +235,17 @@ Implementation: [[src/cli/init.ts]], checklist menu in [[src/cli/checklist-menu.
 
 User-level configuration is stored in `~/.config/lat/config.json` (XDG Base Directory on Linux/macOS, `%APPDATA%\lat\config.json` on Windows). The `XDG_CONFIG_HOME` env var is respected if set.
 
-Currently supports one field:
+Supports these fields, each with a matching env var that takes priority over it:
 
-- `llm_key` — embedding API key for semantic search, used when `LAT_LLM_KEY` env var is not set
+- `llm_key` (`LAT_LLM_KEY`) — embedding API key for semantic search
+- `llm_base_url` (`LAT_LLM_BASE_URL`) — custom OpenAI/Anthropic-compatible embeddings API root, for self-hosted or 3rd-party endpoints (Ollama, LM Studio, Azure OpenAI, Groq, Together AI, an Anthropic-compatible proxy, etc.). Bypasses key-prefix provider detection entirely.
+- `llm_provider` (`LAT_LLM_PROVIDER`) — `openai` (default) or `anthropic`. Only controls the auth header sent alongside `llm_base_url`: `openai` sends `Authorization: Bearer <key>`; `anthropic` sends `x-api-key: <key>` plus an `anthropic-version` header. Both still POST the same `{model, input}` embeddings body — Anthropic itself has no embeddings API, so this targets Anthropic-compatible proxies that add one.
+- `llm_model` (`LAT_LLM_MODEL`) — embedding model name override, usable with or without `llm_base_url`. Required when `llm_provider` is `anthropic`.
+- `llm_anthropic_version` (`LAT_LLM_ANTHROPIC_VERSION`) — overrides the `anthropic-version` header (default `2023-06-01`). Only used when `llm_provider` is `anthropic`.
 
-Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies everywhere: `lat search`, `lat check`, and the MCP `lat_search` tool.
+Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies everywhere: `lat search`, `lat check`, and the MCP `lat_search` tool. The other four fields resolve as env var, then config file value, then a built-in default (see [[cli#Provider Detection]]).
+
+Run `lat config` to see the config file path and all resolved values.
 
 Implementation: [[src/config.ts]]
 
@@ -317,12 +323,17 @@ Requires an LLM key resolved by [[src/config.ts#getLlmKey]] in priority order:
 3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key to stdout (10 s timeout)
 4. `llm_key` from config file (see [[cli#Configuration File]])
 
-Provider is auto-detected from the resolved key prefix:
+[[src/search/provider.ts#detectProvider]] resolves the provider in this order:
 
-- `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims)
-- `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims)
-- `sk-ant-...` — Anthropic (not supported, errors with guidance)
-- `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for offline testing
+1. `LAT_LLM_PROVIDER=anthropic` (via [[src/config.ts#getLlmProviderOptions]]) — requires `LAT_LLM_BASE_URL` and `LAT_LLM_MODEL` (throws a precise error naming whichever is missing, since Anthropic has no default embeddings endpoint or model). Sends `x-api-key`/`anthropic-version` headers instead of `Authorization: Bearer`.
+2. `LAT_LLM_BASE_URL` set (provider unset or `openai`) — custom OpenAI-compatible endpoint. Model defaults to `text-embedding-3-small` if `LAT_LLM_MODEL` isn't set.
+3. Otherwise, auto-detected from the resolved key prefix:
+   - `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims by default)
+   - `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims by default)
+   - `sk-ant-...` — Anthropic (not supported without `LAT_LLM_BASE_URL`, errors with guidance)
+   - `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for offline testing
+
+`LAT_LLM_MODEL` overrides the model name in all of these cases (required for the `anthropic` case). Overriding the model, or using a custom base URL, clears the provider's statically known `dimensions` — see [[cli#Storage#Dimension Resolution]] below for how the actual dimension count is then resolved.
 
 Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
@@ -341,6 +352,12 @@ Single `sections` table holds metadata, content, content hash, and the embedding
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 
 Implementation: [[src/search/db.ts]]
+
+#### Dimension Resolution
+
+The `sections.embedding` column is a fixed-size `F32_BLOB(dimensions)`, so the vector length must be known before the table is created. Built-in providers (OpenAI, Vercel) know their dimension count statically; custom base URLs and model overrides don't.
+
+[[src/search/schema.ts#resolveSchema]] resolves it: it caches a `name:apiBase:model` signature plus the resolved dimension count in the `meta` table (created but otherwise unused by [[src/search/db.ts#ensureSchema]]). If the signature is unchanged from the last run, the cached dimension is reused with no extra API call. If unknown (first run, or the signature changed) and the provider has no static `dimensions`, it issues one embedding call to a probe string to learn the vector length. If the signature changed since the last run, the caller ([[src/cli/search.ts#runSearch|withDb]]) drops and recreates the `sections` table before calling `ensureSchema()` with the new dimension — a fixed-size `F32_BLOB` can't hold vectors of a different size, so switching provider/model triggers an automatic full re-embed instead of a hard DB error.
 
 ### Indexing
 

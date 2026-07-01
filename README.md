@@ -72,12 +72,33 @@ lat mcp                         # start MCP server for editor integration
 
 ## Configuration
 
-Semantic search (`lat search`) requires an OpenAI (`sk-...`) or Vercel AI Gateway (`vck_...`) API key. The key is resolved in order:
+Semantic search (`lat search`) requires an embedding API key. The key is resolved in order:
 
 1. `LAT_LLM_KEY` env var — direct value
 2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key
 3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key (10s timeout)
-4. Config file — saved by `lat init`. Run `lat config` to see its location.
+4. Config file — saved by `lat init`. Run `lat config` to see its location and current settings.
+
+By default the key prefix picks the provider: OpenAI (`sk-...`) or Vercel AI Gateway (`vck_...`).
+
+### Custom endpoints
+
+To use a self-hosted or 3rd-party endpoint instead (Ollama, LM Studio, Azure OpenAI, Groq, Together AI, an Anthropic-compatible proxy, etc.), set:
+
+- `LAT_LLM_BASE_URL` — the API root, e.g. `http://localhost:11434/v1`
+- `LAT_LLM_PROVIDER` — `openai` (default) or `anthropic`. This only controls the auth header: `openai` sends `Authorization: Bearer <key>`, `anthropic` sends `x-api-key: <key>` plus an `anthropic-version` header (both still POST the same `{model, input}` embeddings request body, since Anthropic has no native embeddings API of its own — this targets Anthropic-compatible proxies that add one).
+- `LAT_LLM_MODEL` — the embedding model name, e.g. `nomic-embed-text`. Required when `LAT_LLM_PROVIDER=anthropic`.
+- `LAT_LLM_ANTHROPIC_VERSION` — overrides the `anthropic-version` header (default `2023-06-01`). Only used when `LAT_LLM_PROVIDER=anthropic`.
+
+```bash
+# Using a local Ollama instance running an embedding model
+export LAT_LLM_BASE_URL=http://localhost:11434/v1
+export LAT_LLM_KEY=ollama
+export LAT_LLM_MODEL=nomic-embed-text
+lat search "how do we handle auth?"
+```
+
+Each of these can also be set once via the config file (`llm_base_url`, `llm_provider`, `llm_model`, `llm_anthropic_version`) instead of exporting env vars every session.
 
 ## Development
 

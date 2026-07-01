@@ -243,12 +243,34 @@ program
 
 program
   .command('config')
-  .description('Show configuration file path')
+  .description('Show configuration file path and resolved LLM settings')
   .action(async () => {
-    const { getConfigPath } = await import('../config.js');
+    const { getConfigPath, getLlmKey, getLlmProviderOptions } = await import(
+      '../config.js'
+    );
     const configPath = getConfigPath();
     const exists = existsSync(configPath);
     console.log(`Config file: ${configPath}${exists ? '' : ' (not found)'}`);
+
+    let hasKey = false;
+    try {
+      hasKey = !!getLlmKey();
+    } catch {
+      // key resolution failed (e.g. empty file) — treat as missing
+    }
+    const { baseUrl, providerName, model, anthropicVersion } =
+      getLlmProviderOptions();
+
+    console.log('');
+    console.log(`LLM key: ${hasKey ? 'configured' : 'not configured'}`);
+    console.log(`LLM base URL: ${baseUrl ?? '(default)'}`);
+    console.log(`LLM provider: ${providerName ?? '(default: openai)'}`);
+    console.log(`LLM model: ${model ?? '(default)'}`);
+    if (providerName === 'anthropic') {
+      console.log(
+        `LLM anthropic-version: ${anthropicVersion ?? '(default)'}`,
+      );
+    }
   });
 
 await program.parseAsync();

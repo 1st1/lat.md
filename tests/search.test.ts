@@ -34,6 +34,94 @@ describe('detectProvider', () => {
   it('rejects unknown key', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
   });
+
+  // @lat: [[search#Provider Detection#Custom OpenAI-compatible endpoint]]
+  it('builds a custom openai-compatible provider from baseUrl', () => {
+    const p = detectProvider('ollama', {
+      baseUrl: 'http://localhost:11434/v1/',
+    });
+    expect(p.name).toBe('openai-compatible');
+    expect(p.apiBase).toBe('http://localhost:11434/v1'); // trailing slash stripped
+    expect(p.model).toBe('text-embedding-3-small'); // default
+    expect(p.dimensions).toBeUndefined();
+    expect(p.headers('ollama')).toEqual({
+      Authorization: 'Bearer ollama',
+      'Content-Type': 'application/json',
+    });
+  });
+
+  it('uses a custom model for a custom openai-compatible provider', () => {
+    const p = detectProvider('ollama', {
+      baseUrl: 'http://localhost:11434/v1',
+      model: 'nomic-embed-text',
+    });
+    expect(p.model).toBe('nomic-embed-text');
+  });
+
+  // @lat: [[search#Provider Detection#Anthropic-compatible endpoint]]
+  it('builds an anthropic-compatible provider with x-api-key headers', () => {
+    const p = detectProvider('sk-my-proxy-key', {
+      baseUrl: 'https://proxy.example.com/v1',
+      providerName: 'anthropic',
+      model: 'my-embed-model',
+    });
+    expect(p.name).toBe('anthropic-compatible');
+    expect(p.model).toBe('my-embed-model');
+    expect(p.dimensions).toBeUndefined();
+    expect(p.headers('sk-my-proxy-key')).toEqual({
+      'x-api-key': 'sk-my-proxy-key',
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    });
+  });
+
+  it('overrides the anthropic-version header when given', () => {
+    const p = detectProvider('key', {
+      baseUrl: 'https://proxy.example.com/v1',
+      providerName: 'anthropic',
+      model: 'my-embed-model',
+      anthropicVersion: '2024-05-01',
+    });
+    expect(p.headers('key')['anthropic-version']).toBe('2024-05-01');
+  });
+
+  // @lat: [[search#Provider Detection#Anthropic provider requires base URL and model]]
+  it('rejects anthropic provider without a base URL', () => {
+    expect(() =>
+      detectProvider('key', { providerName: 'anthropic', model: 'm' }),
+    ).toThrow(/LAT_LLM_BASE_URL/);
+  });
+
+  it('rejects anthropic provider without a model', () => {
+    expect(() =>
+      detectProvider('key', {
+        providerName: 'anthropic',
+        baseUrl: 'https://proxy.example.com/v1',
+      }),
+    ).toThrow(/LAT_LLM_MODEL/);
+  });
+
+  it('rejects an unrecognized LAT_LLM_PROVIDER value', () => {
+    expect(() =>
+      detectProvider('sk-abc123', { providerName: 'not-a-real-provider' }),
+    ).toThrow(/Unrecognized LAT_LLM_PROVIDER/);
+  });
+
+  // @lat: [[search#Provider Detection#Model override clears static dimensions]]
+  it('overriding the model for a built-in provider clears its static dimensions', () => {
+    const openai = detectProvider('sk-abc123', { model: 'text-embedding-3-large' });
+    expect(openai.model).toBe('text-embedding-3-large');
+    expect(openai.dimensions).toBeUndefined();
+
+    const vercel = detectProvider('vck_abc123', { model: 'custom-model' });
+    expect(vercel.model).toBe('custom-model');
+    expect(vercel.dimensions).toBeUndefined();
+  });
+
+  it('leaves built-in provider dimensions intact without a model override', () => {
+    expect(detectProvider('sk-abc123').dimensions).toBe(1536);
+    expect(detectProvider('vck_abc123').dimensions).toBe(1536);
+  });
 });
 
 // --- RAG functional tests ---
@@ -91,7 +179,8 @@ describe.skipIf(!canRun)('search (rag)', () => {
     });
 
     db = openDb(latDir);
-    await ensureSchema(db, provider.dimensions);
+    // The replay provider always has a statically known dimension count.
+    await ensureSchema(db, provider.dimensions!);
   });
 
   afterAll(async () => {

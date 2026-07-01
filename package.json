@@ -1,16 +1,19 @@
 {
-  "name": "lat.md",
-  "version": "0.11.0",
+  "name": "@erbanku/lat.md",
+  "version": "0.11.2",
   "description": "A knowledge graph for your codebase, written in markdown",
   "type": "module",
   "packageManager": "pnpm@10.30.2",
   "license": "MIT",
-  "author": "Yury Selivanov",
+  "author": "Erban Ku",
   "repository": {
     "type": "git",
-    "url": "https://github.com/1st1/lat.md.git"
+    "url": "git+https://github.com/erbanku/lat.md.git"
   },
-  "homepage": "https://github.com/1st1/lat.md",
+  "homepage": "https://github.com/erbanku/lat.md",
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "markdown",
     "knowledge-graph",
@@ -21,7 +24,7 @@
     "codebase"
   ],
   "bin": {
-    "lat": "./dist/src/cli/index.js"
+    "lat": "dist/src/cli/index.js"
   },
   "files": [
     "dist/src",

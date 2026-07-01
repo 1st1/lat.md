@@ -1,6 +1,7 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { openDb, ensureSchema, closeDb } from '../search/db.js';
 import { detectProvider } from '../search/provider.js';
+import { resolveSchema } from '../search/schema.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -9,6 +10,7 @@ import {
   type SectionMatch,
 } from '../lattice.js';
 import { formatResultList, formatNavHints } from '../format.js';
+import { getLlmProviderOptions } from '../config.js';
 
 export type SearchResult = {
   query: string;
@@ -31,11 +33,22 @@ async function withDb<T>(
     provider: ReturnType<typeof detectProvider>,
   ) => Promise<T>,
 ): Promise<T> {
-  const provider = detectProvider(key);
+  const provider = detectProvider(key, getLlmProviderOptions());
   const db = openDb(latDir);
 
   try {
-    await ensureSchema(db, provider.dimensions);
+    const { dimensions, configChanged } = await resolveSchema(
+      db,
+      provider,
+      key,
+    );
+    if (configChanged) {
+      // Embedding provider/model changed since the last run — the fixed-size
+      // vector column can't hold vectors of a different dimension, so drop
+      // and rebuild from scratch.
+      await db.execute('DROP TABLE IF EXISTS sections');
+    }
+    await ensureSchema(db, dimensions);
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
     const isEmpty = (countResult.rows[0].n as number) === 0;
@@ -146,11 +159,20 @@ export async function searchCommand(
   }
 
   if (!query) {
-    await runIndex(ctx.latDir, key, progress);
+    try {
+      await runIndex(ctx.latDir, key, progress);
+    } catch (err) {
+      return { output: (err as Error).message, isError: true };
+    }
     return { output: '' };
   }
 
-  const result = await runSearch(ctx.latDir, query, key, opts.limit, progress);
+  let result: SearchResult;
+  try {
+    result = await runSearch(ctx.latDir, query, key, opts.limit, progress);
+  } catch (err) {
+    return { output: (err as Error).message, isError: true };
+  }
 
   if (result.matches.length === 0) {
     return { output: 'No results found.' };
