@@ -80,7 +80,7 @@ describe('resolveSchema', () => {
 
   afterEach(async () => {
     await closeDb(db);
-    server.close();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
     try {
       rmSync(tmp, { recursive: true, force: true });
     } catch {
