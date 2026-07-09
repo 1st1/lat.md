@@ -6,6 +6,7 @@ import {
   detectProvider,
   type EmbeddingProvider,
 } from '../src/search/provider.js';
+import { planBatches } from '../src/search/embeddings.js';
 import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
@@ -33,6 +34,33 @@ describe('detectProvider', () => {
 
   it('rejects unknown key', () => {
     expect(() => detectProvider('xyz_abc123')).toThrow(/Unrecognized/);
+  });
+});
+
+// @lat: [[cli#Embeddings]]
+describe('planBatches', () => {
+  it('keeps a small corpus in a single batch', () => {
+    const batches = planBatches(['a', 'b', 'c']);
+    expect(batches).toEqual([['a', 'b', 'c']]);
+  });
+
+  it('splits when the estimated token budget is exceeded', () => {
+    // ~4 chars/token, 250k-token cap → ~1M chars per batch.
+    const big = 'x'.repeat(600_000); // ~150k tokens each
+    const batches = planBatches([big, big, big]);
+    expect(batches.map((b) => b.length)).toEqual([1, 1, 1]);
+  });
+
+  it('never emits an empty batch', () => {
+    expect(planBatches([])).toEqual([]);
+    expect(planBatches(['only']).every((b) => b.length > 0)).toBe(true);
+  });
+
+  it('preserves order and loses no inputs', () => {
+    const texts = Array.from({ length: 5000 }, (_, i) => `text-${i}`);
+    const batches = planBatches(texts);
+    expect(batches.length).toBeGreaterThan(1); // > 2048 count cap
+    expect(batches.flat()).toEqual(texts);
   });
 });
 

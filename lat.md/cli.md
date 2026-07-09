@@ -328,7 +328,9 @@ Implementation: [[src/search/provider.ts]], [[src/config.ts]]
 
 ### Embeddings
 
-Direct `fetch()` calls to the provider's OpenAI-compatible `/v1/embeddings` endpoint. No LangChain or other framework — keeps the dependency tree minimal. Batches up to 2048 texts per request.
+Direct `fetch()` calls to the provider's OpenAI-compatible `/v1/embeddings` endpoint. No LangChain or other framework — keeps the dependency tree minimal.
+
+[[src/search/embeddings.ts#planBatches]] splits inputs into requests bounded by both count (2048 texts) and estimated tokens (~250k, under the API's 300k-tokens-per-request cap), so a large corpus indexes without a `max_tokens_per_request` error.
 
 Implementation: [[src/search/embeddings.ts]]
 
