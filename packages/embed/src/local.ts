@@ -23,7 +23,9 @@ export async function createLocalEmbedder(
   const engine = new WasmEmbedder(weights, tokenizer, config, model.maxTokens);
 
   return {
-    name: model.id,
+    // `local:` prefix marks the backend (not baked into the model id) so callers
+    // can tell local vs remote from the name alone.
+    name: `local:${model.id}`,
     dimensions: engine.dimensions(),
     embed: async (texts) => {
       const out: number[][] = [];

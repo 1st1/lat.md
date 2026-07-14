@@ -183,17 +183,21 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
 
   // @lat: [[tests/mcp#lat_search works offline without a key]]
   it('lat_search works offline (local model) when no key is set', async () => {
-    // MCP server with every key source cleared → local MiniLM backend.
+    // Fresh fixture (the shared `tmp` was already indexed remotely by the replay
+    // group; a remote index with no key would correctly require a reindex).
+    const tmp2 = mkdtempSync(join(tmpdir(), 'lat-mcp-local-'));
+    cpSync(join(casesDir, 'rag'), tmp2, { recursive: true });
+
     const transport2 = new StdioClientTransport({
       command: 'node',
       args: [cliPath, 'mcp'],
-      cwd: tmp,
+      cwd: tmp2,
       env: {
         ...process.env,
         LAT_LLM_KEY: '',
         LAT_LLM_KEY_FILE: '',
         LAT_LLM_KEY_HELPER: '',
-        XDG_CONFIG_HOME: tmp,
+        XDG_CONFIG_HOME: tmp2,
       },
     });
     const client2 = new Client({ name: 'test2', version: '0.1' });
@@ -208,5 +212,6 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(text).toContain('Authentication');
 
     await client2.close();
+    rmSync(tmp2, { recursive: true, force: true });
   });
 });

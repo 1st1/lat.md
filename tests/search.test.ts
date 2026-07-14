@@ -4,7 +4,12 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { detectProvider, createEmbedder, type Embedder } from '@lat.md/embed';
 import minilm from '@lat.md/embed-minilm-fp16';
-import { openDb, ensureSchema, closeDb } from '../src/search/db.js';
+import {
+  openDb,
+  ensureMeta,
+  ensureSectionsSchema,
+  closeDb,
+} from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
@@ -52,7 +57,8 @@ describe('search (rag, local)', () => {
     embedder = await createEmbedder({ model: minilm });
     latDir = copyFixture();
     db = openDb(latDir);
-    await ensureSchema(db, embedder.name, embedder.dimensions);
+    await ensureMeta(db);
+    await ensureSectionsSchema(db, embedder.dimensions);
   });
 
   afterAll(async () => {
@@ -154,7 +160,8 @@ describe.skipIf(!canRunHosted)('search (rag, hosted replay)', () => {
 
     latDir = copyFixture();
     db = openDb(latDir);
-    await ensureSchema(db, embedder.name, embedder.dimensions);
+    await ensureMeta(db);
+    await ensureSectionsSchema(db, embedder.dimensions);
   });
 
   afterAll(async () => {

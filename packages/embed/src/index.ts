@@ -52,5 +52,5 @@ export async function createEmbedder(cfg: {
   throw new Error('createEmbedder requires either a `key` or a `model`.');
 }
 
-export { detectProvider } from './remote.js';
+export { detectProvider, EmbeddingAuthError } from './remote.js';
 export type { RemoteProvider } from './remote.js';

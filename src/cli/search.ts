@@ -1,6 +1,20 @@
 import type { CmdContext, CmdResult, Styler } from '../context.js';
-import { openDb, ensureSchema, closeDb } from '../search/db.js';
-import { getEmbedder, type Embedder } from '../search/embedder.js';
+import {
+  openDb,
+  ensureMeta,
+  getStoredModel,
+  setStoredModel,
+  ensureSectionsSchema,
+  dropSections,
+  closeDb,
+} from '../search/db.js';
+import {
+  embedderForIndex,
+  modelKey,
+  ReindexRequiredError,
+  EmbeddingAuthError,
+  type Embedder,
+} from '../search/embedder.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import {
@@ -24,14 +38,25 @@ export type IndexProgress = {
 
 async function withDb<T>(
   latDir: string,
-  embedder: Embedder,
   progress: IndexProgress | undefined,
-  fn: (db: Awaited<ReturnType<typeof openDb>>) => Promise<T>,
+  fn: (
+    db: Awaited<ReturnType<typeof openDb>>,
+    embedder: Embedder,
+  ) => Promise<T>,
+  forceReindex = false,
 ): Promise<T> {
   const db = openDb(latDir);
 
   try {
-    await ensureSchema(db, embedder.name, embedder.dimensions);
+    await ensureMeta(db);
+    const stored = await getStoredModel(db);
+    // The stored model is authoritative — no silent backend switch. Throws
+    // ReindexRequiredError if the environment can't serve the stored index.
+    const embedder = await embedderForIndex(stored);
+
+    if (forceReindex) await dropSections(db);
+    await ensureSectionsSchema(db, embedder.dimensions);
+    if (!stored || forceReindex) await setStoredModel(db, modelKey(embedder));
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
     const isEmpty = (countResult.rows[0].n as number) === 0;
@@ -40,7 +65,7 @@ async function withDb<T>(
     const stats = await indexSections(latDir, db, embedder);
     progress?.afterIndex?.(stats, isEmpty);
 
-    return await fn(db);
+    return await fn(db, embedder);
   } finally {
     await closeDb(db);
   }
@@ -53,27 +78,32 @@ async function withDb<T>(
 export async function runSearch(
   latDir: string,
   query: string,
-  embedder: Embedder,
   limit: number,
   progress?: IndexProgress,
+  forceReindex = false,
 ): Promise<SearchResult> {
-  return withDb(latDir, embedder, progress, async (db) => {
-    const results = await searchSections(db, query, embedder, limit);
-    if (results.length === 0) {
-      return { query, matches: [] };
-    }
+  return withDb(
+    latDir,
+    progress,
+    async (db, embedder) => {
+      const results = await searchSections(db, query, embedder, limit);
+      if (results.length === 0) {
+        return { query, matches: [] };
+      }
 
-    const allSections = await loadAllSections(latDir);
-    const flat = flattenSections(allSections);
-    const byId = new Map(flat.map((s) => [s.id, s]));
+      const allSections = await loadAllSections(latDir);
+      const flat = flattenSections(allSections);
+      const byId = new Map(flat.map((s) => [s.id, s]));
 
-    const matches = results
-      .map((r) => byId.get(r.id))
-      .filter((s): s is NonNullable<typeof s> => !!s)
-      .map((s) => ({ section: s, reason: 'semantic match' }));
+      const matches = results
+        .map((r) => byId.get(r.id))
+        .filter((s): s is NonNullable<typeof s> => !!s)
+        .map((s) => ({ section: s, reason: 'semantic match' }));
 
-    return { query, matches };
-  });
+      return { query, matches };
+    },
+    forceReindex,
+  );
 }
 
 /**
@@ -81,10 +111,10 @@ export async function runSearch(
  */
 export async function runIndex(
   latDir: string,
-  embedder: Embedder,
   progress?: IndexProgress,
+  forceReindex = false,
 ): Promise<void> {
-  await withDb(latDir, embedder, progress, async () => {});
+  await withDb(latDir, progress, async () => {}, forceReindex);
 }
 
 export function cliProgress(reindex: boolean, s: Styler): IndexProgress {
@@ -119,36 +149,52 @@ export async function searchCommand(
   opts: { limit: number; reindex?: boolean },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
-  // No key required: with no key we embed locally (offline MiniLM). A key
-  // switches to the hosted backend. getEmbedder may throw if a key source is
-  // misconfigured (e.g. an empty LAT_LLM_KEY_FILE).
-  let embedder: Embedder;
+  const s = ctx.styler;
+  const force = !!opts.reindex;
   try {
-    embedder = await getEmbedder();
+    if (!query) {
+      await runIndex(ctx.latDir, progress, force);
+      return { output: '' };
+    }
+
+    const result = await runSearch(
+      ctx.latDir,
+      query,
+      opts.limit,
+      progress,
+      force,
+    );
+
+    if (result.matches.length === 0) {
+      return { output: 'No results found.' };
+    }
+
+    return {
+      output:
+        formatResultList(
+          ctx,
+          `Search results for "${query}":`,
+          result.matches,
+        ) + formatNavHints(ctx),
+    };
   } catch (err) {
+    // The stored index can't be served in the current environment — never
+    // switch backends silently; direct the user to `lat reindex`.
+    if (err instanceof ReindexRequiredError) {
+      return { output: s.red(err.message), isError: true };
+    }
+    if (err instanceof EmbeddingAuthError) {
+      return {
+        output:
+          s.red(`LAT_LLM_KEY was rejected by the provider (${err.status}).`) +
+          ' Run ' +
+          s.cyan('lat reindex') +
+          ' to fix the key or switch to the local model.',
+        isError: true,
+      };
+    }
+    // Config/key resolution errors (e.g. empty LAT_LLM_KEY_FILE) or other
+    // failures — surface the message rather than crashing.
     return { output: (err as Error).message, isError: true };
   }
-
-  if (!query) {
-    await runIndex(ctx.latDir, embedder, progress);
-    return { output: '' };
-  }
-
-  const result = await runSearch(
-    ctx.latDir,
-    query,
-    embedder,
-    opts.limit,
-    progress,
-  );
-
-  if (result.matches.length === 0) {
-    return { output: 'No results found.' };
-  }
-
-  return {
-    output:
-      formatResultList(ctx, `Search results for "${query}":`, result.matches) +
-      formatNavHints(ctx),
-  };
 }

@@ -198,6 +198,17 @@ program
   );
 
 program
+  .command('reindex')
+  .description('Rebuild the embedding index; switch backends if needed')
+  .option('--local', 'use the local offline model (ignore LAT_LLM_KEY)')
+  .option('--yes', 'assume yes to prompts (non-interactive)')
+  .action(async (opts: { local?: boolean; yes?: boolean }) => {
+    const ctx = resolveContext(program.opts());
+    const { reindexCommand } = await import('./reindex.js');
+    handleResult(await reindexCommand(ctx, opts));
+  });
+
+program
   .command('gen')
   .description(
     'Generate a file to stdout (agents.md, claude.md, cursor-rules.md)',

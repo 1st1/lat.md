@@ -5,7 +5,6 @@ import { plainStyler, type CmdContext } from '../context.js';
 import { expandPrompt } from './expand.js';
 import { runSearch } from './search.js';
 import { getSection, formatSectionOutput } from './section.js';
-import { getEmbedder } from '../search/embedder.js';
 import { checkMd, checkCodeRefs, checkIndex, checkSections } from './check.js';
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
 
@@ -62,14 +61,14 @@ async function searchAndExpand(
   ctx: CmdContext,
   userPrompt: string,
 ): Promise<string | null> {
-  let embedder;
+  let result;
   try {
-    embedder = await getEmbedder();
+    result = await runSearch(ctx.latDir, userPrompt, 5);
   } catch {
+    // No usable backend (e.g. reindex required, key rejected) — skip semantic
+    // enrichment silently rather than blocking the user's prompt.
     return null;
   }
-
-  const result = await runSearch(ctx.latDir, userPrompt, embedder, 5);
   if (result.matches.length === 0) return null;
 
   const parts: string[] = [
