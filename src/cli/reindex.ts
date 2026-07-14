@@ -1,5 +1,5 @@
 import readline from 'node:readline/promises';
-import type { CmdContext, CmdResult, Styler } from '../context.js';
+import type { CmdContext, CmdResult } from '../context.js';
 import {
   openDb,
   ensureMeta,
@@ -19,20 +19,6 @@ import { getLlmKey } from '../config.js';
 import { indexSections } from '../search/index.js';
 
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-
-/** Animated stderr spinner for interactive terminals. Returns a stop function. */
-function startSpinner(s: Styler, label: string): () => void {
-  let i = 0;
-  const render = () =>
-    process.stderr.write(`\r${SPINNER[i++ % SPINNER.length]} ${s.dim(label)}`);
-  render();
-  const timer = setInterval(render, 80);
-  timer.unref?.(); // never keep the process alive
-  return () => {
-    clearInterval(timer);
-    process.stderr.write('\r\x1b[K'); // return to col 0 and clear the line
-  };
-}
 
 async function confirmUseLocal(
   ctx: CmdContext,
@@ -115,17 +101,30 @@ export async function reindexCommand(
     await ensureSectionsSchema(db, embedder.dimensions);
     await setStoredModel(db, modelKey(embedder));
 
-    const label = `Reindexing with ${embedder.name}…`;
-    // Interactive terminals get an animated spinner; elsewhere (agents, CI, MCP)
-    // a single plain line keeps logs clean.
-    const stopSpinner = interactive ? startSpinner(s, label) : null;
-    if (!interactive) process.stderr.write(s.dim(label + '\n'));
+    const label = `Reindexing with ${embedder.name}`;
+    // Interactive terminals get a live progress line driven per embed-chunk
+    // (frame + done/total). Elsewhere (agents, CI, MCP) a single plain line
+    // keeps logs clean. Progress is event-driven, not timer-based, so it stays
+    // accurate even though the local WASM forward pass is synchronous.
+    let frame = 0;
+    const onProgress = interactive
+      ? (done: number, total: number) => {
+          const f = SPINNER[frame++ % SPINNER.length];
+          process.stderr.write(
+            `\r\x1b[K${f} ${s.dim(`${label} — ${done}/${total}`)}`,
+          );
+        }
+      : undefined;
+
+    if (interactive)
+      process.stderr.write(`${SPINNER[0]} ${s.dim(label + '…')}`);
+    else process.stderr.write(s.dim(label + '…\n'));
 
     let stats;
     try {
-      stats = await indexSections(ctx.latDir, db, embedder);
+      stats = await indexSections(ctx.latDir, db, embedder, onProgress);
     } finally {
-      stopSpinner?.();
+      if (interactive) process.stderr.write('\r\x1b[K'); // clear the progress line
     }
 
     return {

@@ -10,8 +10,9 @@ import { loadWasmEngine } from './wasm-loader.js';
 // Cap the per-call batch so the padded [batch, seqLen, hidden] activations stay
 // within WASM's linear memory. Embedding hundreds of sections at once otherwise
 // overflows and traps (RuntimeError: unreachable). Throughput is unaffected —
-// the engine has no cross-item batching speedup anyway.
-const CHUNK = 32;
+// the engine has no cross-item batching speedup anyway. Kept modest so progress
+// updates (and event-loop yields) land frequently.
+const CHUNK = 16;
 
 export async function createLocalEmbedder(
   model: ModelManifest,
@@ -27,13 +28,13 @@ export async function createLocalEmbedder(
     // can tell local vs remote from the name alone.
     name: `local:${model.id}`,
     dimensions: engine.dimensions(),
-    embed: async (texts) => {
+    embed: async (texts, onProgress) => {
       const out: number[][] = [];
       for (let i = 0; i < texts.length; i += CHUNK) {
         out.push(...engine.embed(texts.slice(i, i + CHUNK)));
+        onProgress?.(Math.min(i + CHUNK, texts.length), texts.length);
         // The WASM forward pass is synchronous and blocks the event loop; yield
-        // between chunks so a caller's progress UI (e.g. the reindex spinner)
-        // can repaint and timers/signals fire.
+        // between chunks so the progress line repaints and signals (Ctrl-C) fire.
         if (i + CHUNK < texts.length) {
           await new Promise((resolve) => setImmediate(resolve));
         }
