@@ -181,25 +181,31 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(text).toContain('Performance');
   });
 
-  // @lat: [[tests/mcp#lat_search returns no results message]]
-  it('lat_search returns no results message when key is missing', async () => {
-    // Spin up a separate MCP server without LAT_LLM_KEY and without XDG config
+  // @lat: [[tests/mcp#lat_search works offline without a key]]
+  it('lat_search works offline (local model) when no key is set', async () => {
+    // MCP server with every key source cleared → local MiniLM backend.
     const transport2 = new StdioClientTransport({
       command: 'node',
       args: [cliPath, 'mcp'],
       cwd: tmp,
-      env: { ...process.env, LAT_LLM_KEY: '', XDG_CONFIG_HOME: tmp },
+      env: {
+        ...process.env,
+        LAT_LLM_KEY: '',
+        LAT_LLM_KEY_FILE: '',
+        LAT_LLM_KEY_HELPER: '',
+        XDG_CONFIG_HOME: tmp,
+      },
     });
     const client2 = new Client({ name: 'test2', version: '0.1' });
     await client2.connect(transport2);
 
     const result = await client2.callTool({
       name: 'lat_search',
-      arguments: { query: 'anything' },
+      arguments: { query: 'how do we handle user login and security?' },
     });
     const text = (result.content as { type: string; text: string }[])[0].text;
-    expect(text).toContain('No API key configured');
-    expect(result.isError).toBe(true);
+    expect(result.isError).toBeFalsy();
+    expect(text).toContain('Authentication');
 
     await client2.close();
   });

@@ -8,19 +8,22 @@ Tests in `tests/search.test.ts`.
 
 ## Provider Detection
 
-Unit tests (always run). Verify `detectProvider` correctly identifies OpenAI (`sk-`), Vercel (`vck_`), rejects Anthropic (`sk-ant-`) with a helpful message, and rejects unknown prefixes.
+Unit tests (always run). Verify `detectProvider` (now exported from
+[[packages/embed/src/remote.ts#detectProvider]] in `@lat.md/embed`) correctly identifies OpenAI
+(`sk-`), Vercel (`vck_`), rejects Anthropic (`sk-ant-`) with a helpful message, and rejects unknown
+prefixes.
 
-## RAG Replay Tests
+## RAG Tests
 
-Functional tests that exercise the full RAG pipeline using a replay server instead of a real embedding API.
+Functional tests that exercise the full RAG pipeline using the **local MiniLM engine**, which
+produces deterministic vectors — so they run the real WASM embedder directly, with no API key, no
+network, and no replay recording.
 
-The test covers indexing, hashing, vector insert, and KNN search via `tests/rag-replay-server.ts`. Test fixture lives in `tests/cases/rag/lat.md/` with pre-recorded vectors in `tests/cases/rag/replay-data/`.
-
-The replay server has two modes:
-- **Replay** (default `pnpm test`): serves cached vectors from binary replay data. Matches requests by SHA-256 of input text.
-- **Capture** (`pnpm cook-test-rag`): proxies to real API via `LAT_LLM_KEY`, records all text→vector mappings, flushes binary data to `replay-data/` on teardown. Re-run this after changing how sections are chunked or which texts are embedded.
-
-The test sets `LAT_LLM_KEY` to `REPLAY_LAT_LLM_KEY::<server-url>`, which `detectProvider` routes to the local replay server. This way the entire codebase runs unmodified — same `fetch()` calls, same provider logic.
+The test covers indexing, hashing, vector insert, and KNN search. Fixture lives in
+`tests/cases/rag/lat.md/` (9 sections across 2 files). A supplementary `search (rag, hosted replay)`
+group exercises the hosted `fetch` backend against a local OpenAI-compatible replay server
+(`tests/rag-replay-server.ts`); it runs only when `tests/cases/rag/replay-data/` is present and is
+re-cooked with `pnpm cook-test-rag` if hosted chunking changes.
 
 ### Indexes all sections
 
@@ -28,11 +31,18 @@ Index the RAG fixture (9 sections across 2 files), verify counts.
 
 ### Finds auth section for login query
 
-Search for "how do we handle user login and security?" and verify the Authentication section ranks first.
+Search for "how do we handle user login and security?" and verify the Authentication section ranks
+first.
 
 ### Finds performance section for latency query
 
-Search for "what tools do we use to measure response times?" and verify the Performance Tests section ranks first.
+Search for "what tools do we use to measure response times?" and verify the Performance Tests
+section ranks first.
+
+### Deterministic embeddings
+
+Embedding the same text twice yields byte-identical vectors — the property that lets the local RAG
+tests run the real engine without recording fixtures.
 
 ### Incremental index skips unchanged sections
 

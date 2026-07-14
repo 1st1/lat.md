@@ -300,43 +300,48 @@ Implementation: [[src/mcp/server.ts]]
 
 ## search
 
-Semantic search across `lat.md` sections using vector embeddings.
+Semantic search across `lat.md` sections using vector embeddings. Works **offline by default** — no
+API key required.
 
 Usage: `lat search [query] [--limit=5] [--reindex]`
 
 Query is optional — `lat search --reindex` re-indexes without searching. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
 
-Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing and embedding internals in `src/search/`.
+Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
 
-### Provider Detection
+### Backend selection
 
-Requires an LLM key resolved by [[src/config.ts#getLlmKey]] in priority order:
+lat.md contains no embedding-generation logic — [[src/search/embedder.ts#getEmbedder]] resolves an
+`Embedder` and hands it to the pipeline. An LLM key selects the hosted backend; with no key, the
+bundled local MiniLM model is used (offline, zero-config).
 
-1. `LAT_LLM_KEY` env var — direct value
-2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key (read and trimmed)
-3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key to stdout (10 s timeout)
-4. `llm_key` from config file (see [[cli#Configuration File]])
+Key resolution is unchanged ([[src/config.ts#getLlmKey]], priority: `LAT_LLM_KEY` →
+`LAT_LLM_KEY_FILE` → `LAT_LLM_KEY_HELPER` → `llm_key` config).
 
-Provider is auto-detected from the resolved key prefix:
+The key prefix picks the hosted provider (detected in `@lat.md/embed`):
 
-- `sk-...` — OpenAI (uses `text-embedding-3-small`, 1536 dims)
-- `vck_...` — Vercel AI Gateway (uses `openai/text-embedding-3-small`, 1536 dims)
+- (no key) — **local** `@lat.md/embed-minilm-fp16` (all-MiniLM-L6-v2, 384 dims, offline)
+- `sk-...` — OpenAI (`text-embedding-3-small`, 1536 dims)
+- `vck_...` — Vercel AI Gateway (`openai/text-embedding-3-small`, 1536 dims)
 - `sk-ant-...` — Anthropic (not supported, errors with guidance)
-- `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for offline testing
+- `REPLAY_LAT_LLM_KEY::<url>` — test-only replay server for the hosted path
 
-Implementation: [[src/search/provider.ts]], [[src/config.ts]]
+Implementation: [[src/search/embedder.ts]], [[src/config.ts]]
 
 ### Embeddings
 
-Direct `fetch()` calls to the provider's OpenAI-compatible `/v1/embeddings` endpoint. No LangChain or other framework — keeps the dependency tree minimal. Batches up to 2048 texts per request.
+All embedding generation is isolated in the `@lat.md/embed` package, exposed through one
+[[packages/embed/src/index.ts#createEmbedder]] entry point returning an `Embedder`
+(`{ name, dimensions, embed() }`). Two backends:
 
-Implementation: [[src/search/embeddings.ts]]
+- **local** — a candle (Rust) BERT engine compiled to WebAssembly ([[packages/embed/src/local.ts#createLocalEmbedder]]), driven by a `ModelManifest` from a weights package (`@lat.md/embed-minilm-fp16`, fp16 weights up-cast to fp32 at load). Pure WASM, no native binaries; masked-mean pooling + L2 normalize, matching `sentence-transformers`.
+- **remote** — direct `fetch()` to an OpenAI-compatible `/v1/embeddings` endpoint, batching up to 2048 texts per request ([[packages/embed/src/remote.ts#detectProvider]]).
 
 ### Storage
 
 Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed.
+Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the active embedding model + dimensions; when they change (e.g. switching between local 384-dim and hosted 1536-dim), [[src/search/db.ts#ensureSchema]] drops and rebuilds `sections` so the fixed-width vector column always matches.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 
@@ -350,7 +355,7 @@ Content freshness is tracked via SHA-256 hashes. On each run:
 
 1. Parse all sections, compute hashes
 2. Compare against stored hashes in the DB
-3. Only re-embed new or changed sections (saves API cost)
+3. Only re-embed new or changed sections (saves API cost / local compute)
 4. Delete DB rows for sections that no longer exist
 
 On first run, automatically indexes all sections. The `--reindex` flag forces a full rebuild.
@@ -359,7 +364,7 @@ Implementation: [[src/search/index.ts]]
 
 ### Vector Search
 
-Embeds the user's query via the same provider, then runs a `vector_top_k()` KNN query joined back to the sections table.
+Embeds the user's query via the active embedder, then runs a `vector_top_k()` KNN query joined back to the sections table.
 
 Implementation: [[src/search/search.ts]]
 

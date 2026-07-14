@@ -29,6 +29,9 @@
   ],
   "scripts": {
     "build": "tsc",
+    "build:wasm": "pnpm --filter @lat.md/embed build:wasm",
+    "build:weights": "pnpm --filter @lat.md/embed-minilm-fp16 build:weights",
+    "build:packages": "pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -48,6 +51,8 @@
   },
   "dependencies": {
     "@folder/xdg": "^4.0.1",
+    "@lat.md/embed": "workspace:*",
+    "@lat.md/embed-minilm-fp16": "workspace:*",
     "@libsql/client": "^0.17.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@repomix/tree-sitter-wasms": "^0.1.16",

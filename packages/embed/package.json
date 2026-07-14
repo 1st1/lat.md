@@ -1,0 +1,39 @@
+{
+  "name": "@lat.md/embed",
+  "version": "0.1.0",
+  "description": "Embedding generation for lat.md — local candle/WASM MiniLM engine and OpenAI-compatible remote backends behind one interface",
+  "type": "module",
+  "license": "MIT",
+  "author": "Yury Selivanov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1st1/lat.md.git",
+    "directory": "packages/embed"
+  },
+  "keywords": [
+    "embeddings",
+    "candle",
+    "wasm",
+    "minilm",
+    "lat.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/build-wasm.mjs && tsc && node scripts/copy-wasm.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

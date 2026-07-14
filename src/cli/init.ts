@@ -1096,33 +1096,33 @@ async function setupLlmKey(
       ') that lets agents find',
   );
   console.log(
-    '  relevant documentation by meaning, not just keywords. This requires an',
+    '  relevant documentation by meaning, not just keywords. It works out of the',
   );
   console.log(
-    '  embedding API key (OpenAI or Vercel AI Gateway). Without it, agents can still',
+    '  box using a bundled local model — no key, fully offline. Adding an embedding',
   );
   console.log(
-    '  use ' +
-      styleText('cyan', 'lat locate') +
-      ' for exact lookups, but will miss semantic matches.',
+    '  API key (OpenAI or Vercel AI Gateway) switches to higher-quality hosted',
   );
+  console.log('  embeddings.');
   console.log('');
 
   // Interactive prompt
   if (!rl) {
     console.log(
-      styleText('yellow', '  No LLM key found.') +
-        ' Set LAT_LLM_KEY env var or run ' +
+      styleText('dim', '  Using local offline embeddings.') +
+        ' Set ' +
+        styleText('cyan', 'LAT_LLM_KEY') +
+        ' or run ' +
         styleText('cyan', 'lat init') +
-        ' interactively.',
+        ' interactively for hosted quality.',
     );
     return;
   }
 
   console.log(
-    '  You can provide a key now, or skip and set ' +
-      styleText('cyan', 'LAT_LLM_KEY') +
-      ' env var later.',
+    '  You can provide a key now for hosted quality, or skip to use the local' +
+      ' model.',
   );
   console.log(
     '  Supported: OpenAI (' +
@@ -1137,7 +1137,7 @@ async function setupLlmKey(
 
   if (!key) {
     console.log(
-      styleText('dim', '  Skipped.') +
+      styleText('dim', '  Skipped — using local offline embeddings.') +
         ' You can set ' +
         styleText('cyan', 'LAT_LLM_KEY') +
         ' later or re-run ' +
