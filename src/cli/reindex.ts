@@ -15,7 +15,7 @@ import {
   EmbeddingAuthError,
   type Embedder,
 } from '../search/embedder.js';
-import { getLlmKey } from '../config.js';
+import { getLlmKey, setRepoEmbedding } from '../config.js';
 import { indexSections } from '../search/index.js';
 
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -126,6 +126,14 @@ export async function reindexCommand(
     } finally {
       if (interactive) process.stderr.write('\r\x1b[K'); // clear the progress line
     }
+
+    // Durably remember the choice so it survives a `.cache` wipe / fresh clone:
+    // local pins local (ignore the key thereafter); remote clears the pin so the
+    // env decides again.
+    setRepoEmbedding(
+      ctx.latDir,
+      embedder.name.startsWith('local:') ? 'local' : null,
+    );
 
     return {
       output:

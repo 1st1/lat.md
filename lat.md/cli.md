@@ -316,8 +316,11 @@ an `Embedder` and hands it to the pipeline. The backend is **governed by the ind
 from the environment on each search: `meta.embedding_model` (see [[cli#search#Storage]]) is
 authoritative.
 
-- **Fresh index** (no `meta` yet) — decide from the environment: a key → hosted, otherwise the
-  bundled local MiniLM model. The choice is then recorded.
+- **Fresh index** (no `meta` yet — first run, or the regenerable `.cache` was wiped) — a durable
+  per-repo preference wins first: if the repo was switched to local (recorded in the config's `repos`
+  map by [[cli#reindex]], keyed by lat.md dir), rebuild local and ignore any key. Otherwise decide
+  from the environment (key → hosted, else local). The resulting model is recorded in `meta` only
+  after the index build succeeds, so a failed build never pins a broken backend.
 - **`local:`-prefixed model** — use the local backend; `LAT_LLM_KEY` is ignored entirely.
 - **Remote model** — the key is required and is used to embed the query on **every** search. If it
   is absent, rejected (401/403 → `EmbeddingAuthError`), or resolves to a different model, `lat search`
@@ -388,8 +391,9 @@ from the environment, drops the old vectors, and rebuilds with the chosen model.
 
 If a key is set but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
 never wipes a working index), then **asks the user to confirm** the switch to the local model. On
-yes, it rebuilds local and records `local:…` in `meta`, so subsequent `lat search` runs ignore the
-key. Flags: `--local` forces the offline model; `--yes` skips the confirmation (for CI /
+yes, it rebuilds local, records `local:…` in `meta`, and sets the **durable** per-repo `local`
+preference in the config — so subsequent `lat search` runs ignore the key, and the choice survives a
+`.cache` wipe or fresh clone. (Choosing remote clears that preference.) Flags: `--local` forces the offline model; `--yes` skips the confirmation (for CI /
 non-interactive use). When the shell isn't a TTY and `--yes` isn't given, it errors rather than
 switching without consent.
 

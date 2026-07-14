@@ -5,8 +5,10 @@ import {
   getStoredModel,
   setStoredModel,
   ensureSectionsSchema,
+  dropSections,
   closeDb,
 } from '../search/db.js';
+import { getLlmKey } from '../config.js';
 import {
   embedderForIndex,
   modelKey,
@@ -51,17 +53,42 @@ async function withDb<T>(
     // The stored model is authoritative — no silent backend switch. Throws
     // ReindexRequiredError if the environment can't serve the stored index.
     // Rebuilding / switching backends is `lat reindex`, never `lat search`.
-    const embedder = await embedderForIndex(stored);
+    const embedder = await embedderForIndex(stored, latDir);
 
     await ensureSectionsSchema(db, embedder.dimensions);
-    if (!stored) await setStoredModel(db, modelKey(embedder));
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
     const isEmpty = (countResult.rows[0].n as number) === 0;
 
+    // If the repo is pinned to local but a key is set, say so — otherwise it
+    // looks like the key is being silently ignored.
+    if (isEmpty && embedder.name.startsWith('local:') && process.stderr.isTTY) {
+      let hasKey = false;
+      try {
+        hasKey = !!getLlmKey();
+      } catch {
+        /* key source misconfigured — irrelevant, we're local */
+      }
+      if (hasKey) {
+        process.stderr.write(
+          'This repo is configured for local embeddings; ignoring LAT_LLM_KEY.\n',
+        );
+      }
+    }
+
     progress?.beforeIndex?.(isEmpty);
-    const stats = await indexSections(latDir, db, embedder);
-    progress?.afterIndex?.(stats, isEmpty);
+    try {
+      const stats = await indexSections(latDir, db, embedder);
+      // Pin the backend only after a successful index, so a failed build never
+      // leaves the repo wrongly pinned to an empty index.
+      if (!stored) await setStoredModel(db, modelKey(embedder));
+      progress?.afterIndex?.(stats, isEmpty);
+    } catch (err) {
+      // Failed fresh build → drop the half-created table so the next run is
+      // truly fresh (re-resolves the backend cleanly) rather than stuck.
+      if (!stored) await dropSections(db);
+      throw err;
+    }
 
     return await fn(db, embedder);
   } finally {
