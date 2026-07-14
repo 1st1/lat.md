@@ -14,11 +14,18 @@ import { createLocalEmbedder } from './local.js';
 
 /** A configured embedder. `embed` returns one vector per input text. */
 export interface Embedder {
-  /** Stable identifier: 'minilm-l6-v2' | 'openai' | 'vercel' | 'replay'. */
+  /** Stable identifier: 'local:minilm-l6-v2' | 'openai' | 'vercel' | 'replay'. */
   readonly name: string;
   /** Output dimensionality (384 local MiniLM, 1536 hosted OpenAI). */
   readonly dimensions: number;
-  embed(texts: string[]): Promise<number[][]>;
+  /**
+   * Embed texts. `onProgress(done, total)` fires as internal batches complete —
+   * useful for a progress indicator on the (synchronous, chunked) local backend.
+   */
+  embed(
+    texts: string[],
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<number[][]>;
 }
 
 /** Contract a model-weights package (e.g. `@lat.md/embed-minilm-fp16`) exports. */

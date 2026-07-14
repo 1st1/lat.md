@@ -75,6 +75,7 @@ async function embedViaFetch(
   texts: string[],
   provider: RemoteProvider,
   key: string,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<number[][]> {
   const results: number[][] = [];
   for (let i = 0; i < texts.length; i += MAX_BATCH) {
@@ -98,6 +99,7 @@ async function embedViaFetch(
     };
     const sorted = json.data.sort((a, b) => a.index - b.index);
     for (const item of sorted) results.push(item.embedding);
+    onProgress?.(Math.min(i + MAX_BATCH, texts.length), texts.length);
   }
   return results;
 }
@@ -107,7 +109,9 @@ export function createRemoteEmbedder(key: string): Embedder {
   return {
     name: provider.name,
     dimensions: provider.dimensions,
-    embed: (texts) =>
-      texts.length ? embedViaFetch(texts, provider, key) : Promise.resolve([]),
+    embed: (texts, onProgress) =>
+      texts.length
+        ? embedViaFetch(texts, provider, key, onProgress)
+        : Promise.resolve([]),
   };
 }
