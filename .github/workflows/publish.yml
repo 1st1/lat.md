@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+# Publishes any of the three packages whose version was bumped, in dependency
+# order. Uses `pnpm publish` (not `npm publish`) so `workspace:*` deps in lat.md
+# are rewritten to the real published versions.
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -12,61 +15,53 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Check for version change
-        id: version
-        run: |
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          OLD_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).version")
-          if [ "$NEW_VERSION" != "$OLD_VERSION" ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-            echo "Version changed: $OLD_VERSION -> $NEW_VERSION"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Version unchanged ($NEW_VERSION), skipping publish"
-          fi
-
       - uses: pnpm/action-setup@v4
-        if: steps.version.outputs.changed == 'true'
-
       - uses: actions/setup-node@v4
-        if: steps.version.outputs.changed == 'true'
         with:
           node-version: '22'
           cache: pnpm
+      - run: npm install -g npm@latest
 
-      - name: Upgrade npm for trusted publishing
-        if: steps.version.outputs.changed == 'true'
-        run: npm install -g npm@latest
+      # Rust toolchain for the WASM engine build.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-bindgen-cli (matches Cargo.lock)
+        run: cargo install wasm-bindgen-cli --version 0.2.126 --locked
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y binaryen ripgrep
 
-      - name: Install ripgrep
-        if: steps.version.outputs.changed == 'true'
-        run: sudo apt-get install -y ripgrep
+      - run: pnpm install --frozen-lockfile
 
-      - name: Install dependencies
-        if: steps.version.outputs.changed == 'true'
-        run: pnpm install --frozen-lockfile
+      # Each package's `build` runs its full chain (WASM engine / fp16 weights + tsc).
+      - run: pnpm build:packages
+      - run: pnpm build
+      - run: pnpm vitest run --reporter=verbose
 
-      - name: Build
-        if: steps.version.outputs.changed == 'true'
-        run: pnpm build
+      # Publish each package whose local version is not yet on npm, in order.
+      - name: Publish changed packages
+        run: |
+          publish_if_new() {
+            local dir="$1"
+            local name; name=$(node -p "require('./$dir/package.json').name")
+            local ver; ver=$(node -p "require('./$dir/package.json').version")
+            local pub; pub=$(npm view "$name@$ver" version 2>/dev/null || true)
+            if [ "$pub" = "$ver" ]; then
+              echo "$name@$ver already published, skipping"
+            else
+              echo "Publishing $name@$ver"
+              (cd "$dir" && pnpm publish --provenance --access public --no-git-checks)
+            fi
+          }
+          publish_if_new packages/embed-minilm-fp16
+          publish_if_new packages/embed
+          publish_if_new .
 
-      - name: Test
-        if: steps.version.outputs.changed == 'true'
-        run: pnpm vitest run --reporter=verbose
-
-      - name: Publish to npm
-        if: steps.version.outputs.changed == 'true'
-        run: npm publish --provenance --access public
-
-      - name: Create GitHub Release
-        if: steps.version.outputs.changed == 'true'
+      - name: Create GitHub Release for lat.md
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            --title "v${{ steps.version.outputs.version }}" \
-            --generate-notes
+          VER=$(node -p "require('./package.json').version")
+          if ! gh release view "v$VER" >/dev/null 2>&1; then
+            gh release create "v$VER" --title "v$VER" --generate-notes
+          fi

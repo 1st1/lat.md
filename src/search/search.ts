@@ -1,6 +1,5 @@
 import type { Client } from '@libsql/client';
-import { embed } from './embeddings.js';
-import type { EmbeddingProvider } from './provider.js';
+import type { Embedder } from './embedder.js';
 
 export type SearchResult = {
   id: string;
@@ -12,11 +11,10 @@ export type SearchResult = {
 export async function searchSections(
   db: Client,
   query: string,
-  provider: EmbeddingProvider,
-  key: string,
+  embedder: Embedder,
   limit = 5,
 ): Promise<SearchResult[]> {
-  const [queryVec] = await embed([query], provider, key);
+  const [queryVec] = await embedder.embed([query]);
   const vecJson = JSON.stringify(queryVec);
 
   const rows = await db.execute({

@@ -11,6 +11,12 @@ importers:
       '@folder/xdg':
         specifier: ^4.0.1
         version: 4.0.1
+      '@lat.md/embed':
+        specifier: workspace:*
+        version: link:packages/embed
+      '@lat.md/embed-minilm-fp16':
+        specifier: workspace:*
+        version: link:packages/embed-minilm-fp16
       '@libsql/client':
         specifier: ^0.17.0
         version: 0.17.0
@@ -75,6 +81,14 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/debug@4.1.12)(@types/node@25.3.0)(tsx@4.21.0)(yaml@2.8.2)
+
+  packages/embed: {}
+
+  packages/embed-minilm-fp16:
+    devDependencies:
+      '@lat.md/embed':
+        specifier: workspace:*
+        version: link:../embed
 
 packages:
 

@@ -16,6 +16,23 @@ jobs:
         with:
           node-version: '22'
           cache: pnpm
+
+      # Rust toolchain for the @lat.md/embed candle → WASM engine.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/embed/crate
+      - name: Install wasm-bindgen-cli (matches Cargo.lock)
+        run: cargo install wasm-bindgen-cli --version 0.2.126 --locked
+      - name: Install wasm-opt (binaryen)
+        run: sudo apt-get update && sudo apt-get install -y binaryen
+
       - run: pnpm install --frozen-lockfile
+
+      # Each package's `build` runs its full chain (WASM engine / fp16 weights + tsc).
+      - run: pnpm build:packages
+
       - run: pnpm build
       - run: pnpm vitest run --reporter=verbose

@@ -541,23 +541,6 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
 
   lines.push(s.green('All checks passed'));
 
-  const { getLlmKey } = await import('../config.js');
-  let hasKey = false;
-  try {
-    hasKey = !!getLlmKey();
-  } catch {
-    // key resolution failed (e.g. empty file) — treat as missing
-  }
-  if (!hasKey) {
-    lines.push(
-      s.yellow('Warning:') +
-        ' No LLM key found — semantic search (lat search) will not work.' +
-        ' Provide a key via LAT_LLM_KEY, LAT_LLM_KEY_FILE, LAT_LLM_KEY_HELPER, or run ' +
-        s.cyan('lat init') +
-        ' to configure.',
-    );
-  }
-
   // Suggest ripgrep if check was slow (>1s) and rg is not available
   if (elapsed > 1000) {
     const { hasRipgrep } = await import('../code-refs.js');

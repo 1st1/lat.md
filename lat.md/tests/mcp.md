@@ -40,5 +40,5 @@ Semantic search via `lat_search` for a login/security query returns results cont
 ## lat_search finds performance section
 Semantic search for a latency/response-times query returns results containing the Performance section.
 
-## lat_search returns no results message
-When `LAT_LLM_KEY` is not set, `lat_search` returns an error with `isError: true` explaining the missing key.
+## lat_search works offline without a key
+When no key source is set, `lat_search` falls back to the bundled local MiniLM model and still returns results (no error) — verified by finding the Authentication section for a login/security query.
