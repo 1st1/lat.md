@@ -1,5 +1,5 @@
 import readline from 'node:readline/promises';
-import type { CmdContext, CmdResult } from '../context.js';
+import type { CmdContext, CmdResult, Styler } from '../context.js';
 import {
   openDb,
   ensureMeta,
@@ -17,6 +17,22 @@ import {
 } from '../search/embedder.js';
 import { getLlmKey } from '../config.js';
 import { indexSections } from '../search/index.js';
+
+const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+/** Animated stderr spinner for interactive terminals. Returns a stop function. */
+function startSpinner(s: Styler, label: string): () => void {
+  let i = 0;
+  const render = () =>
+    process.stderr.write(`\r${SPINNER[i++ % SPINNER.length]} ${s.dim(label)}`);
+  render();
+  const timer = setInterval(render, 80);
+  timer.unref?.(); // never keep the process alive
+  return () => {
+    clearInterval(timer);
+    process.stderr.write('\r\x1b[K'); // return to col 0 and clear the line
+  };
+}
 
 async function confirmUseLocal(
   ctx: CmdContext,
@@ -92,15 +108,25 @@ export async function reindexCommand(
   }
 
   const db = openDb(ctx.latDir);
+  const interactive = ctx.mode === 'cli' && !!process.stderr.isTTY;
   try {
     await ensureMeta(db);
     await dropSections(db);
     await ensureSectionsSchema(db, embedder.dimensions);
     await setStoredModel(db, modelKey(embedder));
 
-    process.stderr.write(s.dim(`Reindexing with ${embedder.name}...`));
-    const stats = await indexSections(ctx.latDir, db, embedder);
-    process.stderr.write(s.dim(` done\n`));
+    const label = `Reindexing with ${embedder.name}…`;
+    // Interactive terminals get an animated spinner; elsewhere (agents, CI, MCP)
+    // a single plain line keeps logs clean.
+    const stopSpinner = interactive ? startSpinner(s, label) : null;
+    if (!interactive) process.stderr.write(s.dim(label + '\n'));
+
+    let stats;
+    try {
+      stats = await indexSections(ctx.latDir, db, embedder);
+    } finally {
+      stopSpinner?.();
+    }
 
     return {
       output:
