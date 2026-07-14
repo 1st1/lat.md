@@ -33,9 +33,8 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Each package's `build` runs its full chain (WASM engine / fp16 weights + tsc).
-      - run: pnpm build:packages
-      - run: pnpm build
+      # buildall = packages (WASM engine + fp16 weights + tsc) then top-level lat.
+      - run: pnpm buildall
       - run: pnpm vitest run --reporter=verbose
 
       # Publish each package whose local version is not yet on npm, in order.
