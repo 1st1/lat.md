@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import xdg from '@folder/xdg';
 
 // ── XDG config directory ────────────────────────────────────────────
@@ -17,6 +17,12 @@ export function getConfigPath(): string {
 
 export type LatConfig = {
   llm_key?: string;
+  /**
+   * Per-repo embedding backend preference, keyed by absolute lat.md dir. Durable
+   * (survives deletion of the regenerable `.cache`), so a repo explicitly
+   * switched to local stays local even after a cache wipe or fresh clone.
+   */
+  repos?: Record<string, { embedding?: 'local' }>;
 };
 
 export function readConfig(): LatConfig {
@@ -36,6 +42,27 @@ export function writeConfig(config: LatConfig): void {
   const dir = getConfigDir();
   mkdirSync(dir, { recursive: true });
   writeFileSync(getConfigPath(), JSON.stringify(config, null, 2) + '\n');
+}
+
+// ── Per-repo embedding backend preference ───────────────────────────
+
+/** Durable per-repo backend choice, or undefined if none recorded. */
+export function getRepoEmbedding(latDir: string): 'local' | undefined {
+  return readConfig().repos?.[resolve(latDir)]?.embedding;
+}
+
+/** Record (or clear, with `null`) the durable per-repo backend choice. */
+export function setRepoEmbedding(
+  latDir: string,
+  embedding: 'local' | null,
+): void {
+  const key = resolve(latDir);
+  const config = readConfig();
+  const repos = config.repos ?? {};
+  if (embedding === null) delete repos[key];
+  else repos[key] = { embedding };
+  config.repos = repos;
+  writeConfig(config);
 }
 
 // ── Centralized LLM key resolution ─────────────────────────────────

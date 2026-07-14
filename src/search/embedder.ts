@@ -4,7 +4,7 @@ import {
   type Embedder,
 } from '@lat.md/embed';
 import minilm from '@lat.md/embed-minilm-fp16';
-import { getLlmKey } from '../config.js';
+import { getLlmKey, getRepoEmbedding } from '../config.js';
 
 export type { Embedder };
 export { EmbeddingAuthError };
@@ -36,16 +36,21 @@ export function localEmbedder(): Promise<Embedder> {
 }
 
 /**
- * Resolve the embedder `lat search` must use, given the index's recorded model.
- * The stored model is authoritative — the env var never silently flips the
- * backend. A local index ignores the key; a remote index requires a matching
- * key (used to embed every query) or throws {@link ReindexRequiredError}.
+ * Resolve the embedder `lat search` must use, given the index's recorded model
+ * and the repo dir. The stored model is authoritative — the env var never
+ * silently flips the backend. A local index ignores the key; a remote index
+ * requires a matching key (used to embed every query) or throws
+ * {@link ReindexRequiredError}. On a fresh index (no stored model — e.g. the
+ * regenerable `.cache` was wiped) the durable per-repo preference wins over the
+ * env, so a repo switched to local stays local across cache loss.
  */
 export async function embedderForIndex(
   storedModel: string | null,
+  latDir: string,
 ): Promise<Embedder> {
   if (storedModel === null) {
-    // Fresh index — decide from the environment and record it later.
+    if (getRepoEmbedding(latDir) === 'local') return localEmbedder();
+    // No durable preference — decide from the environment, record it later.
     return embedderFromEnv();
   }
 
