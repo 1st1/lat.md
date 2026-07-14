@@ -381,21 +381,21 @@ Implementation: [[src/search/search.ts]]
 
 ## reindex
 
-Rebuilds the embedding index — the single write/rebuild path, and the **only** command that
-re-decides the backend from the environment (`lat search` only reads). Usage:
-`lat reindex [--local] [--yes]`.
+Rebuilds the embedding index — the single write/rebuild path (`lat search` only reads). Usage:
+`lat reindex [--local] [--remote] [--yes]`.
 
-Because `lat search` never switches backends silently (see [[cli#search#Backend selection]]), this is
-how a user migrates — e.g. after removing a key, or when a key is rejected. It resolves the backend
-from the environment, drops the old vectors, and rebuilds with the chosen model.
+Backend selection honors the **durable per-repo preference**: a repo pinned to local rebuilds local
+and ignores `LAT_LLM_KEY` (printing a note when a key is nonetheless set). Flags override: `--local`
+forces the offline model; `--remote` re-resolves from the key (the escape hatch back to hosted, and
+errors if no key is set). A bare run on an *unpinned* repo decides from the environment. This is how
+a user migrates — e.g. after removing a key, or when a key is rejected.
 
-If a key is set but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
-never wipes a working index), then **asks the user to confirm** the switch to the local model. On
-yes, it rebuilds local, records `local:…` in `meta`, and sets the **durable** per-repo `local`
-preference in the config — so subsequent `lat search` runs ignore the key, and the choice survives a
-`.cache` wipe or fresh clone. (Choosing remote clears that preference.) Flags: `--local` forces the offline model; `--yes` skips the confirmation (for CI /
-non-interactive use). When the shell isn't a TTY and `--yes` isn't given, it errors rather than
-switching without consent.
+If a key is used but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
+never wipes a working index), then **asks the user to confirm** the switch to local. On yes it
+rebuilds local, records `local:…` in `meta`, and sets the durable `local` preference — so subsequent
+`lat search` runs ignore the key and the choice survives a `.cache` wipe or fresh clone (choosing
+remote clears it). `--yes` skips the confirmation (CI / non-interactive); when the shell isn't a TTY
+and `--yes` isn't given, it errors rather than switching without consent.
 
 Implementation: [[src/cli/reindex.ts#reindexCommand]]
 
