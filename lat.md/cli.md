@@ -311,16 +311,24 @@ Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections),
 
 ### Backend selection
 
-lat.md contains no embedding-generation logic — [[src/search/embedder.ts#getEmbedder]] resolves an
-`Embedder` and hands it to the pipeline. An LLM key selects the hosted backend; with no key, the
-bundled local MiniLM model is used (offline, zero-config).
+lat.md contains no embedding-generation logic — [[src/search/embedder.ts#embedderForIndex]] resolves
+an `Embedder` and hands it to the pipeline. The backend is **governed by the index**, not re-decided
+from the environment on each search: `meta.embedding_model` (see [[cli#search#Storage]]) is
+authoritative.
+
+- **Fresh index** (no `meta` yet) — decide from the environment: a key → hosted, otherwise the
+  bundled local MiniLM model. The choice is then recorded.
+- **`local:`-prefixed model** — use the local backend; `LAT_LLM_KEY` is ignored entirely.
+- **Remote model** — the key is required and is used to embed the query on **every** search. If it
+  is absent, rejected (401/403 → `EmbeddingAuthError`), or resolves to a different model, `lat search`
+  throws [[src/search/embedder.ts#ReindexRequiredError]] and stops — it never silently switches or
+  rebuilds. The user runs [[cli#reindex]] to re-decide the backend.
 
 Key resolution is unchanged ([[src/config.ts#getLlmKey]], priority: `LAT_LLM_KEY` →
-`LAT_LLM_KEY_FILE` → `LAT_LLM_KEY_HELPER` → `llm_key` config).
+`LAT_LLM_KEY_FILE` → `LAT_LLM_KEY_HELPER` → `llm_key` config). The key prefix picks the hosted
+provider (detected in `@lat.md/embed`):
 
-The key prefix picks the hosted provider (detected in `@lat.md/embed`):
-
-- (no key) — **local** `@lat.md/embed-minilm-fp16` (all-MiniLM-L6-v2, 384 dims, offline)
+- (no key) — **local** `@lat.md/embed-minilm-fp16` (all-MiniLM-L6-v2, 384 dims, name `local:minilm-l6-v2`)
 - `sk-...` — OpenAI (`text-embedding-3-small`, 1536 dims)
 - `vck_...` — Vercel AI Gateway (`openai/text-embedding-3-small`, 1536 dims)
 - `sk-ant-...` — Anthropic (not supported, errors with guidance)
@@ -341,7 +349,7 @@ All embedding generation is isolated in the `@lat.md/embed` package, exposed thr
 
 Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the active embedding model + dimensions; when they change (e.g. switching between local 384-dim and hosted 1536-dim), [[src/search/db.ts#ensureSchema]] drops and rebuilds `sections` so the fixed-width vector column always matches.
+Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the embedding model + dimensions the index was built with ([[src/search/db.ts#getStoredModel]], e.g. `local:minilm-l6-v2:384` or `openai:1536`). This record is authoritative for [[cli#search#Backend selection]] — vectors from different models are not comparable, so a model change never silently rebuilds; [[cli#reindex]] drops (via [[src/search/db.ts#dropSections]]) and rebuilds explicitly.
 
 The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
 
@@ -367,6 +375,24 @@ Implementation: [[src/search/index.ts]]
 Embeds the user's query via the active embedder, then runs a `vector_top_k()` KNN query joined back to the sections table.
 
 Implementation: [[src/search/search.ts]]
+
+## reindex
+
+Rebuilds the embedding index and is the **only** command that re-decides the backend from the
+environment. Usage: `lat reindex [--local] [--yes]`.
+
+Because `lat search` never switches backends silently (see [[cli#search#Backend selection]]), this is
+how a user migrates — e.g. after removing a key, or when a key is rejected. It resolves the backend
+from the environment, drops the old vectors, and rebuilds with the chosen model.
+
+If a key is set but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
+never wipes a working index), then interactively offers to switch to the local model. On yes, it
+rebuilds local and records `local:…` in `meta`, so subsequent `lat search` runs ignore the key. Flags:
+`--local` forces the offline model; `--yes` answers the prompt non-interactively (for CI). The
+distinction from `lat search --reindex` (which force-rebuilds with the *current* backend) is that
+`lat reindex` may *change* the backend.
+
+Implementation: [[src/cli/reindex.ts#reindexCommand]]
 
 ## Section Preview
 

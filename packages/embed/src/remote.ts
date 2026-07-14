@@ -13,6 +13,16 @@ export type RemoteProvider = {
   headers: (key: string) => Record<string, string>;
 };
 
+/** Thrown when the provider rejects the credential (HTTP 401/403). */
+export class EmbeddingAuthError extends Error {
+  readonly status: number;
+  constructor(status: number, body: string) {
+    super(`Embedding API rejected the key (${status}): ${body.slice(0, 200)}`);
+    this.name = 'EmbeddingAuthError';
+    this.status = status;
+  }
+}
+
 const MAX_BATCH = 2048;
 
 const openai: RemoteProvider = {
@@ -76,6 +86,9 @@ async function embedViaFetch(
     });
     if (!resp.ok) {
       const body = await resp.text();
+      if (resp.status === 401 || resp.status === 403) {
+        throw new EmbeddingAuthError(resp.status, body);
+      }
       throw new Error(
         `Embedding API error (${resp.status}): ${body.slice(0, 200)}`,
       );
