@@ -5,7 +5,6 @@ import {
   getStoredModel,
   setStoredModel,
   ensureSectionsSchema,
-  dropSections,
   closeDb,
 } from '../search/db.js';
 import {
@@ -43,7 +42,6 @@ async function withDb<T>(
     db: Awaited<ReturnType<typeof openDb>>,
     embedder: Embedder,
   ) => Promise<T>,
-  forceReindex = false,
 ): Promise<T> {
   const db = openDb(latDir);
 
@@ -52,11 +50,11 @@ async function withDb<T>(
     const stored = await getStoredModel(db);
     // The stored model is authoritative — no silent backend switch. Throws
     // ReindexRequiredError if the environment can't serve the stored index.
+    // Rebuilding / switching backends is `lat reindex`, never `lat search`.
     const embedder = await embedderForIndex(stored);
 
-    if (forceReindex) await dropSections(db);
     await ensureSectionsSchema(db, embedder.dimensions);
-    if (!stored || forceReindex) await setStoredModel(db, modelKey(embedder));
+    if (!stored) await setStoredModel(db, modelKey(embedder));
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
     const isEmpty = (countResult.rows[0].n as number) === 0;
@@ -80,53 +78,46 @@ export async function runSearch(
   query: string,
   limit: number,
   progress?: IndexProgress,
-  forceReindex = false,
 ): Promise<SearchResult> {
-  return withDb(
-    latDir,
-    progress,
-    async (db, embedder) => {
-      const results = await searchSections(db, query, embedder, limit);
-      if (results.length === 0) {
-        return { query, matches: [] };
-      }
+  return withDb(latDir, progress, async (db, embedder) => {
+    const results = await searchSections(db, query, embedder, limit);
+    if (results.length === 0) {
+      return { query, matches: [] };
+    }
 
-      const allSections = await loadAllSections(latDir);
-      const flat = flattenSections(allSections);
-      const byId = new Map(flat.map((s) => [s.id, s]));
+    const allSections = await loadAllSections(latDir);
+    const flat = flattenSections(allSections);
+    const byId = new Map(flat.map((s) => [s.id, s]));
 
-      const matches = results
-        .map((r) => byId.get(r.id))
-        .filter((s): s is NonNullable<typeof s> => !!s)
-        .map((s) => ({ section: s, reason: 'semantic match' }));
+    const matches = results
+      .map((r) => byId.get(r.id))
+      .filter((s): s is NonNullable<typeof s> => !!s)
+      .map((s) => ({ section: s, reason: 'semantic match' }));
 
-      return { query, matches };
-    },
-    forceReindex,
-  );
+    return { query, matches };
+  });
 }
 
 /**
- * Index-only mode (no query). Used by `lat search --reindex`.
+ * Index-only mode (no query) — builds the index on first use. Rebuilding is
+ * `lat reindex`, not a flag here.
  */
 export async function runIndex(
   latDir: string,
   progress?: IndexProgress,
-  forceReindex = false,
 ): Promise<void> {
-  await withDb(latDir, progress, async () => {}, forceReindex);
+  await withDb(latDir, progress, async () => {});
 }
 
-export function cliProgress(reindex: boolean, s: Styler): IndexProgress {
+export function cliProgress(s: Styler): IndexProgress {
   return {
     beforeIndex(isEmpty) {
-      if (isEmpty || reindex) {
-        const label = reindex ? 'Re-indexing' : 'Building index';
-        process.stderr.write(s.dim(`${label}...`));
+      if (isEmpty) {
+        process.stderr.write(s.dim('Building index...'));
       }
     },
     afterIndex(stats, isEmpty) {
-      if (isEmpty || reindex) {
+      if (isEmpty) {
         process.stderr.write(
           s.dim(
             ` done (${stats.added} added, ${stats.updated} updated, ${stats.removed} removed)\n`,
@@ -146,24 +137,17 @@ export function cliProgress(reindex: boolean, s: Styler): IndexProgress {
 export async function searchCommand(
   ctx: CmdContext,
   query: string | undefined,
-  opts: { limit: number; reindex?: boolean },
+  opts: { limit: number },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
   const s = ctx.styler;
-  const force = !!opts.reindex;
   try {
     if (!query) {
-      await runIndex(ctx.latDir, progress, force);
+      await runIndex(ctx.latDir, progress);
       return { output: '' };
     }
 
-    const result = await runSearch(
-      ctx.latDir,
-      query,
-      opts.limit,
-      progress,
-      force,
-    );
+    const result = await runSearch(ctx.latDir, query, opts.limit, progress);
 
     if (result.matches.length === 0) {
       return { output: 'No results found.' };
