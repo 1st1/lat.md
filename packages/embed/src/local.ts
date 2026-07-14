@@ -31,6 +31,12 @@ export async function createLocalEmbedder(
       const out: number[][] = [];
       for (let i = 0; i < texts.length; i += CHUNK) {
         out.push(...engine.embed(texts.slice(i, i + CHUNK)));
+        // The WASM forward pass is synchronous and blocks the event loop; yield
+        // between chunks so a caller's progress UI (e.g. the reindex spinner)
+        // can repaint and timers/signals fire.
+        if (i + CHUNK < texts.length) {
+          await new Promise((resolve) => setImmediate(resolve));
+        }
       }
       return out;
     },
