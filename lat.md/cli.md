@@ -303,9 +303,9 @@ Implementation: [[src/mcp/server.ts]]
 Semantic search across `lat.md` sections using vector embeddings. Works **offline by default** — no
 API key required.
 
-Usage: `lat search [query] [--limit=5] [--reindex]`
+Usage: `lat search [query] [--limit=5]`
 
-Query is optional — `lat search --reindex` re-indexes without searching. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
+Query is optional — `lat search` with no query just builds the index on first use. `lat search` only reads; rebuilding is [[cli#reindex]]. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
 
 Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
 
@@ -366,7 +366,7 @@ Content freshness is tracked via SHA-256 hashes. On each run:
 3. Only re-embed new or changed sections (saves API cost / local compute)
 4. Delete DB rows for sections that no longer exist
 
-On first run, automatically indexes all sections. The `--reindex` flag forces a full rebuild.
+On first run, automatically indexes all sections. A full rebuild is [[cli#reindex]].
 
 Implementation: [[src/search/index.ts]]
 
@@ -378,19 +378,20 @@ Implementation: [[src/search/search.ts]]
 
 ## reindex
 
-Rebuilds the embedding index and is the **only** command that re-decides the backend from the
-environment. Usage: `lat reindex [--local] [--yes]`.
+Rebuilds the embedding index — the single write/rebuild path, and the **only** command that
+re-decides the backend from the environment (`lat search` only reads). Usage:
+`lat reindex [--local] [--yes]`.
 
 Because `lat search` never switches backends silently (see [[cli#search#Backend selection]]), this is
 how a user migrates — e.g. after removing a key, or when a key is rejected. It resolves the backend
 from the environment, drops the old vectors, and rebuilds with the chosen model.
 
 If a key is set but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
-never wipes a working index), then interactively offers to switch to the local model. On yes, it
-rebuilds local and records `local:…` in `meta`, so subsequent `lat search` runs ignore the key. Flags:
-`--local` forces the offline model; `--yes` answers the prompt non-interactively (for CI). The
-distinction from `lat search --reindex` (which force-rebuilds with the *current* backend) is that
-`lat reindex` may *change* the backend.
+never wipes a working index), then **asks the user to confirm** the switch to the local model. On
+yes, it rebuilds local and records `local:…` in `meta`, so subsequent `lat search` runs ignore the
+key. Flags: `--local` forces the offline model; `--yes` skips the confirmation (for CI /
+non-interactive use). When the shell isn't a TTY and `--yes` isn't given, it errors rather than
+switching without consent.
 
 Implementation: [[src/cli/reindex.ts#reindexCommand]]
 

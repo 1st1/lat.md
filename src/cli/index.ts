@@ -178,24 +178,18 @@ program
   .description('Semantic search across lat.md sections')
   .argument('[query]', 'search query in plain English')
   .option('--limit <n>', 'max results', '5')
-  .option('--reindex', 'force full re-indexing')
-  .action(
-    async (
-      query: string | undefined,
-      opts: { limit: string; reindex?: boolean },
-    ) => {
-      const ctx = resolveContext(program.opts());
-      const { searchCommand, cliProgress } = await import('./search.js');
-      const progress = cliProgress(!!opts.reindex, ctx.styler);
-      const result = await searchCommand(
-        ctx,
-        query,
-        { limit: parseInt(opts.limit), reindex: opts.reindex },
-        progress,
-      );
-      handleResult(result);
-    },
-  );
+  .action(async (query: string | undefined, opts: { limit: string }) => {
+    const ctx = resolveContext(program.opts());
+    const { searchCommand, cliProgress } = await import('./search.js');
+    const progress = cliProgress(ctx.styler);
+    const result = await searchCommand(
+      ctx,
+      query,
+      { limit: parseInt(opts.limit) },
+      progress,
+    );
+    handleResult(result);
+  });
 
 program
   .command('reindex')
