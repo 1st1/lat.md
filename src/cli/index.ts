@@ -195,12 +195,18 @@ program
   .command('reindex')
   .description('Rebuild the embedding index; switch backends if needed')
   .option('--local', 'use the local offline model (ignore LAT_LLM_KEY)')
+  .option(
+    '--remote',
+    'use the hosted API from LAT_LLM_KEY (override a local pin)',
+  )
   .option('--yes', 'assume yes to prompts (non-interactive)')
-  .action(async (opts: { local?: boolean; yes?: boolean }) => {
-    const ctx = resolveContext(program.opts());
-    const { reindexCommand } = await import('./reindex.js');
-    handleResult(await reindexCommand(ctx, opts));
-  });
+  .action(
+    async (opts: { local?: boolean; remote?: boolean; yes?: boolean }) => {
+      const ctx = resolveContext(program.opts());
+      const { reindexCommand } = await import('./reindex.js');
+      handleResult(await reindexCommand(ctx, opts));
+    },
+  );
 
 program
   .command('gen')

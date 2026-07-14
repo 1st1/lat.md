@@ -15,7 +15,7 @@ import {
   EmbeddingAuthError,
   type Embedder,
 } from '../search/embedder.js';
-import { getLlmKey, setRepoEmbedding } from '../config.js';
+import { getLlmKey, getRepoEmbedding, setRepoEmbedding } from '../config.js';
 import { indexSections } from '../search/index.js';
 
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -47,15 +47,15 @@ async function confirmUseLocal(
 }
 
 /**
- * Rebuild the embedding index, re-deciding the backend from the environment.
- * This is the only place the env var re-selects the backend. If a key is set
- * but rejected, offers to switch to the local model (then future `lat search`
- * runs use local, ignoring the key). `--local` forces local; `--yes` answers
- * the prompt non-interactively.
+ * Rebuild the embedding index. Honors the durable per-repo backend preference:
+ * a repo pinned to local rebuilds local and ignores the key. `--local` forces
+ * local; `--remote` forces re-resolving from the key (the escape hatch back to
+ * hosted); a bare run on an unpinned repo decides from the env. If a key is set
+ * but rejected, offers to switch to local (`--yes` answers non-interactively).
  */
 export async function reindexCommand(
   ctx: CmdContext,
-  opts: { local?: boolean; yes?: boolean },
+  opts: { local?: boolean; remote?: boolean; yes?: boolean },
 ): Promise<CmdResult> {
   const s = ctx.styler;
 
@@ -66,12 +66,32 @@ export async function reindexCommand(
     return { output: (err as Error).message, isError: true };
   }
 
+  if (opts.remote && !key) {
+    return {
+      output: s.red('--remote requires LAT_LLM_KEY to be set.'),
+      isError: true,
+    };
+  }
+
+  const pinnedLocal = getRepoEmbedding(ctx.latDir) === 'local';
+
   let embedder: Embedder;
-  if (opts.local || !key) {
+  if (opts.local || (pinnedLocal && !opts.remote)) {
+    // Explicit --local, or the repo is already pinned to local: use local and
+    // ignore the key. Say so when a key is present, so it's not a silent drop.
+    if (!opts.local && key) {
+      process.stderr.write(
+        s.dim(
+          'Local embeddings configured for this repo; ignoring LAT_LLM_KEY.\n',
+        ),
+      );
+    }
+    embedder = await localEmbedder();
+  } else if (!key) {
     embedder = await localEmbedder();
   } else {
-    // Key present — verify it with a tiny probe before committing to a remote
-    // rebuild, so an invalid key doesn't wipe a working index.
+    // Resolve from the env key (bare + unpinned, or explicit --remote). Verify
+    // it with a tiny probe first, so an invalid key doesn't wipe a working index.
     const remote = await embedderFromEnv();
     try {
       await remote.embed(['lat reindex: verifying embedding key']);
