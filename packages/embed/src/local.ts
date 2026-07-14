@@ -7,12 +7,13 @@ import { readFileSync } from 'node:fs';
 import type { Embedder, ModelManifest } from './index.js';
 import { loadWasmEngine } from './wasm-loader.js';
 
-// Cap the per-call batch so the padded [batch, seqLen, hidden] activations stay
-// within WASM's linear memory. Embedding hundreds of sections at once otherwise
-// overflows and traps (RuntimeError: unreachable). Throughput is unaffected —
-// the engine has no cross-item batching speedup anyway. Kept modest so progress
-// updates (and event-loop yields) land frequently.
-const CHUNK = 16;
+// Embed one text at a time. The single-threaded WASM engine has no cross-item
+// batching speedup, and `BatchLongest` padding within a batch makes every item
+// pay the longest item's token length — so batching is strictly slower when
+// lengths vary (measured ~2× on real docs), besides risking an out-of-memory
+// trap on large batches. One-at-a-time is fastest here, uses minimal memory,
+// and yields the finest progress granularity.
+const CHUNK = 1;
 
 export async function createLocalEmbedder(
   model: ModelManifest,
