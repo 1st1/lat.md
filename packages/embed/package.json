@@ -1,6 +1,6 @@
 {
   "name": "@lat.md/embed",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Embedding generation for lat.md — local candle/WASM MiniLM engine and OpenAI-compatible remote backends behind one interface",
   "type": "module",
   "license": "MIT",
