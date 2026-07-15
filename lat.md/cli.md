@@ -316,11 +316,13 @@ an `Embedder` and hands it to the pipeline. The backend is **governed by the ind
 from the environment on each search: `meta.embedding_model` (see [[cli#search#Storage]]) is
 authoritative.
 
-- **Fresh index** (no `meta` yet — first run, or the regenerable `.cache` was wiped) — a durable
-  per-repo preference wins first: if the repo was switched to local (recorded in the config's `repos`
-  map by [[cli#reindex]], keyed by lat.md dir), rebuild local and ignore any key. Otherwise decide
-  from the environment (key → hosted, else local). The resulting model is recorded in `meta` only
-  after the index build succeeds, so a failed build never pins a broken backend.
+- **Fresh index** (no `meta` yet — first run, the regenerable `.cache` was wiped, or a legacy
+  `.cache` from a version that never recorded the model) — a durable per-repo preference wins first:
+  if the repo was switched to local (recorded in the config's `repos` map by [[cli#reindex]], keyed
+  by lat.md dir), rebuild local and ignore any key. Otherwise decide from the environment (key →
+  hosted, else local). The resulting model is recorded in `meta` only after the index build succeeds,
+  so a failed build never pins a broken backend. A legacy `.cache` that has rows but no recorded
+  model is dropped and rebuilt from scratch (its vectors may be a different dimension), never queried.
 - **`local:`-prefixed model** — use the local backend; `LAT_LLM_KEY` is ignored entirely.
 - **Remote model** — the key is required and is used to embed the query on **every** search. If it
   is absent, rejected (401/403 → `EmbeddingAuthError`), or resolves to a different model, `lat search`

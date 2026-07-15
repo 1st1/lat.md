@@ -29,6 +29,16 @@ jobs:
       - name: Install wasm-opt (binaryen)
         run: sudo apt-get update && sudo apt-get install -y binaryen
 
+      # Cache the ~90 MB MiniLM weights fetched + converted by build-weights.mjs
+      # (the script is idempotent and skips the fetch when model/ is present), so
+      # CI doesn't re-download from HuggingFace every run. Keyed on the fetch
+      # script so a change to the weights source busts the cache.
+      - name: Cache MiniLM weights
+        uses: actions/cache@v4
+        with:
+          path: packages/embed-minilm-fp16/model
+          key: minilm-weights-${{ hashFiles('packages/embed-minilm-fp16/scripts/build-weights.mjs') }}
+
       - run: pnpm install --frozen-lockfile
 
       # buildall = packages (WASM engine + fp16 weights + tsc) then top-level lat.
