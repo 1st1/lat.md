@@ -64,7 +64,7 @@ describe('search (rag, local)', () => {
 
   afterAll(async () => {
     if (db) await closeDb(db);
-    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true });
+    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // @lat: [[search#RAG Tests#Indexes all sections]]
@@ -175,8 +175,8 @@ describe('search (rag, legacy cache upgrade)', () => {
         if (saved[k] === undefined) delete process.env[k];
         else process.env[k] = saved[k];
       }
-      rmSync(cfg, { recursive: true, force: true });
-      rmSync(join(latDir, '..'), { recursive: true, force: true });
+      rmSync(cfg, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
@@ -227,7 +227,7 @@ describe.skipIf(!canRunHosted)('search (rag, hosted replay)', () => {
     if (capturing) flushCapture();
     if (db) await closeDb(db);
     if (server) server.close();
-    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true });
+    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it('indexes and finds the auth section via the hosted backend', async () => {
