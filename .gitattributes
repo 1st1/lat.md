@@ -1,0 +1,10 @@
+# Normalize line endings to LF in the working tree on every platform. Without
+# this, Windows checkouts (autocrlf=true on GitHub runners) would rewrite text
+# files to CRLF and break line-based parsing and the markdown roundtrip tests.
+* text=auto eol=lf
+
+# Binary assets — never apply text/eol conversion.
+*.png binary
+*.jpg binary
+*.ico binary
+*.wasm binary

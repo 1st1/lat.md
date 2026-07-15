@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { join, relative } from 'node:path';
-import { walkEntries } from './walk.js';
+import { toPosix, walkEntries } from './walk.js';
 
 /** Glob patterns used to exclude directories/files from code-ref scanning.
  *  Shared between rg args and the TS fallback's walkFiles filter. */
@@ -112,8 +112,10 @@ async function findSubProjects(projectRoot: string): Promise<string[]> {
   if (!out) return [];
 
   const subProjects = new Set<string>();
-  for (const line of out.split('\n')) {
-    if (!line) continue;
+  for (const rawLine of out.split('\n')) {
+    if (!rawLine) continue;
+    // rg emits native separators on Windows; normalize before matching '/lat.md/'.
+    const line = toPosix(rawLine);
     const clean = line.startsWith('./') ? line.slice(2) : line;
     // "tests/cases/foo/lat.md/specs.md" → "tests/cases/foo"
     // Skip root lat.md/ (no parent prefix — starts with "lat.md/")
@@ -168,7 +170,7 @@ async function tryRipgrep(
     .split('\n')
     .filter(Boolean)
     .map((f) => {
-      const clean = f.startsWith('./') ? f.slice(2) : f;
+      const clean = toPosix(f).replace(/^\.\//, '');
       return join(projectRoot, clean);
     });
 
@@ -194,7 +196,10 @@ function parseGrepOutput(
     const secondColon = line.indexOf(':', firstColon + 1);
     if (secondColon === -1) continue;
 
-    let filePath = line.slice(0, firstColon);
+    // rg emits native separators (`\` on Windows); normalize to POSIX so the
+    // stored path matches wiki-link and TS-fallback conventions. This also
+    // turns a Windows `.\` prefix into `./` for the strip below.
+    let filePath = toPosix(line.slice(0, firstColon));
     const lineNum = parseInt(line.slice(firstColon + 1, secondColon), 10);
     const content = line.slice(secondColon + 1);
 
@@ -240,7 +245,7 @@ async function scanWithTs(
       while ((match = LAT_REF_RE.exec(lines[i])) !== null) {
         refs.push({
           target: match[1],
-          file: relative(projectRoot, file),
+          file: toPosix(relative(projectRoot, file)),
           line: i + 1,
         });
       }
