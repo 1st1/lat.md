@@ -102,6 +102,16 @@ function embedParallel(
           reject(err);
         }
       });
+      // A worker can die without emitting 'error' (OOM, a hard WASM abort). Guard
+      // against a hung job by rejecting on any non-zero exit before we've settled.
+      // (Our own cleanup() terminate() fires 'exit' too, but only after settled.)
+      w.on('exit', (code) => {
+        if (code !== 0 && !settled) {
+          settled = true;
+          cleanup();
+          reject(new Error(`embedding worker exited with code ${code}`));
+        }
+      });
     }
   });
 }

@@ -119,7 +119,6 @@ export async function reindexCommand(
     await ensureMeta(db);
     await dropSections(db);
     await ensureSectionsSchema(db, embedder.dimensions);
-    await setStoredModel(db, modelKey(embedder));
 
     const label = `Reindexing with ${embedder.name}`;
     // Interactive terminals get a live progress line driven per embed-chunk
@@ -143,6 +142,14 @@ export async function reindexCommand(
     let stats;
     try {
       stats = await indexSections(ctx.latDir, db, embedder, onProgress);
+      // Pin the backend only after a successful build, so a failed reindex never
+      // records a model that doesn't match a completed index.
+      await setStoredModel(db, modelKey(embedder));
+    } catch (err) {
+      // Build failed: drop the half-built table so the DB is left clean. `meta`
+      // still holds the prior model, so the next run rebuilds it consistently.
+      await dropSections(db);
+      throw err;
     } finally {
       if (interactive) process.stderr.write('\r\x1b[K'); // clear the progress line
     }

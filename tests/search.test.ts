@@ -12,6 +12,7 @@ import {
 } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
+import { runSearch } from '../src/cli/search.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
 import type { Client } from '@libsql/client';
 import type { Server } from 'node:http';
@@ -119,6 +120,64 @@ describe('search (rag, local)', () => {
     const stats = await indexSections(latDir, db, embedder);
     expect(stats.removed).toBe(4); // testing + unit + integration + performance
     expect(stats.unchanged).toBe(5); // architecture sections remain
+  });
+});
+
+// --- Legacy cache upgrade: rebuild a pre-versioning index ---
+//
+// A `.cache` built by a version that never recorded `meta.embedding_model` has
+// rows but no model. Resolving to a different backend (here local 384-dim vs a
+// stale remote 1536-dim table) must drop + rebuild, not query the mismatch.
+
+describe('search (rag, legacy cache upgrade)', () => {
+  // @lat: [[search#RAG Tests#Rebuilds a legacy cache with no recorded model]]
+  it('rebuilds a legacy cache that has rows but no recorded model', async () => {
+    const latDir = copyFixture();
+
+    // Seed a populated 1536-dim table (as an old remote build would leave) with
+    // no meta.embedding_model recorded.
+    const seed = openDb(latDir);
+    await ensureMeta(seed);
+    await ensureSectionsSchema(seed, 1536);
+    const bogus = JSON.stringify(new Array(1536).fill(0.1));
+    await seed.execute({
+      sql: `INSERT INTO sections (id, file, heading, content, content_hash, embedding, updated_at)
+            VALUES (?, ?, ?, ?, ?, vector(?), ?)`,
+      args: ['stale#Old', 'stale.md', 'Old', 'stale', 'deadbeef', bogus, 0],
+    });
+    await closeDb(seed);
+
+    // Clear the env so the rebuild resolves to the local 384-dim model — the
+    // dimension mismatch that previously threw a raw libsql error at query time.
+    const savedKeys = [
+      'LAT_LLM_KEY',
+      'LAT_LLM_KEY_FILE',
+      'LAT_LLM_KEY_HELPER',
+      'XDG_CONFIG_HOME',
+    ] as const;
+    const saved = Object.fromEntries(savedKeys.map((k) => [k, process.env[k]]));
+    const cfg = mkdtempSync(join(tmpdir(), 'lat-cfg-'));
+    process.env.LAT_LLM_KEY = '';
+    process.env.LAT_LLM_KEY_FILE = '';
+    process.env.LAT_LLM_KEY_HELPER = '';
+    process.env.XDG_CONFIG_HOME = cfg;
+
+    try {
+      const result = await runSearch(
+        latDir,
+        'how do we handle user login and security?',
+        5,
+      );
+      expect(result.matches.length).toBeGreaterThan(0);
+      expect(result.matches[0].section.id).toContain('Authentication');
+    } finally {
+      for (const k of savedKeys) {
+        if (saved[k] === undefined) delete process.env[k];
+        else process.env[k] = saved[k];
+      }
+      rmSync(cfg, { recursive: true, force: true });
+      rmSync(join(latDir, '..'), { recursive: true, force: true });
+    }
   });
 });
 

@@ -51,3 +51,11 @@ Re-index unchanged content, verify all sections reported as unchanged with zero 
 ### Detects deleted sections when file is removed
 
 Remove `testing.md`, re-index, verify 4 sections removed and 5 architecture sections remain.
+
+### Rebuilds a legacy cache with no recorded model
+
+Seed a 1536-dim `sections` table with rows but no `meta.embedding_model`, then run a local-backed
+search: the mismatched table is dropped and rebuilt at 384 dims and the query succeeds.
+
+This is the pre-versioning `.cache` upgrade path — before, the stale table was queried and threw a
+raw dimension-mismatch error.

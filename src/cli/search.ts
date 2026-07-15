@@ -58,7 +58,18 @@ async function withDb<T>(
     await ensureSectionsSchema(db, embedder.dimensions);
 
     const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
-    const isEmpty = (countResult.rows[0].n as number) === 0;
+    let isEmpty = (countResult.rows[0].n as number) === 0;
+
+    // Legacy cache: a version before the model was recorded left rows behind
+    // with no `meta.embedding_model`. Those vectors may be a different backend
+    // (and dimension) than the resolved embedder, and `CREATE TABLE IF NOT
+    // EXISTS` won't migrate the column width — so drop and rebuild from scratch
+    // under the resolved backend rather than querying a mismatched table.
+    if (!stored && !isEmpty) {
+      await dropSections(db);
+      await ensureSectionsSchema(db, embedder.dimensions);
+      isEmpty = true;
+    }
 
     // If the repo is pinned to local but a key is set, say so — otherwise it
     // looks like the key is being silently ignored.
