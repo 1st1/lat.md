@@ -38,6 +38,8 @@ The root (h1) heading can be omitted in references: `[[backend#CORS]]` resolves 
 
 The file index ([[src/lattice.ts#buildFileIndex]]) maps all trailing path suffixes to their full paths. For `lat.md/guides/setup`, both `guides/setup` and `setup` are indexed. All keys are lowercase for case-insensitive lookup.
 
+Stored paths are always forward-slash (POSIX), independent of host OS. Node's `path.relative()` emits the native separator (`\` on Windows), so every OS-relative path is normalized through [[src/walk.ts#toPosix]] at construction — in [[src/lattice.ts#parseSections]], [[src/lattice.ts#extractRefs]], and the code-ref scanner ([[src/code-refs.ts#scanCodeRefs]]). Without this, `buildFileIndex` (which splits on `/`) failed to index any suffix on Windows, so bare-name links in directory-index files never resolved (issue #69).
+
 Resolution is handled by [[src/lattice.ts#resolveRef]] for strict contexts (`lat check`, `lat refs`) where authored links must resolve unambiguously. Lenient contexts (`lat locate`, `lat expand`) use [[src/lattice.ts#findSections]] directly, which has its own file stem expansion built in — it does not call `resolveRef`.
 
 ## Refs Extraction

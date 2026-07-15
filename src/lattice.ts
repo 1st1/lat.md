@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join, basename, relative, resolve } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
 import { parse } from './parser.js';
-import { walkEntries } from './walk.js';
+import { toPosix, walkEntries } from './walk.js';
 import { visit } from 'unist-util-visit';
 import type { Heading, RootContent, Text } from 'mdast';
 import type { WikiLink } from './extensions/wiki-link/types.js';
@@ -99,10 +99,10 @@ export function parseSections(
 ): Section[] {
   const tree = parse(content);
   const file = projectRoot
-    ? relative(projectRoot, filePath).replace(/\.md$/, '')
+    ? toPosix(relative(projectRoot, filePath)).replace(/\.md$/, '')
     : basename(filePath, '.md');
   const sectionFilePath = projectRoot
-    ? relative(projectRoot, filePath)
+    ? toPosix(relative(projectRoot, filePath))
     : basename(filePath);
   const roots: Section[] = [];
   const stack: Section[] = [];
@@ -619,7 +619,7 @@ export function extractRefs(
 ): Ref[] {
   const tree = parse(content);
   const file = projectRoot
-    ? relative(projectRoot, filePath).replace(/\.md$/, '')
+    ? toPosix(relative(projectRoot, filePath)).replace(/\.md$/, '')
     : basename(filePath, '.md');
   const refs: Ref[] = [];
 

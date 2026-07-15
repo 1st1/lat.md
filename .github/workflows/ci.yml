@@ -8,7 +8,13 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Run the full suite on Linux and Windows so platform-specific issues
+    # (path separators, line endings) are caught before release.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -35,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: packages/embed-minilm-fp16/model
-          key: minilm-weights-${{ hashFiles('packages/embed-minilm-fp16/scripts/build-weights.mjs') }}
+          key: minilm-weights-${{ matrix.os }}-${{ hashFiles('packages/embed-minilm-fp16/scripts/build-weights.mjs') }}
 
       - run: pnpm install --frozen-lockfile
 
