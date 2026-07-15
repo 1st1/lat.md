@@ -26,8 +26,6 @@ jobs:
           workspaces: packages/embed/crate
       - name: Install wasm-bindgen-cli (matches Cargo.lock)
         run: cargo install wasm-bindgen-cli --version 0.2.126 --locked
-      - name: Install wasm-opt (binaryen)
-        run: sudo apt-get update && sudo apt-get install -y binaryen
 
       # Cache the ~90 MB MiniLM weights fetched + converted by build-weights.mjs
       # (the script is idempotent and skips the fetch when model/ is present), so

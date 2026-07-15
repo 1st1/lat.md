@@ -28,8 +28,8 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: Install wasm-bindgen-cli (matches Cargo.lock)
         run: cargo install wasm-bindgen-cli --version 0.2.126 --locked
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y binaryen ripgrep
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
 
       - run: pnpm install --frozen-lockfile
 

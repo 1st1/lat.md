@@ -1,8 +1,8 @@
 /**
- * Build the candle engine to WASM: cargo → wasm-bindgen (nodejs) → wasm-opt.
+ * Build the candle engine to WASM: cargo → wasm-bindgen (nodejs).
  * Outputs engine.js (CJS glue) + engine_bg.wasm into ./wasm-dist.
  *
- * Requires: rustup + wasm32-unknown-unknown target, wasm-bindgen-cli, wasm-opt.
+ * Requires: rustup + wasm32-unknown-unknown target, wasm-bindgen-cli.
  * Run in CI before publish (artifacts are not committed to git).
  */
 import { execFileSync } from 'node:child_process';
@@ -38,12 +38,10 @@ run('wasm-bindgen', [
   'engine',
 ]);
 
+// Note: we deliberately do NOT run `wasm-opt`. It only trimmed ~0.4 MB, and its
+// output varies by binaryen version — an older `-Oz` (e.g. Ubuntu apt's) breaks
+// the module's growable function table (RangeError: WebAssembly.Table.grow).
+// Shipping wasm-bindgen's output directly is smaller-toolchain and deterministic.
 const bg = join(outDir, 'engine_bg.wasm');
-try {
-  run('wasm-opt', ['-Oz', bg, '-o', bg]);
-} catch {
-  console.warn('wasm-opt not found or failed; shipping un-optimized wasm.');
-}
-
 if (!existsSync(bg)) throw new Error('WASM build produced no engine_bg.wasm');
 console.log('WASM engine built →', outDir);
