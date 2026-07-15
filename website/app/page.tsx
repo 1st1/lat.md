@@ -172,7 +172,7 @@ export default function Home() {
             }}
           >
             {[
-              { v: '0.12', text: <>Offline semantic search — <Cmd>lat search</Cmd> works with no API key via a bundled local WASM embedding model; new <Cmd>lat reindex</Cmd> command to rebuild the index and switch backends</> },
+              { v: '0.12', text: <>Offline semantic search — <Cmd>lat search</Cmd> works with no API key via a bundled local WASM embedding model; new <Cmd>lat reindex</Cmd> command to rebuild the index and switch backends; Windows support</> },
               { v: '0.11', text: <><Cmd>lat init</Cmd> supports Codex, OpenCode, and Cursor stop hook</> },
               { v: '0.10', text: <><Cmd>lat section</Cmd> and <Cmd>lat refs</Cmd> show source code snippets; ripgrep-powered code scanning</> },
               { v: '0.9', text: <><Cmd>lat init</Cmd> creates a lat skill for supported agents</> },
