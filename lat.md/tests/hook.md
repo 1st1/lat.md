@@ -4,9 +4,9 @@ lat:
 ---
 # Hook
 
-Functional tests for the Stop hook. Runs `lat hook claude Stop` as a subprocess against test case fixtures, with a fake `git` script injected via PATH to control `git diff HEAD --numstat` output.
+Functional tests for the Stop hook. Most run `lat hook claude Stop` as a subprocess with a fake `git` on PATH serving both `git diff --numstat` and `git ls-files` output; one exercises [[src/cli/hook.ts#analyzeDiff]] directly.
 
-Tests in `tests/hook.test.ts`.
+The fake `git` dispatches on the subcommand, so a single helper controls both the tracked diff and the untracked-file list. Tests in `tests/hook.test.ts`.
 
 ## Exits silently when check passes and no diff
 
@@ -47,3 +47,9 @@ Files that don't match `SOURCE_EXTENSIONS` (e.g. `.md`) are not counted toward c
 ## Cursor stop hook returns follow-up work instead of a Claude block
 
 When Cursor needs more work at stop time, the hook returns a `followup_message` payload instead of Claude's `decision: "block"` shape so the agent keeps going in Cursor's native hook format.
+
+## Counts untracked lat.md/ and source files
+
+[[src/cli/hook.ts#analyzeDiff]] counts untracked files (via `git ls-files`) alongside tracked changes, so a freshly scaffolded, never-committed `lat.md/` registers as updated.
+
+Untracked `lat.md/` files count as lat.md lines and untracked source as code lines. Without this, an uncommitted `lat.md/` reads as zero churn and the sync reminder fires every turn (issue #61).

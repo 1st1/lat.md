@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { join, delimiter } from 'node:path';
-import { mkdtempSync, writeFileSync, chmodSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { rmDirBestEffort } from './util.js';
+import { analyzeDiff } from '../src/cli/hook.js';
 
 const casesDir = join(import.meta.dirname, 'cases');
 const cliPath = join(
@@ -21,25 +22,38 @@ function numstat(files: [number, number, string][]): string {
 }
 
 /**
- * Create a temp dir with a fake `git` that prints the given numstat regardless
- * of args. Cross-platform: the payload is stored in a data file (preserving the
- * tab separators), and both a POSIX `git` shell script and a Windows `git.cmd`
- * batch shim emit it — so the hook's `git diff --numstat` is intercepted on
- * every OS. Callers prepend this dir to PATH.
+ * Create a temp dir with a fake `git` that dispatches on the subcommand:
+ * `git diff …` prints the given numstat, `git ls-files …` prints the untracked
+ * list. Cross-platform: payloads live in data files (preserving tab separators),
+ * and both a POSIX `git` shell script and a Windows `git.cmd` batch shim serve
+ * them — so `git diff --numstat` and `git ls-files` are intercepted on every OS.
+ * Callers prepend this dir to PATH.
  */
-function makeFakeGitDir(output: string): string {
+function makeFakeGitDir(diffOutput: string, lsFilesOutput = ''): string {
   const dir = mkdtempSync(join(tmpdir(), 'lat-hook-'));
-  const dataFile = join(dir, 'numstat.txt');
-  writeFileSync(dataFile, output);
+  writeFileSync(join(dir, 'diff.txt'), diffOutput);
+  writeFileSync(join(dir, 'lsfiles.txt'), lsFilesOutput);
 
-  // POSIX: `git` shell script.
+  // POSIX: dispatch on the git subcommand ($1).
   const shScript = join(dir, 'git');
-  writeFileSync(shScript, '#!/bin/sh\ncat "$(dirname "$0")/numstat.txt"\n');
+  writeFileSync(
+    shScript,
+    '#!/bin/sh\n' +
+      'case "$1" in\n' +
+      '  diff) cat "$(dirname "$0")/diff.txt" ;;\n' +
+      '  ls-files) cat "$(dirname "$0")/lsfiles.txt" ;;\n' +
+      'esac\n',
+  );
   chmodSync(shScript, 0o755);
 
   // Windows: `git.cmd` batch shim (resolved via PATHEXT). `type` preserves tabs.
   const cmdScript = join(dir, 'git.cmd');
-  writeFileSync(cmdScript, '@type "%~dp0numstat.txt"\r\n');
+  writeFileSync(
+    cmdScript,
+    '@echo off\r\n' +
+      'if "%1"=="diff" type "%~dp0diff.txt"\r\n' +
+      'if "%1"=="ls-files" type "%~dp0lsfiles.txt"\r\n',
+  );
 
   return dir;
 }
@@ -217,6 +231,41 @@ describe('hook stop', () => {
       expect(parsed.decision).toBeUndefined();
     } finally {
       rmDirBestEffort(fakeBinDir);
+    }
+  });
+});
+
+describe('analyzeDiff', () => {
+  // @lat: [[tests/hook#Counts untracked lat.md/ and source files]]
+  it('counts untracked lat.md/ and source files, not just tracked changes', () => {
+    const proj = mkdtempSync(join(tmpdir(), 'lat-untracked-'));
+    try {
+      // A freshly scaffolded, never-committed lat.md/ (60 lines) plus an
+      // untracked source file (20 lines) — the issue #61 scenario.
+      mkdirSync(join(proj, 'lat.md'), { recursive: true });
+      mkdirSync(join(proj, 'src'), { recursive: true });
+      writeFileSync(join(proj, 'lat.md', 'feature.md'), 'x\n'.repeat(60));
+      writeFileSync(join(proj, 'src', 'brand-new.ts'), 'y\n'.repeat(20));
+
+      // Fake git: 110 tracked code lines + both untracked files listed.
+      const fakeBinDir = makeFakeGitDir(
+        numstat([[80, 30, 'src/refactor.ts']]),
+        'lat.md/feature.md\nsrc/brand-new.ts\n',
+      );
+      const savedPath = process.env.PATH;
+      process.env.PATH = fakeBinDir + delimiter + (savedPath ?? '');
+      try {
+        const { codeLines, latMdLines } = analyzeDiff(proj);
+        // Untracked lat.md/ is counted (previously read as 0 → perpetual nag).
+        expect(latMdLines).toBe(60);
+        // Tracked (110) + untracked source (20).
+        expect(codeLines).toBe(130);
+      } finally {
+        process.env.PATH = savedPath;
+        rmDirBestEffort(fakeBinDir);
+      }
+    } finally {
+      rmDirBestEffort(proj);
     }
   });
 });

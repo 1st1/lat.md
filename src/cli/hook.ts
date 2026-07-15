@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
-import { dirname, extname } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, extname, join } from 'node:path';
 import { findLatticeDir } from '../lattice.js';
 import { plainStyler, type CmdContext } from '../context.js';
 import { expandPrompt } from './expand.js';
@@ -165,37 +166,76 @@ const LATMD_RATIO = 0.05;
 /** If lat.md/ changes exceed this many lines, skip the ratio check entirely. */
 const LATMD_UPPER_THRESHOLD = 50;
 
-/** Run `git diff --numstat` and return { codeLines, latMdLines }. */
-function analyzeDiff(projectRoot: string): {
+/**
+ * Count lines in a file the way `git diff --numstat` reports a brand-new file:
+ * every line is "added". Returns 0 if the file can't be read (binary, gone).
+ */
+function countFileLines(projectRoot: string, file: string): number {
+  try {
+    const text = readFileSync(join(projectRoot, file), 'utf-8');
+    if (text.length === 0) return 0;
+    return text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Measure code vs `lat.md/` churn since HEAD, in lines. Combines tracked
+ * changes (`git diff HEAD --numstat`) with untracked files
+ * (`git ls-files --others --exclude-standard`). Counting untracked files is
+ * what makes a freshly scaffolded, never-committed `lat.md/` register as
+ * updated — otherwise its edits are invisible to `git diff HEAD` and the sync
+ * reminder fires on every turn until `lat.md/` is committed (issue #61).
+ */
+export function analyzeDiff(projectRoot: string): {
   codeLines: number;
   latMdLines: number;
 } {
-  let output: string;
-  try {
-    output = execSync('git diff HEAD --numstat', {
-      cwd: projectRoot,
-      encoding: 'utf-8',
-    });
-  } catch {
-    return { codeLines: 0, latMdLines: 0 };
-  }
-
   let codeLines = 0;
   let latMdLines = 0;
 
-  // Each line: "added\tremoved\tfile" (e.g. "42\t11\tsrc/cli/hook.ts")
-  for (const line of output.split('\n')) {
-    const parts = line.split('\t');
-    if (parts.length < 3) continue;
-    const added = parseInt(parts[0], 10) || 0;
-    const removed = parseInt(parts[1], 10) || 0;
-    const file = parts[2];
-    const changed = added + removed;
+  // git always emits forward-slash paths, so the `lat.md/` prefix test holds on
+  // every platform.
+  const tally = (file: string, changed: number): void => {
     if (file.startsWith('lat.md/')) {
       latMdLines += changed;
     } else if (SOURCE_EXTENSIONS.has(extname(file))) {
       codeLines += changed;
     }
+  };
+
+  // Tracked changes vs HEAD. Throws when there is no HEAD yet (a repo with no
+  // commits) or no repo at all; the untracked scan below still runs.
+  try {
+    const output = execSync('git diff HEAD --numstat', {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+    });
+    // Each line: "added\tremoved\tfile" (e.g. "42\t11\tsrc/cli/hook.ts")
+    for (const line of output.split('\n')) {
+      const parts = line.split('\t');
+      if (parts.length < 3) continue;
+      const added = parseInt(parts[0], 10) || 0;
+      const removed = parseInt(parts[1], 10) || 0;
+      tally(parts[2], added + removed);
+    }
+  } catch {
+    // Not a git repo, or no HEAD — fall through to the untracked scan.
+  }
+
+  // Untracked files (respecting .gitignore, so `lat.md/.cache/` is excluded).
+  try {
+    const output = execSync('git ls-files --others --exclude-standard', {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+    });
+    for (const file of output.split('\n')) {
+      if (!file) continue;
+      tally(file, countFileLines(projectRoot, file));
+    }
+  } catch {
+    // Not a git repo — nothing to add.
   }
 
   return { codeLines, latMdLines };
