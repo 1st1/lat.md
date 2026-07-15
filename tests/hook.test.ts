@@ -1,13 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { join, delimiter } from 'node:path';
-import { mkdtempSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-
-/** Remove a temp dir, retrying on transient Windows locks (EBUSY/EPERM). */
-function rmDir(dir: string): void {
-  rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-}
+import { rmDirBestEffort } from './util.js';
 
 const casesDir = join(import.meta.dirname, 'cases');
 const cliPath = join(
@@ -112,7 +108,7 @@ describe('hook stop', () => {
       expect(stdout).toBe('');
       expect(stderr).toBe('');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -137,7 +133,7 @@ describe('hook stop', () => {
       expect(parsed.reason).toContain('110');
       expect(parsed.reason).toContain('lat.md/');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -150,7 +146,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -161,7 +157,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -175,7 +171,7 @@ describe('hook stop', () => {
       expect(parsed.reason).toContain('Update `lat.md/`');
       expect(parsed.reason).toContain('lat check` until it passes');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -204,7 +200,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 
@@ -220,7 +216,7 @@ describe('hook stop', () => {
       expect(parsed.followup_message).toContain('110');
       expect(parsed.decision).toBeUndefined();
     } finally {
-      rmDir(fakeBinDir);
+      rmDirBestEffort(fakeBinDir);
     }
   });
 });

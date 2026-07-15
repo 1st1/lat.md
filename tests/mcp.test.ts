@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { join } from 'node:path';
-import { mkdtempSync, rmSync, cpSync } from 'node:fs';
+import { mkdtempSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { rmDirBestEffort } from './util.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
@@ -158,7 +159,7 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
   afterAll(async () => {
     await client.close();
     if (server) server.close();
-    if (tmp) rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (tmp) rmDirBestEffort(tmp);
   });
 
   // @lat: [[tests/mcp#lat_search finds auth section]]
@@ -212,6 +213,6 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(text).toContain('Authentication');
 
     await client2.close();
-    rmSync(tmp2, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmDirBestEffort(tmp2);
   });
 });

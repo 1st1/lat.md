@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
+import { rmDirBestEffort } from './util.js';
 import { tmpdir } from 'node:os';
 import { detectProvider, createEmbedder, type Embedder } from '@lat.md/embed';
 import minilm from '@lat.md/embed-minilm-fp16';
@@ -64,7 +65,7 @@ describe('search (rag, local)', () => {
 
   afterAll(async () => {
     if (db) await closeDb(db);
-    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (latDir) rmDirBestEffort(join(latDir, '..'));
   });
 
   // @lat: [[search#RAG Tests#Indexes all sections]]
@@ -175,8 +176,8 @@ describe('search (rag, legacy cache upgrade)', () => {
         if (saved[k] === undefined) delete process.env[k];
         else process.env[k] = saved[k];
       }
-      rmSync(cfg, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-      rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      rmDirBestEffort(cfg);
+      rmDirBestEffort(join(latDir, '..'));
     }
   });
 });
@@ -227,7 +228,7 @@ describe.skipIf(!canRunHosted)('search (rag, hosted replay)', () => {
     if (capturing) flushCapture();
     if (db) await closeDb(db);
     if (server) server.close();
-    if (latDir) rmSync(join(latDir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    if (latDir) rmDirBestEffort(join(latDir, '..'));
   });
 
   it('indexes and finds the auth section via the hosted backend', async () => {
