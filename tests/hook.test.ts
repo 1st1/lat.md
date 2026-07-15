@@ -1,8 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { join } from 'node:path';
+import { join, delimiter } from 'node:path';
 import { mkdtempSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+
+/** Remove a temp dir, retrying on transient Windows locks (EBUSY/EPERM). */
+function rmDir(dir: string): void {
+  rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+}
 
 const casesDir = join(import.meta.dirname, 'cases');
 const cliPath = join(
@@ -19,15 +24,27 @@ function numstat(files: [number, number, string][]): string {
   return files.map(([a, r, f]) => `${a}\t${r}\t${f}`).join('\n');
 }
 
-/** Create a temp dir with a fake `git` script that outputs the given numstat. */
+/**
+ * Create a temp dir with a fake `git` that prints the given numstat regardless
+ * of args. Cross-platform: the payload is stored in a data file (preserving the
+ * tab separators), and both a POSIX `git` shell script and a Windows `git.cmd`
+ * batch shim emit it — so the hook's `git diff --numstat` is intercepted on
+ * every OS. Callers prepend this dir to PATH.
+ */
 function makeFakeGitDir(output: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'lat-hook-'));
-  const gitScript = join(dir, 'git');
-  writeFileSync(
-    gitScript,
-    '#!/bin/sh\n' + "cat <<'NUMSTAT'\n" + output + '\nNUMSTAT\n',
-  );
-  chmodSync(gitScript, 0o755);
+  const dataFile = join(dir, 'numstat.txt');
+  writeFileSync(dataFile, output);
+
+  // POSIX: `git` shell script.
+  const shScript = join(dir, 'git');
+  writeFileSync(shScript, '#!/bin/sh\ncat "$(dirname "$0")/numstat.txt"\n');
+  chmodSync(shScript, 0o755);
+
+  // Windows: `git.cmd` batch shim (resolved via PATHEXT). `type` preserves tabs.
+  const cmdScript = join(dir, 'git.cmd');
+  writeFileSync(cmdScript, '@type "%~dp0numstat.txt"\r\n');
+
   return dir;
 }
 
@@ -49,7 +66,13 @@ function runHook(
     ...(process.env as Record<string, string>),
   };
   if (opts.fakeBinDir) {
-    env.PATH = opts.fakeBinDir + ':' + env.PATH;
+    // Prepend using the OS path delimiter (';' on Windows). Windows env vars are
+    // case-insensitive, so drop any existing `Path` key before setting `PATH` to
+    // avoid the child inheriting the unmodified value under a different casing.
+    const orig = env.PATH ?? env.Path ?? '';
+    delete env.Path;
+    delete env.PATH;
+    env.PATH = opts.fakeBinDir + delimiter + orig;
   }
 
   const result = spawnSync('node', [cliPath, 'hook', agent, event], {
@@ -89,7 +112,7 @@ describe('hook stop', () => {
       expect(stdout).toBe('');
       expect(stderr).toBe('');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -114,7 +137,7 @@ describe('hook stop', () => {
       expect(parsed.reason).toContain('110');
       expect(parsed.reason).toContain('lat.md/');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -127,7 +150,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -138,7 +161,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -152,7 +175,7 @@ describe('hook stop', () => {
       expect(parsed.reason).toContain('Update `lat.md/`');
       expect(parsed.reason).toContain('lat check` until it passes');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -181,7 +204,7 @@ describe('hook stop', () => {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
       expect(stdout).toBe('');
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 
@@ -197,7 +220,7 @@ describe('hook stop', () => {
       expect(parsed.followup_message).toContain('110');
       expect(parsed.decision).toBeUndefined();
     } finally {
-      rmSync(fakeBinDir, { recursive: true });
+      rmDir(fakeBinDir);
     }
   });
 });

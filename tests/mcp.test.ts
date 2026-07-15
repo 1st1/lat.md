@@ -158,7 +158,7 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
   afterAll(async () => {
     await client.close();
     if (server) server.close();
-    if (tmp) rmSync(tmp, { recursive: true, force: true });
+    if (tmp) rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // @lat: [[tests/mcp#lat_search finds auth section]]
@@ -212,6 +212,6 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
     expect(text).toContain('Authentication');
 
     await client2.close();
-    rmSync(tmp2, { recursive: true, force: true });
+    rmSync(tmp2, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 });
