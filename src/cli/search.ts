@@ -107,32 +107,60 @@ async function withDb<T>(
   }
 }
 
+/** Resolve raw search hits (by id) to full section matches. */
+async function resolveMatches(
+  latDir: string,
+  results: { id: string }[],
+): Promise<SectionMatch[]> {
+  if (results.length === 0) return [];
+
+  const allSections = await loadAllSections(latDir);
+  const flat = flattenSections(allSections);
+  const byId = new Map(flat.map((s) => [s.id, s]));
+
+  return results
+    .map((r) => byId.get(r.id))
+    .filter((s): s is NonNullable<typeof s> => !!s)
+    .map((s) => ({ section: s, reason: 'semantic match' }));
+}
+
 /**
  * Run a semantic search across lat.md sections.
  * Handles indexing (with optional progress callback). Returns matched sections.
+ *
+ * `opts.buildIndex: false` is read-only mode (the UserPromptSubmit hook): search
+ * an existing index but never build or update it — so a user's first prompt in a
+ * fresh repo isn't blocked by a full local embed pass. Building the index is
+ * `lat search` / `lat reindex`. With nothing indexed yet, returns no matches
+ * without even loading the embedder to embed the query.
  */
 export async function runSearch(
   latDir: string,
   query: string,
   limit: number,
   progress?: IndexProgress,
+  opts?: { buildIndex?: boolean },
 ): Promise<SearchResult> {
+  if (opts?.buildIndex === false) {
+    const db = openDb(latDir);
+    try {
+      await ensureMeta(db);
+      const stored = await getStoredModel(db);
+      // Never built (or a legacy pre-versioning cache) — leave building to
+      // `lat search`; don't load the embedder just to embed the query.
+      if (stored === null) return { query, matches: [] };
+      const embedder = await embedderForIndex(stored, latDir);
+      await ensureSectionsSchema(db, embedder.dimensions);
+      const results = await searchSections(db, query, embedder, limit);
+      return { query, matches: await resolveMatches(latDir, results) };
+    } finally {
+      await closeDb(db);
+    }
+  }
+
   return withDb(latDir, progress, async (db, embedder) => {
     const results = await searchSections(db, query, embedder, limit);
-    if (results.length === 0) {
-      return { query, matches: [] };
-    }
-
-    const allSections = await loadAllSections(latDir);
-    const flat = flattenSections(allSections);
-    const byId = new Map(flat.map((s) => [s.id, s]));
-
-    const matches = results
-      .map((r) => byId.get(r.id))
-      .filter((s): s is NonNullable<typeof s> => !!s)
-      .map((s) => ({ section: s, reason: 'semantic match' }));
-
-    return { query, matches };
+    return { query, matches: await resolveMatches(latDir, results) };
   });
 }
 

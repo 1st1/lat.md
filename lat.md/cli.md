@@ -261,7 +261,7 @@ Reads the hook input from stdin (JSON with `user_prompt`). Outputs JSON with `ad
 1. A directive to ALWAYS run `lat search` on the user's intent before starting work — even for seemingly straightforward tasks — because search may reveal critical design details, protocols, or constraints. Includes a hard gate: do not read files, write code, or run commands until search is done.
 2. A reminder that `lat.md/` must stay in sync with the codebase — update relevant sections and run `lat check` before finishing.
 3. If the prompt contains `[[refs]]`, resolves them inline using [[src/cli/expand.ts#expandPrompt]]
-4. Runs [[src/cli/search.ts#runSearch]] on the user prompt, then [[src/cli/section.ts#getSection]] + [[src/cli/section.ts#formatSectionOutput]] on each result — the agent gets full section content with outgoing/incoming refs before it starts work. Gracefully degrades if no LLM key is configured.
+4. Runs [[src/cli/search.ts#runSearch]] on the user prompt in **read-only mode** (`buildIndex: false`) — it searches an existing index but never builds or updates one, so a user's first prompt in a fresh repo isn't blocked by a full local embed pass (building the index is `lat search` / [[cli#reindex]], and until then this returns no matches). Then [[src/cli/section.ts#getSection]] + [[src/cli/section.ts#formatSectionOutput]] on each result — the agent gets full section content with outgoing/incoming refs before it starts work. Gracefully degrades when nothing is indexed yet or the backend can't serve the index.
 
 ### Stop
 
@@ -398,6 +398,11 @@ rebuilds local, records `local:…` in `meta`, and sets the durable `local` pref
 `lat search` runs ignore the key and the choice survives a `.cache` wipe or fresh clone (choosing
 remote clears it). `--yes` skips the confirmation (CI / non-interactive); when the shell isn't a TTY
 and `--yes` isn't given, it errors rather than switching without consent.
+
+A rejected key (401/403) is distinct from a **malformed or unsupported key prefix** (e.g. an
+Anthropic `sk-ant-…` key, or an unrecognized prefix): the latter can't resolve a provider at all, so
+`lat reindex` surfaces the provider-detection error as a clean message and exits without touching the
+index — it never offers the local switch or crashes.
 
 Implementation: [[src/cli/reindex.ts#reindexCommand]]
 

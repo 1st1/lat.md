@@ -63,7 +63,12 @@ async function searchAndExpand(
 ): Promise<string | null> {
   let result;
   try {
-    result = await runSearch(ctx.latDir, userPrompt, 5);
+    // Read-only: search an existing index but never build/update it here. A fresh
+    // repo's first prompt must not trigger a full local embed pass — that's what
+    // `lat search` / `lat reindex` are for. Returns no matches until then.
+    result = await runSearch(ctx.latDir, userPrompt, 5, undefined, {
+      buildIndex: false,
+    });
   } catch {
     // No usable backend (e.g. reindex required, key rejected) — skip semantic
     // enrichment silently rather than blocking the user's prompt.

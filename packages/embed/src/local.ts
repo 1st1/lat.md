@@ -14,8 +14,9 @@ import { Worker } from 'node:worker_threads';
 import type { Embedder, ModelManifest } from './index.js';
 import { loadWasmEngine, type WasmEngine } from './wasm-loader.js';
 
-// Below this many texts, run inline: spinning up workers (each loads ~90 MB of
-// weights) isn't worth it. At/above, fan out across threads.
+// Below this many texts, run inline: spinning up workers (each reads the ~45 MB
+// fp16 weights and up-casts them to ~90 MB fp32 in memory) isn't worth it.
+// At/above, fan out across threads.
 const WORKER_THRESHOLD = 24;
 // Each worker should embed at least this many texts to amortize its model load,
 // so worker count scales down for smaller jobs instead of always using all CPUs.
