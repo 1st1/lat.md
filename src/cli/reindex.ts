@@ -92,11 +92,13 @@ export async function reindexCommand(
   } else {
     // Resolve from the env key (bare + unpinned, or explicit --remote). Verify
     // it with a tiny probe first, so an invalid key doesn't wipe a working index.
-    const remote = await embedderFromEnv();
     try {
+      const remote = await embedderFromEnv();
       await remote.embed(['lat reindex: verifying embedding key']);
       embedder = remote;
     } catch (err) {
+      // A malformed/unsupported key prefix throws from embedderFromEnv (a plain
+      // Error, not EmbeddingAuthError) — surface it cleanly instead of crashing.
       if (!(err instanceof EmbeddingAuthError)) {
         return { output: (err as Error).message, isError: true };
       }

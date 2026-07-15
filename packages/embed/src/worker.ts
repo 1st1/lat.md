@@ -4,7 +4,7 @@
  * running N of them across threads) and embeds the text slices it's handed.
  *
  * Model files are passed as paths via workerData and read here, so the ~45 MB
- * weights are never copied through the message channel.
+ * fp16 weights are never copied through the message channel.
  */
 import { parentPort, workerData } from 'node:worker_threads';
 import { readFileSync } from 'node:fs';
