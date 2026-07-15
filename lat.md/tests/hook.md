@@ -2,11 +2,12 @@
 lat:
   require-code-mention: true
 ---
+
 # Hook
 
-Functional tests for Claude, Codex, and Cursor lifecycle hooks. Runs hook commands against fixtures and injects a fake `git` through PATH to control `git diff HEAD --numstat` output.
+Functional tests for Claude, Codex, and Cursor lifecycle hooks. Hook subprocesses use fake Git output; [[src/cli/hook.ts#analyzeDiff]] also runs against temporary real repositories.
 
-Tests in `tests/hook.test.ts`.
+The fake `git` dispatches on the subcommand, so one helper controls both the tracked diff and untracked-file list. Real repositories verify native Git ignore and unborn-branch behavior. Tests live in `tests/hook.test.ts`.
 
 ## Exits silently when check passes and no diff
 
@@ -63,3 +64,13 @@ Syncing `.codex/hooks.json` removes stale lat-owned entries, installs current pr
 ## Local JavaScript hook commands retain Node
 
 When init runs from a local compiled JavaScript entry point, generated hook commands invoke it through the same Node executable so non-executable `tsc` output works without changing file permissions.
+
+## Counts tracked and untracked files together
+
+Diff analysis combines tracked churn with relevant untracked `lat.md/` and supported source files while respecting nested `.gitignore` rules and safely skipping unrelated paths.
+
+The integration fixture also covers spaces and non-ASCII characters in untracked source paths, exercising the NUL-delimited Git output contract.
+
+## Counts untracked files before the first commit
+
+When `HEAD` does not exist yet, tracked diff analysis may fail but untracked `lat.md/` and supported source files still contribute their complete line counts.

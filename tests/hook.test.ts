@@ -4,6 +4,7 @@ import { join, delimiter } from 'node:path';
 import {
   mkdtempSync,
   cpSync,
+  mkdirSync,
   writeFileSync,
   readFileSync,
   chmodSync,
@@ -11,6 +12,7 @@ import {
 import { tmpdir } from 'node:os';
 import { rmDirBestEffort } from './util.js';
 import { syncLatHooks } from '../src/cli/init.js';
+import { analyzeDiff } from '../src/cli/hook.js';
 
 const casesDir = join(import.meta.dirname, 'cases');
 const cliPath = join(
@@ -28,25 +30,38 @@ function numstat(files: [number, number, string][]): string {
 }
 
 /**
- * Create a temp dir with a fake `git` that prints the given numstat regardless
- * of args. Cross-platform: the payload is stored in a data file (preserving the
- * tab separators), and both a POSIX `git` shell script and a Windows `git.cmd`
- * batch shim emit it — so the hook's `git diff --numstat` is intercepted on
- * every OS. Callers prepend this dir to PATH.
+ * Create a temp dir with a fake `git` that dispatches on the subcommand:
+ * `git diff …` prints the given numstat, `git ls-files …` prints the untracked
+ * list. Cross-platform: payloads live in data files (preserving tab separators),
+ * and both a POSIX `git` shell script and a Windows `git.cmd` batch shim serve
+ * them — so `git diff --numstat` and `git ls-files` are intercepted on every OS.
+ * Callers prepend this dir to PATH.
  */
-function makeFakeGitDir(output: string): string {
+function makeFakeGitDir(diffOutput: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'lat-hook-'));
-  const dataFile = join(dir, 'numstat.txt');
-  writeFileSync(dataFile, output);
+  writeFileSync(join(dir, 'diff.txt'), diffOutput);
+  writeFileSync(join(dir, 'lsfiles.txt'), '');
 
-  // POSIX: `git` shell script.
+  // POSIX: dispatch on the git subcommand ($1).
   const shScript = join(dir, 'git');
-  writeFileSync(shScript, '#!/bin/sh\ncat "$(dirname "$0")/numstat.txt"\n');
+  writeFileSync(
+    shScript,
+    '#!/bin/sh\n' +
+      'case "$1" in\n' +
+      '  diff) cat "$(dirname "$0")/diff.txt" ;;\n' +
+      '  ls-files) cat "$(dirname "$0")/lsfiles.txt" ;;\n' +
+      'esac\n',
+  );
   chmodSync(shScript, 0o755);
 
   // Windows: `git.cmd` batch shim (resolved via PATHEXT). `type` preserves tabs.
   const cmdScript = join(dir, 'git.cmd');
-  writeFileSync(cmdScript, '@type "%~dp0numstat.txt"\r\n');
+  writeFileSync(
+    cmdScript,
+    '@echo off\r\n' +
+      'if "%1"=="diff" type "%~dp0diff.txt"\r\n' +
+      'if "%1"=="ls-files" type "%~dp0lsfiles.txt"\r\n',
+  );
 
   return dir;
 }
@@ -103,6 +118,17 @@ function runStopHook(
   } = {},
 ): { stdout: string; stderr: string; exitCode: number } {
   return runHook(agent, agent === 'cursor' ? 'stop' : 'Stop', caseDir, opts);
+}
+
+function runGit(projectRoot: string, args: string[]): string {
+  const result = spawnSync('git', args, {
+    cwd: projectRoot,
+    encoding: 'utf-8',
+  });
+  if (result.status !== 0) {
+    throw new Error(`git ${args.join(' ')} failed: ${result.stderr}`);
+  }
+  return result.stdout ?? '';
 }
 
 const clean = join(casesDir, 'hook-clean');
@@ -352,6 +378,71 @@ describe('Codex hook integration', () => {
     } finally {
       process.argv[1] = originalScript;
       rmDirBestEffort(dir);
+    }
+  });
+});
+
+describe('analyzeDiff', () => {
+  // @lat: [[tests/hook#Counts tracked and untracked files together]]
+  it('counts relevant untracked files and respects nested gitignores', () => {
+    const proj = mkdtempSync(join(tmpdir(), 'lat-untracked-'));
+    try {
+      mkdirSync(join(proj, 'lat.md'), { recursive: true });
+      mkdirSync(join(proj, 'lat.md', '.cache'), { recursive: true });
+      mkdirSync(join(proj, 'src'), { recursive: true });
+      mkdirSync(join(proj, 'src', 'generated'), { recursive: true });
+      writeFileSync(join(proj, 'lat.md', '.gitignore'), '.cache/\n');
+      writeFileSync(join(proj, 'src', '.gitignore'), 'generated/\n');
+      writeFileSync(join(proj, 'src', 'tracked.ts'), 'before\n');
+
+      runGit(proj, ['init', '--quiet']);
+      runGit(proj, ['config', 'user.email', 'lat@example.com']);
+      runGit(proj, ['config', 'user.name', 'Lat Tests']);
+      runGit(proj, [
+        'add',
+        'lat.md/.gitignore',
+        'src/.gitignore',
+        'src/tracked.ts',
+      ]);
+      runGit(proj, ['commit', '--quiet', '-m', 'initial']);
+
+      writeFileSync(join(proj, 'src', 'tracked.ts'), 'changed\n'.repeat(110));
+      writeFileSync(join(proj, 'lat.md', 'feature.md'), 'x\n'.repeat(60));
+      writeFileSync(join(proj, 'src', 'brand-new.ts'), 'y\n'.repeat(20));
+      writeFileSync(join(proj, 'src', 'with space.ts'), 's\n'.repeat(3));
+      writeFileSync(join(proj, 'src', 'café.ts'), 'u\n'.repeat(7));
+      writeFileSync(
+        join(proj, 'lat.md', '.cache', 'ignored.md'),
+        'ignored\n'.repeat(500),
+      );
+      writeFileSync(
+        join(proj, 'src', 'generated', 'ignored.ts'),
+        'ignored\n'.repeat(500),
+      );
+      writeFileSync(join(proj, 'archive.tgz'), 'unrelated\n'.repeat(500));
+
+      expect(analyzeDiff(proj)).toEqual({
+        codeLines: 141,
+        latMdLines: 60,
+      });
+    } finally {
+      rmDirBestEffort(proj);
+    }
+  });
+
+  // @lat: [[tests/hook#Counts untracked files before the first commit]]
+  it('counts untracked files in a repository without HEAD', () => {
+    const proj = mkdtempSync(join(tmpdir(), 'lat-unborn-'));
+    try {
+      runGit(proj, ['init', '--quiet']);
+      mkdirSync(join(proj, 'lat.md'), { recursive: true });
+      mkdirSync(join(proj, 'src'), { recursive: true });
+      writeFileSync(join(proj, 'lat.md', 'feature.md'), 'x\n'.repeat(12));
+      writeFileSync(join(proj, 'src', 'feature.ts'), 'y\n'.repeat(8));
+
+      expect(analyzeDiff(proj)).toEqual({ codeLines: 8, latMdLines: 12 });
+    } finally {
+      rmDirBestEffort(proj);
     }
   });
 });
