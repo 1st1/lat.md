@@ -943,6 +943,48 @@ describe('error-source-ref-c-missing', () => {
   });
 });
 
+describe('source-ref-java-valid', () => {
+  // @lat: [[tests/check-md#Passes with valid links#Passes with Java symbol links]]
+  it('resolves Java class, method, constructor, field, nested class, interface, enum, record, and annotation type refs without errors', async () => {
+    // docs.md links: Greeter (class), Greeter#greet / Greeter#Greeter /
+    // Greeter#of (methods/constructor), Greeter#DEFAULT_NAME (field),
+    // Inner + Greeter#Inner (nested class, dual-emitted), Inner#innerMethod,
+    // Greeting (interface) + hello/bye/NAME_CONST members,
+    // Color (enum) + RED (constant) + label (method),
+    // Point (record) + x (component) + sum (method),
+    // Marker (annotation type) + value (element)
+    const { errors } = await checkMd(latDir('source-ref-java-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe('error-source-ref-java-missing', () => {
+  it('check md reports all missing Java symbols', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-java-missing'));
+    expect(errors).toHaveLength(4);
+
+    const byTarget = new Map(errors.map((e) => [e.target, e]));
+
+    const fn = byTarget.get('src/Greeter.java#nonexistent')!;
+    expect(fn).toBeDefined();
+    expect(fn.message).toContain('symbol "nonexistent" not found');
+
+    const cls = byTarget.get('src/Greeter.java#MissingClass')!;
+    expect(cls).toBeDefined();
+    expect(cls.message).toContain('symbol "MissingClass" not found');
+
+    const cnst = byTarget.get('src/Greeter.java#MISSING_CONST')!;
+    expect(cnst).toBeDefined();
+    expect(cnst.message).toContain('symbol "MISSING_CONST" not found');
+
+    const method = byTarget.get('src/Greeter.java#Greeter#missingMethod')!;
+    expect(method).toBeDefined();
+    expect(method.message).toContain(
+      'symbol "Greeter#missingMethod" not found',
+    );
+  });
+});
+
 describe('error-source-ref-unsupported-ext', () => {
   it('check md reports unsupported extension with list of supported ones', async () => {
     const { errors } = await checkMd(

@@ -60,6 +60,7 @@ const grammarMap: Record<string, string> = {
   '.go': 'tree-sitter-go.wasm',
   '.c': 'tree-sitter-c.wasm',
   '.h': 'tree-sitter-c.wasm',
+  '.java': 'tree-sitter-java.wasm',
 };
 
 /** All source file extensions that lat can parse (derived from grammarMap). */
@@ -517,6 +518,136 @@ function extractGoSymbols(tree: Tree): SourceSymbol[] {
   return symbols;
 }
 
+/** Java type-declaration node types and the symbol kind they map to. */
+const javaTypeKinds: Record<string, SourceSymbol['kind']> = {
+  class_declaration: 'class',
+  record_declaration: 'class',
+  enum_declaration: 'class',
+  interface_declaration: 'interface',
+  annotation_type_declaration: 'interface',
+};
+
+function extractJavaSymbols(tree: Tree): SourceSymbol[] {
+  const symbols: SourceSymbol[] = [];
+  collectJavaScope(tree.rootNode, null, symbols);
+  return symbols;
+}
+
+/**
+ * Walk a Java scope (program, class_body, interface_body, enum_body, ...)
+ * and collect type declarations and their members.
+ *
+ * Nested types are emitted both standalone and with `parent` set, so both
+ * `#Inner` and `#Outer#Inner` resolve (same dual-emit approach as C enum
+ * members). Members always carry their enclosing type as `parent`.
+ */
+function collectJavaScope(
+  scope: SyntaxNode,
+  parentName: string | null,
+  symbols: SourceSymbol[],
+): void {
+  for (let i = 0; i < scope.namedChildCount; i++) {
+    const node = scope.namedChild(i)!;
+    const startLine = node.startPosition.row + 1;
+    const endLine = node.endPosition.row + 1;
+
+    const typeKind = javaTypeKinds[node.type];
+    if (typeKind) {
+      const name = extractName(node);
+      if (!name) continue;
+      const sym: SourceSymbol = {
+        name,
+        kind: typeKind,
+        startLine,
+        endLine,
+        signature: firstLine(node.text),
+      };
+      symbols.push(sym);
+      if (parentName) {
+        // Nested type — also emit with parent so #Outer#Inner works
+        symbols.push({ ...sym, parent: parentName });
+      }
+      // Record components (`record Point(int x, int y)`) act as fields
+      if (node.type === 'record_declaration') {
+        const params = node.childForFieldName('parameters');
+        if (params) {
+          for (let j = 0; j < params.namedChildCount; j++) {
+            const param = params.namedChild(j)!;
+            if (param.type !== 'formal_parameter') continue;
+            const paramName = extractName(param);
+            if (!paramName) continue;
+            symbols.push({
+              name: paramName,
+              kind: 'variable',
+              parent: name,
+              startLine: param.startPosition.row + 1,
+              endLine: param.endPosition.row + 1,
+              signature: firstLine(param.text),
+            });
+          }
+        }
+      }
+      const body = node.childForFieldName('body');
+      if (body) collectJavaScope(body, name, symbols);
+      continue;
+    }
+
+    if (!parentName) continue;
+
+    if (
+      node.type === 'method_declaration' ||
+      node.type === 'constructor_declaration' ||
+      node.type === 'annotation_type_element_declaration'
+    ) {
+      const name = extractName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'method',
+          parent: parentName,
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (
+      node.type === 'field_declaration' ||
+      node.type === 'constant_declaration'
+    ) {
+      // One declaration can declare several fields: `private int a, b;`
+      for (let j = 0; j < node.namedChildCount; j++) {
+        const declarator = node.namedChild(j)!;
+        if (declarator.type !== 'variable_declarator') continue;
+        const name = extractName(declarator);
+        if (!name) continue;
+        symbols.push({
+          name,
+          kind: node.type === 'constant_declaration' ? 'const' : 'variable',
+          parent: parentName,
+          startLine: declarator.startPosition.row + 1,
+          endLine: declarator.endPosition.row + 1,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (node.type === 'enum_constant') {
+      const name = extractName(node);
+      if (name) {
+        symbols.push({
+          name,
+          kind: 'const',
+          parent: parentName,
+          startLine,
+          endLine,
+          signature: firstLine(node.text),
+        });
+      }
+    } else if (node.type === 'enum_body_declarations') {
+      // Methods/fields after the constants in an enum body
+      collectJavaScope(node, parentName, symbols);
+    }
+  }
+}
+
 /**
  * Extract the declarator name from a C function_declarator node.
  * Handles plain identifiers and pointer declarators (*name).
@@ -861,6 +992,9 @@ export async function parseSourceSymbols(
     }
     if (ext === '.c' || ext === '.h') {
       return extractCSymbols(tree);
+    }
+    if (ext === '.java') {
+      return extractJavaSymbols(tree);
     }
     return extractTsSymbols(tree);
   } finally {

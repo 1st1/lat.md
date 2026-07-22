@@ -104,7 +104,7 @@ def init():
     ...
 ```
 
-Supported comment styles: `//` (JS/TS/Rust/Go/C) and `#` (Python).
+Supported comment styles: `//` (JS/TS/Rust/Go/C/Java) and `#` (Python).
 
 Place one `@lat:` comment per section, at the relevant code — not at the top of the file.
 

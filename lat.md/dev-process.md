@@ -51,7 +51,7 @@ It wraps the `ignore-walk` npm package to ensure `.gitignore` rules are consiste
 
 ## Formatting
 
-Prettier with no semicolons, single quotes, trailing commas. Run `pnpm format` before committing.
+Prettier with semicolons, single quotes, trailing commas (see `.prettierrc`). Run `pnpm format` before committing.
 
 ## Publishing
 
