@@ -613,12 +613,32 @@ describe('full-ref', () => {
     expect(errors).toHaveLength(0);
   });
 
+  // @lat: [[ref-resolution#Windows-style backslash refs pass]]
+  it('check code-refs accepts backslashes in the file portion of a ref', async () => {
+    const { errors } = await checkCodeRefs(lat);
+    const backslashRef = errors.find(
+      (e) => e.target === String.raw`lat.md\guides\setup#Setup#Install`,
+    );
+    expect(backslashRef).toBeUndefined();
+  });
+
   // @lat: [[ref-resolution#Full ref findSections resolves]]
   it('findSections finds section by full path', async () => {
     const sections = await loadAllSections(lat);
     const matches = findSections(sections, 'guides/setup#Install');
     expect(matches).toHaveLength(1);
     expect(matches[0].section.id).toBe('lat.md/guides/setup#Setup#Install');
+  });
+
+  it('findSections treats a backslash path as an exact match', async () => {
+    const sections = await loadAllSections(lat);
+    const matches = findSections(
+      sections,
+      String.raw`lat.md\guides\setup#Setup#Install`,
+    );
+    expect(matches).toHaveLength(1);
+    expect(matches[0].section.id).toBe('lat.md/guides/setup#Setup#Install');
+    expect(matches[0].reason).toBe('exact match');
   });
 
   // @lat: [[ref-resolution#Full ref refs finds md references]]

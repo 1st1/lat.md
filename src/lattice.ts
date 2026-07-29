@@ -266,6 +266,16 @@ export type ResolveResult = {
 };
 
 /**
+ * Normalize separators only in the file portion of a section reference.
+ * Headings are authored text and may legitimately contain backslashes.
+ */
+function normalizeRefFilePath(target: string): string {
+  const hashIdx = target.indexOf('#');
+  if (hashIdx === -1) return toPosix(target);
+  return toPosix(target.slice(0, hashIdx)) + target.slice(hashIdx);
+}
+
+/**
  * Resolve a potentially short reference to its canonical full-path form.
  * If the file segment of the ref is a bare stem that uniquely maps to one
  * full path, expands it. Otherwise returns the ref unchanged.
@@ -279,6 +289,8 @@ export function resolveRef(
   sectionIds: Set<string>,
   fileIndex: Map<string, string[]>,
 ): ResolveResult {
+  target = normalizeRefFilePath(target);
+
   // Already matches a known section — no resolution needed
   if (sectionIds.has(target.toLowerCase())) {
     return { resolved: target, ambiguous: null, suggested: null };
@@ -361,7 +373,9 @@ export function findSections(
 ): SectionMatch[] {
   const flat = flattenSections(sections);
   // Leading # means "search for a heading", strip it
-  const normalized = query.startsWith('#') ? query.slice(1) : query;
+  const normalized = normalizeRefFilePath(
+    query.startsWith('#') ? query.slice(1) : query,
+  );
   const q = normalized.toLowerCase();
   const isFullPath = normalized.includes('#');
 

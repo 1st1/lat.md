@@ -51,6 +51,10 @@ A wiki link using the full vault-relative path `[[guides/setup#Install]]` passes
 
 A `@lat:` code comment using the full vault-relative path `[[guides/setup#Configure]]` passes `check code-refs` without errors.
 
+## Windows-style backslash refs pass
+
+A `@lat:` code comment whose file portion uses Windows-style backslashes resolves to the canonical POSIX section id, preserving references generated before v0.12.1.
+
 ## Full ref findSections resolves
 
 `findSections` resolves a full vault-relative ref like `guides/setup#Install` and returns the matching section.
