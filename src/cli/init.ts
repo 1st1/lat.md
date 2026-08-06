@@ -1007,6 +1007,60 @@ async function setupOpenCode(
   ensureGitignored(root, '.opencode');
 }
 
+async function setupAntigravity(
+  root: string,
+  latDir: string,
+  hashes: Record<string, string>,
+  ask: (message: string) => Promise<boolean>,
+): Promise<void> {
+  // AGENTS.md — Antigravity reads this natively
+  // (already created in the shared step if any non-Claude agent is selected)
+
+  // AGENTS.md is the primary config — Antigravity reads it natively.
+  // GEMINI.md is a legacy fallback; update it if it already exists.
+  if (existsSync(join(root, 'GEMINI.md'))) {
+    const geminiHash = await appendTemplateSection(
+      root,
+      latDir,
+      'GEMINI.md',
+      readAgentsTemplate(),
+      'GEMINI.md',
+      '  ',
+      ask,
+    );
+    if (geminiHash) hashes['GEMINI.md'] = geminiHash;
+  }
+
+  // .agents/rules/lat.md — workspace rules (Antigravity discovers from .agents/rules/)
+  console.log('');
+  console.log(
+    styleText(
+      'dim',
+      '  Workspace rules give Antigravity the lat.md workflow checklist and',
+    ),
+  );
+  console.log(
+    styleText('dim', '  CLI commands so the agent uses lat proactively.'),
+  );
+
+  const rulesHash = await writeTemplateFile(
+    root,
+    latDir,
+    '.agents/rules/lat.md',
+    readAgentsTemplate(),
+    'agents.md',
+    'Rules (.agents/rules/lat.md)',
+    '  ',
+    ask,
+  );
+  if (rulesHash) hashes['.agents/rules/lat.md'] = rulesHash;
+
+  // Antigravity does not support per-workspace MCP config — MCP is global only.
+
+  // .agents/skills/lat-md/SKILL.md — skill for authoring lat.md files
+  await writeAgentsSkill(root, latDir, hashes, ask);
+}
+
 async function setupCodex(
   root: string,
   latDir: string,
@@ -1196,6 +1250,7 @@ function printNextSteps(selectedAgents: string[]): void {
     pi: 'Pi',
     opencode: 'OpenCode',
     codex: 'Codex',
+    antigravity: 'Antigravity',
   };
 
   if (!hasClaudeCode && ideAgents.length === 0) return;
@@ -1304,6 +1359,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
       { label: 'VS Code Copilot', value: 'copilot' },
       { label: 'OpenCode', value: 'opencode' },
       { label: 'Codex', value: 'codex' },
+      { label: 'Antigravity', value: 'antigravity' },
     ];
 
     const selectedAgents = await checklistMenu(
@@ -1317,6 +1373,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
     const useCopilot = selectedAgents.includes('copilot');
     const useOpenCode = selectedAgents.includes('opencode');
     const useCodex = selectedAgents.includes('codex');
+    const useAntigravity = selectedAgents.includes('antigravity');
 
     const anySelected = selectedAgents.length > 0;
     const needsLatCommand =
@@ -1374,7 +1431,12 @@ export async function initCmd(targetDir?: string): Promise<void> {
 
     // Step 3: AGENTS.md (shared by non-Claude agents)
     const needsAgentsMd =
-      usePi || useCursor || useCopilot || useOpenCode || useCodex;
+      usePi ||
+      useCursor ||
+      useCopilot ||
+      useOpenCode ||
+      useCodex ||
+      useAntigravity;
     if (needsAgentsMd) {
       await setupAgentsMd(root, latDir, template, fileHashes, ask);
     }
@@ -1421,6 +1483,12 @@ export async function initCmd(targetDir?: string): Promise<void> {
       console.log('');
       console.log(styleText('bold', 'Setting up Codex...'));
       await setupCodex(root, latDir, fileHashes, ask, commandStyle);
+    }
+
+    if (useAntigravity) {
+      console.log('');
+      console.log(styleText('bold', 'Setting up Antigravity...'));
+      await setupAntigravity(root, latDir, fileHashes, ask);
     }
 
     // Step 5: LLM key setup
