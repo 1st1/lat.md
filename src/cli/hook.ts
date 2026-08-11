@@ -8,7 +8,7 @@ import { getSection, formatSectionOutput } from './section.js';
 import { checkMd, checkCodeRefs, checkIndex, checkSections } from './check.js';
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
 
-function outputClaudePromptSubmit(context: string): void {
+function outputPromptSubmit(context: string): void {
   process.stdout.write(
     JSON.stringify({
       hookSpecificOutput: {
@@ -19,7 +19,7 @@ function outputClaudePromptSubmit(context: string): void {
   );
 }
 
-function outputClaudeStop(reason: string): void {
+function outputStop(reason: string): void {
   process.stdout.write(
     JSON.stringify({
       decision: 'block',
@@ -97,7 +97,7 @@ async function handleUserPromptSubmit(): Promise<void> {
   try {
     const raw = await readStdin();
     const input = JSON.parse(raw);
-    userPrompt = input.user_prompt ?? '';
+    userPrompt = input.user_prompt ?? input.prompt ?? '';
   } catch {
     // If we can't parse stdin, still emit the reminder
   }
@@ -152,7 +152,7 @@ async function handleUserPromptSubmit(): Promise<void> {
     }
   }
 
-  outputClaudePromptSubmit(parts.join('\n'));
+  outputPromptSubmit(parts.join('\n'));
 }
 
 /** Minimum diff size (in lines) to consider "significant" code change. */
@@ -283,7 +283,7 @@ function formatStopReason({
   return parts.join('\n');
 }
 
-async function handleClaudeStop(): Promise<void> {
+async function handleStop(): Promise<void> {
   const latDir = findLatticeDir();
   if (!latDir) return;
 
@@ -311,7 +311,7 @@ async function handleClaudeStop(): Promise<void> {
 
   const reason = formatStopReason(status);
   if (!reason) return;
-  outputClaudeStop(reason);
+  outputStop(reason);
 }
 
 async function handleCursorStop(): Promise<void> {
@@ -331,11 +331,25 @@ export async function hookCmd(agent: string, event: string): Promise<void> {
           await handleUserPromptSubmit();
           return;
         case 'Stop':
-          await handleClaudeStop();
+          await handleStop();
           return;
         default:
           console.error(
             `Unknown hook event for claude: ${event}. Supported: UserPromptSubmit, Stop`,
+          );
+          process.exit(1);
+      }
+    case 'codex':
+      switch (event) {
+        case 'UserPromptSubmit':
+          await handleUserPromptSubmit();
+          return;
+        case 'Stop':
+          await handleStop();
+          return;
+        default:
+          console.error(
+            `Unknown hook event for codex: ${event}. Supported: UserPromptSubmit, Stop`,
           );
           process.exit(1);
       }
@@ -351,7 +365,9 @@ export async function hookCmd(agent: string, event: string): Promise<void> {
           process.exit(1);
       }
     default:
-      console.error(`Unknown agent: ${agent}. Supported: claude, cursor`);
+      console.error(
+        `Unknown agent: ${agent}. Supported: claude, codex, cursor`,
+      );
       process.exit(1);
   }
 }

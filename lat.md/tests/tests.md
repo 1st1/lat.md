@@ -27,5 +27,5 @@ Shared patterns for writing and organizing tests in this project.
 - [[roundtrip]] — Parse → render fidelity for all markdown and wiki link features
 - [[check-sections]] — Validating section leading paragraphs
 - [[section]] — getSection core function and formatSectionOutput formatter
-- [[hook]] — Stop hook conditional blocking and diff analysis
+- [[hook]] — Lifecycle hook context injection, conditional continuation, and setup merging
 - [[ts-fallback]] — Pure-TypeScript code-ref scanner fallback without ripgrep

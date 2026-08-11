@@ -4,7 +4,7 @@ lat:
 ---
 # Hook
 
-Functional tests for the Stop hook. Runs `lat hook claude Stop` as a subprocess against test case fixtures, with a fake `git` script injected via PATH to control `git diff HEAD --numstat` output.
+Functional tests for Claude, Codex, and Cursor lifecycle hooks. Runs hook commands against fixtures and injects a fake `git` through PATH to control `git diff HEAD --numstat` output.
 
 Tests in `tests/hook.test.ts`.
 
@@ -47,3 +47,15 @@ Files that don't match `SOURCE_EXTENSIONS` (e.g. `.md`) are not counted toward c
 ## Cursor stop hook returns follow-up work instead of a Claude block
 
 When Cursor needs more work at stop time, the hook returns a `followup_message` payload instead of Claude's `decision: "block"` shape so the agent keeps going in Cursor's native hook format.
+
+## Codex stop hook returns a block decision
+
+When Codex needs more work at stop time, the hook returns the same guarded `decision: "block"` continuation payload used for Claude.
+
+## Codex prompt hook reads the Codex prompt field
+
+The Codex `UserPromptSubmit` adapter reads `prompt`, expands wiki links, and returns the resolved prompt as additional developer context.
+
+## Codex hook setup preserves non-lat hooks
+
+Syncing `.codex/hooks.json` removes stale lat-owned entries, installs current prompt and stop commands, and preserves unrelated hook metadata and event handlers.

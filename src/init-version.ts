@@ -7,7 +7,7 @@ import { join } from 'node:path';
  * requires users to re-run it (e.g. new hooks, AGENTS.md changes,
  * MCP config changes).
  */
-export const INIT_VERSION = 1;
+export const INIT_VERSION = 2;
 
 type InitMeta = {
   init_version: number;

@@ -144,7 +144,7 @@ function styledMcpCommand(style: LatCommandStyle): {
 /** Derive the hook command prefix for the given command style. */
 function latHookCommand(
   style: LatCommandStyle,
-  agent: 'claude' | 'cursor',
+  agent: 'claude' | 'codex' | 'cursor',
   event: string,
 ): string {
   return `${latBinString(style)} hook ${agent} ${event}`;
@@ -161,6 +161,7 @@ function isLatHookEntry(entry: HookEntry): boolean {
         typeof h.command === 'string' &&
         (/\blat\b/.test(h.command) ||
           h.command.includes('hook claude ') ||
+          h.command.includes('hook codex ') ||
           h.command.startsWith(bin + ' ')),
     ) ?? false
   );
@@ -170,7 +171,11 @@ function isLatHookEntry(entry: HookEntry): boolean {
  * Remove all lat-owned hook entries from settings, then add fresh ones.
  * Preserves any non-lat hooks the user may have configured.
  */
-function syncLatHooks(settingsPath: string, style: LatCommandStyle): void {
+export function syncLatHooks(
+  settingsPath: string,
+  style: LatCommandStyle,
+  agent: 'claude' | 'codex' = 'claude',
+): void {
   let settings: Record<string, unknown> = {};
   if (existsSync(settingsPath)) {
     const raw = readFileSync(settingsPath, 'utf-8');
@@ -206,7 +211,7 @@ function syncLatHooks(settingsPath: string, style: LatCommandStyle): void {
     }
     (hooks[event] as unknown[]).push({
       hooks: [
-        { type: 'command', command: latHookCommand(style, 'claude', event) },
+        { type: 'command', command: latHookCommand(style, agent, event) },
       ],
     });
   }
@@ -1017,6 +1022,26 @@ async function setupCodex(
   // AGENTS.md — Codex reads this natively
   // (already created in the shared step if any non-Claude agent is selected)
 
+  // Hooks — UserPromptSubmit (lat.md reminders + [[ref]] expansion) and Stop (update reminder)
+  console.log('');
+  console.log(
+    styleText(
+      'dim',
+      '  Hooks inject lat.md workflow reminders into every prompt and remind',
+    ),
+  );
+  console.log(
+    styleText('dim', '  the agent to update lat.md/ before finishing.'),
+  );
+
+  const codexDir = join(root, '.codex');
+  const hooksPath = join(codexDir, 'hooks.json');
+  mkdirSync(codexDir, { recursive: true });
+  syncLatHooks(hooksPath, style, 'codex');
+  console.log(
+    styleText('green', '  Hooks') + ' synced (UserPromptSubmit + Stop)',
+  );
+
   // .codex/config.toml — MCP server registration
   console.log('');
   console.log(
@@ -1069,6 +1094,12 @@ async function setupCodex(
     ask,
   );
   if (skillHash) hashes['.codex/skills/lat-md/SKILL.md'] = skillHash;
+
+  console.log('');
+  console.log(
+    styleText('yellow', '  Note:') +
+      ' Run /hooks in Codex to review and trust the project hooks.',
+  );
 }
 
 // ── LLM key setup ───────────────────────────────────────────────────

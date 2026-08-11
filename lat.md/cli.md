@@ -149,7 +149,7 @@ Steps:
 
 1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead.
 2. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
-3. **Command style** — if any selected agent needs a lat command reference (all except Codex), a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
+3. **Command style** — if any agent is selected, a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
 4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file. Uses marker-based append mode (see below).
 5. **Per-agent setup** — configures each selected agent (see subsections below). Each step prints a brief explanation of _why_ it's needed (e.g. why a hook is used instead of CLAUDE.md, why MCP is registered alongside CLI access).
 6. **LLM key setup** — checks for an existing key (env var or [[cli#Configuration File]]), and if missing, interactively prompts the user to paste one. Explains what semantic search is and why a key is needed before asking.
@@ -211,11 +211,12 @@ Sets up an OpenCode plugin that registers lat tools as native OpenCode tools and
 
 ### Codex
 
-Sets up AGENTS.md, registers the MCP server, and installs skills for the Codex CLI agent.
+Sets up AGENTS.md, lifecycle hooks, the MCP server, and skills for the Codex CLI agent.
 
 - `AGENTS.md` — shared instruction file (created in the shared step)
+- `.codex/hooks.json` — merges lat-owned `UserPromptSubmit` and `Stop` command hooks while preserving unrelated hooks. The prompt hook injects reminders, expands `[[refs]]`, and supplies indexed lat.md context; the stop hook runs validation and continues the turn when documentation needs work. Codex requires users to review and trust project hooks through `/hooks` before they run.
 - [[cli#mcp]] server registered in `.codex/config.toml` as a `[mcp_servers.lat]` TOML table
-- `.codex` directory added to `.gitignore` (config contains local absolute paths)
+- `.codex` directory added to `.gitignore` (hooks and config can contain local absolute paths)
 - `.agents/skills/lat-md/SKILL.md` — skill spec for authoring `lat.md/` files, placed in the cross-agent standard skills directory
 - `.codex/skills/lat-md/SKILL.md` — same skill spec in Codex's native skills directory
 
@@ -252,11 +253,12 @@ Usage: `lat hook <agent> <event>`
 Currently supports:
 
 - `claude` with `UserPromptSubmit` and `Stop`
+- `codex` with `UserPromptSubmit` and `Stop`
 - `cursor` with `stop`
 
 ### UserPromptSubmit
 
-Reads the hook input from stdin (JSON with `user_prompt`). Outputs JSON with `additionalContext` containing:
+Reads the hook input from stdin (Claude JSON with `user_prompt` or Codex JSON with `prompt`). Outputs the shared Claude/Codex JSON shape with `additionalContext` containing:
 
 1. A directive to ALWAYS run `lat search` on the user's intent before starting work — even for seemingly straightforward tasks — because search may reveal critical design details, protocols, or constraints. Includes a hard gate: do not read files, write code, or run commands until search is done.
 2. A reminder that `lat.md/` must stay in sync with the codebase — update relevant sections and run `lat check` before finishing.
@@ -265,7 +267,7 @@ Reads the hook input from stdin (JSON with `user_prompt`). Outputs JSON with `ad
 
 ### Stop
 
-Conditionally blocks the agent from stopping — only when something is actually wrong.
+Conditionally continues Claude or Codex — only when something is actually wrong. Both agents use the same `decision: "block"` response and `stop_hook_active` loop guard.
 
 1. **No `lat.md/` dir** — exit silently.
 2. **Run `lat check`** — always, on both first and second pass.

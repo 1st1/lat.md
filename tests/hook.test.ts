@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { join, delimiter } from 'node:path';
-import { mkdtempSync, writeFileSync, chmodSync } from 'node:fs';
+import {
+  mkdtempSync,
+  cpSync,
+  writeFileSync,
+  readFileSync,
+  chmodSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { rmDirBestEffort } from './util.js';
+import { syncLatHooks } from '../src/cli/init.js';
 
 const casesDir = join(import.meta.dirname, 'cases');
 const cliPath = join(
@@ -52,10 +59,12 @@ function runHook(
   opts: {
     stopHookActive?: boolean;
     fakeBinDir?: string;
+    prompt?: string;
   } = {},
 ): { stdout: string; stderr: string; exitCode: number } {
   const stdinJson = JSON.stringify({
     stop_hook_active: opts.stopHookActive ?? false,
+    ...(opts.prompt === undefined ? {} : { prompt: opts.prompt }),
   });
 
   const env: Record<string, string> = {
@@ -86,14 +95,14 @@ function runHook(
 }
 
 function runStopHook(
-  agent: 'claude' | 'cursor',
+  agent: 'claude' | 'codex' | 'cursor',
   caseDir: string,
   opts: {
     stopHookActive?: boolean;
     fakeBinDir?: string;
   } = {},
 ): { stdout: string; stderr: string; exitCode: number } {
-  return runHook(agent, agent === 'claude' ? 'Stop' : 'stop', caseDir, opts);
+  return runHook(agent, agent === 'cursor' ? 'stop' : 'Stop', caseDir, opts);
 }
 
 const clean = join(casesDir, 'hook-clean');
@@ -140,7 +149,10 @@ describe('hook stop', () => {
   // @lat: [[tests/hook#Exits silently when lat.md/ changes are proportional]]
   it('exits silently when lat.md/ changes are proportional', () => {
     const fakeBinDir = makeFakeGitDir(
-      numstat([[60, 40, 'src/feature.ts'], [8, 2, 'lat.md/feature.md']]),
+      numstat([
+        [60, 40, 'src/feature.ts'],
+        [8, 2, 'lat.md/feature.md'],
+      ]),
     );
     try {
       const { stdout } = runStopHook('claude', clean, { fakeBinDir });
@@ -217,6 +229,98 @@ describe('hook stop', () => {
       expect(parsed.decision).toBeUndefined();
     } finally {
       rmDirBestEffort(fakeBinDir);
+    }
+  });
+
+  // @lat: [[tests/hook#Codex stop hook returns a block decision]]
+  it('returns a Codex block decision when stop needs more work', () => {
+    const fakeBinDir = makeFakeGitDir(
+      numstat([[80, 30, 'src/big-refactor.ts']]),
+    );
+    try {
+      const { stdout } = runStopHook('codex', clean, { fakeBinDir });
+      const parsed = JSON.parse(stdout);
+      expect(parsed.decision).toBe('block');
+      expect(parsed.reason).toContain('lat.md/');
+      expect(parsed.reason).toContain('110');
+    } finally {
+      rmDirBestEffort(fakeBinDir);
+    }
+  });
+});
+
+describe('Codex hook integration', () => {
+  // @lat: [[tests/hook#Codex prompt hook reads the Codex prompt field]]
+  it('reads the Codex prompt field and expands wiki links', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lat-codex-prompt-'));
+    const projectDir = join(dir, 'project');
+    cpSync(clean, projectDir, { recursive: true });
+    try {
+      const { stdout } = runHook('codex', 'UserPromptSubmit', projectDir, {
+        prompt: 'Update [[feature]]',
+      });
+      const parsed = JSON.parse(stdout);
+      const context = parsed.hookSpecificOutput.additionalContext;
+      expect(context).toContain('Expanded user prompt');
+      expect(context).toContain('[[lat.md/feature#Feature]]');
+    } finally {
+      rmDirBestEffort(dir);
+    }
+  });
+
+  // @lat: [[tests/hook#Codex hook setup preserves non-lat hooks]]
+  it('syncs Codex hooks while preserving non-lat hooks', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lat-codex-hooks-'));
+    const hooksPath = join(dir, 'hooks.json');
+    writeFileSync(
+      hooksPath,
+      JSON.stringify({
+        description: 'Workspace hooks',
+        hooks: {
+          UserPromptSubmit: [
+            {
+              hooks: [{ type: 'command', command: 'custom prompt hook' }],
+            },
+            {
+              hooks: [
+                {
+                  type: 'command',
+                  command: 'lat hook claude UserPromptSubmit',
+                },
+              ],
+            },
+          ],
+          Stop: [
+            {
+              hooks: [{ type: 'command', command: 'lat hook codex Stop' }],
+            },
+          ],
+          PreToolUse: [
+            {
+              matcher: 'Bash',
+              hooks: [{ type: 'command', command: 'custom tool hook' }],
+            },
+          ],
+        },
+      }),
+    );
+
+    try {
+      syncLatHooks(hooksPath, 'global', 'codex');
+      const config = JSON.parse(readFileSync(hooksPath, 'utf-8'));
+      expect(config.description).toBe('Workspace hooks');
+      expect(config.hooks.PreToolUse).toHaveLength(1);
+      expect(config.hooks.UserPromptSubmit).toHaveLength(2);
+      expect(config.hooks.UserPromptSubmit[0].hooks[0].command).toBe(
+        'custom prompt hook',
+      );
+      expect(config.hooks.UserPromptSubmit[1].hooks[0].command).toBe(
+        'lat hook codex UserPromptSubmit',
+      );
+      expect(config.hooks.Stop).toHaveLength(1);
+      expect(config.hooks.Stop[0].hooks[0].command).toBe('lat hook codex Stop');
+    } finally {
+      rmDirBestEffort(dir);
     }
   });
 });
