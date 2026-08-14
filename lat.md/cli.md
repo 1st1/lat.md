@@ -63,7 +63,7 @@ Core logic in [[src/cli/refs.ts#findRefs]] (returns structured result), used by 
 
 Validation command group. Runs all checks when invoked without a subcommand.
 
-Usage: `lat check [md|code-refs|links|index|sections]`
+Usage: `lat check [md|links|code-refs|index|sections]`
 
 Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. Missing LLM key warning appears only when all checks pass. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
 
@@ -73,18 +73,16 @@ Implementation: [[src/cli/check.ts]]
 
 Validate that all [[parser#Wiki Links]] in `lat.md` markdown files point to existing sections.
 
+### links
+
+Validate that ordinary markdown links (`[text](path)`) in `lat.md/` files point to files that exist. See [[markdown#Relative Links]] for which destinations are checked and which are skipped.
+
 ### code-refs
 
 Two validations:
 
 1. Every `// @lat: [[...]]` or `# @lat: [[...]]` comment in source code must point to a real section in `lat.md/`
 2. For files with [[markdown#Frontmatter#require-code-mention]], every leaf section must be referenced by at least one `// @lat:` comment in the codebase
-
-### links
-
-Validate that ordinary markdown links (`[text](path)`) in `lat.md/` files point to files that exist — see [[markdown#Relative Links]] for the rules on what is and is not checked.
-
-Targets resolve against the containing file's directory, and existence on disk is the only test, so a link that deliberately leaves `lat.md/` (`../../AGENTS.md`) is validated the same way. Images and reference definitions are checked alongside inline links; a broken image is reported as a broken image.
 
 ### sections
 

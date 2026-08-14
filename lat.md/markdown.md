@@ -64,15 +64,15 @@ Source code is parsed lazily with tree-sitter (via `web-tree-sitter`). Only file
 
 Ordinary markdown links (`[text](path)`) to local files are validated for existence, so a moved or deleted file is caught the same way a stale `[[wiki link]]` is.
 
-Targets resolve against the containing file's directory — the rule every markdown renderer applies — and existence on disk is the only test. A link pointing outside `lat.md/` (`../../AGENTS.md`) is therefore checked too. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate. Because validation walks the mdast rather than matching text, a link inside a fenced or inline code block is correctly ignored.
+Targets resolve against the containing file's directory, and existence on disk is the only test — a link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; a link inside a code block does not.
 
-These destinations are never treated as paths, and never reported:
+Destinations that are not local paths are skipped and never reported:
 
-- **Any URI scheme** — `https:`, `mailto:`, `tel:`, custom app schemes. A Windows absolute path (`C:/notes.md`) matches this rule and is skipped rather than misread as a relative path.
-- **Root-absolute** — `/img/logo.png`, and protocol-relative `//example.com/x`. Ambiguous between a site root and the filesystem root, so checking either way would invent false positives.
-- **Pure fragments** — `#section`, an anchor within the same file.
+- **Any URI scheme** — `https:`, `mailto:`, and a Windows absolute path like `C:/notes.md`.
+- **Root-absolute and protocol-relative** — `/img/logo.png`, `//example.com/x`. Ambiguous between a site root and the filesystem root.
+- **Bare fragments** — `#section`.
 
-A `?query` and `#fragment` are dropped before resolving, so `foo.md#some-heading` verifies that `foo.md` exists and `?tab=1` alone is skipped. The anchor itself is not validated — matching a heading to its slug depends on the target renderer's own anchor rules.
+A `?query` and `#fragment` are dropped before resolving, so `foo.md#some-heading` only checks that `foo.md` exists. The anchor itself is not validated — heading slugs depend on the rendering tool.
 
 Validated by [[cli#check#links]].
 

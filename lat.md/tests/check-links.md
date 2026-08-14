@@ -9,11 +9,11 @@ Tests for validating ordinary markdown links to local files in `lat.md/` files.
 
 ## Detects broken relative links
 
-Given links whose targets do not exist on disk, [[cli#check#links]] should report one error per broken target — covering the bare, `./`, `../`, and outside-the-graph forms.
+Given links whose targets do not exist on disk, [[cli#check#links]] should report one error per broken destination, at the line it was written on.
 
-## Reports anchors and images distinctly
+## Names the resolved file and the link kind
 
-Given an anchored link, [[cli#check#links]] should validate only the file part and name it in the error; given a broken image, it should report a broken image rather than a broken link.
+Given an anchored link, [[cli#check#links]] should name the file it resolved to, without the anchor; given a broken image, it should say image rather than link.
 
 ## Passes valid and skipped link forms
 

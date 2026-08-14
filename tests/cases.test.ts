@@ -352,29 +352,30 @@ describe('valid-links', () => {
 
 describe('error-md-links', () => {
   // @lat: [[check-links#Detects broken relative links]]
-  it('check links flags every relative form whose target is missing', async () => {
+  it('check links reports every broken destination at its line', async () => {
     const errors = await checkLinks(latDir('error-md-links'));
-    expect(errors.map((e) => e.target)).toEqual([
-      'does-not-exist.md',
-      './does-not-exist.md',
-      '../does-not-exist.md',
-      './does-not-exist.md#Heading',
-      './does-not-exist.svg',
+    expect(errors.map((e) => `${e.line}: ${e.target}`)).toEqual([
+      '5: does-not-exist.md',
+      '6: ./does-not-exist.md',
+      '7: ../does-not-exist.md',
+      '8: ./does-not-exist.md#Heading',
+      '9: ./50%.md',
+      '10: ./does-not-exist.svg',
+      '13: ./does-not-exist-def.md',
     ]);
-    expect(errors[0].line).toBe(5);
   });
 
-  // @lat: [[check-links#Reports anchors and images distinctly]]
-  it('check links drops the anchor when resolving and names images as images', async () => {
+  // @lat: [[check-links#Names the resolved file and the link kind]]
+  it('check links names the resolved file, with the anchor dropped', async () => {
     const errors = await checkLinks(latDir('error-md-links'));
-    const anchored = errors.find((e) => e.target.includes('#Heading'))!;
-    // The anchor is not part of the path, so the resolved file is reported
-    // without it. Whether `#Heading` itself exists is not validated.
-    expect(anchored.message).toContain('does-not-exist.md" does not exist');
-    expect(anchored.message).not.toContain('#Heading"');
+    const byTarget = new Map(errors.map((e) => [e.target, e]));
 
-    const image = errors.find((e) => e.target.endsWith('.svg'))!;
-    expect(image.message).toContain('broken image');
+    expect(byTarget.get('./does-not-exist.md#Heading')!.message).toContain(
+      'does-not-exist.md" not found',
+    );
+    expect(byTarget.get('./does-not-exist.svg')!.message).toContain(
+      'broken image',
+    );
   });
 });
 
@@ -384,7 +385,7 @@ describe('valid-md-links', () => {
   // @lat: [[check-links#Passes valid and skipped link forms]]
   it('check links resolves local targets and skips non-path destinations', async () => {
     const errors = await checkLinks(latDir('valid-md-links'));
-    expect(errors.map((e) => `${e.file}:${e.line} ${e.target}`)).toEqual([]);
+    expect(errors.map((e) => e.target)).toEqual([]);
   });
 });
 

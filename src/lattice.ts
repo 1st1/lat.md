@@ -35,7 +35,7 @@ export type Ref = {
 
 /** An ordinary markdown link, image, or reference definition. */
 export type MdLink = {
-  /** Destination exactly as authored — percent-escapes, query and fragment intact. */
+  /** Destination exactly as authored, percent-escapes and all. */
   url: string;
   kind: 'link' | 'image' | 'definition';
   line: number;
@@ -702,23 +702,17 @@ export function extractRefs(
 }
 
 /**
- * Extract every ordinary markdown link destination: inline links, images, and
- * reference definitions. Wiki links are a distinct node type and are handled by
- * [[src/lattice.ts#extractRefs]] instead.
- *
- * Destinations are returned verbatim — deciding which denote a path on disk is
- * the caller's job. Walking the mdast (rather than matching `[..](..)` with a
- * regex) is what keeps destinations inside fenced and inline code out of the
- * results: a code sample showing `[x](./missing.md)` documents a link, it is
- * not one.
+ * Extract ordinary markdown link destinations; wiki links are a separate node
+ * type, handled by `extractRefs`. Walking the mdast rather than regex-matching
+ * `[..](..)` is what keeps links inside code samples out of the results.
  */
 export function extractLinks(content: string): MdLink[] {
   const tree = parse(content);
   const links: MdLink[] = [];
 
   visit(tree, ['link', 'image', 'definition'], (node) => {
-    const n = node as Link | Image | Definition;
-    links.push({ url: n.url, kind: n.type, line: n.position!.start.line });
+    const { url, type, position } = node as Link | Image | Definition;
+    links.push({ url, kind: type, line: position!.start.line });
   });
 
   return links;
