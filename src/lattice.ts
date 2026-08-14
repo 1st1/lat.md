@@ -4,7 +4,14 @@ import { existsSync, statSync } from 'node:fs';
 import { parse } from './parser.js';
 import { toPosix, walkEntries } from './walk.js';
 import { visit } from 'unist-util-visit';
-import type { Heading, RootContent, Text } from 'mdast';
+import type {
+  Definition,
+  Heading,
+  Image,
+  Link,
+  RootContent,
+  Text,
+} from 'mdast';
 import type { WikiLink } from './extensions/wiki-link/types.js';
 
 export type Section = {
@@ -23,6 +30,14 @@ export type Ref = {
   target: string;
   fromSection: string;
   file: string;
+  line: number;
+};
+
+/** An ordinary markdown link, image, or reference definition. */
+export type MdLink = {
+  /** Destination exactly as authored — percent-escapes, query and fragment intact. */
+  url: string;
+  kind: 'link' | 'image' | 'definition';
   line: number;
 };
 
@@ -684,4 +699,27 @@ export function extractRefs(
   });
 
   return refs;
+}
+
+/**
+ * Extract every ordinary markdown link destination: inline links, images, and
+ * reference definitions. Wiki links are a distinct node type and are handled by
+ * [[src/lattice.ts#extractRefs]] instead.
+ *
+ * Destinations are returned verbatim — deciding which denote a path on disk is
+ * the caller's job. Walking the mdast (rather than matching `[..](..)` with a
+ * regex) is what keeps destinations inside fenced and inline code out of the
+ * results: a code sample showing `[x](./missing.md)` documents a link, it is
+ * not one.
+ */
+export function extractLinks(content: string): MdLink[] {
+  const tree = parse(content);
+  const links: MdLink[] = [];
+
+  visit(tree, ['link', 'image', 'definition'], (node) => {
+    const n = node as Link | Image | Definition;
+    links.push({ url: n.url, kind: n.type, line: n.position!.start.line });
+  });
+
+  return links;
 }

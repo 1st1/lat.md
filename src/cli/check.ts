@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { basename, dirname, extname, join, relative } from 'node:path';
+import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import {
   listLatticeFiles,
   loadAllSections,
+  extractLinks,
   extractRefs,
   flattenSections,
   parseFrontmatter,
@@ -14,7 +15,7 @@ import {
 } from '../lattice.js';
 import { scanCodeRefs } from '../code-refs.js';
 import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
-import { walkEntries } from '../walk.js';
+import { toPosix, walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
 
@@ -181,6 +182,99 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
   }
 
   return { errors, files: countByExt(files) };
+}
+
+// --- Relative link validation ---
+
+/** Matches a URI scheme prefix (`https:`, `mailto:`, `obsidian:`, …). */
+const URI_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+
+/**
+ * Whether a link destination denotes a path on disk that can be checked for
+ * existence. Everything else is out of scope and must never be reported:
+ *
+ * - **any URI scheme** — `https:`, `mailto:`, `tel:`, custom app schemes. This
+ *   also covers a Windows absolute path (`C:/notes.md`), which is skipped
+ *   rather than misread as a relative one.
+ * - **root-absolute** (`/img/logo.png`, and protocol-relative `//host/x`) —
+ *   ambiguous between a site root and the filesystem root, so resolving it
+ *   either way would invent false positives.
+ * - **pure fragment** (`#section`) — an anchor within the same file.
+ * - **empty**.
+ */
+function isLocalPathLink(url: string): boolean {
+  const u = url.trim();
+  if (u === '') return false;
+  if (u.startsWith('#')) return false;
+  if (u.startsWith('/')) return false;
+  return !URI_SCHEME.test(u);
+}
+
+/**
+ * Convert a link destination to the path it denotes on disk, dropping the
+ * `?query` and `#fragment` a URL may carry. Returns `''` when nothing but those
+ * remain (`?tab=1`), which the caller treats as having no path to check.
+ *
+ * Both are stripped *before* percent-decoding: `%23` decodes to a literal `#`
+ * and `%3F` to a `?`, so decoding first would split the path at a character
+ * that is part of the filename. A malformed escape (a stray `%`) is left as
+ * authored rather than throwing.
+ */
+function linkTargetToPath(url: string): string {
+  const hashIdx = url.indexOf('#');
+  const withoutFragment = hashIdx === -1 ? url : url.slice(0, hashIdx);
+  const queryIdx = withoutFragment.indexOf('?');
+  const path =
+    queryIdx === -1 ? withoutFragment : withoutFragment.slice(0, queryIdx);
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/**
+ * Validate ordinary markdown links (`[text](path)`) in `lat.md/` files that
+ * point at local files. Wiki links are validated by [[src/cli/check.ts#checkMd]];
+ * this covers the plain-markdown half of the graph, which is otherwise
+ * unprotected against rot.
+ *
+ * Targets resolve against the containing file's directory — the same rule every
+ * markdown renderer applies — and existence on disk is the whole test, so a
+ * link that legitimately leaves `lat.md/` (`../../AGENTS.md`) is checked too.
+ * An anchor is dropped before resolving: `foo.md#heading` verifies `foo.md`.
+ */
+export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
+  const files = await listLatticeFiles(latticeDir);
+  const errors: CheckError[] = [];
+
+  for (const file of files) {
+    const content = await readFile(file, 'utf-8');
+    const relPath = relative(process.cwd(), file);
+
+    for (const link of extractLinks(content)) {
+      if (!isLocalPathLink(link.url)) continue;
+
+      const target = linkTargetToPath(link.url);
+      // Nothing but a query and/or fragment — no path to check.
+      if (target === '') continue;
+
+      const abs = resolve(dirname(file), target);
+      if (existsSync(abs)) continue;
+
+      const shown = toPosix(relative(process.cwd(), abs));
+      errors.push({
+        file: relPath,
+        line: link.line,
+        target: link.url,
+        message:
+          `broken ${link.kind === 'image' ? 'image' : 'link'} ` +
+          `(${link.url}) — "${shown}" does not exist`,
+      });
+    }
+  }
+
+  return errors;
 }
 
 export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
@@ -487,11 +581,14 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   const startTime = Date.now();
   const md = await checkMd(ctx.latDir);
   const code = await checkCodeRefs(ctx.latDir);
+  const linkErrors = await checkLinks(ctx.latDir);
   const indexErrors = await checkIndex(ctx.latDir);
   const sectionErrors = await checkSections(ctx.latDir);
   const elapsed = Date.now() - startTime;
 
-  const allErrors = [...md.errors, ...code.errors];
+  // `checkLinks` re-reads the same lat.md/ files as `checkMd`, so its errors
+  // are merged but its file counts are not — they would double the scan total.
+  const allErrors = [...md.errors, ...code.errors, ...linkErrors];
   const allFiles: FileStats = { ...md.files };
   for (const [ext, n] of Object.entries(code.files)) {
     allFiles[ext] = (allFiles[ext] || 0) + n;
@@ -589,6 +686,22 @@ export async function checkCodeRefsCommand(
   }
 
   lines.push(s.green('code-refs: All references OK'));
+  return { output: lines.join('\n') };
+}
+
+export async function checkLinksCommand(ctx: CmdContext): Promise<CmdResult> {
+  const errors = await checkLinks(ctx.latDir);
+  const s = ctx.styler;
+  const lines: string[] = [];
+
+  lines.push(...formatCheckErrors(errors, s));
+
+  if (errors.length > 0) {
+    lines.push(formatErrorCount(errors.length, s));
+    return { output: lines.join('\n'), isError: true };
+  }
+
+  lines.push(s.green('links: All relative links resolve'));
   return { output: lines.join('\n') };
 }
 

@@ -60,6 +60,22 @@ Source code is parsed lazily with tree-sitter (via `web-tree-sitter`). Only file
 
 **Lenient** — `lat locate` and `lat expand` use `findSections()`, which applies tiered matching (exact → file stem → subsection tail → fuzzy). These commands are for interactive exploration and accept approximate queries.
 
+## Relative Links
+
+Ordinary markdown links (`[text](path)`) to local files are validated for existence, so a moved or deleted file is caught the same way a stale `[[wiki link]]` is.
+
+Targets resolve against the containing file's directory — the rule every markdown renderer applies — and existence on disk is the only test. A link pointing outside `lat.md/` (`../../AGENTS.md`) is therefore checked too. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate. Because validation walks the mdast rather than matching text, a link inside a fenced or inline code block is correctly ignored.
+
+These destinations are never treated as paths, and never reported:
+
+- **Any URI scheme** — `https:`, `mailto:`, `tel:`, custom app schemes. A Windows absolute path (`C:/notes.md`) matches this rule and is skipped rather than misread as a relative path.
+- **Root-absolute** — `/img/logo.png`, and protocol-relative `//example.com/x`. Ambiguous between a site root and the filesystem root, so checking either way would invent false positives.
+- **Pure fragments** — `#section`, an anchor within the same file.
+
+A `?query` and `#fragment` are dropped before resolving, so `foo.md#some-heading` verifies that `foo.md` exists and `?tab=1` alone is skipped. The anchor itself is not validated — matching a heading to its slug depends on the target renderer's own anchor rules.
+
+Validated by [[cli#check#links]].
+
 ## Leading Paragraph
 
 Every section must have a leading paragraph — at least one sentence immediately after the heading, before any child headings.

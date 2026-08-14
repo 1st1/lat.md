@@ -18,6 +18,7 @@ import {
   checkMd,
   checkCodeRefs,
   checkIndex,
+  checkLinks,
   checkSections,
 } from '../src/cli/check.js';
 import { scanCodeRefs } from '../src/code-refs.js';
@@ -344,6 +345,46 @@ describe('valid-links', () => {
   it('check md passes when all links resolve', async () => {
     const { errors } = await checkMd(latDir('valid-links'));
     expect(errors).toHaveLength(0);
+  });
+});
+
+// --- md-links ---
+
+describe('error-md-links', () => {
+  // @lat: [[check-links#Detects broken relative links]]
+  it('check links flags every relative form whose target is missing', async () => {
+    const errors = await checkLinks(latDir('error-md-links'));
+    expect(errors.map((e) => e.target)).toEqual([
+      'does-not-exist.md',
+      './does-not-exist.md',
+      '../does-not-exist.md',
+      './does-not-exist.md#Heading',
+      './does-not-exist.svg',
+    ]);
+    expect(errors[0].line).toBe(5);
+  });
+
+  // @lat: [[check-links#Reports anchors and images distinctly]]
+  it('check links drops the anchor when resolving and names images as images', async () => {
+    const errors = await checkLinks(latDir('error-md-links'));
+    const anchored = errors.find((e) => e.target.includes('#Heading'))!;
+    // The anchor is not part of the path, so the resolved file is reported
+    // without it. Whether `#Heading` itself exists is not validated.
+    expect(anchored.message).toContain('does-not-exist.md" does not exist');
+    expect(anchored.message).not.toContain('#Heading"');
+
+    const image = errors.find((e) => e.target.endsWith('.svg'))!;
+    expect(image.message).toContain('broken image');
+  });
+});
+
+// --- valid-md-links ---
+
+describe('valid-md-links', () => {
+  // @lat: [[check-links#Passes valid and skipped link forms]]
+  it('check links resolves local targets and skips non-path destinations', async () => {
+    const errors = await checkLinks(latDir('valid-md-links'));
+    expect(errors.map((e) => `${e.file}:${e.line} ${e.target}`)).toEqual([]);
   });
 });
 

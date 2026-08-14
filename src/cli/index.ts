@@ -111,6 +111,15 @@ check
   });
 
 check
+  .command('links')
+  .description('Validate relative markdown links to local files')
+  .action(async () => {
+    const ctx = resolveContext(program.opts());
+    const { checkLinksCommand } = await import('./check.js');
+    handleResult(await checkLinksCommand(ctx));
+  });
+
+check
   .command('index')
   .description('Validate directory index files in lat.md')
   .action(async () => {

@@ -16,6 +16,7 @@ Shared patterns for writing and organizing tests in this project.
 - [[ref-extraction]] — Extracting wiki link references from markdown files
 - [[section-preview]] — Formatting section previews for terminal output
 - [[check-md]] — Validating wiki links in lat.md markdown files
+- [[check-links]] — Validating relative markdown links to local files
 - [[check-code-refs]] — Validating @lat code references and coverage
 - [[locate]] — Finding sections by exact, subsection, and fuzzy matching
 - [[refs-e2e]] — End-to-end tests for the refs command
