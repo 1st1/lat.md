@@ -102,21 +102,21 @@ check
   });
 
 check
+  .command('links')
+  .description('Validate relative markdown links in lat.md')
+  .action(async () => {
+    const ctx = resolveContext(program.opts());
+    const { checkLinksCommand } = await import('./check.js');
+    handleResult(await checkLinksCommand(ctx));
+  });
+
+check
   .command('code-refs')
   .description('Validate @lat code references and coverage')
   .action(async () => {
     const ctx = resolveContext(program.opts());
     const { checkCodeRefsCommand } = await import('./check.js');
     handleResult(await checkCodeRefsCommand(ctx));
-  });
-
-check
-  .command('links')
-  .description('Validate relative markdown links to local files')
-  .action(async () => {
-    const ctx = resolveContext(program.opts());
-    const { checkLinksCommand } = await import('./check.js');
-    handleResult(await checkLinksCommand(ctx));
   });
 
 check
