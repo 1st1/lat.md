@@ -8,7 +8,13 @@ import { locateCommand } from '../cli/locate.js';
 import { sectionCommand } from '../cli/section.js';
 import { searchCommand } from '../cli/search.js';
 import { expandCommand } from '../cli/expand.js';
-import { checkAllCommand } from '../cli/check.js';
+import {
+  checkAllCommand,
+  checkCodeRefsCommand,
+  checkIndexCommand,
+  checkMdCommand,
+  checkSectionsCommand,
+} from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
 
 function toMcp(result: CmdResult) {
@@ -75,9 +81,30 @@ export async function startMcpServer(): Promise<void> {
 
   server.tool(
     'lat_check',
-    'Validate all wiki links, code references, and directory indexes in lat.md',
-    {},
-    async () => toMcp(await checkAllCommand(ctx)),
+    'Validate wiki links, code references, directory indexes, and/or section structure in lat.md',
+    {
+      scope: z
+        .enum(['all', 'md', 'code-refs', 'index', 'sections'])
+        .optional()
+        .default('all')
+        .describe(
+          'What to check: all (default), md, code-refs, index, or sections',
+        ),
+    },
+    async ({ scope }: { scope: string }) => {
+      switch (scope) {
+        case 'md':
+          return toMcp(await checkMdCommand(ctx));
+        case 'code-refs':
+          return toMcp(await checkCodeRefsCommand(ctx));
+        case 'index':
+          return toMcp(await checkIndexCommand(ctx));
+        case 'sections':
+          return toMcp(await checkSectionsCommand(ctx));
+        default:
+          return toMcp(await checkAllCommand(ctx));
+      }
+    },
   );
 
   server.tool(

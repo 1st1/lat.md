@@ -293,7 +293,7 @@ Clients invoke this as `lat mcp`. The `lat init` wizard registers the MCP server
 - **lat_section** — show section content with outgoing/incoming refs (wraps [[cli#section]])
 - **lat_search** — semantic search across sections (wraps [[cli#search]])
 - **lat_expand** — expand `[[refs]]` in text (wraps [[cli#expand]])
-- **lat_check** — validate links and code refs (wraps [[cli#check]])
+- **lat_check** — validate links, code refs, indexes, and/or sections (wraps [[cli#check]]). Optional `scope` parameter: `all` (default), `md`, `code-refs`, `index`, `sections`
 - **lat_refs** — find references to a section (wraps [[cli#refs]])
 
 Each MCP tool calls the same command function as the CLI (e.g. `locateCommand`, `refsCommand`, `searchCommand`), passing a `CmdContext` with `plainStyler` and `mode: 'mcp'`. The `toMcp()` helper converts `CmdResult` to MCP response format. Uses `@modelcontextprotocol/sdk` with stdio transport. Resolves `lat.md/` from cwd.
