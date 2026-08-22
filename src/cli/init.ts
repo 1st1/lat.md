@@ -80,34 +80,36 @@ function loaderExecArgs(): string[] {
 }
 
 /**
- * Reconstruct the command prefix used to invoke this process.
+ * Reconstruct the executable and arguments used to invoke this process.
  *
- * When running via a compiled JS entry point (e.g. the global `lat` binary),
- * `process.argv[1]` is enough (e.g. `/usr/local/bin/lat`).
+ * Node script entry points must keep their Node launcher. Build output from
+ * `tsc` is not executable by default, even when it retains a shebang.
  *
  * When running via a TypeScript loader like tsx, the script itself can't be
  * executed directly — we need to replay the same node flags that loaded tsx.
- * We detect this by checking `process.execArgv` for tsx's `--import` loader
- * and reconstruct: `node <execArgv...> <script>`.
+ * Wrapper scripts and standalone binaries are already executable and can be
+ * invoked directly.
  */
-function resolveLatBin(): string {
+function resolveLatInvocation(): { command: string; args: string[] } {
   const script = resolve(process.argv[1]);
-
-  // Not a .ts file — compiled JS or a wrapper script, use as-is.
-  if (!script.endsWith('.ts')) return script;
-
-  // Running a .ts file: reconstruct `node <execArgv> <script>` so the
-  // same loader (tsx, ts-node, etc.) is used when the command is replayed.
-  const node = process.argv[0];
-  const execArgs = loaderExecArgs();
-  if (execArgs.length > 0) {
-    return [node, ...execArgs, script]
-      .map((a) => (a.includes(' ') ? `"${a}"` : a))
-      .join(' ');
+  const isTypeScript = /\.[cm]?ts$/.test(script);
+  const isJavaScript = /\.[cm]?js$/.test(script);
+  if (!isTypeScript && !isJavaScript) {
+    return { command: script, args: [] };
   }
 
-  // .ts file but no special loader flags — best-effort, just return the path
-  return script;
+  return {
+    command: process.execPath,
+    args: [...(isTypeScript ? loaderExecArgs() : []), script],
+  };
+}
+
+/** Format the current invocation for command-string based integrations. */
+function resolveLatBin(): string {
+  const { command, args } = resolveLatInvocation();
+  return [command, ...args]
+    .map((arg) => (arg.includes(' ') ? `"${arg}"` : arg))
+    .join(' ');
 }
 
 // ── Command style ───────────────────────────────────────────────────
@@ -291,32 +293,16 @@ function ensureGitignored(root: string, entry: string): void {
  * Derive the MCP server command from the currently running binary.
  * If `lat init` was invoked as `/path/to/lat`, we emit
  * `{ command: "/path/to/lat", args: ["mcp"] }` so the MCP client
- * starts the same binary. When running via tsx, emits
- * `{ command: "node", args: ["--import", "tsx/loader", ..., "script.ts", "mcp"] }`.
+ * starts the same binary. Node scripts retain their Node executable; TypeScript
+ * scripts also retain loader arguments such as tsx's `--import` flag.
  */
 function mcpCommand(): { command: string; args: string[] } {
-  const script = resolve(process.argv[1]);
-  if (!script.endsWith('.ts')) {
-    return { command: script, args: ['mcp'] };
-  }
-  const raw = process.execArgv;
-  const execArgs: string[] = [];
-  for (let i = 0; i < raw.length; i++) {
-    if (
-      raw[i] === '--eval' ||
-      raw[i] === '-e' ||
-      raw[i] === '--print' ||
-      raw[i] === '-p'
-    ) {
-      i++;
-    } else {
-      execArgs.push(raw[i]);
-    }
-  }
-  if (execArgs.length > 0) {
-    return { command: process.argv[0], args: [...execArgs, script, 'mcp'] };
-  }
-  return { command: script, args: ['mcp'] };
+  const { command, args } = resolveLatInvocation();
+
+  return {
+    command,
+    args: [...args, 'mcp'],
+  };
 }
 
 // ── MCP config helpers ───────────────────────────────────────────────

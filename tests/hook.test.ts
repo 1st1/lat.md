@@ -323,4 +323,35 @@ describe('Codex hook integration', () => {
       rmDirBestEffort(dir);
     }
   });
+
+  // @lat: [[tests/hook#Local JavaScript hook commands retain Node]]
+  it('runs a local JavaScript CLI through Node', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lat-codex-local-hooks-'));
+    const hooksPath = join(dir, 'hooks.json');
+    const cliPath = join(dir, 'index.js');
+    const originalScript = process.argv[1];
+
+    try {
+      writeFileSync(
+        cliPath,
+        'process.stdout.write(process.argv.slice(2).join(" "));\n',
+      );
+      process.argv[1] = cliPath;
+      syncLatHooks(hooksPath, 'local', 'codex');
+
+      const config = JSON.parse(readFileSync(hooksPath, 'utf-8'));
+      const quote = (arg: string) => (arg.includes(' ') ? `"${arg}"` : arg);
+      const command = config.hooks.Stop[0].hooks[0].command;
+      expect(command).toBe(
+        `${quote(process.execPath)} ${quote(cliPath)} hook codex Stop`,
+      );
+
+      const result = spawnSync(command, { shell: true, encoding: 'utf-8' });
+      expect(result.status).toBe(0);
+      expect(result.stdout).toBe('hook codex Stop');
+    } finally {
+      process.argv[1] = originalScript;
+      rmDirBestEffort(dir);
+    }
+  });
 });

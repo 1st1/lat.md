@@ -59,3 +59,7 @@ The Codex `UserPromptSubmit` adapter reads `prompt`, expands wiki links, and ret
 ## Codex hook setup preserves non-lat hooks
 
 Syncing `.codex/hooks.json` removes stale lat-owned entries, installs current prompt and stop commands, and preserves unrelated hook metadata and event handlers.
+
+## Local JavaScript hook commands retain Node
+
+When init runs from a local compiled JavaScript entry point, generated hook commands invoke it through the same Node executable so non-executable `tsc` output works without changing file permissions.
