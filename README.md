@@ -79,7 +79,7 @@ To use higher-quality hosted embeddings instead, provide an OpenAI (`sk-...`) or
 1. `LAT_LLM_KEY` env var — direct value
 2. `LAT_LLM_KEY_FILE` env var — path to a file containing the key
 3. `LAT_LLM_KEY_HELPER` env var — shell command that prints the key (10s timeout)
-4. Config file — saved by `lat init`. Run `lat config` to see its location.
+4. Config file — power users can set `llm_key` manually. Run `lat config` to print its location.
 
 Switch backends any time with `lat reindex` (`--local` to force the offline model, `--remote` to use your key).
 

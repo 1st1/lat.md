@@ -3,11 +3,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
- * Bump this number whenever `lat init` setup changes in a way that
- * requires users to re-run it (e.g. new hooks, AGENTS.md changes,
- * MCP config changes).
+ * Bump this number whenever `lat init` setup or defaults change in a way that
+ * requires users to re-run it (e.g. new hooks, generated files, MCP config, or
+ * a configuration migration).
  */
-export const INIT_VERSION = 2;
+export const INIT_VERSION = 3;
 
 type InitMeta = {
   init_version: number;

@@ -65,7 +65,7 @@ Validation command group. Runs all checks when invoked without a subcommand.
 
 Usage: `lat check [md|code-refs|index|sections]`
 
-Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. Missing LLM key warning appears only when all checks pass. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
+Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
 
 Implementation: [[src/cli/check.ts]]
 
@@ -148,12 +148,12 @@ Usage: `lat init [dir]`
 Steps:
 
 1. **lat.md/ directory** — if not present, asks whether to create it (via a one-off readline interface that is closed before step 2). Scaffolds from `templates/init/` (`.gitignore` and `README.md`). If it already exists, skips ahead.
-2. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
-3. **Command style** — if any agent is selected, a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
-4. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file. Uses marker-based append mode (see below).
-5. **Per-agent setup** — configures each selected agent (see subsections below). Each step prints a brief explanation of _why_ it's needed (e.g. why a hook is used instead of CLAUDE.md, why MCP is registered alongside CLI access).
-6. **LLM key setup** — checks for an existing key (env var or [[cli#Configuration File]]), and if missing, interactively prompts the user to paste one. Explains what semantic search is and why a key is needed before asking.
-7. **Version stamp + file hashes** — writes `INIT_VERSION` and SHA-256 hashes of all template-generated files to `lat.md/.cache/lat_init.json`. On re-run, compares current file content against stored hashes: unmodified files are silently updated to the latest template; user-modified files trigger a Y/n prompt offering to overwrite with the latest template, declining suggests [[cli#gen]].
+2. **Embedding setup** — fresh and outdated setups default to a per-repository local preference before agent selection, unless the repo already has a _working_ hosted setup (a hosted `meta.embedding_model` plus a resolvable key for the same provider and model). That exception matters because the outdated check re-fires on every `INIT_VERSION` bump, so pinning local unconditionally would keep undoing a deliberate hosted choice; a hosted index with no compatible key is unusable, so it does fall back to local. In a TTY, if a key resolves from `LAT_LLM_KEY`, `LAT_LLM_KEY_FILE`, `LAT_LLM_KEY_HELPER`, or user config, init asks whether to stay local or use hosted embeddings; fresh repos default local, while re-runs default to their existing backend. When that choice differs from `meta.embedding_model`, including a change between hosted providers, interactive init offers to reindex immediately. Non-interactive init never chooses: it applies the local default only where no working hosted setup exists, and prints the required command for any mismatch.
+3. **Agent selection** — interactive checklist menu ([[src/cli/checklist-menu.ts#checklistMenu]]). All agents are shown at once with `[x]`/`[ ]` checkboxes; the cursor row is highlighted with `chalk.bgCyan`. Keys: up/down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to abort. Returns an array of selected agent values. Non-TTY fallback returns `[]`. After confirmation, prints a summary line (e.g. "Selected: Claude Code, Cursor" or dim "None"). **Important:** the persistent readline interface is created _after_ this step — `checklistMenu` puts stdin into raw mode with its own `data` listener, which corrupts any co-existing readline interface.
+4. **Command style** — if any agent is selected, a `selectMenu` asks "How should agents run lat?" with three options: `lat` (global install, portable), the resolved local binary path, or `npx lat.md@latest` (slow but zero-install). The choice determines what command string is written into hooks, MCP configs, and Pi extensions. Non-interactive mode defaults to `local`. Choosing `global` or `npx` makes generated config files portable and safe to commit.
+5. **AGENTS.md** — created if a non-Claude agent is selected (Cursor, Copilot, Codex). Shared instruction file. Uses marker-based append mode (see below).
+6. **Per-agent setup** — configures each selected agent (see subsections below). Each step prints a brief explanation of _why_ it's needed (e.g. why a hook is used instead of CLAUDE.md, why MCP is registered alongside CLI access).
+7. **Version stamp + file hashes** — writes `INIT_VERSION` and SHA-256 hashes of all template-generated files to `lat.md/.cache/lat_init.json`. The version is also stamped when no agents are selected, because embedding setup has completed and must not be treated as fresh on the next run. On re-run, compares current file content against stored hashes: unmodified files are silently updated to the latest template; user-modified files trigger a Y/n prompt offering to overwrite with the latest template, declining suggests [[cli#gen]].
 8. **Next steps** — after all setup completes, prints agent-specific guidance for having the agent document the codebase. For Claude Code, shows a runnable `claude "..."` command. For IDE agents (Cursor, Copilot, Pi, OpenCode, Codex), shows the prompt to paste into agent chat. Both suggest running `lat check` when done.
 
 At the very end, after all steps complete, init checks whether ripgrep (`rg`) is available. If missing, prints a tip suggesting the user install it for faster code scanning, with a link to the ripgrep installation guide.
@@ -236,11 +236,12 @@ Implementation: [[src/cli/init.ts]], checklist menu in [[src/cli/checklist-menu.
 
 User-level configuration is stored in `~/.config/lat/config.json` (XDG Base Directory on Linux/macOS, `%APPDATA%\lat\config.json` on Windows). The `XDG_CONFIG_HOME` env var is respected if set.
 
-Currently supports one field:
+Currently supports:
 
-- `llm_key` — embedding API key for semantic search, used when `LAT_LLM_KEY` env var is not set
+- `repos` — per-repository embedding preferences keyed by absolute `lat.md/` path; `lat init` records `embedding: "local"` unless the user explicitly selects hosted embeddings
+- `llm_key` — optional hosted embedding API key, set manually by power users and used when `LAT_LLM_KEY` is not set
 
-Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies everywhere: `lat search`, `lat check`, and the MCP `lat_search` tool.
+Key resolution order: `LAT_LLM_KEY` > `LAT_LLM_KEY_FILE` > `LAT_LLM_KEY_HELPER` > config file `llm_key`. This applies to `lat search`, `lat reindex`, `lat init`, and the MCP `lat_search` tool.
 
 Implementation: [[src/config.ts]]
 
@@ -320,10 +321,12 @@ authoritative.
 
 - **Fresh index** (no `meta` yet — first run, the regenerable `.cache` was wiped, or a legacy
   `.cache` from a version that never recorded the model) — a durable per-repo preference wins first:
-  if the repo was switched to local (recorded in the config's `repos` map by [[cli#reindex]], keyed
-  by lat.md dir), rebuild local and ignore any key. Otherwise decide from the environment (key →
-  hosted, else local). The resulting model is recorded in `meta` only after the index build succeeds,
-  so a failed build never pins a broken backend. A legacy `.cache` that has rows but no recorded
+  [[cli#init]] defaults new repositories to local and asks before using an available hosted key;
+  [[cli#reindex]] maintains explicit backend changes in the config's `repos` map, keyed by lat.md
+  dir. A local preference rebuilds locally and ignores any key. Repositories without a preference
+  decide from the environment (key → hosted, else local). The resulting model is recorded in `meta`
+  only after the index build succeeds, so a failed build never pins a broken backend. A legacy
+  `.cache` that has rows but no recorded
   model is dropped and rebuilt from scratch (its vectors may be a different dimension), never queried.
 - **`local:`-prefixed model** — use the local backend; `LAT_LLM_KEY` is ignored entirely.
 - **Remote model** — the key is required and is used to embed the query on **every** search. If it

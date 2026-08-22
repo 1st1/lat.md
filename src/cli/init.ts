@@ -9,6 +9,7 @@ import { join, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
 import { styleText } from 'node:util';
+import { createEmbedder } from '@lat.md/embed';
 import { findTemplatesDir } from './templates.js';
 import {
   readAgentsTemplate,
@@ -17,13 +18,18 @@ import {
   readOpenCodePluginTemplate,
   readSkillTemplate,
 } from './gen.js';
+import { getLlmKey, getRepoEmbedding, setRepoEmbedding } from '../config.js';
+import { makeStyler } from './context.js';
+import { closeDb, ensureMeta, getStoredModel, openDb } from '../search/db.js';
+import { modelKey } from '../search/embedder.js';
+import { reindexCommand } from './reindex.js';
 import {
-  getLlmKey,
-  getConfigPath,
-  readConfig,
-  writeConfig,
-} from '../config.js';
-import { writeInitMeta, readFileHash, contentHash } from '../init-version.js';
+  INIT_VERSION,
+  writeInitMeta,
+  readInitVersion,
+  readFileHash,
+  contentHash,
+} from '../init-version.js';
 import { getLocalVersion, fetchLatestVersion } from '../version.js';
 import { selectMenu, type SelectOption } from './select-menu.js';
 import { checklistMenu } from './checklist-menu.js';
@@ -45,19 +51,6 @@ async function confirm(
     if (val === '' || val === 'y' || val === 'yes') return true;
     if (val === 'n' || val === 'no') return false;
     console.log(styleText('yellow', '  Please answer Y or n.'));
-  }
-}
-
-async function prompt(
-  rl: ReturnType<typeof createInterface>,
-  message: string,
-): Promise<string> {
-  try {
-    const answer = await rl.question(message);
-    return answer.trim();
-  } catch {
-    console.log('');
-    process.exit(130);
   }
 }
 
@@ -1102,113 +1095,204 @@ async function setupCodex(
   );
 }
 
-// ── LLM key setup ───────────────────────────────────────────────────
+// ── Embedding setup ─────────────────────────────────────────────────
 
-async function setupLlmKey(
-  rl: ReturnType<typeof createInterface> | null,
+type EmbeddingBackend = 'local' | 'remote';
+
+async function readStoredEmbeddingModel(
+  latDir: string,
+): Promise<string | null> {
+  if (!existsSync(join(latDir, '.cache', 'vectors.db'))) return null;
+
+  const db = openDb(latDir);
+  try {
+    await ensureMeta(db);
+    return await getStoredModel(db);
+  } finally {
+    await closeDb(db);
+  }
+}
+
+async function offerReindex(
+  root: string,
+  latDir: string,
+  backend: EmbeddingBackend,
+  remoteModel: string | null,
+  storedModel: string | null,
+  interactive: boolean,
 ): Promise<void> {
-  // Use the centralized key resolution (env var → file → helper → config)
-  const existingKey = getLlmKey();
-  if (existingKey) {
+  if (!storedModel) return;
+
+  const storedBackend: EmbeddingBackend = storedModel.startsWith('local:')
+    ? 'local'
+    : 'remote';
+  const modelMatches =
+    backend === 'local'
+      ? storedBackend === 'local'
+      : remoteModel
+        ? storedModel === remoteModel
+        : storedBackend === 'remote';
+  if (modelMatches) return;
+
+  const command = `lat reindex --${backend}`;
+  const configuredModel =
+    backend === 'remote' && remoteModel
+      ? `'${remoteModel}'`
+      : `${backend} embeddings`;
+  console.log('');
+  console.log(
+    styleText('yellow', 'Existing search index') +
+      ` — built with '${storedModel}', but this repo is now configured for ${configuredModel}.`,
+  );
+
+  if (!interactive) {
+    console.log('  Run ' + styleText('cyan', command) + ' to rebuild it.');
+    return;
+  }
+
+  const action = await selectMenu(
+    [
+      { label: 'Reindex now', value: 'now' },
+      { label: `Later (run ${command})`, value: 'later' },
+    ],
+    `Rebuild the existing index with ${backend} embeddings?`,
+    0,
+  );
+  if (action !== 'now') return;
+
+  const result = await reindexCommand(
+    { latDir, projectRoot: root, styler: makeStyler(), mode: 'cli' },
+    backend === 'local' ? { local: true } : { remote: true },
+  );
+  if (result.isError) console.error(result.output);
+  else if (result.output) console.log(result.output);
+}
+
+async function setupEmbeddingsForInit(
+  root: string,
+  latDir: string,
+  interactive: boolean,
+  configureDefault: boolean,
+): Promise<void> {
+  let key: string | undefined;
+  let remoteModel: string | null = null;
+  try {
+    key = getLlmKey();
+    if (key) remoteModel = modelKey(await createEmbedder({ key }));
+  } catch (err) {
+    key = undefined;
     console.log('');
     console.log(
-      styleText('green', 'Semantic search') + ' — LLM key found. Ready.',
+      styleText('yellow', 'Embedding key unavailable:') +
+        ' ' +
+        (err as Error).message,
     );
-    return;
   }
 
-  // No key found — explain what semantic search is and prompt
-  console.log('');
-  console.log(styleText('bold', 'Semantic search'));
-  console.log('');
-  console.log(
-    '  lat.md includes semantic search (' +
-      styleText('cyan', 'lat search') +
-      ') that lets agents find',
-  );
-  console.log(
-    '  relevant documentation by meaning, not just keywords. It works out of the',
-  );
-  console.log(
-    '  box using a bundled local model — no key, fully offline. Adding an embedding',
-  );
-  console.log(
-    '  API key (OpenAI or Vercel AI Gateway) switches to higher-quality hosted',
-  );
-  console.log('  embeddings.');
-  console.log('');
-
-  // Interactive prompt
-  if (!rl) {
+  let storedModel: string | null = null;
+  try {
+    storedModel = await readStoredEmbeddingModel(latDir);
+  } catch (err) {
+    console.log('');
     console.log(
-      styleText('dim', '  Using local offline embeddings.') +
-        ' Set ' +
+      styleText('yellow', 'Could not inspect the existing search index:') +
+        ' ' +
+        (err as Error).message,
+    );
+  }
+
+  const repoIsLocal = getRepoEmbedding(latDir) === 'local';
+  const storedBackend: EmbeddingBackend | null = storedModel
+    ? storedModel.startsWith('local:')
+      ? 'local'
+      : 'remote'
+    : null;
+  const existingBackend: EmbeddingBackend | null = repoIsLocal
+    ? 'local'
+    : storedBackend;
+
+  // Fresh/outdated non-interactive setups default local. Current non-interactive
+  // setups preserve their backend. Only a TTY presents and applies a key choice.
+  //
+  // The local-first default deliberately skips a repo with a *working* hosted
+  // setup (hosted index + a provider/model-compatible key): `configureDefault`
+  // re-fires
+  // on every INIT_VERSION bump, so pinning local here would keep undoing a
+  // deliberate choice — and without a TTY the user has no way to object. A
+  // hosted index with no key is unusable, so that one does fall back to local.
+  const workingHosted =
+    existingBackend === 'remote' && remoteModel === storedModel;
+  let backend: EmbeddingBackend;
+  let configuredNow = false;
+  if (key && interactive) {
+    console.log('');
+    console.log(styleText('bold', 'Semantic search'));
+    console.log('');
+    console.log(
+      '  An embedding API key is configured. Choose whether this repo should use',
+    );
+    console.log('  the bundled offline model or hosted embeddings.');
+    console.log('');
+
+    const defaultIndex = existingBackend
+      ? existingBackend === 'local'
+        ? 0
+        : 1
+      : configureDefault
+        ? 0
+        : 1;
+    const selected = await selectMenu(
+      [
+        { label: 'Local — bundled, offline (recommended)', value: 'local' },
+        { label: 'Hosted — use LAT_LLM_KEY', value: 'remote' },
+      ],
+      'Embedding backend',
+      defaultIndex,
+    );
+    if (!selected) return;
+    backend = selected as EmbeddingBackend;
+    setRepoEmbedding(latDir, backend === 'local' ? 'local' : null);
+    configuredNow = true;
+  } else if (configureDefault && !workingHosted) {
+    backend = 'local';
+    setRepoEmbedding(latDir, 'local');
+    configuredNow = true;
+
+    console.log('');
+    console.log(styleText('bold', 'Semantic search'));
+    console.log('');
+    console.log(
+      '  lat.md includes semantic search (' +
+        styleText('cyan', 'lat search') +
+        ') that lets agents find',
+    );
+    console.log(
+      '  relevant documentation by meaning, not just keywords. This repo is configured',
+    );
+    console.log(
+      '  to use the bundled local model — fully offline, with no API key required.',
+    );
+  } else {
+    backend = existingBackend ?? (key ? 'remote' : 'local');
+  }
+
+  if (configuredNow && backend === 'local' && !key) {
+    console.log('');
+    console.log(
+      '  Power users can opt into hosted embeddings by setting ' +
         styleText('cyan', 'LAT_LLM_KEY') +
-        ' or run ' +
-        styleText('cyan', 'lat init') +
-        ' interactively for hosted quality.',
+        ' and running',
     );
-    return;
+    console.log('  ' + styleText('cyan', 'lat reindex --remote') + '.');
   }
 
-  console.log(
-    '  You can provide a key now for hosted quality, or skip to use the local' +
-      ' model.',
-  );
-  console.log(
-    '  Supported: OpenAI (' +
-      styleText('dim', 'sk-...') +
-      ') or Vercel AI Gateway (' +
-      styleText('dim', 'vck_...') +
-      ')',
-  );
-  console.log('');
-
-  const key = await prompt(rl, `  Paste your key (or press Enter to skip): `);
-
-  if (!key) {
-    console.log(
-      styleText('dim', '  Skipped — using local offline embeddings.') +
-        ' You can set ' +
-        styleText('cyan', 'LAT_LLM_KEY') +
-        ' later or re-run ' +
-        styleText('cyan', 'lat init') +
-        '.',
-    );
-    return;
-  }
-
-  // Validate prefix
-  if (key.startsWith('sk-ant-')) {
-    console.log(
-      styleText('red', '  That looks like an Anthropic key.') +
-        " Anthropic doesn't offer embeddings.",
-    );
-    console.log(
-      '  lat.md needs an OpenAI (' +
-        styleText('dim', 'sk-...') +
-        ') or Vercel AI Gateway (' +
-        styleText('dim', 'vck_...') +
-        ') key.',
-    );
-    return;
-  }
-
-  if (!key.startsWith('sk-') && !key.startsWith('vck_')) {
-    console.log(
-      styleText('yellow', '  Unrecognized key prefix.') +
-        ' Expected sk-... (OpenAI) or vck_... (Vercel AI Gateway).',
-    );
-    console.log('  Saving anyway — you can update it later.');
-  }
-
-  // Save to config
-  const updatedConfig = { ...readConfig(), llm_key: key };
-  writeConfig(updatedConfig);
-  console.log(
-    styleText('green', '  Key saved') +
-      ' to ' +
-      styleText('dim', getConfigPath()),
+  await offerReindex(
+    root,
+    latDir,
+    backend,
+    remoteModel,
+    storedModel,
+    interactive,
   );
 }
 
@@ -1285,6 +1369,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
 
   const root = resolve(targetDir ?? process.cwd());
   const latDir = join(root, 'lat.md');
+  const storedInitVersion = readInitVersion(latDir);
 
   const interactive = process.stdin.isTTY ?? false;
 
@@ -1325,7 +1410,17 @@ export async function initCmd(targetDir?: string): Promise<void> {
       console.log(styleText('green', 'Created lat.md/'));
     }
 
-    // Step 2: Which coding agents do you use? (interactive select menu)
+    // Step 2: Configure fresh/outdated setups, ask interactive users about an
+    // available key, and offer to rebuild an index whose backend differs. This
+    // happens before agent selection so "no agents" still completes it.
+    await setupEmbeddingsForInit(
+      root,
+      latDir,
+      interactive,
+      storedInitVersion === null || storedInitVersion < INIT_VERSION,
+    );
+
+    // Step 3: Which coding agents do you use? (interactive select menu)
     console.log('');
 
     const allAgents = [
@@ -1358,7 +1453,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
       useOpenCode ||
       useCodex;
 
-    // Step 2b: How should agents run lat?
+    // Step 4: How should agents run lat?
     let commandStyle: LatCommandStyle = 'local';
     if (anySelected && needsLatCommand && interactive) {
       console.log('');
@@ -1390,6 +1485,10 @@ export async function initCmd(targetDir?: string): Promise<void> {
     }
 
     if (!anySelected) {
+      // Embedding setup is complete even when the user does not configure an
+      // agent. Stamp the version so future non-interactive runs do not reapply
+      // fresh/outdated defaults and overwrite the chosen backend.
+      writeInitMeta(latDir, {});
       console.log('');
       console.log(
         styleText('dim', 'No agents selected. You can re-run') +
@@ -1403,14 +1502,14 @@ export async function initCmd(targetDir?: string): Promise<void> {
     const template = readAgentsTemplate();
     const fileHashes: Record<string, string> = {};
 
-    // Step 3: AGENTS.md (shared by non-Claude agents)
+    // Step 5: AGENTS.md (shared by non-Claude agents)
     const needsAgentsMd =
       usePi || useCursor || useCopilot || useOpenCode || useCodex;
     if (needsAgentsMd) {
       await setupAgentsMd(root, latDir, template, fileHashes, ask);
     }
 
-    // Step 4: Per-agent setup
+    // Step 6: Per-agent setup
     if (useClaudeCode) {
       console.log('');
       console.log(styleText('bold', 'Setting up Claude Code...'));
@@ -1453,9 +1552,6 @@ export async function initCmd(targetDir?: string): Promise<void> {
       console.log(styleText('bold', 'Setting up Codex...'));
       await setupCodex(root, latDir, fileHashes, ask, commandStyle);
     }
-
-    // Step 5: LLM key setup
-    await setupLlmKey(rl);
 
     // Record init version and file hashes so `lat check` can detect stale setups
     writeInitMeta(latDir, fileHashes);

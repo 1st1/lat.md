@@ -5,7 +5,7 @@ import type { CmdContext, Styler } from '../context.js';
 
 export type { CmdContext };
 
-function makeStyler(): Styler {
+export function makeStyler(): Styler {
   return {
     bold: (s) => styleText('bold', s),
     dim: (s) => styleText('dim', s),

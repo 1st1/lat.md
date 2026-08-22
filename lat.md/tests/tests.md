@@ -28,4 +28,6 @@ Shared patterns for writing and organizing tests in this project.
 - [[check-sections]] — Validating section leading paragraphs
 - [[section]] — getSection core function and formatSectionOutput formatter
 - [[hook]] — Lifecycle hook context injection, conditional continuation, and setup merging
+- [[init]] — Initialization defaults for local-first semantic search
+- [[config]] — User-level configuration and repository embedding preference persistence
 - [[ts-fallback]] — Pure-TypeScript code-ref scanner fallback without ripgrep
