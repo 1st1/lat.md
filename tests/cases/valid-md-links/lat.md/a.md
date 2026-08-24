@@ -23,4 +23,16 @@ Skipped forms:
 
 Code is not a link: `[fake](./nope.md)`
 
+Escaped reference syntax is not a link: \[fake][missing]
+
+Undefined shortcut brackets remain text: [not-a-reference]
+
+HTML is not markdown link syntax: <span data-example="[fake][missing]">text</span>
+
+Fenced code is not a link:
+
+```markdown
+[fake][missing]
+```
+
 [bravo]: ./b.md

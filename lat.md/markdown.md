@@ -64,7 +64,9 @@ Source code is parsed lazily with tree-sitter (via `web-tree-sitter`). Only file
 
 Ordinary markdown links (`[text](path)`) to local files are validated for existence, so a moved or deleted file is caught the same way a stale `[[wiki link]]` is.
 
-Targets resolve against the containing file's directory, and existence on disk is the only test — a link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; a link inside a code block does not.
+Targets resolve against the containing file's directory, and existence on disk is the only test — a link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; code samples and bracket-like text in raw HTML do not.
+
+Full (`[text][id]`) and collapsed (`[id][]`) references without a matching definition are errors. An undefined shortcut form (`[id]`) is indistinguishable from bracketed prose and remains text, following CommonMark parsing.
 
 Destinations that are not local paths are skipped and never reported:
 

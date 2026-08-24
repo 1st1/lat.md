@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import {
   findLatticeDir,
@@ -18,7 +18,6 @@ import {
   checkMd,
   checkCodeRefs,
   checkIndex,
-  checkLinks,
   checkSections,
 } from '../src/cli/check.js';
 import { scanCodeRefs } from '../src/code-refs.js';
@@ -29,6 +28,31 @@ import { getSection, formatSectionOutput } from '../src/cli/section.js';
 const stripAnsi = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, '');
 
 const casesDir = join(import.meta.dirname, 'cases');
+const cliPath = join(
+  import.meta.dirname,
+  '..',
+  'dist',
+  'src',
+  'cli',
+  'index.js',
+);
+
+function runCli(
+  caseName: string,
+  args: string[],
+): { stdout: string; stderr: string; exitCode: number } {
+  const result = spawnSync(process.execPath, [cliPath, ...args], {
+    cwd: caseDir(caseName),
+    encoding: 'utf-8',
+    env: process.env,
+  });
+
+  return {
+    stdout: (result.stdout ?? '').replaceAll('\\', '/'),
+    stderr: result.stderr ?? '',
+    exitCode: result.status ?? 1,
+  };
+}
 
 function caseDir(name: string): string {
   return join(casesDir, name);
@@ -352,30 +376,57 @@ describe('valid-links', () => {
 
 describe('error-md-links', () => {
   // @lat: [[check-links#Detects broken relative links]]
-  it('check links reports every broken destination at its line', async () => {
-    const errors = await checkLinks(latDir('error-md-links'));
-    expect(errors.map((e) => `${e.line}: ${e.target}`)).toEqual([
-      '5: does-not-exist.md',
-      '6: ./does-not-exist.md',
-      '7: ../does-not-exist.md',
-      '8: ./does-not-exist.md#Heading',
-      '9: ./50%.md',
-      '10: ./does-not-exist.svg',
-      '13: ./does-not-exist-def.md',
-    ]);
+  it('lat check links reports every broken destination at its line', () => {
+    const {
+      stdout,
+      stderr: output,
+      exitCode,
+    } = runCli('error-md-links', ['check', 'links']);
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe('');
+    for (const expected of [
+      'lat.md/a.md:5: broken link (does-not-exist.md)',
+      'lat.md/a.md:6: broken link (./does-not-exist.md)',
+      'lat.md/a.md:7: broken link (../does-not-exist.md)',
+      'lat.md/a.md:8: broken link (./does-not-exist.md#Heading)',
+      'lat.md/a.md:9: broken link (./50%.md)',
+      'lat.md/a.md:10: broken image (./does-not-exist.svg)',
+      'lat.md/a.md:12: undefined link reference',
+      'lat.md/a.md:13: undefined image reference',
+      'lat.md/a.md:14: undefined link reference',
+      'lat.md/a.md:16: broken link (./does-not-exist-def.md)',
+    ]) {
+      expect(output).toContain(expected);
+    }
+    expect(output).toContain('10 errors found');
   });
 
   // @lat: [[check-links#Names the resolved file and the link kind]]
-  it('check links names the resolved file, with the anchor dropped', async () => {
-    const errors = await checkLinks(latDir('error-md-links'));
-    const byTarget = new Map(errors.map((e) => [e.target, e]));
+  it('lat check links names resolved files and distinguishes images', () => {
+    const { stderr: output } = runCli('error-md-links', ['check', 'links']);
 
-    expect(byTarget.get('./does-not-exist.md#Heading')!.message).toContain(
-      'does-not-exist.md" not found',
+    expect(output).toContain(
+      'broken link (./does-not-exist.md#Heading) — file "lat.md/does-not-exist.md" not found',
     );
-    expect(byTarget.get('./does-not-exist.svg')!.message).toContain(
-      'broken image',
+    expect(output).toContain(
+      'undefined image reference (![undefined image][missing-image])',
     );
+  });
+
+  // @lat: [[check-links#Default check validates relative links]]
+  it('lat check includes relative-link validation', () => {
+    const {
+      stdout,
+      stderr: output,
+      exitCode,
+    } = runCli('error-md-links', ['check']);
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe('');
+    expect(output).toContain('lat.md/a.md:5: broken link (does-not-exist.md)');
+    expect(output).toContain('10 errors found');
+    expect(output).not.toContain('missing index file');
   });
 });
 
@@ -383,9 +434,15 @@ describe('error-md-links', () => {
 
 describe('valid-md-links', () => {
   // @lat: [[check-links#Passes valid and skipped link forms]]
-  it('check links resolves local targets and skips non-path destinations', async () => {
-    const errors = await checkLinks(latDir('valid-md-links'));
-    expect(errors.map((e) => e.target)).toEqual([]);
+  it('lat check links accepts valid and skipped destinations', () => {
+    const { stdout, stderr, exitCode } = runCli('valid-md-links', [
+      'check',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toBe('links: All relative links resolve\n');
   });
 });
 

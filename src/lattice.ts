@@ -33,13 +33,22 @@ export type Ref = {
   line: number;
 };
 
-/** An ordinary markdown link, image, or reference definition. */
-export type MdLink = {
-  /** Destination exactly as authored, percent-escapes and all. */
-  url: string;
-  kind: 'link' | 'image' | 'definition';
-  line: number;
-};
+/** An ordinary markdown destination or an undefined reference-style link. */
+export type MdLink =
+  | {
+      /** Destination exactly as authored, percent-escapes and all. */
+      url: string;
+      kind: 'link' | 'image' | 'definition';
+      line: number;
+    }
+  | {
+      /** Authored label that should have a matching definition. */
+      identifier: string;
+      /** Full reference syntax exactly as authored. */
+      source: string;
+      kind: 'linkReference' | 'imageReference';
+      line: number;
+    };
 
 export type LatFrontmatter = {
   requireCodeMention?: boolean;
@@ -701,11 +710,27 @@ export function extractRefs(
   return refs;
 }
 
-/**
- * Extract ordinary markdown link destinations; wiki links are a separate node
- * type, handled by `extractRefs`. Walking the mdast rather than regex-matching
- * `[..](..)` is what keeps links inside code samples out of the results.
- */
+function isEscapedAt(value: string, index: number): boolean {
+  let slashes = 0;
+  for (let i = index - 1; i >= 0 && value[i] === '\\'; i--) slashes++;
+  return slashes % 2 === 1;
+}
+
+function closingBracket(value: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < value.length; i++) {
+    if (isEscapedAt(value, i)) continue;
+    if (value[i] === '[') {
+      depth++;
+    } else if (value[i] === ']') {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** Extract link destinations and undefined full/collapsed references. */
 export function extractLinks(content: string): MdLink[] {
   const tree = parse(content);
   const links: MdLink[] = [];
@@ -715,5 +740,79 @@ export function extractLinks(content: string): MdLink[] {
     links.push({ url, kind: type, line: position!.start.line });
   });
 
-  return links;
+  // CommonMark parses a reference with no matching definition as plain text,
+  // so it has no linkReference node to visit. Scan the authored syntax while
+  // excluding AST ranges where bracket text is data rather than prose.
+  const excluded: { start: number; end: number }[] = [];
+  visit(
+    tree,
+    [
+      'code',
+      'inlineCode',
+      'html',
+      'yaml',
+      'link',
+      'image',
+      'definition',
+      'linkReference',
+      'imageReference',
+      'wikiLink',
+    ],
+    (node) => {
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (start !== undefined && end !== undefined) {
+        excluded.push({ start, end });
+      }
+    },
+  );
+
+  const overlapsExcluded = (start: number, end: number) =>
+    excluded.some((range) => start < range.end && end > range.start);
+
+  for (let open = 0; open < content.length; open++) {
+    if (content[open] !== '[' || isEscapedAt(content, open)) continue;
+
+    const labelEnd = closingBracket(content, open);
+    const identifierStart = labelEnd + 1;
+    if (
+      labelEnd === -1 ||
+      content[identifierStart] !== '[' ||
+      isEscapedAt(content, identifierStart)
+    ) {
+      continue;
+    }
+
+    const identifierEnd = closingBracket(content, identifierStart);
+    if (identifierEnd === -1) continue;
+
+    const isImage =
+      open > 0 && content[open - 1] === '!' && !isEscapedAt(content, open - 1);
+    const start = isImage ? open - 1 : open;
+    const end = identifierEnd + 1;
+    if (overlapsExcluded(start, end)) {
+      open = identifierEnd;
+      continue;
+    }
+
+    const explicitIdentifier = content.slice(
+      identifierStart + 1,
+      identifierEnd,
+    );
+    const identifier = explicitIdentifier || content.slice(open + 1, labelEnd);
+    if (identifier.trim() === '') {
+      open = identifierEnd;
+      continue;
+    }
+
+    links.push({
+      identifier: identifier.trim(),
+      source: content.slice(start, end),
+      kind: isImage ? 'imageReference' : 'linkReference',
+      line: content.slice(0, start).split('\n').length,
+    });
+    open = identifierEnd;
+  }
+
+  return links.sort((a, b) => a.line - b.line);
 }

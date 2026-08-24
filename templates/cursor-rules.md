@@ -8,7 +8,7 @@
 After EVERY task, before responding to the user:
 
 - [ ] Update `lat.md/` if you added or changed any functionality, architecture, tests, or behavior
-- [ ] Use the `lat_check` tool — all wiki links and code refs must pass
+- [ ] Use the `lat_check` tool — all validations must pass
 - [ ] Do not skip these steps. Do not consider your task done until both are complete.
 
 ---
@@ -24,7 +24,7 @@ You have access to the following MCP tools from the `lat` server:
 - **lat_locate** — find a section by name (exact, fuzzy)
 - **lat_search** — semantic search across all sections
 - **lat_expand** — expand `[[refs]]` in text to resolved locations
-- **lat_check** — validate all wiki links and code refs
+- **lat_check** — run full graph and documentation validation
 - **lat_refs** — find what references a section
 
 If `lat_search` fails because `LAT_LLM_KEY` is not set, explain to the user that semantic search requires an API key (`export LAT_LLM_KEY=sk-...` for OpenAI or `export LAT_LLM_KEY=vck_...` for Vercel). If the user doesn't want to set it up, use `lat_locate` for direct lookups instead.

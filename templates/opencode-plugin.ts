@@ -68,7 +68,7 @@ export const LatPlugin: Plugin = async (ctx) => {
 
       lat_check: tool({
         description:
-          "Validate all wiki links and code refs in lat.md. Returns errors or 'All checks passed'",
+          "Run full lat.md validation. Returns errors or 'All checks passed'",
         args: {},
         async execute() {
           try {

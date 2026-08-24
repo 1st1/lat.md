@@ -146,8 +146,8 @@ export default function (pi: ExtensionAPI) {
     name: "lat_check",
     label: "lat check",
     description:
-      "Validate all wiki links and code refs in lat.md. Returns errors or 'All checks passed'",
-    promptSnippet: "Validate lat.md links and code refs",
+      "Run full lat.md validation. Returns errors or 'All checks passed'",
+    promptSnippet: "Run full lat.md validation",
     parameters: Type.Object({}),
     async execute() {
       try {

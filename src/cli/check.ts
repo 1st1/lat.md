@@ -217,6 +217,17 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
     const relPath = relative(process.cwd(), file);
 
     for (const link of extractLinks(content)) {
+      if ('identifier' in link) {
+        const kind = link.kind === 'imageReference' ? 'image' : 'link';
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.identifier,
+          message: `undefined ${kind} reference (${link.source}) — definition "[${link.identifier}]" not found`,
+        });
+        continue;
+      }
+
       const target = linkPath(link.url);
       if (target === null) continue;
 

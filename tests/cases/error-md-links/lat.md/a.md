@@ -9,5 +9,8 @@ Broken links of every relative shape.
 - [stray percent](./50%.md)
 - ![image](./does-not-exist.svg)
 - [reference][def]
+- [undefined reference][missing-def]
+- ![undefined image][missing-image]
+- [undefined collapsed][]
 
 [def]: ./does-not-exist-def.md
