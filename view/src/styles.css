@@ -1,0 +1,266 @@
+:root {
+  color: #25231f;
+  background: #f8f7f3;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --background: #f8f7f3;
+  --panel: #f0eee8;
+  --panel-border: #dedbd1;
+  --text: #25231f;
+  --muted: #777268;
+  --accent: #7357d9;
+  --accent-soft: #e7e0ff;
+  --code: #ece9e1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #e8e6df;
+    background: #181816;
+    --background: #181816;
+    --panel: #201f1c;
+    --panel-border: #34322d;
+    --text: #e8e6df;
+    --muted: #9c978d;
+    --accent: #ad9aff;
+    --accent-soft: #332b52;
+    --code: #25241f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--text);
+  background: var(--background);
+}
+
+a {
+  color: var(--accent);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 28px 18px;
+  overflow-y: auto;
+  background: var(--panel);
+  border-right: 1px solid var(--panel-border);
+}
+
+.brand {
+  display: inline-block;
+  margin: 0 10px 34px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 21px;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--accent);
+}
+
+.sidebar-label {
+  margin: 0 10px 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.document-link {
+  display: block;
+  padding: 8px 10px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 7px;
+}
+
+.document-link:hover,
+.document-link.active {
+  color: var(--text);
+  background: var(--accent-soft);
+}
+
+.document-link.active {
+  font-weight: 650;
+}
+
+.main {
+  width: 100%;
+  max-width: 980px;
+  min-width: 0;
+  padding: 46px clamp(28px, 6vw, 82px) 100px;
+}
+
+.document-path {
+  margin-bottom: 34px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+}
+
+.markdown {
+  max-width: 760px;
+  font-size: 16px;
+  line-height: 1.72;
+}
+
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4 {
+  margin: 2em 0 0.65em;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  scroll-margin-top: 24px;
+}
+
+.markdown h1 {
+  margin-top: 0;
+  font-size: clamp(32px, 5vw, 46px);
+}
+
+.markdown h2 {
+  padding-top: 0.4em;
+  font-size: 26px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.markdown h3 {
+  font-size: 20px;
+}
+
+.markdown p,
+.markdown ul,
+.markdown ol,
+.markdown blockquote,
+.markdown pre {
+  margin: 0 0 1.25em;
+}
+
+.markdown li + li {
+  margin-top: 0.35em;
+}
+
+.markdown a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.markdown blockquote {
+  margin-left: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  border-left: 3px solid var(--panel-border);
+}
+
+.markdown code {
+  padding: 0.16em 0.36em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--code);
+  border-radius: 5px;
+}
+
+.markdown pre {
+  padding: 18px 20px;
+  overflow-x: auto;
+  background: var(--code);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+
+.markdown pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.markdown img {
+  max-width: 100%;
+}
+
+.markdown hr {
+  margin: 2.5em 0;
+  border: 0;
+  border-top: 1px solid var(--panel-border);
+}
+
+.state {
+  display: flex;
+  min-height: 50vh;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+.state.error {
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+}
+
+.state.error strong {
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    display: block;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .brand {
+    margin-bottom: 18px;
+  }
+
+  .sidebar-label,
+  .sidebar nav {
+    display: none;
+  }
+
+  .main {
+    padding-top: 28px;
+  }
+}

@@ -1,4 +1,4 @@
-import type { Literal } from 'mdast';
+import type { Data, Literal } from 'mdast';
 
 /**
  * mdast node for a wiki-style link like [[target]] or [[target|alias]].
@@ -6,7 +6,7 @@ import type { Literal } from 'mdast';
 export interface WikiLink extends Literal {
   type: 'wikiLink';
   value: string;
-  data: {
+  data: Data & {
     alias: string | null;
   };
 }

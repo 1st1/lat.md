@@ -39,6 +39,26 @@ Usage: `lat section <query>`
 
 Core logic in [[src/cli/section.ts#getSection]] (returns structured result), used by both the CLI command and [[cli#mcp]] `lat_section` tool.
 
+## view
+
+Open the discovered `lat.md/` as rendered documentation in the default browser.
+
+Usage: `lat view`
+
+The command starts [[src/view/server.ts#startViewServer]] on an ephemeral loopback port, prints the URL, and launches the platform browser without routing the URL through a shell. The server remains active until the CLI process exits.
+
+The React client is compiled by Vite into publishable static assets under `dist/src/view/client`; frontend build tooling is not part of the installed runtime. The server itself uses Node's HTTP implementation rather than a web framework.
+
+### Markdown navigation
+
+The first browser slice lists every discovered Markdown file and renders documents through [[src/view/markdown.ts#renderMarkdown]].
+
+Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links remain authored text until graph-aware resolution is added; code links, search, graph visualization, and Git diffs are outside this slice.
+
+Only Markdown files returned by the vault walker can be read. The document API rejects absolute paths, backslashes, non-Markdown targets, ignored files, and symlinks that resolve outside `lat.md/`.
+
+CLI orchestration is in [[src/cli/view.ts#viewCommand]].
+
 ## refs
 
 Find sections that reference a given target via [[parser#Wiki Links]]. The query can be a section id or a source file path.

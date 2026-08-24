@@ -111,6 +111,15 @@ program
   });
 
 program
+  .command('view')
+  .description('Open lat.md in a local browser')
+  .action(async () => {
+    const ctx = resolveContext(program.opts());
+    const { viewCommand } = await import('./view.js');
+    handleResult(await viewCommand(ctx));
+  });
+
+program
   .command('refs')
   .description('Find references to a section')
   .argument('<query>', 'section id to find references for')
