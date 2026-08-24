@@ -30,3 +30,8 @@ Running `lat check links` accepts GitHub fragments with punctuation removed and 
 ## Rejects non-GitHub heading fragments
 
 For ordinary Markdown links, `lat check links` rejects heading fragments that are not GitHub-style slugs. Wiki links are unaffected: they accept both literal Obsidian headings and GitHub slugs.
+
+## Rejects backslash path separators
+
+Regular Markdown links reject literal or percent-encoded backslashes in local
+paths and direct authors to use `/`, preventing Windows-only false positives.

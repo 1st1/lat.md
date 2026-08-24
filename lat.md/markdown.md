@@ -79,6 +79,12 @@ Destinations that are not local paths are skipped and never reported:
 
 A `?query` is dropped before resolving. Fragments on non-Markdown targets are ignored because they are not heading ids.
 
+Local paths must use `/` separators on every operating system. Literal and
+percent-encoded backslashes are rejected because GitHub treats them as filename
+characters rather than Windows path separators. This restriction does not
+apply to lat wiki links or code references. Diagnostics display filesystem
+paths with `/` separators on every operating system.
+
 Validated by [[cli#check#links]].
 
 ## Leading Paragraph

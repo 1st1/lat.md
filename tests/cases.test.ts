@@ -405,11 +405,29 @@ describe('error-md-links', () => {
       'lat.md/a.md:13: undefined image reference',
       'lat.md/a.md:14: undefined link reference',
       'lat.md/a.md:15: broken link (#Alpha)',
-      'lat.md/a.md:17: broken link (./does-not-exist-def.md)',
+      'lat.md/a.md:20: broken link (./does-not-exist-def.md)',
     ]) {
       expect(output).toContain(expected);
     }
-    expect(output).toContain('11 errors found');
+    expect(output).toContain('14 errors found');
+  });
+
+  // @lat: [[check-links#Rejects backslash path separators]]
+  it('lat check links rejects Windows path separators', () => {
+    const { stderr: output, exitCode } = runCli('error-md-links', [
+      'check',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain('invalid link (.\\a.md)');
+    expect(output).toContain('invalid link (.%5Ca.md)');
+    expect(output).toContain('invalid link (C:\\notes.md)');
+    expect(
+      output.match(
+        /backslashes are not path separators in Markdown; use "\/" instead/g,
+      ),
+    ).toHaveLength(3);
   });
 
   // @lat: [[check-links#Rejects non-GitHub heading fragments]]
@@ -448,7 +466,7 @@ describe('error-md-links', () => {
     expect(exitCode).toBe(1);
     expect(stdout).toBe('');
     expect(output).toContain('lat.md/a.md:5: broken link (does-not-exist.md)');
-    expect(output).toContain('11 errors found');
+    expect(output).toContain('14 errors found');
     expect(output).not.toContain('missing index file');
   });
 });

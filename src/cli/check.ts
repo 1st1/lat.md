@@ -16,7 +16,7 @@ import {
 } from '../lattice.js';
 import { scanCodeRefs } from '../code-refs.js';
 import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
-import { walkEntries } from '../walk.js';
+import { toPosix, walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
 
@@ -191,12 +191,15 @@ export async function checkMd(
 
 // --- Relative link validation ---
 
-type LocalLinkTarget = {
-  /** Decoded on-disk path, or null for a fragment in the current file. */
-  path: string | null;
-  /** Decoded fragment without `#`, or null when none was authored. */
-  fragment: string | null;
-};
+type LocalLinkTarget =
+  | {
+      kind: 'target';
+      /** Decoded on-disk path, or null for a fragment in the current file. */
+      path: string | null;
+      /** Decoded fragment without `#`, or null when none was authored. */
+      fragment: string | null;
+    }
+  | { kind: 'invalid-backslash' };
 
 function decodeLinkPart(value: string): string {
   try {
@@ -210,7 +213,10 @@ function decodeLinkPart(value: string): string {
 function localLinkTarget(url: string): LocalLinkTarget | null {
   const u = url.trim();
   if (u.startsWith('/')) return null;
-  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) return null;
+  const windowsDrivePath = /^[a-zA-Z]:\\/.test(u);
+  if (!windowsDrivePath && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) {
+    return null;
+  }
 
   // Split before decoding: `%23` and `%3F` decode to `#` and `?`, which would
   // then truncate a filename that legitimately contains them.
@@ -221,12 +227,15 @@ function localLinkTarget(url: string): LocalLinkTarget | null {
     fragmentAt === -1 ? u.length : fragmentAt,
   );
   const rawPath = u.slice(0, pathEnd);
+  const path = rawPath === '' ? null : decodeLinkPart(rawPath);
   const fragment =
     fragmentAt === -1 ? null : decodeLinkPart(u.slice(fragmentAt + 1));
 
   if (rawPath === '' && fragment === null) return null;
+  if (path?.includes('\\')) return { kind: 'invalid-backslash' };
   return {
-    path: rawPath === '' ? null : decodeLinkPart(rawPath),
+    kind: 'target',
+    path,
     fragment,
   };
 }
@@ -252,7 +261,7 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
 
   for (const file of files) {
     const content = await readFile(file, 'utf-8');
-    const relPath = relative(process.cwd(), file);
+    const relPath = toPosix(relative(process.cwd(), file));
 
     for (const link of extractLinks(content)) {
       if ('identifier' in link) {
@@ -269,10 +278,23 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
       const target = localLinkTarget(link.url);
       if (target === null) continue;
 
+      if (target.kind === 'invalid-backslash') {
+        const kind = link.kind === 'image' ? 'image' : 'link';
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.url,
+          message:
+            `invalid ${kind} (${link.url}) — backslashes are not path ` +
+            'separators in Markdown; use "/" instead',
+        });
+        continue;
+      }
+
       const abs = target.path ? resolve(dirname(file), target.path) : file;
       if (!existsSync(abs)) {
         const kind = link.kind === 'image' ? 'image' : 'link';
-        const shown = relative(process.cwd(), abs);
+        const shown = toPosix(relative(process.cwd(), abs));
         errors.push({
           file: relPath,
           line: link.line,
@@ -289,7 +311,7 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
       ) {
         const headings = await headingsFor(abs);
         if (!headings.has(target.fragment)) {
-          const shown = relative(process.cwd(), abs);
+          const shown = toPosix(relative(process.cwd(), abs));
           errors.push({
             file: relPath,
             line: link.line,
