@@ -5,7 +5,11 @@ import type {
   ViewIndex,
 } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
-import { documentPath, documentUrl } from './navigation';
+import {
+  documentPath,
+  documentUrl,
+  scrollToDocumentLocation,
+} from './navigation';
 
 async function fetchJson<T extends object>(
   url: string,
@@ -71,17 +75,10 @@ export function App() {
     if (!document) return;
     window.document.title = `${document.title} · lat.md`;
     requestAnimationFrame(() => {
-      if (window.location.hash) {
-        let id = window.location.hash.slice(1);
-        try {
-          id = decodeURIComponent(id);
-        } catch {
-          // Leave malformed fragments untouched; they simply will not match.
-        }
-        window.document.getElementById(id)?.scrollIntoView();
-      } else {
-        window.scrollTo({ top: 0 });
-      }
+      scrollToDocumentLocation(window.location.hash, {
+        getElementById: (id) => window.document.getElementById(id),
+        scrollTo: (options) => window.scrollTo(options),
+      });
     });
   }, [document, location]);
 

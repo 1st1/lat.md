@@ -55,6 +55,8 @@ The browser groups discovered Markdown files into an expandable directory tree a
 
 Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; source-code and unresolved wiki targets remain authored text.
 
+Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
+
 For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.
 
 Search, graph visualization, Git diffs, and rendered source-code links are outside this slice.

@@ -7,6 +7,7 @@ import { viewCommand } from '../src/cli/view.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
 import type { ViewDocument, ViewIndex } from '../src/view/protocol.js';
 import { buildFileTree } from '../view/src/file-tree.js';
+import { scrollToDocumentLocation } from '../view/src/navigation.js';
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
@@ -103,6 +104,25 @@ describe('lat view', () => {
       { kind: 'file', name: 'api.md', path: 'api.md' },
       { kind: 'file', name: 'lat.md', path: 'lat.md' },
     ]);
+  });
+
+  // @lat: [[view#Stabilizes fragment navigation immediately]]
+  it('positions fragment navigation without smooth scrolling', () => {
+    const scrollIntoView = vi.fn();
+    const getElementById = vi.fn(() => ({ scrollIntoView }));
+    const scrollTo = vi.fn();
+
+    scrollToDocumentLocation('#wiki%20links', {
+      getElementById,
+      scrollTo,
+    });
+
+    expect(getElementById).toHaveBeenCalledWith('wiki links');
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'instant',
+      block: 'start',
+    });
+    expect(scrollTo).not.toHaveBeenCalled();
   });
 
   // @lat: [[view#Rejects files outside the Markdown vault]]

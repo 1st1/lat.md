@@ -25,6 +25,10 @@ Each visually split segment owns its underline so the decoration matches that se
 
 Vault-relative Markdown paths become a directory-first hierarchy with alphabetized children and complete file paths for navigation.
 
+## Stabilizes fragment navigation immediately
+
+Fragment links position the newly rendered document without smooth scrolling so text selection and further link clicks work as soon as navigation completes.
+
 ## Rejects files outside the Markdown vault
 
 The document API rejects traversal attempts and non-Markdown targets so browser requests cannot read arbitrary project files.
