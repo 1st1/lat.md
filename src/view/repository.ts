@@ -1,6 +1,20 @@
 import { readFile, realpath } from 'node:fs/promises';
-import { basename, isAbsolute, relative, resolve, sep } from 'node:path';
-import { listLatticeFiles } from '../lattice.js';
+import {
+  basename,
+  dirname,
+  isAbsolute,
+  relative,
+  resolve,
+  sep,
+} from 'node:path';
+import {
+  buildFileIndex,
+  buildSectionSlugIndex,
+  flattenSections,
+  listLatticeFiles,
+  loadAllSections,
+  resolveRef,
+} from '../lattice.js';
 import { toPosix } from '../walk.js';
 import type { ViewDocument, ViewIndex } from './protocol.js';
 import { renderMarkdown } from './markdown.js';
@@ -20,6 +34,40 @@ async function markdownFiles(latDir: string): Promise<Map<string, string>> {
   return new Map(
     files.map((file) => [toPosix(relative(latDir, file)), file] as const),
   );
+}
+
+function documentUrl(path: string): string {
+  return `/docs/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+async function markdownWikiLinkResolver(
+  latDir: string,
+): Promise<(target: string) => string | null> {
+  const projectRoot = dirname(latDir);
+  const sections = await loadAllSections(latDir, projectRoot);
+  const flat = flattenSections(sections);
+  const sectionIds = new Set(flat.map((section) => section.id.toLowerCase()));
+  const fileIndex = buildFileIndex(sections);
+  const slugIndex = buildSectionSlugIndex(sections);
+  const byId = new Map(
+    flat.map((section) => [section.id.toLowerCase(), section]),
+  );
+
+  return (target) => {
+    const result = resolveRef(target, sectionIds, fileIndex, slugIndex);
+    if (result.ambiguous) return null;
+
+    const section = byId.get(result.resolved.toLowerCase());
+    if (!section) return null;
+
+    const absoluteFile = resolve(projectRoot, section.filePath);
+    const file = toPosix(relative(latDir, absoluteFile));
+    const fragment =
+      target.includes('#') && section.githubSlug
+        ? `#${encodeURIComponent(section.githubSlug)}`
+        : '';
+    return `${documentUrl(file)}${fragment}`;
+  };
 }
 
 /** List browser-visible Markdown files and choose the conventional root index. */
@@ -64,7 +112,14 @@ export async function getViewDocument(
     throw new ViewDocumentNotFoundError('Markdown document not found');
   }
 
-  const markdown = await readFile(resolve(filePath), 'utf-8');
-  const rendered = await renderMarkdown(markdown, requestedPath);
+  const [markdown, resolveWikiLink] = await Promise.all([
+    readFile(resolve(filePath), 'utf-8'),
+    markdownWikiLinkResolver(latDir),
+  ]);
+  const rendered = await renderMarkdown(
+    markdown,
+    requestedPath,
+    resolveWikiLink,
+  );
   return { path: requestedPath, ...rendered };
 }

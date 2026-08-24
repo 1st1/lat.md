@@ -15,6 +15,16 @@ The loopback server exposes the visible Markdown file index, redirects its root 
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their authored destinations and fragments.
 
+## Resolves Markdown wiki links but leaves source links as text
+
+Wiki links that resolve to Markdown sections become document anchors with aliases and heading fragments. Unaliased links mute context through the final `#`; source-code and unresolved targets retain their authored text.
+
+Each visually split segment owns its underline so the decoration matches that segment's text color.
+
+## Builds a nested file tree
+
+Vault-relative Markdown paths become a directory-first hierarchy with alphabetized children and complete file paths for navigation.
+
 ## Rejects files outside the Markdown vault
 
 The document API rejects traversal attempts and non-Markdown targets so browser requests cannot read arbitrary project files.

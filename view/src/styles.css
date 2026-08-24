@@ -96,6 +96,52 @@ a {
   text-transform: uppercase;
 }
 
+.file-tree {
+  min-width: 0;
+}
+
+.tree-directory > summary {
+  display: flex;
+  padding: 8px 10px;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 7px;
+}
+
+.tree-directory > summary::-webkit-details-marker {
+  display: none;
+}
+
+.tree-directory > summary::before {
+  content: '›';
+  display: inline-block;
+  width: 10px;
+  font-size: 15px;
+  line-height: 1;
+  transform-origin: center;
+  transition: transform 120ms ease;
+}
+
+.tree-directory[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.tree-directory > summary:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+}
+
+.tree-children {
+  margin-left: 15px;
+  padding-left: 7px;
+  border-left: 1px solid var(--panel-border);
+}
+
 .document-link {
   display: block;
   padding: 8px 10px;
@@ -177,6 +223,21 @@ a {
 }
 
 .markdown a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.markdown .wiki-link-context {
+  color: var(--muted);
+}
+
+.markdown a.wiki-link-segmented {
+  text-decoration: none;
+}
+
+.markdown a.wiki-link-segmented > span {
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }

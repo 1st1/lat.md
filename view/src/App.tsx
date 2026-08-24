@@ -4,6 +4,7 @@ import type {
   ViewError,
   ViewIndex,
 } from '../../src/view/protocol';
+import { FileTree } from './FileTree';
 import { documentPath, documentUrl } from './navigation';
 
 async function fetchJson<T extends object>(
@@ -20,10 +21,6 @@ async function fetchJson<T extends object>(
 
 function currentLocation(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
-}
-
-function linkLabel(path: string): string {
-  return path.replace(/\.md$/i, '').replaceAll('/', ' / ');
 }
 
 export function App() {
@@ -147,18 +144,13 @@ export function App() {
         </a>
         <div className="sidebar-label">Documents</div>
         <nav aria-label="Markdown files">
-          {index?.files.map((file) => (
-            <a
-              className={
-                file === path ? 'document-link active' : 'document-link'
-              }
-              href={documentUrl(file)}
-              key={file}
-              onClick={onNavigationClick}
-            >
-              {linkLabel(file)}
-            </a>
-          ))}
+          {index && (
+            <FileTree
+              activePath={path}
+              files={index.files}
+              onNavigate={onNavigationClick}
+            />
+          )}
         </nav>
       </aside>
 

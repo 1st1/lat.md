@@ -6,6 +6,7 @@ import { plainStyler, type CmdContext } from '../src/context.js';
 import { viewCommand } from '../src/cli/view.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
 import type { ViewDocument, ViewIndex } from '../src/view/protocol.js';
+import { buildFileTree } from '../view/src/file-tree.js';
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
@@ -58,8 +59,50 @@ describe('lat view', () => {
     expect(document.title).toBe('View Project');
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
-    expect(document.html).toContain('[[guide|wiki navigation]]');
     expect(document.html).not.toContain('require-code-mention');
+  });
+
+  // @lat: [[view#Resolves Markdown wiki links but leaves source links as text]]
+  it('resolves Markdown wiki links but leaves source links as text', async () => {
+    const response = await fetch(
+      new URL('/api/document?path=lat.md', view.url),
+    );
+    const document = (await response.json()) as ViewDocument;
+
+    expect(document.html).toContain(
+      '<a href="/docs/guide.md">wiki navigation</a>',
+    );
+    expect(document.html).toContain(
+      '<a href="/docs/guide.md#details">wiki heading links</a>',
+    );
+    expect(document.html).toContain(
+      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span></a>',
+    );
+    expect(document.html).toContain('[[src/app.ts#run]]');
+  });
+
+  // @lat: [[view#Builds a nested file tree]]
+  it('builds a nested file tree', () => {
+    expect(
+      buildFileTree([
+        'lat.md',
+        'guides/setup.md',
+        'guides/guides.md',
+        'api.md',
+      ]),
+    ).toEqual([
+      {
+        kind: 'directory',
+        name: 'guides',
+        path: 'guides',
+        children: [
+          { kind: 'file', name: 'guides.md', path: 'guides/guides.md' },
+          { kind: 'file', name: 'setup.md', path: 'guides/setup.md' },
+        ],
+      },
+      { kind: 'file', name: 'api.md', path: 'api.md' },
+      { kind: 'file', name: 'lat.md', path: 'lat.md' },
+    ]);
   });
 
   // @lat: [[view#Rejects files outside the Markdown vault]]

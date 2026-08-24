@@ -51,9 +51,13 @@ The React client is compiled by Vite into publishable static assets under `dist/
 
 ### Markdown navigation
 
-The first browser slice lists every discovered Markdown file and renders documents through [[src/view/markdown.ts#renderMarkdown]].
+The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestor directories open automatically.
 
-Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links remain authored text until graph-aware resolution is added; code links, search, graph visualization, and Git diffs are outside this slice.
+Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; source-code and unresolved wiki targets remain authored text.
+
+For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.
+
+Search, graph visualization, Git diffs, and rendered source-code links are outside this slice.
 
 Only Markdown files returned by the vault walker can be read. The document API rejects absolute paths, backslashes, non-Markdown targets, ignored files, and symlinks that resolve outside `lat.md/`.
 
@@ -433,7 +437,7 @@ Rebuilds the embedding index — the single write/rebuild path (`lat search` onl
 Backend selection honors the **durable per-repo preference**: a repo pinned to local rebuilds local
 and ignores `LAT_LLM_KEY` (printing a note when a key is nonetheless set). Flags override: `--local`
 forces the offline model; `--remote` re-resolves from the key (the escape hatch back to hosted, and
-errors if no key is set). A bare run on an *unpinned* repo decides from the environment. This is how
+errors if no key is set). A bare run on an _unpinned_ repo decides from the environment. This is how
 a user migrates — e.g. after removing a key, or when a key is rejected.
 
 If a key is used but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key
