@@ -12,5 +12,6 @@ Broken links of every relative shape.
 - [undefined reference][missing-def]
 - ![undefined image][missing-image]
 - [undefined collapsed][]
+- [Obsidian-style heading](#Alpha)
 
 [def]: ./does-not-exist-def.md

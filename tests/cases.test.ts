@@ -370,6 +370,15 @@ describe('valid-links', () => {
     const { errors } = await checkMd(latDir('valid-links'));
     expect(errors).toHaveLength(0);
   });
+
+  // @lat: [[ref-resolution#Wiki links accept literal and GitHub headings]]
+  it('lat check md accepts literal headings and GitHub slugs', () => {
+    const { stdout, stderr, exitCode } = runCli('valid-links', ['check', 'md']);
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toContain('md: All links OK\n');
+  });
 });
 
 // --- md-links ---
@@ -395,11 +404,25 @@ describe('error-md-links', () => {
       'lat.md/a.md:12: undefined link reference',
       'lat.md/a.md:13: undefined image reference',
       'lat.md/a.md:14: undefined link reference',
-      'lat.md/a.md:16: broken link (./does-not-exist-def.md)',
+      'lat.md/a.md:15: broken link (#Alpha)',
+      'lat.md/a.md:17: broken link (./does-not-exist-def.md)',
     ]) {
       expect(output).toContain(expected);
     }
-    expect(output).toContain('10 errors found');
+    expect(output).toContain('11 errors found');
+  });
+
+  // @lat: [[check-links#Rejects non-GitHub heading fragments]]
+  it('lat check links rejects an Obsidian-style heading fragment', () => {
+    const { stderr: output, exitCode } = runCli('error-md-links', [
+      'check',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain(
+      'broken link (#Alpha) — heading "#Alpha" not found in "lat.md/a.md"',
+    );
   });
 
   // @lat: [[check-links#Names the resolved file and the link kind]]
@@ -425,7 +448,7 @@ describe('error-md-links', () => {
     expect(exitCode).toBe(1);
     expect(stdout).toBe('');
     expect(output).toContain('lat.md/a.md:5: broken link (does-not-exist.md)');
-    expect(output).toContain('10 errors found');
+    expect(output).toContain('11 errors found');
     expect(output).not.toContain('missing index file');
   });
 });
@@ -435,6 +458,18 @@ describe('error-md-links', () => {
 describe('valid-md-links', () => {
   // @lat: [[check-links#Passes valid and skipped link forms]]
   it('lat check links accepts valid and skipped destinations', () => {
+    const { stdout, stderr, exitCode } = runCli('valid-md-links', [
+      'check',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toBe('links: All relative links resolve\n');
+  });
+
+  // @lat: [[check-links#Accepts GitHub heading fragments]]
+  it('lat check links accepts punctuation and duplicate heading slugs', () => {
     const { stdout, stderr, exitCode } = runCli('valid-md-links', [
       'check',
       'links',
@@ -1160,6 +1195,26 @@ describe('getSection', () => {
     expect(result.kind).toBe('found');
     if (result.kind !== 'found') return;
     expect(result.section.id).toBe('lat.md/guides/setup#Setup#Install');
+  });
+
+  // @lat: [[tests/section#CLI accepts literal and GitHub heading syntax]]
+  it('lat section resolves literal and GitHub-slugged heading paths', () => {
+    const literal = runCli('basic-project', [
+      'section',
+      'dev-process#Testing#Running Tests',
+    ]);
+    const github = runCli('basic-project', [
+      'section',
+      'dev-process#testing#running-tests',
+    ]);
+
+    expect(literal.exitCode).toBe(0);
+    expect(github.exitCode).toBe(0);
+    expect(github.stderr).toBe('');
+    expect(stripAnsi(github.stdout)).toBe(stripAnsi(literal.stdout));
+    expect(stripAnsi(github.stdout)).toContain(
+      '[[lat.md/dev-process#Dev Process#Testing#Running Tests]]',
+    );
   });
 
   // @lat: [[tests/section#Section with no refs or links]]

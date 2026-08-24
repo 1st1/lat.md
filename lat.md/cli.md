@@ -75,7 +75,7 @@ Validate that all [[parser#Wiki Links]] in `lat.md` markdown files point to exis
 
 ### links
 
-Validate that ordinary markdown links in `lat.md/` files point to existing files and that full or collapsed reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
+Validate that ordinary markdown links in `lat.md/` files point to existing files, Markdown fragments use GitHub heading ids, and full or collapsed reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
 
 ### code-refs
 

@@ -10,6 +10,7 @@ import {
   parseFrontmatter,
   parseSections,
   buildFileIndex,
+  buildSectionSlugIndex,
   resolveRef,
   type Section,
 } from '../lattice.js';
@@ -145,6 +146,7 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const slugIndex = buildSectionSlugIndex(allSections);
 
   const errors: CheckError[] = [];
 
@@ -158,6 +160,7 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
         ref.target,
         sectionIds,
         fileIndex,
+        slugIndex,
       );
       if (ambiguous) {
         errors.push({
@@ -186,31 +189,64 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
 
 // --- Relative link validation ---
 
-/**
- * The on-disk path a markdown link destination denotes, or null when it denotes
- * none: a URI scheme (`https:`, `mailto:`, and a Windows `C:/x` drive letter),
- * a root-absolute or protocol-relative path (ambiguous between the site root
- * and the filesystem root), or a bare `#anchor` / `?query`.
- */
-function linkPath(url: string): string | null {
+type LocalLinkTarget = {
+  /** Decoded on-disk path, or null for a fragment in the current file. */
+  path: string | null;
+  /** Decoded fragment without `#`, or null when none was authored. */
+  fragment: string | null;
+};
+
+function decodeLinkPart(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** Parse a local markdown destination without confusing escaped #/? in paths. */
+function localLinkTarget(url: string): LocalLinkTarget | null {
   const u = url.trim();
-  if (u.startsWith('#') || u.startsWith('/')) return null;
+  if (u.startsWith('/')) return null;
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) return null;
 
   // Split before decoding: `%23` and `%3F` decode to `#` and `?`, which would
   // then truncate a filename that legitimately contains them.
-  const path = u.split(/[?#]/)[0];
-  if (path === '') return null;
-  try {
-    return decodeURIComponent(path);
-  } catch {
-    return path; // Malformed escape — check it as authored rather than throw.
-  }
+  const queryAt = u.indexOf('?');
+  const fragmentAt = u.indexOf('#');
+  const pathEnd = Math.min(
+    queryAt === -1 ? u.length : queryAt,
+    fragmentAt === -1 ? u.length : fragmentAt,
+  );
+  const rawPath = u.slice(0, pathEnd);
+  const fragment =
+    fragmentAt === -1 ? null : decodeLinkPart(u.slice(fragmentAt + 1));
+
+  if (rawPath === '' && fragment === null) return null;
+  return {
+    path: rawPath === '' ? null : decodeLinkPart(rawPath),
+    fragment,
+  };
 }
 
 export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
   const files = await listLatticeFiles(latticeDir);
   const errors: CheckError[] = [];
+  const headingCache = new Map<string, Set<string>>();
+
+  const headingsFor = async (file: string): Promise<Set<string>> => {
+    const cached = headingCache.get(file);
+    if (cached) return cached;
+
+    const content = await readFile(file, 'utf-8');
+    const headings = new Set(
+      flattenSections(parseSections(file, content)).map(
+        (section) => section.githubSlug!,
+      ),
+    );
+    headingCache.set(file, headings);
+    return headings;
+  };
 
   for (const file of files) {
     const content = await readFile(file, 'utf-8');
@@ -228,20 +264,38 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
         continue;
       }
 
-      const target = linkPath(link.url);
+      const target = localLinkTarget(link.url);
       if (target === null) continue;
 
-      const abs = resolve(dirname(file), target);
-      if (existsSync(abs)) continue;
+      const abs = target.path ? resolve(dirname(file), target.path) : file;
+      if (!existsSync(abs)) {
+        const kind = link.kind === 'image' ? 'image' : 'link';
+        const shown = relative(process.cwd(), abs);
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.url,
+          message: `broken ${kind} (${link.url}) — file "${shown}" not found`,
+        });
+        continue;
+      }
 
-      const kind = link.kind === 'image' ? 'image' : 'link';
-      const shown = relative(process.cwd(), abs);
-      errors.push({
-        file: relPath,
-        line: link.line,
-        target: link.url,
-        message: `broken ${kind} (${link.url}) — file "${shown}" not found`,
-      });
+      if (
+        target.fragment &&
+        extname(abs).toLowerCase() === '.md' &&
+        link.kind !== 'image'
+      ) {
+        const headings = await headingsFor(abs);
+        if (!headings.has(target.fragment)) {
+          const shown = relative(process.cwd(), abs);
+          errors.push({
+            file: relPath,
+            line: link.line,
+            target: link.url,
+            message: `broken link (${link.url}) — heading "#${target.fragment}" not found in "${shown}"`,
+          });
+        }
+      }
     }
   }
 
@@ -254,6 +308,7 @@ export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const slugIndex = buildSectionSlugIndex(allSections);
 
   const scan = await scanCodeRefs(projectRoot);
   const errors: CheckError[] = [];
@@ -264,6 +319,7 @@ export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
       ref.target,
       sectionIds,
       fileIndex,
+      slugIndex,
     );
     mentionedSections.add(resolved.toLowerCase());
     const displayPath = relative(process.cwd(), join(projectRoot, ref.file));

@@ -25,6 +25,7 @@ Each section has:
 - `children` — nested subsections forming a tree
 - `startLine` / `endLine` — source positions in the original file
 - `firstParagraph` — first paragraph text (used by [[cli#Section Preview]])
+- `githubSlug` — GitHub-compatible heading id, including duplicate suffixes within the document
 
 [[markdown#Frontmatter]] is handled by `remark-frontmatter`, which parses it as a `yaml` AST node so heading positions reflect the original file.
 
@@ -35,6 +36,8 @@ References can use just the file name (without directory path) when the name is 
 For example, `[[search#Provider Detection]]` resolves to `lat.md/tests/search#Search Tests#Provider Detection` if there's only one `search.md` in the vault. If multiple files share the same name, the full path is required — `lat check` reports ambiguous refs as errors.
 
 The root (h1) heading can be omitted in references: `[[backend#CORS]]` resolves to `lat.md/backend#Backend#CORS` because the h1 heading is implicit from the file. Both `resolveRef()` and `findSections()` handle this by trying to insert root headings when a direct match fails.
+
+[[src/lattice.ts#buildSectionSlugIndex]] maps GitHub-slugged heading paths back to canonical literal-heading ids. Strict and lenient resolution accept either form while continuing to return the original section ids used by existing CLI output.
 
 The file index ([[src/lattice.ts#buildFileIndex]]) maps all trailing path suffixes to their full paths. For `lat.md/guides/setup`, both `guides/setup` and `setup` are indexed. All keys are lowercase for case-insensitive lookup.
 

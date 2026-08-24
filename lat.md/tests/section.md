@@ -19,6 +19,10 @@ Given a fully qualified section id like `lat.md/dev-process#Dev Process#Testing`
 
 Given a short-form id like `setup#Install` where the file stem is unique, `getSection` resolves it to the full section and returns its content.
 
+## CLI accepts literal and GitHub heading syntax
+
+`lat section` accepts literal Obsidian heading paths and GitHub-slugged paths, producing identical output with the canonical literal-heading section id.
+
 ## Section with no refs or links
 
 A section that neither contains wiki links nor is referenced by other sections returns empty `outgoingRefs` and `incomingRefs`.

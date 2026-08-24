@@ -22,3 +22,11 @@ Running `lat check` without a subcommand includes [[cli#check#links]] and fails 
 ## Passes valid and skipped link forms
 
 Running `lat check links` with resolving paths, skipped non-local destinations, escaped reference syntax, and links inside code reports no errors.
+
+## Accepts GitHub heading fragments
+
+Running `lat check links` accepts GitHub fragments with punctuation removed and duplicate headings suffixed in document order.
+
+## Rejects non-GitHub heading fragments
+
+For ordinary Markdown links, `lat check links` rejects heading fragments that are not GitHub-style slugs. Wiki links are unaffected: they accept both literal Obsidian headings and GitHub slugs.

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join, basename, relative, resolve } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
+import GithubSlugger from 'github-slugger';
 import { parse } from './parser.js';
 import { toPosix, walkEntries } from './walk.js';
 import { visit } from 'unist-util-visit';
@@ -24,6 +25,8 @@ export type Section = {
   startLine: number;
   endLine: number;
   firstParagraph: string;
+  /** GitHub-compatible anchor generated from the rendered heading text. */
+  githubSlug?: string;
 };
 
 export type Ref = {
@@ -98,6 +101,33 @@ function headingText(node: Heading): string {
     .join('');
 }
 
+/** Extract the rendered text GitHub uses as input to its heading slugger. */
+function githubHeadingText(node: unknown): string {
+  if (!node || typeof node !== 'object') return '';
+
+  const value = node as {
+    type?: string;
+    value?: string;
+    alt?: string | null;
+    data?: { alias?: string | null };
+    children?: unknown[];
+  };
+
+  if (value.type === 'text' || value.type === 'inlineCode') {
+    return value.value ?? '';
+  }
+  if (value.type === 'image' || value.type === 'imageReference') {
+    return value.alt ?? '';
+  }
+  if (value.type === 'wikiLink') {
+    return value.data?.alias ?? value.value ?? '';
+  }
+  if (value.children) {
+    return value.children.map(githubHeadingText).join('');
+  }
+  return '';
+}
+
 function inlineText(node: { children: RootContent[] }): string {
   return node.children
     .map((c) => {
@@ -131,6 +161,7 @@ export function parseSections(
   const roots: Section[] = [];
   const stack: Section[] = [];
   const flat: Section[] = [];
+  const slugger = new GithubSlugger();
 
   visit(tree, 'heading', (node: Heading) => {
     const heading = headingText(node);
@@ -155,6 +186,7 @@ export function parseSections(
       startLine,
       endLine: 0,
       firstParagraph: '',
+      githubSlug: slugger.slug(githubHeadingText(node)),
     };
 
     if (parent) {
@@ -282,6 +314,67 @@ export function buildFileIndex(sections: Section[]): Map<string, string[]> {
   return result;
 }
 
+export type SectionSlugIndex = ReadonlyMap<string, string>;
+
+/**
+ * Map GitHub-slugged heading paths back to canonical, literal-heading ids.
+ * Every path segment accepts either representation so an implicit literal h1
+ * can still prefix slugged child headings during short-ref resolution.
+ */
+export function buildSectionSlugIndex(
+  sections: Section[],
+): Map<string, string> {
+  const aliases = new Map<string, string>();
+  const stacks = new Map<
+    string,
+    { depth: number; literal: string; slug: string }[]
+  >();
+  const sluggers = new Map<string, GithubSlugger>();
+
+  for (const section of flattenSections(sections)) {
+    let slugger = sluggers.get(section.file);
+    if (!slugger) {
+      slugger = new GithubSlugger();
+      sluggers.set(section.file, slugger);
+    }
+
+    // Always advance the fallback slugger so manually constructed Section
+    // objects without githubSlug still get correct duplicate suffixes.
+    const fallbackSlug = slugger.slug(section.heading);
+    const headingSlug = section.githubSlug ?? fallbackSlug;
+    const stack = stacks.get(section.file) ?? [];
+    while (stack.length > 0 && stack[stack.length - 1].depth >= section.depth) {
+      stack.pop();
+    }
+
+    const levels = [
+      ...stack,
+      {
+        depth: section.depth,
+        literal: section.heading.toLowerCase(),
+        slug: headingSlug.toLowerCase(),
+      },
+    ];
+    let paths = [''];
+    for (const level of levels) {
+      const options = [...new Set([level.literal, level.slug])];
+      paths = paths.flatMap((path) =>
+        options.map((part) => (path ? `${path}#${part}` : part)),
+      );
+    }
+
+    for (const path of paths) {
+      const alias = `${section.file.toLowerCase()}#${path}`;
+      if (!aliases.has(alias)) aliases.set(alias, section.id);
+    }
+
+    stack.push(levels[levels.length - 1]);
+    stacks.set(section.file, stack);
+  }
+
+  return aliases;
+}
+
 export type ResolveResult = {
   resolved: string;
   ambiguous: string[] | null;
@@ -312,12 +405,36 @@ export function resolveRef(
   target: string,
   sectionIds: Set<string>,
   fileIndex: Map<string, string[]>,
+  slugIndex?: SectionSlugIndex,
 ): ResolveResult {
   target = normalizeRefFilePath(target);
 
+  const resolveKnown = (candidate: string): string | null => {
+    // Preserve existing wiki-link meaning when a literal heading happens to
+    // collide with a different heading's GitHub slug.
+    if (sectionIds.has(candidate.toLowerCase())) return candidate;
+    return slugIndex?.get(candidate.toLowerCase()) ?? null;
+  };
+
+  const resolveInFile = (file: string, rest: string): string | null => {
+    const direct = resolveKnown(file + rest);
+    if (direct) return direct;
+
+    // Try inserting root headings between file and rest. This also works for
+    // slugged child segments because the slug index contains mixed paths.
+    const rootHeadings = findRootHeadings(file, sectionIds);
+    for (const h1 of rootHeadings) {
+      const withRoot = rest ? `${file}#${h1}${rest}` : `${file}#${h1}`;
+      const resolved = resolveKnown(withRoot);
+      if (resolved) return resolved;
+    }
+    return null;
+  };
+
   // Already matches a known section — no resolution needed
-  if (sectionIds.has(target.toLowerCase())) {
-    return { resolved: target, ambiguous: null, suggested: null };
+  const direct = resolveKnown(target);
+  if (direct) {
+    return { resolved: direct, ambiguous: null, suggested: null };
   }
 
   // Extract the file segment (before first #) and try resolving it
@@ -334,31 +451,14 @@ export function resolveRef(
 
   if (filePaths.length === 1) {
     const fp = filePaths[0];
-    const expanded = fp + rest;
-    if (sectionIds.has(expanded.toLowerCase())) {
-      return { resolved: expanded, ambiguous: null, suggested: null };
-    }
-    // Try inserting root headings between file and rest.
-    // Handles Obsidian-style file#heading refs where the h1 is implicit.
-    const rootHeadings = findRootHeadings(fp, sectionIds);
-    for (const h1 of rootHeadings) {
-      const withRoot = rest ? `${fp}#${h1}${rest}` : `${fp}#${h1}`;
-      if (sectionIds.has(withRoot.toLowerCase())) {
-        return { resolved: withRoot, ambiguous: null, suggested: null };
-      }
+    const resolved = resolveInFile(fp, rest);
+    if (resolved) {
+      return { resolved, ambiguous: null, suggested: null };
     }
   } else if (filePaths.length > 1) {
     // Multiple files share this stem — ambiguous at the filename level
     const all = filePaths.map((c) => c + rest);
-    const valid = filePaths.filter((c) => {
-      if (sectionIds.has((c + rest).toLowerCase())) return true;
-      // Also try with root heading insertion
-      const rootHeadings = findRootHeadings(c, sectionIds);
-      return rootHeadings.some((h1) => {
-        const withRoot = rest ? `${c}#${h1}${rest}` : `${c}#${h1}`;
-        return sectionIds.has(withRoot.toLowerCase());
-      });
-    });
+    const valid = filePaths.filter((c) => resolveInFile(c, rest) !== null);
     return {
       resolved: target,
       ambiguous: all,
@@ -402,9 +502,21 @@ export function findSections(
   );
   const q = normalized.toLowerCase();
   const isFullPath = normalized.includes('#');
+  const byId = new Map(flat.map((s) => [s.id.toLowerCase(), s]));
+  const slugIndex = buildSectionSlugIndex(sections);
+
+  const sectionFor = (candidate: string): Section | undefined => {
+    const key = candidate.toLowerCase();
+    return byId.get(key) ?? byId.get(slugIndex.get(key)?.toLowerCase() ?? '');
+  };
 
   // Tier 1: exact full-id match
-  const exact = flat.filter((s) => s.id.toLowerCase() === q);
+  const literalExact = flat.filter((s) => s.id.toLowerCase() === q);
+  const slugExact =
+    literalExact.length === 0 && isFullPath
+      ? sectionFor(normalized)
+      : undefined;
+  const exact = slugExact ? [slugExact] : literalExact;
   const exactMatches: SectionMatch[] = exact.map((s) => ({
     section: s,
     reason: 'exact match',
@@ -459,11 +571,9 @@ export function findSections(
     const allPaths =
       stemPaths.length > 0 ? stemPaths : filePart ? [filePart] : [];
     for (const p of allPaths) {
-      const expanded = (p + rest).toLowerCase();
-      const s = flat.find(
-        (s) => s.id.toLowerCase() === expanded && !exact.includes(s),
-      );
+      const s = sectionFor(p + rest);
       if (s) {
+        if (exact.includes(s)) continue;
         stemMatches.push({
           section: s,
           reason:
@@ -480,11 +590,9 @@ export function findSections(
           !s.id.includes('#', s.file.length + 1),
       );
       for (const root of rootsOfFile) {
-        const withRoot = (root.id + rest).toLowerCase();
-        const match = flat.find(
-          (s) => s.id.toLowerCase() === withRoot && !exact.includes(s),
-        );
+        const match = sectionFor(root.id + rest);
         if (match) {
+          if (exact.includes(match)) continue;
           stemMatches.push({
             section: match,
             reason:
@@ -518,12 +626,32 @@ export function findSections(
     ...exact.map((s) => s.id),
     ...stemMatches.map((m) => m.section.id),
   ]);
+  const slugTailMatches = new Set<string>();
+  if (!isFullPath) {
+    for (const [alias, canonical] of slugIndex) {
+      if (alias.slice(alias.lastIndexOf('#') + 1) === q) {
+        slugTailMatches.add(canonical.toLowerCase());
+      }
+    }
+  }
+  const literalTailMatches = new Set(
+    isFullPath
+      ? []
+      : flat
+          .filter((s) =>
+            tailSegments(s.id).some((tail) => tail.toLowerCase() === q),
+          )
+          .map((s) => s.id.toLowerCase()),
+  );
   const subsection: SectionMatch[] = isFullPath
     ? []
     : flat
         .filter((s) => {
           if (seen.has(s.id)) return false;
-          return tailSegments(s.id).some((tail) => tail.toLowerCase() === q);
+          const id = s.id.toLowerCase();
+          return literalTailMatches.size > 0
+            ? literalTailMatches.has(id)
+            : slugTailMatches.has(id);
         })
         .map((s) => ({ section: s, reason: 'section name match' }));
 

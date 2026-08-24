@@ -18,6 +18,8 @@ Aligned with Obsidian conventions:
 - **`[[foo#Bar]]`** — heading `Bar` in file `foo.md`. The path after `#` must be an exact heading chain — no intermediate headings can be omitted.
 - **`[[path/foo#Bar]]`** — fully qualified: file `path/foo.md`, heading `Bar`.
 
+Heading segments accept either their literal Obsidian form (`Some Section!`) or their GitHub slug (`some-section`). Resolution always returns and displays the canonical literal-heading section id, so existing links and CLI output remain unchanged. Literal matches win if the two forms collide.
+
 ### Short Path Disambiguation
 
 Short refs are supported for markdown files inside `lat.md/` only. When a file stem is unique across the vault, it can be used without its directory prefix.
@@ -64,7 +66,9 @@ Source code is parsed lazily with tree-sitter (via `web-tree-sitter`). Only file
 
 Ordinary markdown links (`[text](path)`) to local files are validated for existence, so a moved or deleted file is caught the same way a stale `[[wiki link]]` is.
 
-Targets resolve against the containing file's directory, and existence on disk is the only test — a link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; code samples and bracket-like text in raw HTML do not.
+Targets resolve against the containing file's directory. A link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; code samples and bracket-like text in raw HTML do not.
+
+Fragments targeting Markdown files must match a GitHub-style heading id. GitHub lowercases headings, removes punctuation, replaces spaces with hyphens, and suffixes duplicate ids with `-1`, `-2`, and so on. Bare fragments target the containing file and are validated the same way.
 
 Full (`[text][id]`) and collapsed (`[id][]`) references without a matching definition are errors. An undefined shortcut form (`[id]`) is indistinguishable from bracketed prose and remains text, following CommonMark parsing.
 
@@ -72,9 +76,8 @@ Destinations that are not local paths are skipped and never reported:
 
 - **Any URI scheme** — `https:`, `mailto:`, and a Windows absolute path like `C:/notes.md`.
 - **Root-absolute and protocol-relative** — `/img/logo.png`, `//example.com/x`. Ambiguous between a site root and the filesystem root.
-- **Bare fragments** — `#section`.
 
-A `?query` and `#fragment` are dropped before resolving, so `foo.md#some-heading` only checks that `foo.md` exists. The anchor itself is not validated — heading slugs depend on the rendering tool.
+A `?query` is dropped before resolving. Fragments on non-Markdown targets are ignored because they are not heading ids.
 
 Validated by [[cli#check#links]].
 
