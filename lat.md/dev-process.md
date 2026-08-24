@@ -4,7 +4,13 @@ Development workflow, tooling, and conventions for the lat.md project.
 
 ## Tooling
 
-TypeScript ESM project (`"type": "module"`). Strict types enforced — `tsc --noEmit` runs as a [[dev-process#Testing#Typecheck Test]].
+TypeScript ESM project with a Rust-to-WASM embedding engine. Local development mirrors CI so package builds and tests exercise the complete published toolchain.
+
+Node 22 and pnpm through Corepack drive the workspace; `package.json#packageManager` is the sole pnpm version source. Rustup and Cargo are required for `@lat.md/embed`; root `rust-toolchain.toml` selects stable Rust and `wasm32-unknown-unknown`.
+
+`pnpm setup:rust` verifies the target and installs `wasm-bindgen-cli` under `packages/embed/.cargo-tools`, deriving its exact version from `Cargo.lock`. WASM builds run setup automatically and never depend on a global CLI.
+
+The first full build downloads Rust crates and the MiniLM source model, converts the model to fp16, and creates ignored WASM/model artifacts that later builds reuse. Ripgrep is optional because [[dev-process#File Walking]] provides a TypeScript fallback. Hosted embedding credentials are not required.
 
 ## Package Manager
 
@@ -26,6 +32,12 @@ Commands for running the test suite.
 
 - `pnpm test` — run all tests once
 - `pnpm test:watch` — run in watch mode
+
+### Contribution Workflow
+
+Contributions begin by searching and expanding the knowledge graph, then keep design docs and test specs synchronized with meaningful behavior changes.
+
+The complete setup and command guide is in [CONTRIBUTING.md](../CONTRIBUTING.md). Before a pull request, run `pnpm buildall`, `pnpm test`, and `pnpm exec lat check`; CI repeats the full build and suite on Linux and Windows.
 
 ### Typecheck Test
 
@@ -79,7 +91,7 @@ Version numbers follow semver. While pre-1.0, bump the patch for fixes and the m
 
 GitHub Actions workflow at `.github/workflows/publish.yml`. Runs on every push to `main`:
 
-1. **Set up the toolchain** — Node 22 + pnpm, a Rust toolchain with the `wasm32-unknown-unknown` target, and `wasm-bindgen-cli` pinned to the `Cargo.lock` version (`0.2.126`), needed to build the `@lat.md/embed` WASM engine. Also installs ripgrep (`apt-get install ripgrep`) so both the rg and TS-fallback code paths are exercised
+1. **Set up the toolchain** — Node 22 + pnpm and a Rust toolchain with the `wasm32-unknown-unknown` target. `pnpm buildall` installs the Cargo-locked `wasm-bindgen-cli` into the project. The workflow also installs ripgrep so both scan paths are exercised
 2. **Build and test** — `pnpm install --frozen-lockfile`, then `pnpm buildall` (builds the WASM engine + fp16 weights + the top-level `lat` via `tsc`), then `pnpm vitest run`
 3. **Publish changed packages** — a `publish_if_new` shell helper publishes each package **in dependency order** (`packages/embed-minilm-fp16` → `packages/embed` → root `.`), skipping any whose `version` is already on npm (checked via `npm view <name>@<version>`). Each publishes with `pnpm publish --provenance --access public --no-git-checks`. Because `workspace:*` is rewritten at publish time, publishing the leaf packages first guarantees the root's rewritten pins already resolve on npm
 4. **Create GitHub release** — if a `vX.Y.Z` tag/release for the root version does not yet exist, creates one with auto-generated notes

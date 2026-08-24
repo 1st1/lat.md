@@ -30,6 +30,7 @@
   "scripts": {
     "build": "tsc",
     "buildall": "pnpm build:packages && pnpm build",
+    "setup:rust": "pnpm --filter @lat.md/embed setup:rust",
     "build:wasm": "pnpm --filter @lat.md/embed build:wasm",
     "build:weights": "pnpm --filter @lat.md/embed-minilm-fp16 build:weights",
     "build:packages": "pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",

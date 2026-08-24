@@ -2,20 +2,23 @@
  * Build the candle engine to WASM: cargo → wasm-bindgen (nodejs).
  * Outputs engine.js (CJS glue) + engine_bg.wasm into ./wasm-dist.
  *
- * Requires: rustup + wasm32-unknown-unknown target, wasm-bindgen-cli.
+ * `pnpm setup:rust` prepares the target and project-local wasm-bindgen CLI.
  * Run in CI before publish (artifacts are not committed to git).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import {
+  crateDir,
+  pkgDir,
+  wasmBindgenBin,
+  wasmTarget,
+} from './rust-tools.mjs';
 
-const pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
-const crateDir = join(pkgDir, 'crate');
 const outDir = join(pkgDir, 'wasm-dist');
 const wasm = join(
   crateDir,
-  'target/wasm32-unknown-unknown/release/lat_embed_engine.wasm',
+  `target/${wasmTarget}/release/lat_embed_engine.wasm`,
 );
 
 const run = (cmd, args, cwd) =>
@@ -23,12 +26,12 @@ const run = (cmd, args, cwd) =>
 
 run(
   'cargo',
-  ['build', '--target', 'wasm32-unknown-unknown', '--release'],
+  ['build', '--target', wasmTarget, '--release'],
   crateDir,
 );
 
 mkdirSync(outDir, { recursive: true });
-run('wasm-bindgen', [
+run(wasmBindgenBin, [
   wasm,
   '--out-dir',
   outDir,

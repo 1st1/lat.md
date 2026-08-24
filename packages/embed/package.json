@@ -30,8 +30,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "node scripts/build-wasm.mjs && tsc && node scripts/copy-wasm.mjs",
-    "build:wasm": "node scripts/build-wasm.mjs",
+    "setup:rust": "node scripts/setup-rust.mjs",
+    "build": "pnpm setup:rust && node scripts/build-wasm.mjs && tsc && node scripts/copy-wasm.mjs",
+    "build:wasm": "pnpm setup:rust && node scripts/build-wasm.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {},
