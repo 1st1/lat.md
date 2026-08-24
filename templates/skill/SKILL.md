@@ -14,6 +14,8 @@ This skill covers the syntax, structure rules, and conventions for writing `lat.
 
 `lat.md/` files describe **what** the project does and **why** — domain concepts, key design decisions, business logic, and test specifications. They do NOT duplicate source code. Think of each section as an anchor that source code references back to.
 
+Treat `lat.md/` as a focused snapshot of the current state of affairs or planned features. Do not use it as a journal or changelog, and do not grow it just to record insignificant implementation details.
+
 Good candidates for sections:
 - Architecture decisions and their rationale
 - Domain concepts and business rules
@@ -24,7 +26,9 @@ Good candidates for sections:
 Bad candidates:
 - Step-by-step code walkthroughs (the code itself is the walkthrough)
 - Auto-generated API docs (use tools for that)
+- Journal/changelog entries for each change
 - Temporary notes or TODOs
+- Insignificant implementation details that do not change the current-state model
 
 ## Section structure
 

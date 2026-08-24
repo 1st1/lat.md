@@ -30,7 +30,7 @@ When code changes are below 5 lines, the ratio check is skipped and the hook exi
 
 ## Blocks with both messages when check fails and diff needs sync
 
-When `lat check` fails and the diff also needs sync, the block reason includes both "update `lat.md/`" and "run `lat check` until it passes".
+When `lat check` fails and the diff also needs sync, the block reason covers both updating `lat.md/` and running `lat check` until it passes.
 
 ## Exits silently on second pass when check passes
 

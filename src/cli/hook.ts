@@ -110,7 +110,7 @@ async function handleUserPromptSubmit(): Promise<void> {
     'Use `lat section` to read the full content of relevant matches.',
     'Do not read files, write code, or run commands until you have searched.',
     '',
-    'Remember: `lat.md/` must stay in sync with the codebase. If you change code, update the relevant sections in `lat.md/` and run `lat check` before finishing.',
+    'Remember: `lat.md/` must stay in sync with meaningful codebase state. If you change behavior, architecture, tests, or planned work, update the relevant current-state sections and run `lat check` before finishing. Do not use `lat.md/` as a journal/changelog or add notes for insignificant details.',
   );
 
   const latDir = findLatticeDir();
@@ -264,7 +264,7 @@ function formatStopReason({
     parts.push(
       '`lat check` found errors. ' + syncMsg + ' Before finishing:',
       '',
-      '1. Update `lat.md/` to reflect your code changes — run `lat search` to find relevant sections.',
+      '1. Update `lat.md/` where changes affect behavior, architecture, tests, or plans; keep it focused on current state rather than journal/changelog notes.',
       '2. Run `lat check` until it passes.',
     );
   } else if (checkFailed) {
@@ -276,7 +276,7 @@ function formatStopReason({
   } else {
     parts.push(
       syncMsg +
-        ' Verify `lat.md/` is in sync — run `lat search` to find relevant sections. Run `lat check` at the end.',
+        ' Review whether `lat.md/` needs a current-state update; do not add journal/changelog notes just to satisfy this reminder. Run `lat search` to find relevant sections and `lat check` at the end.',
     );
   }
 

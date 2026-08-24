@@ -155,10 +155,10 @@ export const LatPlugin: Plugin = async (ctx) => {
 
         const message =
           checkFailed && needsSync
-            ? `lat check failed and lat.md/ may be out of sync (${codeLines} code lines changed). Run lat_check, fix errors, and update lat.md/.`
+            ? `lat check failed and lat.md/ may be out of sync (${codeLines} code lines changed). Run lat_check, fix errors, and update only relevant current-state lat.md/ sections. Do not add journal/changelog notes.`
             : checkFailed
               ? `lat check failed. Run lat_check and fix the errors.`
-              : `lat.md/ may be out of sync — ${codeLines} code lines changed but lat.md/ was not updated. Update lat.md/ and run lat_check.`
+              : `lat.md/ may be out of sync — ${codeLines} code lines changed but lat.md/ was not updated. Review whether current-state lat.md/ sections need updates; do not add journal/changelog notes. Run lat_check.`
 
         await ctx.client.app.log({
           body: {
