@@ -1,31 +1,56 @@
+import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import xdg from '@folder/xdg';
 import {
   INIT_VERSION,
   readInitVersion,
   writeInitMeta,
 } from '../src/init-version.js';
-import {
-  closeDb,
-  ensureMeta,
-  openDb,
-  setStoredModel,
-} from '../src/search/db.js';
+
+const cliPath = join(
+  import.meta.dirname,
+  '..',
+  'dist',
+  'src',
+  'cli',
+  'index.js',
+);
+const disableNetworkUrl = pathToFileURL(
+  join(import.meta.dirname, 'support', 'disable-network.mjs'),
+).href;
+const seedDbPath = join(import.meta.dirname, 'support', 'seed-model.mjs');
 
 const {
+  closeDb,
+  ensureMeta,
   getLlmKey,
   getRepoEmbedding,
-  setRepoEmbedding,
-  selectMenu,
+  getStoredModel,
+  openDb,
   reindexCommand,
+  selectMenu,
+  setRepoEmbedding,
 } = vi.hoisted(() => ({
+  closeDb: vi.fn(async () => {}),
+  ensureMeta: vi.fn(async () => {}),
   getLlmKey: vi.fn(),
   getRepoEmbedding: vi.fn(),
-  setRepoEmbedding: vi.fn(),
-  selectMenu: vi.fn(),
+  getStoredModel: vi.fn(async () => null as string | null),
+  openDb: vi.fn(() => ({})),
   reindexCommand: vi.fn(),
+  selectMenu: vi.fn(),
+  setRepoEmbedding: vi.fn(),
 }));
 
 vi.mock('../src/config.js', () => ({
@@ -42,30 +67,116 @@ vi.mock('../src/cli/checklist-menu.js', () => ({
 }));
 vi.mock('../src/cli/select-menu.js', () => ({ selectMenu }));
 vi.mock('../src/cli/reindex.js', () => ({ reindexCommand }));
+vi.mock('../src/search/db.js', () => ({
+  closeDb,
+  ensureMeta,
+  getStoredModel,
+  openDb,
+}));
 
 import { initCmd } from '../src/cli/init.js';
+
+type CliResult = {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+};
 
 describe('lat init embedding setup', () => {
   let root: string;
   let stdinIsTTY: PropertyDescriptor | undefined;
 
+  function latDir(): string {
+    return join(root, 'lat.md');
+  }
+
+  function configPath(): string {
+    const env = {
+      ...process.env,
+      XDG_CONFIG_HOME: join(root, '.config'),
+    };
+    return join(xdg({ env }).config, 'lat', 'config.json');
+  }
+
+  function createLatDir(): void {
+    mkdirSync(latDir(), { recursive: true });
+  }
+
   /** Stamp a setup one version behind, so init treats it as outdated. */
-  function writeOutdatedInitMeta(latDir: string): void {
-    mkdirSync(join(latDir, '.cache'), { recursive: true });
+  function writeOutdatedInitMeta(): void {
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    const path = join(latDir(), '.cache', 'lat_init.json');
+    const meta = JSON.parse(readFileSync(path, 'utf-8')) as {
+      init_version: number;
+    };
+    meta.init_version = INIT_VERSION - 1;
+    writeFileSync(path, JSON.stringify(meta, null, 2) + '\n');
+  }
+
+  function writeRepoEmbedding(embedding: 'local'): void {
+    const path = configPath();
+    mkdirSync(dirname(path), { recursive: true });
     writeFileSync(
-      join(latDir, '.cache', 'lat_init.json'),
-      JSON.stringify({ init_version: INIT_VERSION - 1, file_hashes: {} }),
+      path,
+      JSON.stringify(
+        { repos: { [resolve(latDir())]: { embedding } } },
+        null,
+        2,
+      ) + '\n',
     );
   }
 
-  async function writeStoredModel(
-    latDir: string,
-    model: string,
-  ): Promise<void> {
-    const db = openDb(latDir);
-    await ensureMeta(db);
-    await setStoredModel(db, model);
-    await closeDb(db);
+  function readRepoEmbedding(): 'local' | undefined {
+    if (!existsSync(configPath())) return undefined;
+    const config = JSON.parse(readFileSync(configPath(), 'utf-8')) as {
+      repos?: Record<string, { embedding?: 'local' }>;
+    };
+    return config.repos?.[resolve(latDir())]?.embedding;
+  }
+
+  function seedStoredModel(model: string): void {
+    createLatDir();
+    const result = spawnSync(process.execPath, [seedDbPath, latDir(), model], {
+      encoding: 'utf-8',
+    });
+    if (result.error) throw result.error;
+    expect(result.status, result.stderr).toBe(0);
+  }
+
+  function mockStoredModel(model: string): void {
+    mkdirSync(join(latDir(), '.cache'), { recursive: true });
+    writeFileSync(join(latDir(), '.cache', 'vectors.db'), '');
+    getStoredModel.mockResolvedValue(model);
+  }
+
+  function runInit(key?: string): CliResult {
+    const result = spawnSync(
+      process.execPath,
+      ['--import', disableNetworkUrl, cliPath, '--no-color', 'init', root],
+      {
+        cwd: root,
+        encoding: 'utf-8',
+        env: {
+          ...process.env,
+          XDG_CONFIG_HOME: join(root, '.config'),
+          LAT_LLM_KEY: key ?? '',
+          LAT_LLM_KEY_FILE: '',
+          LAT_LLM_KEY_HELPER: '',
+          NO_COLOR: '1',
+        },
+      },
+    );
+    if (result.error) throw result.error;
+    return {
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? '',
+      exitCode: result.status ?? 1,
+    };
+  }
+
+  function expectSuccess(result: CliResult): void {
+    expect(result.exitCode, result.stderr).toBe(0);
   }
 
   function setInteractive(interactive: boolean): void {
@@ -79,12 +190,17 @@ describe('lat init embedding setup', () => {
     root = mkdtempSync(join(tmpdir(), 'lat-init-'));
     stdinIsTTY = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
     setInteractive(false);
+    closeDb.mockClear();
+    ensureMeta.mockClear();
     getLlmKey.mockReset();
     getRepoEmbedding.mockReset();
-    setRepoEmbedding.mockClear();
-    selectMenu.mockReset();
+    getStoredModel.mockReset();
+    getStoredModel.mockResolvedValue(null);
+    openDb.mockClear();
     reindexCommand.mockReset();
     reindexCommand.mockResolvedValue({ output: 'Reindexed.' });
+    selectMenu.mockReset();
+    setRepoEmbedding.mockClear();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
@@ -101,24 +217,17 @@ describe('lat init embedding setup', () => {
   });
 
   // @lat: [[init#Embedding setup#Fresh init pins local embeddings]]
-  it('pins local embeddings before agent selection on a fresh init', async () => {
-    getLlmKey.mockReturnValue('sk-test');
+  it('pins local embeddings before agent selection on a fresh init', () => {
+    const result = runInit('sk-test');
 
-    await initCmd(root);
-
-    expect(selectMenu).not.toHaveBeenCalled();
-    expect(setRepoEmbedding).toHaveBeenCalledOnce();
-    expect(setRepoEmbedding).toHaveBeenCalledWith(
-      resolve(root, 'lat.md'),
-      'local',
-    );
-    expect(readInitVersion(resolve(root, 'lat.md'))).toBe(INIT_VERSION);
+    expectSuccess(result);
+    expect(readRepoEmbedding()).toBe('local');
+    expect(readInitVersion(latDir())).toBe(INIT_VERSION);
   });
 
   // @lat: [[init#Embedding setup#Configured key asks for a backend]]
   it('allows a configured key to opt the repo into hosted embeddings', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
+    createLatDir();
     getLlmKey.mockReturnValue('sk-test');
     selectMenu.mockResolvedValue('remote');
     setInteractive(true);
@@ -133,14 +242,13 @@ describe('lat init embedding setup', () => {
       'Embedding backend',
       0,
     );
-    expect(setRepoEmbedding).toHaveBeenCalledWith(latDir, null);
+    expect(setRepoEmbedding).toHaveBeenCalledWith(latDir(), null);
   });
 
   // @lat: [[init#Embedding setup#Backend mismatch offers reindexing]]
   it('offers and runs a local reindex for an existing remote index', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    await writeStoredModel(latDir, 'openai:1536');
+    createLatDir();
+    mockStoredModel('openai:1536');
     selectMenu.mockResolvedValue('now');
     setInteractive(true);
 
@@ -152,29 +260,32 @@ describe('lat init embedding setup', () => {
       0,
     );
     expect(reindexCommand).toHaveBeenCalledWith(
-      expect.objectContaining({ latDir, projectRoot: root, mode: 'cli' }),
+      expect.objectContaining({
+        latDir: latDir(),
+        projectRoot: root,
+        mode: 'cli',
+      }),
       { local: true },
     );
   });
 
   // @lat: [[init#Embedding setup#Current setup preserves explicit backend choice]]
-  it('does not overwrite the backend choice on a current re-run', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeInitMeta(latDir, {});
-    getRepoEmbedding.mockReturnValue('local');
+  it('does not overwrite the backend choice on a current re-run', () => {
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    writeRepoEmbedding('local');
 
-    await initCmd(root);
+    const result = runInit();
 
-    expect(setRepoEmbedding).not.toHaveBeenCalled();
+    expectSuccess(result);
+    expect(readRepoEmbedding()).toBe('local');
   });
 
   // @lat: [[init#Embedding setup#Hosted re-run defaults to hosted]]
   it('defaults an interactive hosted re-run to its existing backend', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeInitMeta(latDir, {});
-    await writeStoredModel(latDir, 'openai:1536');
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    mockStoredModel('openai:1536');
     getLlmKey.mockReturnValue('sk-test');
     selectMenu.mockResolvedValue('remote');
     setInteractive(true);
@@ -186,87 +297,71 @@ describe('lat init embedding setup', () => {
       'Embedding backend',
       1,
     );
-    expect(setRepoEmbedding).toHaveBeenCalledWith(latDir, null);
+    expect(setRepoEmbedding).toHaveBeenCalledWith(latDir(), null);
     expect(reindexCommand).not.toHaveBeenCalled();
   });
 
   // @lat: [[init#Embedding setup#Non-interactive re-run does not choose]]
-  it('does not prompt or mutate a current hosted repo without a TTY', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeInitMeta(latDir, {});
-    await writeStoredModel(latDir, 'openai:1536');
-    getLlmKey.mockReturnValue('sk-test');
+  it('does not prompt or mutate a current hosted repo without a TTY', () => {
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    seedStoredModel('openai:1536');
 
-    await initCmd(root);
+    const result = runInit('sk-test');
 
-    expect(selectMenu).not.toHaveBeenCalled();
-    expect(setRepoEmbedding).not.toHaveBeenCalled();
-    expect(reindexCommand).not.toHaveBeenCalled();
+    expectSuccess(result);
+    expect(result.stdout).not.toContain('Embedding backend');
+    expect(readRepoEmbedding()).toBeUndefined();
   });
 
   // @lat: [[init#Embedding setup#Outdated re-run keeps a working hosted index]]
-  it('leaves an outdated hosted repo on its existing backend', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeOutdatedInitMeta(latDir);
-    await writeStoredModel(latDir, 'openai:1536');
-    getLlmKey.mockReturnValue('sk-test');
+  it('leaves an outdated hosted repo on its existing backend', () => {
+    writeOutdatedInitMeta();
+    seedStoredModel('openai:1536');
 
-    await initCmd(root);
+    const result = runInit('sk-test');
 
-    expect(setRepoEmbedding).not.toHaveBeenCalled();
-    expect(reindexCommand).not.toHaveBeenCalled();
-    expect(console.log).not.toHaveBeenCalledWith(
-      expect.stringContaining('lat reindex --local'),
-    );
+    expectSuccess(result);
+    expect(readRepoEmbedding()).toBeUndefined();
+    expect(result.stdout).not.toContain('lat reindex --local');
   });
 
   // @lat: [[init#Embedding setup#Outdated hosted provider mismatch defaults local]]
-  it('defaults an outdated hosted repo to local when its key provider changed', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeOutdatedInitMeta(latDir);
-    await writeStoredModel(latDir, 'openai:1536');
-    getLlmKey.mockReturnValue('vck_test');
+  it('defaults an outdated hosted repo to local when its key provider changed', () => {
+    writeOutdatedInitMeta();
+    seedStoredModel('openai:1536');
 
-    await initCmd(root);
+    const result = runInit('vck_test');
 
-    expect(setRepoEmbedding).toHaveBeenCalledWith(latDir, 'local');
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('lat reindex --local'),
-    );
+    expectSuccess(result);
+    expect(readRepoEmbedding()).toBe('local');
+    expect(result.stdout).toContain('lat reindex --local');
   });
 
   // @lat: [[init#Embedding setup#Hosted provider mismatch offers reindexing]]
-  it('prints a remote reindex command when the hosted provider changed', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeInitMeta(latDir, {});
-    await writeStoredModel(latDir, 'openai:1536');
-    getLlmKey.mockReturnValue('vck_test');
+  it('prints a remote reindex command when the hosted provider changed', () => {
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    seedStoredModel('openai:1536');
 
-    await initCmd(root);
+    const result = runInit('vck_test');
 
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('lat reindex --remote'),
-    );
-    expect(reindexCommand).not.toHaveBeenCalled();
+    expectSuccess(result);
+    expect(result.stdout).toContain('lat reindex --remote');
+    expect(readRepoEmbedding()).toBeUndefined();
   });
 
   // @lat: [[init#Embedding setup#Non-interactive mismatch prints command]]
-  it('prints the reindex command for a non-interactive mismatch', async () => {
-    const latDir = join(root, 'lat.md');
-    mkdirSync(latDir, { recursive: true });
-    writeInitMeta(latDir, {});
-    await writeStoredModel(latDir, 'openai:1536');
-    getRepoEmbedding.mockReturnValue('local');
+  it('prints the reindex command for a non-interactive mismatch', () => {
+    createLatDir();
+    writeInitMeta(latDir(), {});
+    seedStoredModel('openai:1536');
+    writeRepoEmbedding('local');
 
-    await initCmd(root);
+    const result = runInit();
 
-    expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('lat reindex --local'),
-    );
-    expect(reindexCommand).not.toHaveBeenCalled();
+    expectSuccess(result);
+    expect(result.stdout).toContain('lat reindex --local');
+    expect(readRepoEmbedding()).toBe('local');
   });
 });

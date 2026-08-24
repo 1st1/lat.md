@@ -10,5 +10,10 @@ declare module '@folder/xdg' {
     logs: string;
   }
 
-  export default function xdg(): XdgDirs;
+  interface XdgOptions {
+    env?: NodeJS.ProcessEnv;
+    platform?: NodeJS.Platform;
+  }
+
+  export default function xdg(options?: XdgOptions): XdgDirs;
 }

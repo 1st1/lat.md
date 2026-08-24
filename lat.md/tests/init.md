@@ -5,7 +5,7 @@ lat:
 
 # Init
 
-Tests in `tests/init.test.ts` verify embedding defaults applied by the initialization wizard.
+Tests run non-interactive database flows through the built CLI in child processes; TTY-only menu branches use isolated mocks.
 
 ## Embedding setup
 

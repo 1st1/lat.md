@@ -8,7 +8,7 @@ Shared patterns for writing and organizing tests in this project.
 
 **Functional over unit.** Prefer functional tests that exercise real `lat` commands against fixture directories over isolated unit tests. Unit tests are only for low-level edge cases that are hard to cover through fixtures (e.g. inline `parseSections` edge cases in `tests/lattice.test.ts`).
 
-**Fixture-based.** Each test scenario is a static directory under `tests/cases/` with its own `lat.md/` and source files — a self-contained mini-project. No temp dirs or runtime file creation.
+**Fixture-based.** Validation scenarios are static directories under `tests/cases/`, each a self-contained mini-project. Mutating commands such as `lat init` use isolated temp directories and invoke the built CLI in child processes.
 
 **Error cases use `error-` prefix.** Test fixture directories that assert error behavior are named with an `error-` prefix (e.g. `error-broken-links`, `error-stale-index`). Success/happy-path fixtures use plain descriptive names (e.g. `valid-links`, `short-ref`).
 
