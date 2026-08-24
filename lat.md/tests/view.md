@@ -19,11 +19,19 @@ Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative
 
 Documents expose [[markdown#Frontmatter#require-code-mention]] separately from rendered HTML so the browser can badge files whose leaf sections require code references.
 
-## Resolves Markdown wiki links but leaves source links as text
+## Resolves Markdown and source wiki links
 
-Wiki links that resolve to Markdown sections become document anchors with aliases and heading fragments. Unaliased links mute context through the final `#`; source-code and unresolved targets retain their authored text.
+Wiki links that resolve to Markdown sections or validated source definitions become client-side anchors. Unaliased links mute context through the final `#`; unresolved targets retain their authored text.
 
 Each visually split segment owns its underline so the decoration matches that segment's text color.
+
+## Serves source definitions securely
+
+Source routes return supported project files with optional symbol ranges for line highlighting while rejecting traversal, unsupported extensions, missing symbols, and files outside the project root.
+
+## Highlights source syntax safely
+
+Supported source languages receive server-side token coloring as independently valid HTML lines, while HTML-like source text stays escaped and multiline tokens retain their styling.
 
 ## Builds a nested file tree
 

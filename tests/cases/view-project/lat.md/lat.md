@@ -13,6 +13,6 @@ The browser resolves [[guide|wiki navigation]] and [[guide#Details|wiki heading 
 
 The compact form [[guide#Details]] keeps its file context visually secondary.
 
-Source targets such as [[src/app.ts#run]] remain authored text for now.
+Source targets such as [[src/app.ts#run]] open their definitions.
 
 - [[guide]] — A second document linked through ordinary Markdown too

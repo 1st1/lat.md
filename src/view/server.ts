@@ -6,8 +6,10 @@ import type { CmdContext } from '../context.js';
 import type { ViewError } from './protocol.js';
 import {
   getViewDocument,
+  getViewSource,
   getViewIndex,
   ViewDocumentNotFoundError,
+  ViewSourceNotFoundError,
 } from './repository.js';
 
 const DEFAULT_HOST = '127.0.0.1';
@@ -167,6 +169,28 @@ export async function startViewServer(
         return;
       }
 
+      if (url.pathname === '/api/source') {
+        const path = url.searchParams.get('path') ?? '';
+        const symbol = url.searchParams.get('symbol') ?? '';
+        try {
+          sendJson(
+            res,
+            200,
+            await getViewSource(ctx.projectRoot, path, symbol),
+            headOnly,
+          );
+        } catch (error) {
+          if (!(error instanceof ViewSourceNotFoundError)) throw error;
+          sendJson(
+            res,
+            404,
+            { error: error.message } satisfies ViewError,
+            headOnly,
+          );
+        }
+        return;
+      }
+
       if (url.pathname.startsWith('/assets/')) {
         const path = clientPath(clientDir, url.pathname);
         if (!path) {
@@ -177,7 +201,10 @@ export async function startViewServer(
         return;
       }
 
-      if (url.pathname.startsWith('/docs/')) {
+      if (
+        url.pathname.startsWith('/docs/') ||
+        url.pathname.startsWith('/code/')
+      ) {
         await sendClientFile(res, join(clientDir, 'index.html'), headOnly);
         return;
       }

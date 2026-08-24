@@ -10,7 +10,9 @@ import { visit } from 'unist-util-visit';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
 
-export type WikiLinkResolver = (target: string) => string | null;
+export type WikiLinkResolver = (
+  target: string,
+) => string | null | Promise<string | null>;
 
 const sanitizeSchema: SanitizeSchema = {
   ...defaultSchema,
@@ -84,7 +86,7 @@ function wikiLinkContent(node: WikiLink): {
   };
 }
 
-/** Render a lat.md file as safe HTML with resolved Markdown wiki links. */
+/** Render a lat.md file as safe HTML with resolved wiki links. */
 export async function renderMarkdown(
   markdown: string,
   filePath: string,
@@ -98,9 +100,20 @@ export async function renderMarkdown(
     ? nodeText(firstHeading)
     : basename(filePath, '.md');
 
+  const resolvedLinks = new Map<WikiLink, string | null>();
+  if (resolveWikiLink) {
+    const wikiLinks: WikiLink[] = [];
+    visit(tree, 'wikiLink', (node: WikiLink) => {
+      wikiLinks.push(node);
+    });
+    for (const node of wikiLinks) {
+      resolvedLinks.set(node, await resolveWikiLink(node.value));
+    }
+  }
+
   visit(tree, 'wikiLink', (node: WikiLink, index, parent) => {
     if (index === undefined || !parent || !('children' in parent)) return;
-    const href = resolveWikiLink?.(node.value);
+    const href = resolvedLinks.get(node);
     if (href) {
       const content = wikiLinkContent(node);
       parent.children[index] = {

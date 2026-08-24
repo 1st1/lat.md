@@ -3,13 +3,25 @@ import type {
   ViewDocument,
   ViewError,
   ViewIndex,
+  ViewSourceDocument,
 } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
 import {
   documentPath,
   documentUrl,
   scrollToDocumentLocation,
+  sourcePath,
+  sourceSymbol,
 } from './navigation';
+import { sourceLineId, SourceView } from './SourceView';
+
+type ViewRoute =
+  | { kind: 'markdown'; path: string }
+  | { kind: 'source'; path: string; symbol: string };
+
+type ViewPage =
+  | { kind: 'markdown'; document: ViewDocument }
+  | { kind: 'source'; source: ViewSourceDocument };
 
 async function fetchJson<T extends object>(
   url: string,
@@ -30,12 +42,22 @@ function currentLocation(): string {
 export function App() {
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
-  const [document, setDocument] = useState<ViewDocument | null>(null);
+  const [page, setPage] = useState<ViewPage | null>(null);
   const [error, setError] = useState('');
-  const path = useMemo(
-    () => documentPath(window.location.pathname),
-    [location],
-  );
+  const route = useMemo<ViewRoute | null>(() => {
+    const markdown = documentPath(window.location.pathname);
+    if (markdown) return { kind: 'markdown', path: markdown };
+    const source = sourcePath(window.location.pathname);
+    if (source) {
+      return {
+        kind: 'source',
+        path: source,
+        symbol: sourceSymbol(window.location.hash),
+      };
+    }
+    return null;
+  }, [location]);
+  const activePath = route?.kind === 'markdown' ? route.path : null;
 
   useEffect(() => {
     const onPopState = () => setLocation(currentLocation());
@@ -52,35 +74,54 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!path) {
-      setError('This is not a Markdown document URL.');
+    if (!route) {
+      setError('This is not a document URL.');
       return;
     }
 
     const controller = new AbortController();
     setError('');
-    setDocument(null);
-    fetchJson<ViewDocument>(
-      `/api/document?path=${encodeURIComponent(path)}`,
-      controller.signal,
-    )
-      .then(setDocument)
-      .catch((reason: Error) => {
-        if (reason.name !== 'AbortError') setError(reason.message);
-      });
+    setPage(null);
+    const request =
+      route.kind === 'markdown'
+        ? fetchJson<ViewDocument>(
+            `/api/document?path=${encodeURIComponent(route.path)}`,
+            controller.signal,
+          ).then((document) => setPage({ kind: 'markdown', document }))
+        : fetchJson<ViewSourceDocument>(
+            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}`,
+            controller.signal,
+          ).then((source) => setPage({ kind: 'source', source }));
+    request.catch((reason: Error) => {
+      if (reason.name !== 'AbortError') setError(reason.message);
+    });
     return () => controller.abort();
-  }, [path]);
+  }, [route]);
 
   useEffect(() => {
-    if (!document) return;
-    window.document.title = `${document.title} · lat.md`;
+    if (!page) return;
+    window.document.title =
+      page.kind === 'markdown'
+        ? `${page.document.title} · lat.md`
+        : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
     requestAnimationFrame(() => {
-      scrollToDocumentLocation(window.location.hash, {
-        getElementById: (id) => window.document.getElementById(id),
-        scrollTo: (options) => window.scrollTo(options),
-      });
+      if (page.kind === 'markdown') {
+        scrollToDocumentLocation(window.location.hash, {
+          getElementById: (id) => window.document.getElementById(id),
+          scrollTo: (options) => window.scrollTo(options),
+        });
+        return;
+      }
+      const line = page.source.focus?.startLine;
+      if (line) {
+        window.document
+          .getElementById(sourceLineId(line))
+          ?.scrollIntoView({ behavior: 'instant', block: 'center' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
     });
-  }, [document, location]);
+  }, [page, location]);
 
   function navigate(url: URL): void {
     window.history.pushState(null, '', url);
@@ -117,10 +158,9 @@ export function App() {
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
 
     const url = new URL(anchor.href, window.location.href);
-    const nextPath = documentPath(url.pathname);
     if (
       url.origin !== window.location.origin ||
-      !nextPath?.toLowerCase().endsWith('.md')
+      (!documentPath(url.pathname) && !sourcePath(url.pathname))
     ) {
       return;
     }
@@ -143,7 +183,7 @@ export function App() {
         <nav aria-label="Markdown files">
           {index && (
             <FileTree
-              activePath={path}
+              activePath={activePath}
               files={index.files}
               onNavigate={onNavigationClick}
             />
@@ -152,10 +192,10 @@ export function App() {
       </aside>
 
       <main className="main">
-        {document && (
+        {page?.kind === 'markdown' && (
           <div className="document-metadata">
-            <div className="document-path">{document.path}</div>
-            {document.frontmatter.requireCodeMention && (
+            <div className="document-path">{page.document.path}</div>
+            {page.document.frontmatter.requireCodeMention && (
               <div
                 className="document-flag"
                 title="Every leaf section must have an @lat code reference"
@@ -170,12 +210,14 @@ export function App() {
             <strong>Could not open this document</strong>
             <span>{error}</span>
           </div>
-        ) : document ? (
+        ) : page?.kind === 'markdown' ? (
           <article
             className="markdown"
             onClick={onDocumentClick}
-            dangerouslySetInnerHTML={{ __html: document.html }}
+            dangerouslySetInnerHTML={{ __html: page.document.html }}
           />
+        ) : page?.kind === 'source' ? (
+          <SourceView source={page.source} />
         ) : (
           <div className="state">Loading…</div>
         )}

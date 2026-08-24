@@ -1,4 +1,5 @@
 const DOCUMENT_PREFIX = '/docs/';
+const SOURCE_PREFIX = '/code/';
 
 type DocumentScroller = {
   getElementById: (id: string) => {
@@ -21,6 +22,28 @@ export function documentPath(pathname: string): string | null {
       .join('/');
   } catch {
     return null;
+  }
+}
+
+export function sourcePath(pathname: string): string | null {
+  if (!pathname.startsWith(SOURCE_PREFIX)) return null;
+  try {
+    return pathname
+      .slice(SOURCE_PREFIX.length)
+      .split('/')
+      .map(decodeURIComponent)
+      .join('/');
+  } catch {
+    return null;
+  }
+}
+
+export function sourceSymbol(hash: string): string {
+  if (!hash) return '';
+  try {
+    return decodeURIComponent(hash.slice(1));
+  } catch {
+    return hash.slice(1);
   }
 }
 

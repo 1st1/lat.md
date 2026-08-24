@@ -53,7 +53,9 @@ The React client is compiled by Vite into publishable static assets under `dist/
 
 The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestor directories open automatically.
 
-Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; source-code and unresolved wiki targets remain authored text.
+Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; unresolved wiki targets remain authored text.
+
+Validated [[markdown#Wiki Links#Source Code Links]] navigate within `/code/`. The source API constrains reads to supported source extensions inside the project root, then uses [[src/source-parser.ts#resolveSourceSymbol]] to return a symbol's definition range. Server-side highlighting registers only the supported languages and returns escaped HTML lines; the client adds line numbers and highlights the resolved range without shipping grammars in its bundle.
 
 Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
 
@@ -61,7 +63,7 @@ YAML stays out of the rendered body. When [[markdown#Frontmatter#require-code-me
 
 For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.
 
-Search, graph visualization, Git diffs, and rendered source-code links are outside this slice.
+Search, graph visualization, and Git diffs are outside this slice.
 
 Only Markdown files returned by the vault walker can be read. The document API rejects absolute paths, backslashes, non-Markdown targets, ignored files, and symlinks that resolve outside `lat.md/`.
 

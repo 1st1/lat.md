@@ -12,6 +12,19 @@ export type ViewDocument = {
   };
 };
 
+export type ViewSourceDocument = {
+  path: string;
+  content: string;
+  highlightedHtmlLines: string[];
+  focus: {
+    symbol: string;
+    kind: string;
+    signature: string;
+    startLine: number;
+    endLine: number;
+  } | null;
+};
+
 export type ViewError = {
   error: string;
 };

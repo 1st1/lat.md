@@ -67,6 +67,7 @@
     "@repomix/tree-sitter-wasms": "^0.1.16",
     "commander": "^14.0.3",
     "github-slugger": "^2.0.0",
+    "highlight.js": "^11.12.0",
     "ignore-walk": "^8.0.0",
     "mdast-util-to-markdown": "^2.1.0",
     "remark-frontmatter": "^5.0.0",

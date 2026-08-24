@@ -5,7 +5,12 @@ import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
 import { viewCommand } from '../src/cli/view.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
-import type { ViewDocument, ViewIndex } from '../src/view/protocol.js';
+import { highlightSource } from '../src/view/highlight.js';
+import type {
+  ViewDocument,
+  ViewIndex,
+  ViewSourceDocument,
+} from '../src/view/protocol.js';
 import { buildFileTree } from '../view/src/file-tree.js';
 import { scrollToDocumentLocation } from '../view/src/navigation.js';
 
@@ -47,6 +52,10 @@ describe('lat view', () => {
     const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
     expect(shellResponse.status).toBe(200);
     expect(await shellResponse.text()).toContain('lat view shell');
+
+    const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
+    expect(sourceShell.status).toBe(200);
+    expect(await sourceShell.text()).toContain('lat view shell');
   });
 
   // @lat: [[view#Renders Markdown with navigable local links]]
@@ -75,8 +84,8 @@ describe('lat view', () => {
     expect(document.html).not.toContain('require-code-mention');
   });
 
-  // @lat: [[view#Resolves Markdown wiki links but leaves source links as text]]
-  it('resolves Markdown wiki links but leaves source links as text', async () => {
+  // @lat: [[view#Resolves Markdown and source wiki links]]
+  it('resolves Markdown and source wiki links', async () => {
     const response = await fetch(
       new URL('/api/document?path=lat.md', view.url),
     );
@@ -91,7 +100,51 @@ describe('lat view', () => {
     expect(document.html).toContain(
       '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span></a>',
     );
-    expect(document.html).toContain('[[src/app.ts#run]]');
+    expect(document.html).toContain(
+      '<a href="/code/src/app.ts#run" class="wiki-link-segmented"><span class="wiki-link-context">src/app.ts#</span><span class="wiki-link-leaf">run</span></a>',
+    );
+  });
+
+  // @lat: [[view#Serves source definitions securely]]
+  it('serves source definitions with symbol ranges', async () => {
+    const response = await fetch(
+      new URL('/api/source?path=src/app.ts&symbol=run', view.url),
+    );
+    expect(response.status).toBe(200);
+    const source = (await response.json()) as ViewSourceDocument;
+
+    expect(source.path).toBe('src/app.ts');
+    expect(source.content).toContain("return 'running'");
+    expect(source.highlightedHtmlLines[0]).toContain('hljs-keyword');
+    expect(source.focus).toMatchObject({
+      symbol: 'run',
+      kind: 'function',
+      startLine: 1,
+      endLine: 3,
+    });
+
+    const outside = await fetch(
+      new URL('/api/source?path=../../view.test.ts', view.url),
+    );
+    expect(outside.status).toBe(404);
+    await expect(outside.json()).resolves.toEqual({
+      error: 'Source document not found',
+    });
+  });
+
+  // @lat: [[view#Highlights source syntax safely]]
+  it('highlights source syntax without emitting executable markup', () => {
+    const lines = highlightSource(
+      'src/example.ts',
+      "const value = '<script>alert(1)</script>';\n/* first\nsecond */",
+    );
+    const html = lines.join('\n');
+
+    expect(html).toContain('hljs-keyword');
+    expect(html).toContain('&lt;script&gt;');
+    expect(html).not.toContain('<script>');
+    expect(lines[1]).toContain('hljs-comment');
+    expect(lines[2]).toContain('hljs-comment');
   });
 
   // @lat: [[view#Builds a nested file tree]]
