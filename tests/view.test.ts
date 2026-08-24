@@ -13,7 +13,11 @@ import type {
   ViewSourceDocument,
 } from '../src/view/protocol.js';
 import { createViewSearch } from '../src/view/search.js';
-import { buildFileTree } from '../view/src/file-tree.js';
+import {
+  buildFileTree,
+  directoryIndex,
+  expandDirectory,
+} from '../view/src/file-tree.js';
 import {
   scrollToDocumentLocation,
   searchEscapeAction,
@@ -405,16 +409,17 @@ describe('lat view', () => {
 
   // @lat: [[view#Builds a nested file tree]]
   it('builds a nested file tree', () => {
-    expect(
-      buildFileTree([
-        'lat.md',
-        'guides/setup.md',
-        'guides/guides.md',
-        'api.md',
-        'chapter10.md',
-        'Chapter2.md',
-      ]),
-    ).toEqual([
+    const tree = buildFileTree([
+      'lat.md',
+      'guides/setup.md',
+      'guides/guides.md',
+      'guides/api.md',
+      'api.md',
+      'chapter10.md',
+      'Chapter2.md',
+    ]);
+
+    expect(tree).toEqual([
       { kind: 'file', name: 'lat.md', path: 'lat.md' },
       { kind: 'file', name: 'api.md', path: 'api.md' },
       { kind: 'file', name: 'Chapter2.md', path: 'Chapter2.md' },
@@ -425,10 +430,21 @@ describe('lat view', () => {
         path: 'guides',
         children: [
           { kind: 'file', name: 'guides.md', path: 'guides/guides.md' },
+          { kind: 'file', name: 'api.md', path: 'guides/api.md' },
           { kind: 'file', name: 'setup.md', path: 'guides/setup.md' },
         ],
       },
     ]);
+
+    const guides = tree.find((node) => node.path === 'guides');
+    expect(guides?.kind).toBe('directory');
+    if (guides?.kind === 'directory') {
+      expect(directoryIndex(guides)?.path).toBe('guides/guides.md');
+    }
+
+    const directory = { open: false };
+    expandDirectory(directory);
+    expect(directory.open).toBe(true);
   });
 
   // @lat: [[view#Stabilizes fragment navigation immediately]]

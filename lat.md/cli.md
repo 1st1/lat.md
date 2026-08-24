@@ -53,7 +53,7 @@ The React client is compiled by Vite into publishable static assets under `dist/
 
 The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestors open automatically.
 
-Root `lat.md` stays first; remaining files and folders use case-insensitive natural name order.
+Root `lat.md` and each nested `name/name.md` directory index stay first; remaining files and folders use case-insensitive natural name order. Clicking a directory label expands it and renders its index, even when that index is already active.
 
 A magnifying-glass link beside the brand opens `/search`. The client debounces input before requesting ranked embedding matches; the server lazily updates the vector index once, then reuses it for read-only queries. Results link to exact section anchors.
 

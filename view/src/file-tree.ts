@@ -27,13 +27,13 @@ const finderCollator = new Intl.Collator(undefined, {
 
 function sortedChildren(
   children: Map<string, MutableNode>,
-  pinIndex = false,
+  indexPath: string | null,
 ): FileTreeNode[] {
   return [...children.values()]
     .sort((a, b) => {
-      if (pinIndex) {
-        const aIsIndex = a.kind === 'file' && a.path === 'lat.md';
-        const bIsIndex = b.kind === 'file' && b.path === 'lat.md';
+      if (indexPath) {
+        const aIsIndex = a.kind === 'file' && a.path === indexPath;
+        const bIsIndex = b.kind === 'file' && b.path === indexPath;
         if (aIsIndex !== bIsIndex) return aIsIndex ? -1 : 1;
       }
       return (
@@ -42,9 +42,33 @@ function sortedChildren(
     })
     .map((node) =>
       node.kind === 'directory'
-        ? { ...node, children: sortedChildren(node.children) }
+        ? {
+            ...node,
+            children: sortedChildren(
+              node.children,
+              `${node.path}/${node.name}.md`,
+            ),
+          }
         : node,
     );
+}
+
+/** Return the conventional name/name.md index for a directory, when present. */
+export function directoryIndex(
+  directory: Extract<FileTreeNode, { kind: 'directory' }>,
+): Extract<FileTreeNode, { kind: 'file' }> | null {
+  const indexPath = `${directory.path}/${directory.name}.md`;
+  return (
+    directory.children.find(
+      (child): child is Extract<FileTreeNode, { kind: 'file' }> =>
+        child.kind === 'file' && child.path === indexPath,
+    ) ?? null
+  );
+}
+
+/** Ensure an indexed directory is visibly expanded before navigating into it. */
+export function expandDirectory(directory: { open: boolean } | null): void {
+  if (directory) directory.open = true;
 }
 
 /** Convert vault-relative file paths into the hierarchy shown in the sidebar. */
@@ -76,5 +100,5 @@ export function buildFileTree(files: string[]): FileTreeNode[] {
     children.set(name, { kind: 'file', name, path: file });
   }
 
-  return sortedChildren(root, true);
+  return sortedChildren(root, 'lat.md');
 }

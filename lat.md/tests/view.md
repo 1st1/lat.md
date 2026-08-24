@@ -59,7 +59,9 @@ Supported source languages receive server-side token coloring as independently v
 
 ## Builds a nested file tree
 
-Vault-relative Markdown paths become a nested hierarchy with root `lat.md` pinned first, then files and folders naturally alphabetized together with complete paths for navigation.
+Vault-relative Markdown paths become a nested hierarchy with directory index files pinned first, then remaining files and folders naturally alphabetized together.
+
+Clicking a directory label expands it and renders its `name/name.md` index in the same action, including when that index is already active.
 
 ## Stabilizes fragment navigation immediately
 

@@ -1,5 +1,10 @@
 import { useMemo, type MouseEvent } from 'react';
-import { buildFileTree, type FileTreeNode } from './file-tree';
+import {
+  buildFileTree,
+  directoryIndex,
+  expandDirectory,
+  type FileTreeNode,
+} from './file-tree';
 import { documentUrl } from './navigation';
 
 type FileTreeProps = {
@@ -24,12 +29,27 @@ function TreeNode({
   onNavigate: FileTreeProps['onNavigate'];
 }) {
   if (node.kind === 'directory') {
+    const index = directoryIndex(node);
     return (
       <details
         className="tree-directory"
         open={containsPath(node, activePath) || undefined}
       >
-        <summary>{node.name}</summary>
+        <summary>
+          {index ? (
+            <a
+              href={documentUrl(index.path)}
+              onClick={(event) => {
+                expandDirectory(event.currentTarget.closest('details'));
+                onNavigate(event);
+              }}
+            >
+              {node.name}
+            </a>
+          ) : (
+            <span>{node.name}</span>
+          )}
+        </summary>
         <div className="tree-children">
           {node.children.map((child) => (
             <TreeNode

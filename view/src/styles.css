@@ -147,6 +147,14 @@ a {
   display: none;
 }
 
+.tree-directory > summary > a,
+.tree-directory > summary > span {
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
 .tree-directory > summary::before {
   content: '›';
   display: inline-block;
