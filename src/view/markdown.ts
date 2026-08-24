@@ -1,5 +1,5 @@
-import { basename } from 'node:path';
-import type { RootContent } from 'mdast';
+import { basename, extname } from 'node:path';
+import type { Link, RootContent } from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
@@ -10,9 +10,30 @@ import { visit } from 'unist-util-visit';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
 
+export type WikiLinkContext = { line: number };
+
 export type WikiLinkResolver = (
   target: string,
+  context: WikiLinkContext,
 ) => string | null | Promise<string | null>;
+
+export type MarkdownRenderOptions = {
+  activeWikiLink?: string;
+  lineOffset?: number;
+  rewriteMarkdownLink?: (url: string) => string;
+};
+
+const CODE_LINK_CLASSES = [
+  'wiki-link-code',
+  'wiki-link-active',
+  'code-link-language',
+  'code-language-ts',
+  'code-language-js',
+  'code-language-py',
+  'code-language-rs',
+  'code-language-go',
+  'code-language-c',
+];
 
 const sanitizeSchema: SanitizeSchema = {
   ...defaultSchema,
@@ -20,12 +41,23 @@ const sanitizeSchema: SanitizeSchema = {
     ...defaultSchema.attributes,
     a: (defaultSchema.attributes?.a ?? []).map((attribute) =>
       Array.isArray(attribute) && attribute[0] === 'className'
-        ? [...attribute, 'wiki-link-segmented']
+        ? [
+            ...attribute,
+            'wiki-link-segmented',
+            'wiki-link-code',
+            'wiki-link-active',
+          ]
         : attribute,
     ),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
-      ['className', 'wiki-link-context', 'wiki-link-leaf'],
+      'ariaHidden',
+      [
+        'className',
+        'wiki-link-context',
+        'wiki-link-leaf',
+        ...CODE_LINK_CLASSES.slice(2),
+      ],
     ],
   },
 };
@@ -86,14 +118,63 @@ function wikiLinkContent(node: WikiLink): {
   };
 }
 
+function codeLanguage(target: string): {
+  className: string;
+  label: string;
+} | null {
+  switch (extname(target.split('#', 1)[0]).toLowerCase()) {
+    case '.ts':
+    case '.tsx':
+      return { className: 'code-language-ts', label: 'TS' };
+    case '.js':
+    case '.jsx':
+      return { className: 'code-language-js', label: 'JS' };
+    case '.py':
+      return { className: 'code-language-py', label: 'PY' };
+    case '.rs':
+      return { className: 'code-language-rs', label: 'RS' };
+    case '.go':
+      return { className: 'code-language-go', label: 'GO' };
+    case '.c':
+    case '.h':
+      return { className: 'code-language-c', label: 'C' };
+    default:
+      return null;
+  }
+}
+
+function languageIcon(language: {
+  className: string;
+  label: string;
+}): RootContent {
+  return {
+    type: 'emphasis',
+    data: {
+      hName: 'span',
+      hProperties: {
+        ariaHidden: 'true',
+        className: ['code-link-language', language.className],
+      },
+    },
+    children: [{ type: 'text', value: language.label }],
+  } as RootContent;
+}
+
 /** Render a lat.md file as safe HTML with resolved wiki links. */
 export async function renderMarkdown(
   markdown: string,
   filePath: string,
   resolveWikiLink?: WikiLinkResolver,
+  options: MarkdownRenderOptions = {},
 ): Promise<{ html: string; title: string }> {
   const tree = parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
+
+  if (options.rewriteMarkdownLink) {
+    visit(tree, 'link', (node: Link) => {
+      node.url = options.rewriteMarkdownLink!(node.url);
+    });
+  }
 
   const firstHeading = tree.children.find((node) => node.type === 'heading');
   const title = firstHeading
@@ -107,7 +188,12 @@ export async function renderMarkdown(
       wikiLinks.push(node);
     });
     for (const node of wikiLinks) {
-      resolvedLinks.set(node, await resolveWikiLink(node.value));
+      resolvedLinks.set(
+        node,
+        await resolveWikiLink(node.value, {
+          line: (node.position?.start.line ?? 0) + (options.lineOffset ?? 0),
+        }),
+      );
     }
   }
 
@@ -116,13 +202,27 @@ export async function renderMarkdown(
     const href = resolvedLinks.get(node);
     if (href) {
       const content = wikiLinkContent(node);
+      const language = href.startsWith('/code/')
+        ? codeLanguage(node.value)
+        : null;
+      const classes = content.segmented ? ['wiki-link-segmented'] : [];
+      if (language) classes.push('wiki-link-code');
+      if (
+        options.activeWikiLink &&
+        node.value.toLowerCase() === options.activeWikiLink.toLowerCase()
+      ) {
+        classes.push('wiki-link-active');
+      }
       parent.children[index] = {
         type: 'link',
         url: href,
-        data: content.segmented
-          ? { hProperties: { className: ['wiki-link-segmented'] } }
-          : undefined,
-        children: content.children,
+        data:
+          classes.length > 0
+            ? { hProperties: { className: classes } }
+            : undefined,
+        children: language
+          ? [languageIcon(language), ...content.children]
+          : content.children,
       } as RootContent;
       return;
     }

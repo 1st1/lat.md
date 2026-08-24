@@ -55,7 +55,9 @@ The browser groups discovered Markdown files into an expandable directory tree a
 
 Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; unresolved wiki targets remain authored text.
 
-Validated [[markdown#Wiki Links#Source Code Links]] navigate within `/code/`. The source API constrains reads to supported source extensions inside the project root, then uses [[src/source-parser.ts#resolveSourceSymbol]] to return a symbol's definition range. Server-side highlighting registers only the supported languages and returns escaped HTML lines; the client adds line numbers and highlights the resolved range without shipping grammars in its bundle.
+Validated [[markdown#Wiki Links#Source Code Links]] navigate within `/code/` and carry compact, extension-derived language badges. The source API constrains reads to supported source extensions inside the project root, then uses [[src/source-parser.ts#resolveSourceSymbol]] to return a symbol's definition range. Server-side highlighting registers only the supported languages and returns escaped HTML lines; the client adds line numbers and highlights the resolved range without shipping grammars in its bundle.
+
+Source links carry their enclosing section id and authored line as provenance. The code view validates that provenance against the vault, then safely renders the referencing paragraph immediately before the highlighted definition with working Markdown and wiki links; the selected code link is visually emphasized. It keeps five surrounding lines visible, collapses distant lines behind separate expansion controls, and places `Other references` in a centered lower divider that expands to links for the other lat sections targeting the same source symbol.
 
 Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
 

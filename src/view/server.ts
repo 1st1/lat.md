@@ -172,11 +172,23 @@ export async function startViewServer(
       if (url.pathname === '/api/source') {
         const path = url.searchParams.get('path') ?? '';
         const symbol = url.searchParams.get('symbol') ?? '';
+        const from = url.searchParams.get('from') ?? '';
+        const parsedLine = Number(url.searchParams.get('line'));
+        const origin =
+          from && Number.isInteger(parsedLine) && parsedLine > 0
+            ? { sectionId: from, line: parsedLine }
+            : undefined;
         try {
           sendJson(
             res,
             200,
-            await getViewSource(ctx.projectRoot, path, symbol),
+            await getViewSource(
+              ctx.latDir,
+              ctx.projectRoot,
+              path,
+              symbol,
+              origin,
+            ),
             headOnly,
           );
         } catch (error) {

@@ -13,6 +13,10 @@ import type {
 } from '../src/view/protocol.js';
 import { buildFileTree } from '../view/src/file-tree.js';
 import { scrollToDocumentLocation } from '../view/src/navigation.js';
+import {
+  getSourceWindow,
+  getSourceWindowRows,
+} from '../view/src/source-window.js';
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
@@ -101,8 +105,16 @@ describe('lat view', () => {
       '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span></a>',
     );
     expect(document.html).toContain(
-      '<a href="/code/src/app.ts#run" class="wiki-link-segmented"><span class="wiki-link-context">src/app.ts#</span><span class="wiki-link-leaf">run</span></a>',
+      'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
     );
+    expect(document.html).toContain('line=16#run');
+    expect(document.html).toContain(
+      'class="wiki-link-segmented wiki-link-code"',
+    );
+    expect(document.html).toContain(
+      'class="code-link-language code-language-ts"',
+    );
+    expect(document.html).toContain('aria-hidden="true"');
   });
 
   // @lat: [[view#Serves source definitions securely]]
@@ -129,6 +141,87 @@ describe('lat view', () => {
     expect(outside.status).toBe(404);
     await expect(outside.json()).resolves.toEqual({
       error: 'Source document not found',
+    });
+  });
+
+  // @lat: [[view#Shows source reference context]]
+  it('shows the originating paragraph and other section references', async () => {
+    const url = new URL('/api/source', view.url);
+    url.searchParams.set('path', 'src/app.ts');
+    url.searchParams.set('symbol', 'run');
+    url.searchParams.set('from', 'lat.md/lat#View Project');
+    url.searchParams.set('line', '16');
+    const response = await fetch(url);
+    const source = (await response.json()) as ViewSourceDocument;
+
+    expect(source.context).toEqual({
+      sectionId: 'lat.md/lat#View Project',
+      breadcrumbs: ['lat', 'View Project'],
+      paragraph:
+        'Source targets such as src/app.ts#run open their definitions; the guide explains them.',
+      paragraphHtml: expect.any(String),
+      url: '/docs/lat.md#view-project',
+    });
+    expect(source.otherReferences).toEqual([
+      {
+        sectionId: 'lat.md/guide#Guide#Details',
+        breadcrumbs: ['guide', 'Guide', 'Details'],
+        paragraph: 'The guide also references the same runner.',
+        paragraphHtml: expect.any(String),
+        url: '/docs/guide.md#details',
+      },
+    ]);
+    expect(source.context?.paragraphHtml).toContain(
+      'wiki-link-segmented wiki-link-code wiki-link-active',
+    );
+    expect(source.context?.paragraphHtml).toContain(
+      'code-link-language code-language-ts',
+    );
+    expect(source.context?.paragraphHtml).toContain(
+      'href="/docs/guide.md#details"',
+    );
+    expect(source.otherReferences[0].paragraphHtml).toContain(
+      'wiki-link-code wiki-link-active',
+    );
+  });
+
+  // @lat: [[view#Places context within a collapsed source window]]
+  it('places context before the focused lines and collapses distant code', () => {
+    const focus = {
+      symbol: 'run',
+      kind: 'function',
+      signature: 'function run() {',
+      startLine: 10,
+      endLine: 12,
+    };
+    expect(getSourceWindow(30, focus)).toEqual({
+      startLine: 5,
+      endLine: 17,
+      hiddenAbove: 4,
+      hiddenBelow: 13,
+    });
+    expect(getSourceWindow(30, focus, true, false)).toMatchObject({
+      startLine: 1,
+      hiddenAbove: 0,
+    });
+    expect(getSourceWindow(30, focus, false, true)).toMatchObject({
+      endLine: 30,
+      hiddenBelow: 0,
+    });
+
+    const rows = getSourceWindowRows(30, focus, true);
+    expect(rows[0]).toEqual({
+      kind: 'expand',
+      count: 4,
+      direction: 'above',
+    });
+    expect(rows[5]).toEqual({ kind: 'line', focused: false, lineNumber: 9 });
+    expect(rows[6]).toEqual({ kind: 'context' });
+    expect(rows[7]).toEqual({ kind: 'line', focused: true, lineNumber: 10 });
+    expect(rows.at(-1)).toEqual({
+      kind: 'expand',
+      count: 13,
+      direction: 'below',
     });
   });
 

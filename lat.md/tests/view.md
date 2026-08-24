@@ -21,13 +21,23 @@ Documents expose [[markdown#Frontmatter#require-code-mention]] separately from r
 
 ## Resolves Markdown and source wiki links
 
-Wiki links that resolve to Markdown sections or validated source definitions become client-side anchors. Unaliased links mute context through the final `#`; unresolved targets retain their authored text.
+Wiki links that resolve to Markdown sections or validated source definitions become client-side anchors. Code links carry compact language badges, unaliased links mute context through the final `#`, and unresolved targets retain their authored text.
 
 Each visually split segment owns its underline so the decoration matches that segment's text color.
 
 ## Serves source definitions securely
 
 Source routes return supported project files with optional symbol ranges for line highlighting while rejecting traversal, unsupported extensions, missing symbols, and files outside the project root.
+
+## Shows source reference context
+
+Source links preserve their originating section and line so the code view can show the breadcrumb and safely rendered paragraph, emphasize the selected code link, and navigate every link before exposing other referencing sections.
+
+The `Other references` control sits centered in the lower divider of the context card, with expanded reference entries flowing beneath it.
+
+## Places context within a collapsed source window
+
+Focused source views place reference context directly before the highlighted definition, retain five surrounding lines, and offer controls that reveal code collapsed above or below the window.
 
 ## Highlights source syntax safely
 

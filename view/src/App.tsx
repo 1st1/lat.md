@@ -17,7 +17,13 @@ import { sourceLineId, SourceView } from './SourceView';
 
 type ViewRoute =
   | { kind: 'markdown'; path: string }
-  | { kind: 'source'; path: string; symbol: string };
+  | {
+      kind: 'source';
+      path: string;
+      symbol: string;
+      from: string;
+      line: number;
+    };
 
 type ViewPage =
   | { kind: 'markdown'; document: ViewDocument }
@@ -49,10 +55,14 @@ export function App() {
     if (markdown) return { kind: 'markdown', path: markdown };
     const source = sourcePath(window.location.pathname);
     if (source) {
+      const query = new URLSearchParams(window.location.search);
+      const parsedLine = Number(query.get('line'));
       return {
         kind: 'source',
         path: source,
         symbol: sourceSymbol(window.location.hash),
+        from: query.get('from') ?? '',
+        line: Number.isInteger(parsedLine) && parsedLine > 0 ? parsedLine : 0,
       };
     }
     return null;
@@ -89,7 +99,7 @@ export function App() {
             controller.signal,
           ).then((document) => setPage({ kind: 'markdown', document }))
         : fetchJson<ViewSourceDocument>(
-            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}`,
+            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}`,
             controller.signal,
           ).then((source) => setPage({ kind: 'source', source }));
     request.catch((reason: Error) => {
@@ -217,7 +227,11 @@ export function App() {
             dangerouslySetInnerHTML={{ __html: page.document.html }}
           />
         ) : page?.kind === 'source' ? (
-          <SourceView source={page.source} />
+          <SourceView
+            key={`${page.source.path}#${page.source.focus?.symbol ?? ''}`}
+            onContentClick={onDocumentClick}
+            source={page.source}
+          />
         ) : (
           <div className="state">Loading…</div>
         )}

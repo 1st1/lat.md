@@ -16,6 +16,7 @@ import {
   loadAllSections,
   parseFrontmatter,
   resolveRef,
+  type Section,
 } from '../lattice.js';
 import {
   resolveSourceSymbol,
@@ -30,6 +31,10 @@ import type {
 } from './protocol.js';
 import { highlightSource } from './highlight.js';
 import { renderMarkdown } from './markdown.js';
+import {
+  getSourceReferenceContext,
+  type SourceReferenceOrigin,
+} from './references.js';
 
 export class ViewDocumentNotFoundError extends Error {}
 export class ViewSourceNotFoundError extends Error {}
@@ -53,10 +58,20 @@ function documentUrl(path: string): string {
   return `/docs/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
-function sourceUrl(path: string, symbol: string): string {
+function sourceUrl(
+  path: string,
+  symbol: string,
+  origin?: SourceReferenceOrigin,
+): string {
   const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const query = new URLSearchParams();
+  if (origin) {
+    query.set('from', origin.sectionId);
+    query.set('line', String(origin.line));
+  }
+  const search = query.size > 0 ? `?${query}` : '';
   const fragment = symbol ? `#${encodeURIComponent(symbol)}` : '';
-  return `/code/${encodedPath}${fragment}`;
+  return `/code/${encodedPath}${search}${fragment}`;
 }
 
 function sourceTarget(target: string): {
@@ -87,7 +102,10 @@ function matchingSymbol(
 
 async function markdownWikiLinkResolver(
   latDir: string,
-): Promise<(target: string) => Promise<string | null>> {
+  requestedPath: string,
+): Promise<
+  (target: string, context: { line: number }) => Promise<string | null>
+> {
   const projectRoot = dirname(latDir);
   const sections = await loadAllSections(latDir, projectRoot);
   const flat = flattenSections(sections);
@@ -97,8 +115,14 @@ async function markdownWikiLinkResolver(
   const byId = new Map(
     flat.map((section) => [section.id.toLowerCase(), section]),
   );
+  const currentFile = toPosix(
+    relative(projectRoot, resolve(latDir, requestedPath)),
+  );
+  const currentSections = flat
+    .filter((section) => section.filePath === currentFile)
+    .sort((a, b) => a.startLine - b.startLine);
 
-  return async (target) => {
+  return async (target, context) => {
     const result = resolveRef(target, sectionIds, fileIndex, slugIndex);
     if (result.ambiguous) return null;
 
@@ -117,7 +141,15 @@ async function markdownWikiLinkResolver(
     if (!source) return null;
     try {
       await readViewSource(projectRoot, source.path, source.symbol);
-      return sourceUrl(source.path, source.symbol);
+      let section: Section | undefined;
+      for (const candidate of currentSections) {
+        if (candidate.startLine > context.line) break;
+        section = candidate;
+      }
+      const origin = section
+        ? { sectionId: section.id, line: context.line }
+        : undefined;
+      return sourceUrl(source.path, source.symbol, origin);
     } catch (error) {
       if (error instanceof ViewSourceNotFoundError) return null;
       throw error;
@@ -129,7 +161,12 @@ async function readViewSource(
   projectRoot: string,
   requestedPath: string,
   requestedSymbol = '',
-): Promise<Omit<ViewSourceDocument, 'highlightedHtmlLines'>> {
+): Promise<
+  Omit<
+    ViewSourceDocument,
+    'highlightedHtmlLines' | 'context' | 'otherReferences'
+  >
+> {
   if (
     !requestedPath ||
     requestedPath.includes('\\') ||
@@ -186,18 +223,28 @@ async function readViewSource(
 
 /** Read and highlight a source file after constraining it to the project root. */
 export async function getViewSource(
+  latDir: string,
   projectRoot: string,
   requestedPath: string,
   requestedSymbol = '',
+  origin?: SourceReferenceOrigin,
 ): Promise<ViewSourceDocument> {
   const source = await readViewSource(
     projectRoot,
     requestedPath,
     requestedSymbol,
   );
+  const references = await getSourceReferenceContext(
+    latDir,
+    projectRoot,
+    `${source.path}${requestedSymbol ? `#${requestedSymbol}` : ''}`,
+    origin,
+    (requestedPath) => markdownWikiLinkResolver(latDir, requestedPath),
+  );
   return {
     ...source,
     highlightedHtmlLines: highlightSource(source.path, source.content),
+    ...references,
   };
 }
 
@@ -245,7 +292,7 @@ export async function getViewDocument(
 
   const [markdown, resolveWikiLink] = await Promise.all([
     readFile(resolve(filePath), 'utf-8'),
-    markdownWikiLinkResolver(latDir),
+    markdownWikiLinkResolver(latDir, requestedPath),
   ]);
   const rendered = await renderMarkdown(
     markdown,

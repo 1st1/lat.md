@@ -12,3 +12,5 @@ This is the linked guide.
 ## Details
 
 Relative Markdown links preserve heading fragments.
+
+The guide also references [[src/app.ts#run|the same runner]].

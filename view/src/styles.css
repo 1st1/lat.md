@@ -206,35 +206,166 @@ a {
   border-radius: 999px;
 }
 
-.source-focus {
-  display: flex;
+.source-context {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - 5.25rem);
   max-width: 760px;
-  margin: -16px 0 18px;
-  padding: 10px 13px;
-  align-items: baseline;
-  gap: 10px;
-  overflow: hidden;
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 12px;
+  margin: 12px 16px 12px 4.25rem;
+  overflow: visible;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
   background: color-mix(in srgb, var(--code) 72%, transparent);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
 }
 
-.source-focus span {
-  flex: 0 0 auto;
+.source-context.has-references:not(.references-open) {
+  margin-bottom: 24px;
+}
+
+.source-context-header {
+  display: flex;
+  min-height: 36px;
+  padding: 7px 10px 7px 13px;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.source-focus code {
-  overflow: hidden;
+.source-reference-toggle {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.source-reference-toggle::before,
+.source-reference-toggle::after {
+  height: 1px;
+  flex: 1;
+  content: '';
+  background: var(--panel-border);
+  visibility: hidden;
+}
+
+.source-context.references-open .source-reference-toggle::before,
+.source-context.references-open .source-reference-toggle::after {
+  visibility: visible;
+}
+
+.source-reference-toggle button {
+  display: inline-flex;
+  padding: 4px 7px;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  cursor: pointer;
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 5px;
+}
+
+.source-reference-toggle button:hover {
   color: var(--text);
-  text-overflow: ellipsis;
+}
+
+.source-reference-toggle button > span {
+  min-width: 16px;
+  padding: 1px 4px;
+  color: var(--muted);
+  text-align: center;
+  background: color-mix(in srgb, var(--background) 65%, transparent);
+  border-radius: 999px;
+}
+
+.source-context-current {
+  padding: 0 13px 13px;
+}
+
+.source-context-current > a,
+.source-reference-item > a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.source-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 650;
   white-space: nowrap;
+}
+
+.source-breadcrumbs > span {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
+
+.source-breadcrumbs > span > span {
+  color: var(--muted);
+}
+
+.source-context-current > a:hover .source-breadcrumbs,
+.source-reference-item > a:hover .source-breadcrumbs {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.source-context-paragraph p {
+  margin: 8px 0 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.source-context-paragraph a,
+.source-reference-paragraph a {
+  text-underline-offset: 2px;
+}
+
+.source-reference-list {
+  padding: 17px 0 3px;
+}
+
+.source-reference-item {
+  padding: 10px 13px;
+}
+
+.source-reference-item + .source-reference-item {
+  border-top: 1px solid var(--panel-border);
+}
+
+.source-reference-paragraph p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .source-code {
@@ -247,6 +378,51 @@ a {
   background: var(--code);
   border: 1px solid var(--panel-border);
   border-radius: 10px;
+}
+
+.source-collapse {
+  display: flex;
+  min-width: max-content;
+  min-height: 34px;
+  align-items: center;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 52%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--panel-border) 72%, transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--panel-border) 72%, transparent);
+}
+
+.source-collapse:first-child {
+  margin-top: -10px;
+  border-top: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+.source-collapse:last-child {
+  margin-bottom: -10px;
+  border-bottom: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.source-collapse > span {
+  flex: 0 0 4.25rem;
+  padding-right: 14px;
+  text-align: right;
+  user-select: none;
+}
+
+.source-collapse button {
+  padding: 6px 20px 6px 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.source-collapse button:hover {
+  color: var(--accent);
 }
 
 .source-line {
@@ -376,19 +552,74 @@ a {
   text-underline-offset: 3px;
 }
 
-.markdown .wiki-link-context {
+.wiki-link-context {
   color: var(--muted);
 }
 
-.markdown a.wiki-link-segmented {
+a.wiki-link-segmented {
   text-decoration: none;
 }
 
-.markdown a.wiki-link-segmented > span {
+a.wiki-link-segmented > .wiki-link-context,
+a.wiki-link-segmented > .wiki-link-leaf {
   text-decoration-line: underline;
   text-decoration-color: currentColor;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+}
+
+.code-link-language {
+  display: inline-flex;
+  width: 1.55em;
+  height: 1.55em;
+  margin-right: 0.38em;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.62em;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.12em;
+  background: var(--muted);
+  border-radius: 3px;
+}
+
+.code-language-ts {
+  background: #3178c6;
+}
+
+.code-language-js {
+  color: #25231f;
+  background: #f0db4f;
+}
+
+.code-language-py {
+  background: #3776ab;
+}
+
+.code-language-rs {
+  background: #9a4b2f;
+}
+
+.code-language-go {
+  color: #15343b;
+  background: #6ad7e5;
+}
+
+.code-language-c {
+  background: #5968ba;
+}
+
+a.wiki-link-active {
+  padding: 0.12em 0.28em;
+  margin: -0.12em -0.28em;
+  background: var(--accent-soft);
+  border-radius: 4px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .markdown blockquote {
@@ -472,5 +703,11 @@ a {
 
   .main {
     padding-top: 28px;
+  }
+
+  .source-context {
+    width: calc(100% - 24px);
+    margin-right: 12px;
+    margin-left: 12px;
   }
 }
