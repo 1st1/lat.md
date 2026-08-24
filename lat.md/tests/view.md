@@ -43,6 +43,8 @@ Every referenced section shows a count that expands into distinct linking Markdo
 
 Focused source views place reference context directly before the highlighted definition, retain five surrounding lines, and offer controls that reveal code collapsed above or below the window.
 
+Expanding hidden lines above preserves the first visible source line's viewport position instead of shifting the reader upward through the newly inserted code.
+
 ## Highlights source syntax safely
 
 Supported source languages receive server-side token coloring as independently valid HTML lines, while HTML-like source text stays escaped and multiline tokens retain their styling.

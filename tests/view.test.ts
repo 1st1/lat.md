@@ -15,6 +15,10 @@ import { buildFileTree } from '../view/src/file-tree.js';
 import { scrollToDocumentLocation } from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
+  captureScrollAnchor,
+  restoreScrollAnchor,
+} from '../view/src/scroll-anchor.js';
+import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
@@ -283,6 +287,22 @@ describe('lat view', () => {
       kind: 'expand',
       count: 13,
       direction: 'below',
+    });
+
+    let anchorTop = 180;
+    const scrollBy = vi.fn();
+    const viewport = {
+      getElementById: vi.fn(() => ({
+        getBoundingClientRect: () => ({ top: anchorTop }),
+      })),
+      scrollBy,
+    };
+    const anchor = captureScrollAnchor('source-line-5', viewport);
+    anchorTop = 420;
+    restoreScrollAnchor(anchor!, viewport);
+    expect(scrollBy).toHaveBeenCalledWith({
+      top: 240,
+      behavior: 'instant',
     });
   });
 

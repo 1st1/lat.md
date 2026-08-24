@@ -1,8 +1,13 @@
-import { useState, type MouseEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import type {
   ViewSourceDocument,
   ViewSourceReference,
 } from '../../src/view/protocol';
+import {
+  captureScrollAnchor,
+  restoreScrollAnchor,
+  type ScrollAnchor,
+} from './scroll-anchor';
 import { getSourceWindowRows } from './source-window';
 
 export const sourceLineId = (line: number) => `source-line-${line}`;
@@ -119,6 +124,7 @@ export function SourceView({
   const [referencesOpen, setReferencesOpen] = useState(false);
   const [expandedAbove, setExpandedAbove] = useState(false);
   const [expandedBelow, setExpandedBelow] = useState(false);
+  const pendingScrollAnchor = useRef<ScrollAnchor | null>(null);
   const hasReferences = source.otherReferences.length > 0;
   const hasContext = Boolean(source.context || hasReferences);
   const rows = getSourceWindowRows(
@@ -128,6 +134,30 @@ export function SourceView({
     expandedAbove,
     expandedBelow,
   );
+
+  useLayoutEffect(() => {
+    const anchor = pendingScrollAnchor.current;
+    if (!anchor) return;
+    pendingScrollAnchor.current = null;
+    restoreScrollAnchor(anchor, {
+      getElementById: (id) => window.document.getElementById(id),
+      scrollBy: (options) => window.scrollBy(options),
+    });
+  }, [expandedAbove]);
+
+  function expandAbove(): void {
+    const firstLine = rows.find((row) => row.kind === 'line');
+    if (firstLine) {
+      pendingScrollAnchor.current = captureScrollAnchor(
+        sourceLineId(firstLine.lineNumber),
+        {
+          getElementById: (id) => window.document.getElementById(id),
+        },
+      );
+    }
+    setExpandedAbove(true);
+  }
+
   return (
     <>
       <div className="document-metadata">
@@ -163,7 +193,7 @@ export function SourceView({
                 key={`expand-${row.direction}`}
                 onExpand={() =>
                   row.direction === 'above'
-                    ? setExpandedAbove(true)
+                    ? expandAbove()
                     : setExpandedBelow(true)
                 }
               />

@@ -378,6 +378,7 @@ a {
   background: var(--code);
   border: 1px solid var(--panel-border);
   border-radius: 10px;
+  overflow-anchor: none;
 }
 
 .source-collapse {
