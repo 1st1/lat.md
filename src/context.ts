@@ -27,6 +27,8 @@ export type CmdContext = {
   projectRoot: string;
   styler: Styler;
   mode: 'cli' | 'mcp';
+  /** The check target was supplied explicitly instead of discovered as lat.md. */
+  headless?: boolean;
 };
 
 export type CmdResult = {

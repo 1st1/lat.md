@@ -138,11 +138,13 @@ async function tryResolveSourceRef(
   }
 }
 
-export async function checkMd(latticeDir: string): Promise<CheckResult> {
+export async function checkMd(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckResult> {
   clearSymbolCache();
-  const projectRoot = dirname(latticeDir);
   const files = await listLatticeFiles(latticeDir);
-  const allSections = await loadAllSections(latticeDir);
+  const allSections = await loadAllSections(latticeDir, projectRoot);
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
@@ -302,9 +304,11 @@ export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
   return errors;
 }
 
-export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
-  const projectRoot = dirname(latticeDir);
-  const allSections = await loadAllSections(latticeDir);
+export async function checkCodeRefs(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckResult> {
+  const allSections = await loadAllSections(latticeDir, projectRoot);
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
@@ -413,14 +417,14 @@ export async function checkIndex(latticeDir: string): Promise<IndexError[]> {
   const errors: IndexError[] = [];
   const allPaths = await walkEntries(latticeDir);
 
-  // Flag non-.md files — only markdown belongs in lat.md/
+  // Flag non-.md files — only markdown belongs in the checked directory.
   for (const p of allPaths) {
     const name = p.includes('/') ? p.slice(p.lastIndexOf('/') + 1) : p;
     if (!name.endsWith('.md')) {
       const relDir = basename(latticeDir) + '/';
       errors.push({
         dir: relDir,
-        message: `"${p}" is not a .md file — only markdown files belong in lat.md/`,
+        message: `"${p}" is not a .md file — only markdown files belong in the checked directory`,
       });
     }
   }
@@ -517,8 +521,10 @@ function bodyTextLength(body: string): number {
   return body.replace(/\[\[[^\]]*\]\]/g, '').length;
 }
 
-export async function checkSections(latticeDir: string): Promise<CheckError[]> {
-  const projectRoot = dirname(latticeDir);
+export async function checkSections(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckError[]> {
   const files = await listLatticeFiles(latticeDir);
   const errors: CheckError[] = [];
 
@@ -606,11 +612,11 @@ function formatErrorCount(count: number, s: Styler): string {
 
 export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   const startTime = Date.now();
-  const md = await checkMd(ctx.latDir);
+  const md = await checkMd(ctx.latDir, ctx.projectRoot);
   const linkErrors = await checkLinks(ctx.latDir);
-  const code = await checkCodeRefs(ctx.latDir);
+  const code = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
   const indexErrors = await checkIndex(ctx.latDir);
-  const sectionErrors = await checkSections(ctx.latDir);
+  const sectionErrors = await checkSections(ctx.latDir, ctx.projectRoot);
   const elapsed = Date.now() - startTime;
 
   const allErrors = [...md.errors, ...linkErrors, ...code.errors];
@@ -627,27 +633,29 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   ];
 
   // Init version warning first — user should fix setup before addressing errors
-  const storedVersion = readInitVersion(ctx.latDir);
-  if (storedVersion === null) {
-    lines.push(
-      '',
-      s.yellow('Warning:') +
-        ' No init version recorded — run ' +
-        s.cyan('lat init') +
-        ' to set up agent hooks and configuration.',
-    );
-  } else if (storedVersion < INIT_VERSION) {
-    lines.push(
-      '',
-      s.yellow('Warning:') +
-        ' Your setup is outdated (v' +
-        storedVersion +
-        ' → v' +
-        INIT_VERSION +
-        '). Re-run ' +
-        s.cyan('lat init') +
-        ' to update agent hooks and configuration.',
-    );
+  if (!ctx.headless) {
+    const storedVersion = readInitVersion(ctx.latDir);
+    if (storedVersion === null) {
+      lines.push(
+        '',
+        s.yellow('Warning:') +
+          ' No init version recorded — run ' +
+          s.cyan('lat init') +
+          ' to set up agent hooks and configuration.',
+      );
+    } else if (storedVersion < INIT_VERSION) {
+      lines.push(
+        '',
+        s.yellow('Warning:') +
+          ' Your setup is outdated (v' +
+          storedVersion +
+          ' → v' +
+          INIT_VERSION +
+          '). Re-run ' +
+          s.cyan('lat init') +
+          ' to update agent hooks and configuration.',
+      );
+    }
   }
 
   lines.push(...formatCheckErrors(allErrors, s));
@@ -681,7 +689,7 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
 }
 
 export async function checkMdCommand(ctx: CmdContext): Promise<CmdResult> {
-  const { errors, files } = await checkMd(ctx.latDir);
+  const { errors, files } = await checkMd(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [formatFileStats(files, s)];
 
@@ -715,7 +723,7 @@ export async function checkLinksCommand(ctx: CmdContext): Promise<CmdResult> {
 export async function checkCodeRefsCommand(
   ctx: CmdContext,
 ): Promise<CmdResult> {
-  const { errors, files } = await checkCodeRefs(ctx.latDir);
+  const { errors, files } = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [formatFileStats(files, s)];
 
@@ -749,7 +757,7 @@ export async function checkIndexCommand(ctx: CmdContext): Promise<CmdResult> {
 export async function checkSectionsCommand(
   ctx: CmdContext,
 ): Promise<CmdResult> {
-  const errors = await checkSections(ctx.latDir);
+  const errors = await checkSections(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [];
 

@@ -1,4 +1,5 @@
-import { dirname } from 'node:path';
+import { statSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { styleText } from 'node:util';
 import { findLatticeDir } from '../lattice.js';
 import type { CmdContext, Styler } from '../context.js';
@@ -36,4 +37,38 @@ export function resolveContext(opts: {
 
   const projectRoot = dirname(latDir);
   return { latDir, projectRoot, styler: makeStyler(), mode: 'cli' };
+}
+
+export function resolveCheckContext(
+  opts: { dir?: string; color?: boolean },
+  target?: string,
+): CmdContext {
+  if (target === undefined) return resolveContext(opts);
+
+  if (opts.color === false) {
+    process.env.NO_COLOR = '1';
+  }
+
+  const projectRoot = resolve(opts.dir ?? process.cwd());
+  const latDir = resolve(projectRoot, target);
+  try {
+    if (!statSync(latDir).isDirectory()) {
+      console.error(
+        styleText('red', `Check target is not a directory: ${target}`),
+      );
+      process.exit(1);
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    console.error(styleText('red', `Check directory not found: ${target}`));
+    process.exit(1);
+  }
+
+  return {
+    latDir,
+    projectRoot,
+    styler: makeStyler(),
+    mode: 'cli',
+    headless: true,
+  };
 }

@@ -232,8 +232,10 @@ export function parseSections(
   return roots;
 }
 
-export async function loadAllSections(latticeDir: string): Promise<Section[]> {
-  const projectRoot = dirname(latticeDir);
+export async function loadAllSections(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<Section[]> {
   const files = await listLatticeFiles(latticeDir);
   const all: Section[] = [];
   for (const file of files) {

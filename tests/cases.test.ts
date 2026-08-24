@@ -481,6 +481,80 @@ describe('valid-md-links', () => {
   });
 });
 
+// --- headless check targets ---
+
+describe('headless-check', () => {
+  // @lat: [[tests/check-headless#Separator disambiguates directory names]]
+  it('treats a name after -- as a directory, not a subcommand', () => {
+    const full = runCli('headless-check', ['check', '--', 'links']);
+    const subcommand = runCli('headless-check', ['check', 'links']);
+
+    expect(full.exitCode).toBe(0);
+    expect(full.stderr).toBe('');
+    expect(full.stdout).toContain('All checks passed');
+    expect(full.stdout).not.toContain('No init version recorded');
+
+    expect(subcommand.exitCode).toBe(0);
+    expect(subcommand.stderr).toBe('');
+    expect(subcommand.stdout).toBe('links: All relative links resolve\n');
+  });
+
+  // @lat: [[tests/check-headless#Every subcommand accepts a directory]]
+  it('runs every check subcommand against the explicit directory', () => {
+    const expected = new Map([
+      ['md', 'md: All links OK'],
+      ['links', 'links: All relative links resolve'],
+      ['code-refs', 'code-refs: All references OK'],
+      ['index', 'index: All directory index files OK'],
+      ['sections', 'sections: All sections have valid leading paragraphs'],
+    ]);
+
+    for (const [subcommand, message] of expected) {
+      const result = runCli('headless-check', [
+        'check',
+        subcommand,
+        '--',
+        'links',
+      ]);
+      expect(result.exitCode, subcommand).toBe(0);
+      expect(result.stderr, subcommand).toBe('');
+      expect(result.stdout, subcommand).toContain(message);
+    }
+  });
+
+  // @lat: [[tests/check-headless#Target syntax requires one directory]]
+  it('requires exactly one directory after the separator', () => {
+    for (const args of [
+      ['check', '--'],
+      ['check', '--', 'links', 'extra'],
+    ]) {
+      const result = runCli('headless-check', args);
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toContain('expects exactly one directory');
+    }
+  });
+});
+
+describe('error-headless-check', () => {
+  // @lat: [[tests/check-headless#Default check runs every validator]]
+  it('runs every validator against the explicit directory', () => {
+    const { stdout, stderr, exitCode } = runCli('error-headless-check', [
+      'check',
+      '--',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe('');
+    expect(stderr).toContain('broken link [[missing]]');
+    expect(stderr).toContain('broken link (missing.md)');
+    expect(stderr).toContain('@lat: [[cli#locate]]');
+    expect(stderr).toContain('missing index file "links.md"');
+    expect(stderr).toContain('has no leading paragraph');
+    expect(stderr).toContain('5 errors found');
+  });
+});
+
 // --- dangling-code-ref ---
 
 describe('error-dangling-code-ref', () => {

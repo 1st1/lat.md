@@ -9,8 +9,51 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Command } from 'commander';
-import { resolveContext } from './context.js';
+import { resolveCheckContext, resolveContext } from './context.js';
 import type { CmdResult } from '../context.js';
+
+type CheckTargetArgs = {
+  args: string[];
+  target?: string;
+};
+
+/** Reserve `-- <directory>` for an explicit check target. */
+function splitCheckTarget(args: string[]): CheckTargetArgs {
+  let commandIndex = -1;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--dir') {
+      i++;
+      continue;
+    }
+    if (arg.startsWith('--dir=')) continue;
+    if (arg.startsWith('-')) continue;
+    commandIndex = i;
+    break;
+  }
+
+  if (commandIndex === -1 || args[commandIndex] !== 'check') {
+    return { args };
+  }
+
+  const separatorIndex = args.indexOf('--', commandIndex + 1);
+  if (separatorIndex === -1) return { args };
+
+  const targets = args.slice(separatorIndex + 1);
+  if (targets.length !== 1 || targets[0] === '') {
+    console.error(
+      'error: `lat check --` expects exactly one directory after `--`',
+    );
+    process.exit(1);
+  }
+
+  return {
+    args: args.slice(0, separatorIndex),
+    target: targets[0],
+  };
+}
+
+const checkTargetArgs = splitCheckTarget(process.argv.slice(2));
 
 function findPackageJson(): string {
   let dir = dirname(fileURLToPath(import.meta.url));
@@ -85,54 +128,60 @@ program
 
 const check = program
   .command('check')
-  .description('Validate links and code references')
+  .usage('[subcommand] [-- <directory>]')
+  .description('Validate markdown, links, code references, and structure')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkAllCommand } = await import('./check.js');
     handleResult(await checkAllCommand(ctx));
   });
 
 check
   .command('md')
-  .description('Validate wiki links in lat.md markdown files')
+  .usage('[-- <directory>]')
+  .description('Validate wiki links in markdown files')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkMdCommand } = await import('./check.js');
     handleResult(await checkMdCommand(ctx));
   });
 
 check
   .command('links')
-  .description('Validate relative markdown links in lat.md')
+  .usage('[-- <directory>]')
+  .description('Validate relative markdown links')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkLinksCommand } = await import('./check.js');
     handleResult(await checkLinksCommand(ctx));
   });
 
 check
   .command('code-refs')
+  .usage('[-- <directory>]')
   .description('Validate @lat code references and coverage')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkCodeRefsCommand } = await import('./check.js');
     handleResult(await checkCodeRefsCommand(ctx));
   });
 
 check
   .command('index')
-  .description('Validate directory index files in lat.md')
+  .usage('[-- <directory>]')
+  .description('Validate directory index files')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkIndexCommand } = await import('./check.js');
     handleResult(await checkIndexCommand(ctx));
   });
 
 check
   .command('sections')
-  .description('Validate section leading paragraphs in lat.md')
+  .usage('[-- <directory>]')
+  .description('Validate section leading paragraphs')
   .action(async () => {
-    const ctx = resolveContext(program.opts());
+    const ctx = resolveCheckContext(program.opts(), checkTargetArgs.target);
     const { checkSectionsCommand } = await import('./check.js');
     handleResult(await checkSectionsCommand(ctx));
   });
@@ -271,4 +320,4 @@ program
     console.log(`Config file: ${configPath}${exists ? '' : ' (not found)'}`);
   });
 
-await program.parseAsync();
+await program.parseAsync(checkTargetArgs.args, { from: 'user' });

@@ -27,6 +27,7 @@ Shared patterns for writing and organizing tests in this project.
 - [[mcp]] — MCP server tool listing and tool call responses
 - [[roundtrip]] — Parse → render fidelity for all markdown and wiki link features
 - [[check-sections]] — Validating section leading paragraphs
+- [[check-headless]] — Validating explicit Markdown directories
 - [[section]] — getSection core function and formatSectionOutput formatter
 - [[hook]] — Lifecycle hook context injection, conditional continuation, and setup merging
 - [[init]] — Initialization defaults for local-first semantic search
