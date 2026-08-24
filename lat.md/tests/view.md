@@ -35,6 +35,10 @@ Source links preserve their originating section and line so the code view can sh
 
 The `Other references` control sits centered in the lower divider of the context card, with expanded reference entries flowing beneath it.
 
+## Shows section back-references
+
+Every referenced section shows a count that expands into distinct linking Markdown paragraphs, wiki references, and `@lat:` code locations, with rendered context and exact source-line navigation.
+
 ## Places context within a collapsed source window
 
 Focused source views place reference context directly before the highlighted definition, retain five surrounding lines, and offer controls that reveal code collapsed above or below the window.

@@ -13,6 +13,7 @@ import type {
 } from '../src/view/protocol.js';
 import { buildFileTree } from '../view/src/file-tree.js';
 import { scrollToDocumentLocation } from '../view/src/navigation.js';
+import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
   getSourceWindow,
   getSourceWindowRows,
@@ -183,6 +184,66 @@ describe('lat view', () => {
     expect(source.otherReferences[0].paragraphHtml).toContain(
       'wiki-link-code wiki-link-active',
     );
+  });
+
+  // @lat: [[view#Shows section back-references]]
+  it('shows Markdown and code references on every referenced section', async () => {
+    const response = await fetch(
+      new URL('/api/document?path=guide.md', view.url),
+    );
+    const document = (await response.json()) as ViewDocument;
+    const details = document.backReferences.find(
+      (section) => section.sectionId === 'lat.md/guide#Guide#Details',
+    );
+
+    expect(details).toBeDefined();
+    expect(details?.headingId).toBe('details');
+    expect(details?.references).toHaveLength(5);
+    expect(details?.references.map((reference) => reference.kind)).toEqual([
+      'markdown',
+      'markdown',
+      'markdown',
+      'markdown',
+      'code',
+    ]);
+    expect(details?.references[0]).toMatchObject({
+      kind: 'markdown',
+      sectionId: 'lat.md/lat#View Project',
+      breadcrumbs: ['lat', 'View Project'],
+      url: '/docs/lat.md#view-project',
+    });
+    expect(details?.references[1]).toMatchObject({
+      kind: 'markdown',
+      sectionId: 'lat.md/lat#View Project',
+    });
+    expect(details?.references[4]).toEqual({
+      kind: 'code',
+      path: 'src/app.ts',
+      line: 5,
+      snippet: expect.stringContaining('@lat: [[guide#Details]]'),
+      url: '/code/src/app.ts?at=5',
+    });
+
+    const rendered = renderSectionBackReferences(
+      document.html,
+      document.backReferences,
+    );
+    expect(rendered).toContain('data-section-back-references');
+    expect(rendered).toContain('section-back-reference-count">5</span>');
+    expect(rendered).toContain('id="section-back-references-1"');
+    expect(rendered).toContain('href="/code/src/app.ts?at=5"');
+    expect(rendered).toContain('wiki-link-active');
+
+    const sourceResponse = await fetch(
+      new URL('/api/source?path=src/app.ts&at=5', view.url),
+    );
+    const source = (await sourceResponse.json()) as ViewSourceDocument;
+    expect(source.focus).toMatchObject({
+      symbol: 'line 5',
+      kind: 'reference',
+      startLine: 5,
+      endLine: 5,
+    });
   });
 
   // @lat: [[view#Places context within a collapsed source window]]

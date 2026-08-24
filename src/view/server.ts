@@ -174,6 +174,11 @@ export async function startViewServer(
         const symbol = url.searchParams.get('symbol') ?? '';
         const from = url.searchParams.get('from') ?? '';
         const parsedLine = Number(url.searchParams.get('line'));
+        const parsedFocusLine = Number(url.searchParams.get('at'));
+        const focusLine =
+          Number.isInteger(parsedFocusLine) && parsedFocusLine > 0
+            ? parsedFocusLine
+            : 0;
         const origin =
           from && Number.isInteger(parsedLine) && parsedLine > 0
             ? { sectionId: from, line: parsedLine }
@@ -188,6 +193,7 @@ export async function startViewServer(
               path,
               symbol,
               origin,
+              focusLine,
             ),
             headOnly,
           );

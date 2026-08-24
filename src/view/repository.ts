@@ -32,6 +32,7 @@ import type {
 import { highlightSource } from './highlight.js';
 import { renderMarkdown } from './markdown.js';
 import {
+  getSectionBackReferences,
   getSourceReferenceContext,
   type SourceReferenceOrigin,
 } from './references.js';
@@ -103,11 +104,13 @@ function matchingSymbol(
 async function markdownWikiLinkResolver(
   latDir: string,
   requestedPath: string,
+  loadedSections?: Section[],
 ): Promise<
   (target: string, context: { line: number }) => Promise<string | null>
 > {
   const projectRoot = dirname(latDir);
-  const sections = await loadAllSections(latDir, projectRoot);
+  const sections =
+    loadedSections ?? (await loadAllSections(latDir, projectRoot));
   const flat = flattenSections(sections);
   const sectionIds = new Set(flat.map((section) => section.id.toLowerCase()));
   const fileIndex = buildFileIndex(sections);
@@ -161,6 +164,7 @@ async function readViewSource(
   projectRoot: string,
   requestedPath: string,
   requestedSymbol = '',
+  requestedLine = 0,
 ): Promise<
   Omit<
     ViewSourceDocument,
@@ -193,7 +197,22 @@ async function readViewSource(
 
   const content = await readFile(realFile, 'utf-8');
   if (!requestedSymbol) {
-    return { path: requestedPath, content, focus: null };
+    if (!requestedLine) return { path: requestedPath, content, focus: null };
+    const line = content.split('\n')[requestedLine - 1];
+    if (line === undefined) {
+      throw new ViewSourceNotFoundError('Source line not found');
+    }
+    return {
+      path: requestedPath,
+      content,
+      focus: {
+        symbol: `line ${requestedLine}`,
+        kind: 'reference',
+        signature: line.trim() || `Line ${requestedLine}`,
+        startLine: requestedLine,
+        endLine: requestedLine,
+      },
+    };
   }
 
   const resolved = await resolveSourceSymbol(
@@ -228,11 +247,13 @@ export async function getViewSource(
   requestedPath: string,
   requestedSymbol = '',
   origin?: SourceReferenceOrigin,
+  requestedLine = 0,
 ): Promise<ViewSourceDocument> {
   const source = await readViewSource(
     projectRoot,
     requestedPath,
     requestedSymbol,
+    requestedLine,
   );
   const references = await getSourceReferenceContext(
     latDir,
@@ -290,18 +311,31 @@ export async function getViewDocument(
     throw new ViewDocumentNotFoundError('Markdown document not found');
   }
 
-  const [markdown, resolveWikiLink] = await Promise.all([
+  const [markdown, allSections] = await Promise.all([
     readFile(resolve(filePath), 'utf-8'),
-    markdownWikiLinkResolver(latDir, requestedPath),
+    loadAllSections(latDir, dirname(latDir)),
   ]);
+  const wikiLinkResolver = await markdownWikiLinkResolver(
+    latDir,
+    requestedPath,
+    allSections,
+  );
   const rendered = await renderMarkdown(
     markdown,
     requestedPath,
-    resolveWikiLink,
+    wikiLinkResolver,
+  );
+  const backReferences = await getSectionBackReferences(
+    latDir,
+    dirname(latDir),
+    requestedPath,
+    allSections,
+    (path) => markdownWikiLinkResolver(latDir, path, allSections),
   );
   return {
     path: requestedPath,
     ...rendered,
+    backReferences,
     frontmatter: {
       requireCodeMention:
         parseFrontmatter(markdown).requireCodeMention === true,

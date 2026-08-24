@@ -7,9 +7,37 @@ export type ViewDocument = {
   path: string;
   title: string;
   html: string;
+  backReferences: ViewSectionBackReferences[];
   frontmatter: {
     requireCodeMention: boolean;
   };
+};
+
+export type ViewMarkdownBackReference = {
+  kind: 'markdown';
+  sectionId: string;
+  breadcrumbs: string[];
+  paragraph: string;
+  paragraphHtml: string;
+  url: string;
+};
+
+export type ViewCodeBackReference = {
+  kind: 'code';
+  path: string;
+  line: number;
+  snippet: string;
+  url: string;
+};
+
+export type ViewSectionBackReference =
+  | ViewMarkdownBackReference
+  | ViewCodeBackReference;
+
+export type ViewSectionBackReferences = {
+  sectionId: string;
+  headingId: string;
+  references: ViewSectionBackReference[];
 };
 
 export type ViewSourceReference = {

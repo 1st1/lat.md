@@ -13,6 +13,7 @@ import {
   sourcePath,
   sourceSymbol,
 } from './navigation';
+import { renderSectionBackReferences } from './section-back-references';
 import { sourceLineId, SourceView } from './SourceView';
 
 type ViewRoute =
@@ -23,6 +24,7 @@ type ViewRoute =
       symbol: string;
       from: string;
       line: number;
+      at: number;
     };
 
 type ViewPage =
@@ -57,17 +59,32 @@ export function App() {
     if (source) {
       const query = new URLSearchParams(window.location.search);
       const parsedLine = Number(query.get('line'));
+      const parsedFocusLine = Number(query.get('at'));
       return {
         kind: 'source',
         path: source,
         symbol: sourceSymbol(window.location.hash),
         from: query.get('from') ?? '',
         line: Number.isInteger(parsedLine) && parsedLine > 0 ? parsedLine : 0,
+        at:
+          Number.isInteger(parsedFocusLine) && parsedFocusLine > 0
+            ? parsedFocusLine
+            : 0,
       };
     }
     return null;
   }, [location]);
   const activePath = route?.kind === 'markdown' ? route.path : null;
+  const documentHtml = useMemo(
+    () =>
+      page?.kind === 'markdown'
+        ? renderSectionBackReferences(
+            page.document.html,
+            page.document.backReferences,
+          )
+        : '',
+    [page],
+  );
 
   useEffect(() => {
     const onPopState = () => setLocation(currentLocation());
@@ -99,7 +116,7 @@ export function App() {
             controller.signal,
           ).then((document) => setPage({ kind: 'markdown', document }))
         : fetchJson<ViewSourceDocument>(
-            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}`,
+            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
             controller.signal,
           ).then((source) => setPage({ kind: 'source', source }));
     request.catch((reason: Error) => {
@@ -163,6 +180,20 @@ export function App() {
       return;
     }
     const target = event.target;
+    const toggle =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-section-back-references]')
+        : null;
+    if (toggle) {
+      const panelId = toggle.getAttribute('aria-controls');
+      const panel = panelId ? window.document.getElementById(panelId) : null;
+      if (panel) {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        panel.hidden = open;
+      }
+      return;
+    }
     const anchor =
       target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
@@ -224,11 +255,11 @@ export function App() {
           <article
             className="markdown"
             onClick={onDocumentClick}
-            dangerouslySetInnerHTML={{ __html: page.document.html }}
+            dangerouslySetInnerHTML={{ __html: documentHtml }}
           />
         ) : page?.kind === 'source' ? (
           <SourceView
-            key={`${page.source.path}#${page.source.focus?.symbol ?? ''}`}
+            key={`${page.source.path}#${page.source.focus?.symbol ?? ''}@${page.source.focus?.startLine ?? 0}`}
             onContentClick={onDocumentClick}
             source={page.source}
           />

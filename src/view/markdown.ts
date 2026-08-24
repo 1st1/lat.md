@@ -18,6 +18,7 @@ export type WikiLinkResolver = (
 ) => string | null | Promise<string | null>;
 
 export type MarkdownRenderOptions = {
+  activeMarkdownLink?: string;
   activeWikiLink?: string;
   lineOffset?: number;
   rewriteMarkdownLink?: (url: string) => string;
@@ -170,9 +171,24 @@ export async function renderMarkdown(
   const tree = parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
 
-  if (options.rewriteMarkdownLink) {
+  if (options.rewriteMarkdownLink || options.activeMarkdownLink) {
     visit(tree, 'link', (node: Link) => {
-      node.url = options.rewriteMarkdownLink!(node.url);
+      const authoredUrl = node.url;
+      if (
+        options.activeMarkdownLink &&
+        authoredUrl === options.activeMarkdownLink
+      ) {
+        node.data = {
+          ...node.data,
+          hProperties: {
+            ...(node.data?.hProperties ?? {}),
+            className: ['wiki-link-active'],
+          },
+        };
+      }
+      if (options.rewriteMarkdownLink) {
+        node.url = options.rewriteMarkdownLink(authoredUrl);
+      }
     });
   }
 
