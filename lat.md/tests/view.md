@@ -15,6 +15,10 @@ The loopback server exposes the visible Markdown file index, redirects its root 
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their authored destinations and fragments.
 
+## Exposes code-mention frontmatter as metadata
+
+Documents expose [[markdown#Frontmatter#require-code-mention]] separately from rendered HTML so the browser can badge files whose leaf sections require code references.
+
 ## Resolves Markdown wiki links but leaves source links as text
 
 Wiki links that resolve to Markdown sections become document anchors with aliases and heading fragments. Unaliased links mute context through the final `#`; source-code and unresolved targets retain their authored text.

@@ -168,11 +168,30 @@ a {
   padding: 46px clamp(28px, 6vw, 82px) 100px;
 }
 
-.document-path {
+.document-metadata {
+  display: flex;
   margin-bottom: 34px;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.document-path {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
+}
+
+.document-flag {
+  padding: 3px 8px;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  border-radius: 999px;
 }
 
 .markdown {

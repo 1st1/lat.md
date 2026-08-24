@@ -58,8 +58,20 @@ describe('lat view', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.title).toBe('View Project');
+    expect(document.frontmatter.requireCodeMention).toBe(false);
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
+    expect(document.html).not.toContain('require-code-mention');
+  });
+
+  // @lat: [[view#Exposes code-mention frontmatter as metadata]]
+  it('exposes code-mention frontmatter as document metadata', async () => {
+    const response = await fetch(
+      new URL('/api/document?path=guide.md', view.url),
+    );
+    const document = (await response.json()) as ViewDocument;
+
+    expect(document.frontmatter.requireCodeMention).toBe(true);
     expect(document.html).not.toContain('require-code-mention');
   });
 

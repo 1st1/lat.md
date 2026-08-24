@@ -1,3 +1,8 @@
+---
+lat:
+  require-code-mention: true
+---
+
 # Guide
 
 This is the linked guide.

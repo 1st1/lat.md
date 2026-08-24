@@ -7,6 +7,9 @@ export type ViewDocument = {
   path: string;
   title: string;
   html: string;
+  frontmatter: {
+    requireCodeMention: boolean;
+  };
 };
 
 export type ViewError = {

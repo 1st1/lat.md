@@ -152,7 +152,19 @@ export function App() {
       </aside>
 
       <main className="main">
-        {document && <div className="document-path">{document.path}</div>}
+        {document && (
+          <div className="document-metadata">
+            <div className="document-path">{document.path}</div>
+            {document.frontmatter.requireCodeMention && (
+              <div
+                className="document-flag"
+                title="Every leaf section must have an @lat code reference"
+              >
+                Code mentions required
+              </div>
+            )}
+          </div>
+        )}
         {error ? (
           <div className="state error" role="alert">
             <strong>Could not open this document</strong>

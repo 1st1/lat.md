@@ -13,6 +13,7 @@ import {
   flattenSections,
   listLatticeFiles,
   loadAllSections,
+  parseFrontmatter,
   resolveRef,
 } from '../lattice.js';
 import { toPosix } from '../walk.js';
@@ -121,5 +122,12 @@ export async function getViewDocument(
     requestedPath,
     resolveWikiLink,
   );
-  return { path: requestedPath, ...rendered };
+  return {
+    path: requestedPath,
+    ...rendered,
+    frontmatter: {
+      requireCodeMention:
+        parseFrontmatter(markdown).requireCodeMention === true,
+    },
+  };
 }

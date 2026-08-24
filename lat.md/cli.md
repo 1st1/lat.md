@@ -57,6 +57,8 @@ Ordinary relative Markdown links navigate within `/docs/` and preserve heading f
 
 Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
 
+YAML stays out of the rendered body. When [[markdown#Frontmatter#require-code-mention]] is `true`, the browser exposes it as document metadata and shows a `Code mentions required` badge beside the file path.
+
 For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.
 
 Search, graph visualization, Git diffs, and rendered source-code links are outside this slice.
