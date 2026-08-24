@@ -220,7 +220,6 @@ export function App() {
         >
           lat<span>.md</span>
         </a>
-        <div className="sidebar-label">Documents</div>
         <nav aria-label="Markdown files">
           {index && (
             <FileTree

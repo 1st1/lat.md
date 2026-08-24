@@ -329,8 +329,14 @@ describe('lat view', () => {
         'guides/setup.md',
         'guides/guides.md',
         'api.md',
+        'chapter10.md',
+        'Chapter2.md',
       ]),
     ).toEqual([
+      { kind: 'file', name: 'lat.md', path: 'lat.md' },
+      { kind: 'file', name: 'api.md', path: 'api.md' },
+      { kind: 'file', name: 'Chapter2.md', path: 'Chapter2.md' },
+      { kind: 'file', name: 'chapter10.md', path: 'chapter10.md' },
       {
         kind: 'directory',
         name: 'guides',
@@ -340,8 +346,6 @@ describe('lat view', () => {
           { kind: 'file', name: 'setup.md', path: 'guides/setup.md' },
         ],
       },
-      { kind: 'file', name: 'api.md', path: 'api.md' },
-      { kind: 'file', name: 'lat.md', path: 'lat.md' },
     ]);
   });
 

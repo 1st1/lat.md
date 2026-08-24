@@ -20,11 +20,25 @@ type MutableDirectory = {
 
 type MutableNode = MutableDirectory | Extract<FileTreeNode, { kind: 'file' }>;
 
-function sortedChildren(children: Map<string, MutableNode>): FileTreeNode[] {
+const finderCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: 'base',
+});
+
+function sortedChildren(
+  children: Map<string, MutableNode>,
+  pinIndex = false,
+): FileTreeNode[] {
   return [...children.values()]
     .sort((a, b) => {
-      if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
-      return a.name.localeCompare(b.name);
+      if (pinIndex) {
+        const aIsIndex = a.kind === 'file' && a.path === 'lat.md';
+        const bIsIndex = b.kind === 'file' && b.path === 'lat.md';
+        if (aIsIndex !== bIsIndex) return aIsIndex ? -1 : 1;
+      }
+      return (
+        finderCollator.compare(a.name, b.name) || a.name.localeCompare(b.name)
+      );
     })
     .map((node) =>
       node.kind === 'directory'
@@ -62,5 +76,5 @@ export function buildFileTree(files: string[]): FileTreeNode[] {
     children.set(name, { kind: 'file', name, path: file });
   }
 
-  return sortedChildren(root);
+  return sortedChildren(root, true);
 }

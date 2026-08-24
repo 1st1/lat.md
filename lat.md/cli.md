@@ -51,7 +51,9 @@ The React client is compiled by Vite into publishable static assets under `dist/
 
 ### Markdown navigation
 
-The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestor directories open automatically.
+The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestors open automatically.
+
+Root `lat.md` stays first; remaining files and folders use case-insensitive natural name order.
 
 Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; unresolved wiki targets remain authored text.
 

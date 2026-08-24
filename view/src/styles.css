@@ -95,15 +95,6 @@ a {
   color: var(--accent);
 }
 
-.sidebar-label {
-  margin: 0 10px 10px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
 .file-tree {
   min-width: 0;
 }
@@ -817,7 +808,6 @@ a.wiki-link-active {
     margin-bottom: 18px;
   }
 
-  .sidebar-label,
   .sidebar nav {
     display: none;
   }
