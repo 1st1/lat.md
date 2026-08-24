@@ -164,6 +164,9 @@ Currently the only supported field is `require-code-mention` for test spec enfor
 
 Always run `lat check` after editing `lat.md/` files. It validates:
 - All wiki links point to existing sections or source code symbols
+- All relative markdown links point to existing files
+- Full and collapsed reference-style links have definitions
 - All `@lat:` code refs point to existing sections
 - Every section has a leading paragraph (≤250 chars)
 - All `require-code-mention` leaf sections are referenced in code
+- Every `lat.md/` directory has an accurate index

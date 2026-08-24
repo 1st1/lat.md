@@ -61,7 +61,7 @@ my-project/
 
 ```bash
 lat init                        # scaffold a lat.md/ directory
-lat check                       # validate all wiki links and code refs
+lat check                       # run full graph and documentation validation
 lat locate "OAuth Flow"         # find sections by name (exact, fuzzy)
 lat section "auth#OAuth Flow"   # show a section with its links and refs
 lat refs "auth#OAuth Flow"      # find what references a section

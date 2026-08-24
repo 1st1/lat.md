@@ -61,9 +61,22 @@ Core logic in [[src/cli/refs.ts#findRefs]] (returns structured result), used by 
 
 ## check
 
-Validation command group. Runs all checks when invoked without a subcommand.
+Validation command group. Without a subcommand it runs every check against the
+discovered `lat.md/`; an explicit `-- <directory>` suffix validates any
+Markdown directory instead.
 
-Usage: `lat check [md|code-refs|index|sections]`
+Usage: `lat check [md|links|code-refs|index|sections] [-- <directory>]`
+
+The separator is required. It keeps directory names distinct from subcommands:
+`lat check links` runs the relative-link subcommand against the discovered
+`lat.md/`, while `lat check -- links` runs every validator against a directory
+named `links`. Exactly one directory must follow `--`.
+
+Every subcommand supports the same suffix, such as
+`lat check code-refs -- docs`. For explicit directories, section ids remain
+relative to the containing project root and code references are scanned from
+that root. The full check skips the `lat init` version warning because the
+directory is not required to have lat setup metadata.
 
 Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
 
@@ -71,7 +84,11 @@ Implementation: [[src/cli/check.ts]]
 
 ### md
 
-Validate that all [[parser#Wiki Links]] in `lat.md` markdown files point to existing sections.
+Validate that all [[parser#Wiki Links]] in the checked markdown files point to existing sections.
+
+### links
+
+Validate that ordinary markdown links in the checked files point to existing files, Markdown fragments use GitHub heading ids, and full or collapsed reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
 
 ### code-refs
 
@@ -97,7 +114,7 @@ Each index file must contain a bullet list covering every visible file and subdi
 
 Four checks:
 
-1. **Non-markdown files** — any file without a `.md` extension is flagged as an error (only markdown belongs in `lat.md/`)
+1. **Non-markdown files** — any file without a `.md` extension is flagged as an error (only markdown belongs in the checked directory)
 2. **Missing index file** — errors with a ready-to-copy bullet list snippet
 3. **Missing entries** — index file exists but doesn't list all visible entries
 4. **Stale entries** — index file lists an entry that doesn't exist on disk
@@ -357,7 +374,9 @@ All embedding generation is isolated in the `@lat.md/embed` package, exposed thr
 
 ### Storage
 
-Uses `@libsql/client` (Turso's libsql) in local file mode — pure JS/WASM, no native addons. Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
+Uses `@libsql/client` in local file mode. Under Node, file URLs load the native `libsql` platform binding, so database handles follow native OS lifetime and locking rules.
+
+Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries.
 
 Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the embedding model + dimensions the index was built with ([[src/search/db.ts#getStoredModel]], e.g. `local:minilm-l6-v2:384` or `openai:1536`). This record is authoritative for [[cli#search#Backend selection]] — vectors from different models are not comparable, so a model change never silently rebuilds; [[cli#reindex]] drops (via [[src/search/db.ts#dropSections]]) and rebuilds explicitly.
 

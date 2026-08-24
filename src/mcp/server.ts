@@ -75,7 +75,7 @@ export async function startMcpServer(): Promise<void> {
 
   server.tool(
     'lat_check',
-    'Validate all wiki links, code references, and directory indexes in lat.md',
+    'Run full lat.md validation: links, code references, indexes, and section structure',
     {},
     async () => toMcp(await checkAllCommand(ctx)),
   );

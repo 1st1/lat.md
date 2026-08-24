@@ -27,6 +27,10 @@ When two directories contain a file with the same stem, a `@lat:` code comment u
 
 When a file stem is unique in the vault (e.g. only one `setup.md` exists, under `guides/`), a wiki link using the short name `[[setup#Install]]` in a markdown file passes `check md` without errors.
 
+## Wiki links accept literal and GitHub headings
+
+`lat check md` accepts both `[[file#Some Section!]]` and `[[file#some-section]]`, resolving both to the same canonical literal-heading section id.
+
 ## Short ref passes check code-refs
 
 When a file stem is unique in the vault, a `@lat:` code comment using the short name (e.g. `// @lat: [[setup#Configure]]`) passes `check code-refs` without errors.

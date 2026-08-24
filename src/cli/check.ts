@@ -1,20 +1,22 @@
 import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { basename, dirname, extname, join, relative } from 'node:path';
+import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import {
   listLatticeFiles,
   loadAllSections,
+  extractLinks,
   extractRefs,
   flattenSections,
   parseFrontmatter,
   parseSections,
   buildFileIndex,
+  buildSectionSlugIndex,
   resolveRef,
   type Section,
 } from '../lattice.js';
 import { scanCodeRefs } from '../code-refs.js';
 import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
-import { walkEntries } from '../walk.js';
+import { toPosix, walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
 
@@ -136,14 +138,17 @@ async function tryResolveSourceRef(
   }
 }
 
-export async function checkMd(latticeDir: string): Promise<CheckResult> {
+export async function checkMd(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckResult> {
   clearSymbolCache();
-  const projectRoot = dirname(latticeDir);
   const files = await listLatticeFiles(latticeDir);
-  const allSections = await loadAllSections(latticeDir);
+  const allSections = await loadAllSections(latticeDir, projectRoot);
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const slugIndex = buildSectionSlugIndex(allSections);
 
   const errors: CheckError[] = [];
 
@@ -157,6 +162,7 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
         ref.target,
         sectionIds,
         fileIndex,
+        slugIndex,
       );
       if (ambiguous) {
         errors.push({
@@ -183,12 +189,152 @@ export async function checkMd(latticeDir: string): Promise<CheckResult> {
   return { errors, files: countByExt(files) };
 }
 
-export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
-  const projectRoot = dirname(latticeDir);
-  const allSections = await loadAllSections(latticeDir);
+// --- Relative link validation ---
+
+type LocalLinkTarget =
+  | {
+      kind: 'target';
+      /** Decoded on-disk path, or null for a fragment in the current file. */
+      path: string | null;
+      /** Decoded fragment without `#`, or null when none was authored. */
+      fragment: string | null;
+    }
+  | { kind: 'invalid-backslash' };
+
+function decodeLinkPart(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** Parse a local markdown destination without confusing escaped #/? in paths. */
+function localLinkTarget(url: string): LocalLinkTarget | null {
+  const u = url.trim();
+  if (u.startsWith('/')) return null;
+  const windowsDrivePath = /^[a-zA-Z]:\\/.test(u);
+  if (!windowsDrivePath && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) {
+    return null;
+  }
+
+  // Split before decoding: `%23` and `%3F` decode to `#` and `?`, which would
+  // then truncate a filename that legitimately contains them.
+  const queryAt = u.indexOf('?');
+  const fragmentAt = u.indexOf('#');
+  const pathEnd = Math.min(
+    queryAt === -1 ? u.length : queryAt,
+    fragmentAt === -1 ? u.length : fragmentAt,
+  );
+  const rawPath = u.slice(0, pathEnd);
+  const path = rawPath === '' ? null : decodeLinkPart(rawPath);
+  const fragment =
+    fragmentAt === -1 ? null : decodeLinkPart(u.slice(fragmentAt + 1));
+
+  if (rawPath === '' && fragment === null) return null;
+  if (path?.includes('\\')) return { kind: 'invalid-backslash' };
+  return {
+    kind: 'target',
+    path,
+    fragment,
+  };
+}
+
+export async function checkLinks(latticeDir: string): Promise<CheckError[]> {
+  const files = await listLatticeFiles(latticeDir);
+  const errors: CheckError[] = [];
+  const headingCache = new Map<string, Set<string>>();
+
+  const headingsFor = async (file: string): Promise<Set<string>> => {
+    const cached = headingCache.get(file);
+    if (cached) return cached;
+
+    const content = await readFile(file, 'utf-8');
+    const headings = new Set(
+      flattenSections(parseSections(file, content)).map(
+        (section) => section.githubSlug!,
+      ),
+    );
+    headingCache.set(file, headings);
+    return headings;
+  };
+
+  for (const file of files) {
+    const content = await readFile(file, 'utf-8');
+    const relPath = toPosix(relative(process.cwd(), file));
+
+    for (const link of extractLinks(content)) {
+      if ('identifier' in link) {
+        const kind = link.kind === 'imageReference' ? 'image' : 'link';
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.identifier,
+          message: `undefined ${kind} reference (${link.source}) — definition "[${link.identifier}]" not found`,
+        });
+        continue;
+      }
+
+      const target = localLinkTarget(link.url);
+      if (target === null) continue;
+
+      if (target.kind === 'invalid-backslash') {
+        const kind = link.kind === 'image' ? 'image' : 'link';
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.url,
+          message:
+            `invalid ${kind} (${link.url}) — backslashes are not path ` +
+            'separators in Markdown; use "/" instead',
+        });
+        continue;
+      }
+
+      const abs = target.path ? resolve(dirname(file), target.path) : file;
+      if (!existsSync(abs)) {
+        const kind = link.kind === 'image' ? 'image' : 'link';
+        const shown = toPosix(relative(process.cwd(), abs));
+        errors.push({
+          file: relPath,
+          line: link.line,
+          target: link.url,
+          message: `broken ${kind} (${link.url}) — file "${shown}" not found`,
+        });
+        continue;
+      }
+
+      if (
+        target.fragment &&
+        extname(abs).toLowerCase() === '.md' &&
+        link.kind !== 'image'
+      ) {
+        const headings = await headingsFor(abs);
+        if (!headings.has(target.fragment)) {
+          const shown = toPosix(relative(process.cwd(), abs));
+          errors.push({
+            file: relPath,
+            line: link.line,
+            target: link.url,
+            message: `broken link (${link.url}) — heading "#${target.fragment}" not found in "${shown}"`,
+          });
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
+export async function checkCodeRefs(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckResult> {
+  const allSections = await loadAllSections(latticeDir, projectRoot);
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const slugIndex = buildSectionSlugIndex(allSections);
 
   const scan = await scanCodeRefs(projectRoot);
   const errors: CheckError[] = [];
@@ -199,6 +345,7 @@ export async function checkCodeRefs(latticeDir: string): Promise<CheckResult> {
       ref.target,
       sectionIds,
       fileIndex,
+      slugIndex,
     );
     mentionedSections.add(resolved.toLowerCase());
     const displayPath = relative(process.cwd(), join(projectRoot, ref.file));
@@ -292,14 +439,14 @@ export async function checkIndex(latticeDir: string): Promise<IndexError[]> {
   const errors: IndexError[] = [];
   const allPaths = await walkEntries(latticeDir);
 
-  // Flag non-.md files — only markdown belongs in lat.md/
+  // Flag non-.md files — only markdown belongs in the checked directory.
   for (const p of allPaths) {
     const name = p.includes('/') ? p.slice(p.lastIndexOf('/') + 1) : p;
     if (!name.endsWith('.md')) {
       const relDir = basename(latticeDir) + '/';
       errors.push({
         dir: relDir,
-        message: `"${p}" is not a .md file — only markdown files belong in lat.md/`,
+        message: `"${p}" is not a .md file — only markdown files belong in the checked directory`,
       });
     }
   }
@@ -396,8 +543,10 @@ function bodyTextLength(body: string): number {
   return body.replace(/\[\[[^\]]*\]\]/g, '').length;
 }
 
-export async function checkSections(latticeDir: string): Promise<CheckError[]> {
-  const projectRoot = dirname(latticeDir);
+export async function checkSections(
+  latticeDir: string,
+  projectRoot = dirname(latticeDir),
+): Promise<CheckError[]> {
   const files = await listLatticeFiles(latticeDir);
   const errors: CheckError[] = [];
 
@@ -485,13 +634,14 @@ function formatErrorCount(count: number, s: Styler): string {
 
 export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   const startTime = Date.now();
-  const md = await checkMd(ctx.latDir);
-  const code = await checkCodeRefs(ctx.latDir);
+  const md = await checkMd(ctx.latDir, ctx.projectRoot);
+  const linkErrors = await checkLinks(ctx.latDir);
+  const code = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
   const indexErrors = await checkIndex(ctx.latDir);
-  const sectionErrors = await checkSections(ctx.latDir);
+  const sectionErrors = await checkSections(ctx.latDir, ctx.projectRoot);
   const elapsed = Date.now() - startTime;
 
-  const allErrors = [...md.errors, ...code.errors];
+  const allErrors = [...md.errors, ...linkErrors, ...code.errors];
   const allFiles: FileStats = { ...md.files };
   for (const [ext, n] of Object.entries(code.files)) {
     allFiles[ext] = (allFiles[ext] || 0) + n;
@@ -505,27 +655,29 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   ];
 
   // Init version warning first — user should fix setup before addressing errors
-  const storedVersion = readInitVersion(ctx.latDir);
-  if (storedVersion === null) {
-    lines.push(
-      '',
-      s.yellow('Warning:') +
-        ' No init version recorded — run ' +
-        s.cyan('lat init') +
-        ' to set up agent hooks and configuration.',
-    );
-  } else if (storedVersion < INIT_VERSION) {
-    lines.push(
-      '',
-      s.yellow('Warning:') +
-        ' Your setup is outdated (v' +
-        storedVersion +
-        ' → v' +
-        INIT_VERSION +
-        '). Re-run ' +
-        s.cyan('lat init') +
-        ' to update agent hooks and configuration.',
-    );
+  if (!ctx.headless) {
+    const storedVersion = readInitVersion(ctx.latDir);
+    if (storedVersion === null) {
+      lines.push(
+        '',
+        s.yellow('Warning:') +
+          ' No init version recorded — run ' +
+          s.cyan('lat init') +
+          ' to set up agent hooks and configuration.',
+      );
+    } else if (storedVersion < INIT_VERSION) {
+      lines.push(
+        '',
+        s.yellow('Warning:') +
+          ' Your setup is outdated (v' +
+          storedVersion +
+          ' → v' +
+          INIT_VERSION +
+          '). Re-run ' +
+          s.cyan('lat init') +
+          ' to update agent hooks and configuration.',
+      );
+    }
   }
 
   lines.push(...formatCheckErrors(allErrors, s));
@@ -559,7 +711,7 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
 }
 
 export async function checkMdCommand(ctx: CmdContext): Promise<CmdResult> {
-  const { errors, files } = await checkMd(ctx.latDir);
+  const { errors, files } = await checkMd(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [formatFileStats(files, s)];
 
@@ -574,10 +726,26 @@ export async function checkMdCommand(ctx: CmdContext): Promise<CmdResult> {
   return { output: lines.join('\n') };
 }
 
+export async function checkLinksCommand(ctx: CmdContext): Promise<CmdResult> {
+  const errors = await checkLinks(ctx.latDir);
+  const s = ctx.styler;
+  const lines: string[] = [];
+
+  lines.push(...formatCheckErrors(errors, s));
+
+  if (errors.length > 0) {
+    lines.push(formatErrorCount(errors.length, s));
+    return { output: lines.join('\n'), isError: true };
+  }
+
+  lines.push(s.green('links: All relative links resolve'));
+  return { output: lines.join('\n') };
+}
+
 export async function checkCodeRefsCommand(
   ctx: CmdContext,
 ): Promise<CmdResult> {
-  const { errors, files } = await checkCodeRefs(ctx.latDir);
+  const { errors, files } = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [formatFileStats(files, s)];
 
@@ -611,7 +779,7 @@ export async function checkIndexCommand(ctx: CmdContext): Promise<CmdResult> {
 export async function checkSectionsCommand(
   ctx: CmdContext,
 ): Promise<CmdResult> {
-  const errors = await checkSections(ctx.latDir);
+  const errors = await checkSections(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
   const lines: string[] = [];
 

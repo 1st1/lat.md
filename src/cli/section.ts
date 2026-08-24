@@ -6,6 +6,7 @@ import {
   flattenSections,
   extractRefs,
   buildFileIndex,
+  buildSectionSlugIndex,
   resolveRef,
   listLatticeFiles,
   type Section,
@@ -85,6 +86,7 @@ export async function getSection(
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
+  const slugIndex = buildSectionSlugIndex(allSections);
   const sectionRefs = extractRefs(absPath, fileContent, ctx.projectRoot);
   const sectionId = section.id.toLowerCase();
 
@@ -146,7 +148,12 @@ export async function getSection(
       }
       continue;
     }
-    const { resolved } = resolveRef(ref.target, sectionIds, fileIndex);
+    const { resolved } = resolveRef(
+      ref.target,
+      sectionIds,
+      fileIndex,
+      slugIndex,
+    );
     const resolvedLower = resolved.toLowerCase();
     if (seen.has(resolvedLower)) continue;
     seen.add(resolvedLower);
@@ -167,7 +174,12 @@ export async function getSection(
     const fc = await readFile(file, 'utf-8');
     const fileRefs = extractRefs(file, fc, ctx.projectRoot);
     for (const ref of fileRefs) {
-      const { resolved } = resolveRef(ref.target, sectionIds, fileIndex);
+      const { resolved } = resolveRef(
+        ref.target,
+        sectionIds,
+        fileIndex,
+        slugIndex,
+      );
       if (
         resolved.toLowerCase() === sectionId &&
         ref.fromSection.toLowerCase() !== sectionId
@@ -193,6 +205,7 @@ export async function getSection(
       ref.target,
       sectionIds,
       fileIndex,
+      slugIndex,
     );
     if (codeResolved.toLowerCase() === sectionId) {
       const absFile = join(ctx.projectRoot, ref.file);

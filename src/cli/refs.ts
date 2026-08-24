@@ -8,6 +8,7 @@ import {
   extractRefs,
   flattenSections,
   buildFileIndex,
+  buildSectionSlugIndex,
   resolveRef,
   type Section,
   type SectionMatch,
@@ -194,7 +195,8 @@ export async function findRefs(
   const flat = flattenSections(allSections);
   const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
   const fileIndex = buildFileIndex(allSections);
-  const { resolved } = resolveRef(query, sectionIds, fileIndex);
+  const slugIndex = buildSectionSlugIndex(allSections);
+  const { resolved } = resolveRef(query, sectionIds, fileIndex, slugIndex);
   const q = resolved.toLowerCase();
   let exactMatch = flat.find((s) => s.id.toLowerCase() === q);
 
@@ -232,6 +234,7 @@ export async function findRefs(
           ref.target,
           sectionIds,
           fileIndex,
+          slugIndex,
         );
         if (refResolved.toLowerCase() === targetId) {
           matchingFromSections.add(ref.fromSection.toLowerCase());
@@ -256,6 +259,7 @@ export async function findRefs(
         ref.target,
         sectionIds,
         fileIndex,
+        slugIndex,
       );
       if (codeResolved.toLowerCase() === targetId) {
         const displayPath = relative(
