@@ -55,6 +55,8 @@ The browser groups discovered Markdown files into an expandable directory tree a
 
 Root `lat.md` and each nested `name/name.md` directory index stay first; remaining files and folders use case-insensitive natural name order. Clicking a directory label expands it and renders its index, even when that index is already active.
 
+Sidebar rows keep a two-pixel vertical gap and compact padding so adjacent hover and active backgrounds remain visually distinct without loosening the tree.
+
 A magnifying-glass link beside the brand opens `/search`. The client debounces input before requesting ranked embedding matches; the server lazily updates the vector index once, then reuses it for read-only queries. Results link to exact section anchors.
 
 The latest input is stored in the search URL with `replaceState`, so navigating Back from a result restores and reruns that query without making every keystroke a separate history entry.

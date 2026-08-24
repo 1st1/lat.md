@@ -127,12 +127,14 @@ a {
 }
 
 .file-tree {
+  display: grid;
   min-width: 0;
+  gap: 2px;
 }
 
 .tree-directory > summary {
   display: flex;
-  padding: 8px 10px;
+  padding: 7px 10px;
   align-items: center;
   gap: 7px;
   color: var(--muted);
@@ -175,14 +177,20 @@ a {
 }
 
 .tree-children {
+  display: grid;
   margin-left: 15px;
   padding-left: 7px;
+  gap: 2px;
   border-left: 1px solid var(--panel-border);
+}
+
+.tree-directory[open] > .tree-children {
+  margin-top: 2px;
 }
 
 .document-link {
   display: block;
-  padding: 8px 10px;
+  padding: 7px 10px;
   overflow: hidden;
   color: var(--muted);
   font-size: 13px;
