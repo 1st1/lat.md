@@ -47,6 +47,34 @@ export function sourceSymbol(hash: string): string {
   }
 }
 
+export function searchQuery(search: string): string {
+  return new URLSearchParams(search).get('q') ?? '';
+}
+
+export function searchUrl(query: string): string {
+  if (!query) return '/search';
+  const search = new URLSearchParams({ q: query });
+  return `/search?${search}`;
+}
+
+const SEARCH_RETURN_KEY = 'latSearchReturnTo';
+
+export function searchHistoryState(returnTo: string): Record<string, string> {
+  return { [SEARCH_RETURN_KEY]: returnTo };
+}
+
+export function searchReturnTo(state: unknown): string | null {
+  if (!state || typeof state !== 'object') return null;
+  const returnTo = (state as Record<string, unknown>)[SEARCH_RETURN_KEY];
+  return typeof returnTo === 'string' && returnTo.startsWith('/')
+    ? returnTo
+    : null;
+}
+
+export function searchEscapeAction(query: string): 'clear' | 'close' {
+  return query ? 'clear' : 'close';
+}
+
 /** Position a newly rendered document without leaving its content in motion. */
 export function scrollToDocumentLocation(
   hash: string,

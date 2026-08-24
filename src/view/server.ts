@@ -11,6 +11,7 @@ import {
   ViewDocumentNotFoundError,
   ViewSourceNotFoundError,
 } from './repository.js';
+import { createViewSearch, type ViewSearch } from './search.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
@@ -25,6 +26,7 @@ export type ViewServerOptions = {
   clientDir?: string;
   host?: string;
   port?: number;
+  search?: ViewSearch;
 };
 
 function documentUrl(path: string): string {
@@ -128,6 +130,7 @@ export async function startViewServer(
   const host = options.host ?? DEFAULT_HOST;
   const clientDir = options.clientDir ?? defaultClientDir;
   const index = await getViewIndex(ctx.latDir);
+  const search = options.search ?? createViewSearch(ctx.latDir);
 
   const server = createServer((req, res) => {
     void (async () => {
@@ -166,6 +169,21 @@ export async function startViewServer(
             headOnly,
           );
         }
+        return;
+      }
+
+      if (url.pathname === '/api/search') {
+        const query = (url.searchParams.get('query') ?? '').trim();
+        if (query.length > 500) {
+          sendJson(
+            res,
+            400,
+            { error: 'Search query is too long' } satisfies ViewError,
+            headOnly,
+          );
+          return;
+        }
+        sendJson(res, 200, await search(query), headOnly);
         return;
       }
 
@@ -220,6 +238,7 @@ export async function startViewServer(
       }
 
       if (
+        url.pathname === '/search' ||
         url.pathname.startsWith('/docs/') ||
         url.pathname.startsWith('/code/')
       ) {

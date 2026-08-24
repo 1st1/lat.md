@@ -55,6 +55,12 @@ The browser groups discovered Markdown files into an expandable directory tree a
 
 Root `lat.md` stays first; remaining files and folders use case-insensitive natural name order.
 
+A magnifying-glass link beside the brand opens `/search`. The client debounces input before requesting ranked embedding matches; the server lazily updates the vector index once, then reuses it for read-only queries. Results link to exact section anchors.
+
+The latest input is stored in the search URL with `replaceState`, so navigating Back from a result restores and reruns that query without making every keystroke a separate history entry.
+
+Search history records the page that opened it. Escape first clears non-empty input; from an empty input it dismisses search back to that exact page. A directly loaded search URL falls back to the vault index.
+
 Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; unresolved wiki targets remain authored text.
 
 Referenced headings carry a compact count derived from incoming ordinary Markdown links, wiki links, and `@lat:` code mentions. Activating it opens a context panel with each distinct referencing paragraph or source line; Markdown context keeps its links interactive, and code entries navigate to the highlighted line.

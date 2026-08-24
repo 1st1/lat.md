@@ -9,10 +9,19 @@ import { highlightSource } from '../src/view/highlight.js';
 import type {
   ViewDocument,
   ViewIndex,
+  ViewSearchResponse,
   ViewSourceDocument,
 } from '../src/view/protocol.js';
+import { createViewSearch } from '../src/view/search.js';
 import { buildFileTree } from '../view/src/file-tree.js';
-import { scrollToDocumentLocation } from '../view/src/navigation.js';
+import {
+  scrollToDocumentLocation,
+  searchEscapeAction,
+  searchHistoryState,
+  searchQuery,
+  searchReturnTo,
+  searchUrl,
+} from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
   captureScrollAnchor,
@@ -33,11 +42,35 @@ function testContext(): CmdContext {
 describe('lat view', () => {
   let clientDir: string;
   let view: ViewServer;
+  const runIndex = vi.fn(async () => {});
+  const runSearch = vi.fn(async (_latDir: string, query: string) => ({
+    query,
+    matches: [
+      {
+        reason: 'semantic match',
+        section: {
+          id: 'lat.md/guide#Guide#Details',
+          heading: 'Details',
+          depth: 2,
+          file: 'lat.md/guide',
+          filePath: 'lat.md/guide.md',
+          children: [],
+          startLine: 12,
+          endLine: 16,
+          firstParagraph: 'Relative Markdown links preserve heading fragments.',
+          githubSlug: 'details',
+        },
+      },
+    ],
+  }));
 
   beforeAll(async () => {
     clientDir = mkdtempSync(join(tmpdir(), 'lat-view-client-'));
     writeFileSync(join(clientDir, 'index.html'), '<main>lat view shell</main>');
-    view = await startViewServer(testContext(), { clientDir });
+    view = await startViewServer(testContext(), {
+      clientDir,
+      search: createViewSearch(latDir, { runIndex, runSearch }),
+    });
   });
 
   afterAll(async () => {
@@ -65,6 +98,55 @@ describe('lat view', () => {
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);
     expect(await sourceShell.text()).toContain('lat view shell');
+
+    const searchShell = await fetch(new URL('/search', view.url));
+    expect(searchShell.status).toBe(200);
+    expect(await searchShell.text()).toContain('lat view shell');
+  });
+
+  // @lat: [[view#Searches sections with embeddings]]
+  it('serves lazily indexed semantic section search', async () => {
+    expect(searchUrl('runner details')).toBe('/search?q=runner+details');
+    expect(searchQuery('?q=runner+details')).toBe('runner details');
+    expect(searchUrl('')).toBe('/search');
+    expect(searchReturnTo(searchHistoryState('/docs/guide.md#details'))).toBe(
+      '/docs/guide.md#details',
+    );
+    expect(searchReturnTo(null)).toBeNull();
+    expect(searchEscapeAction('runner details')).toBe('clear');
+    expect(searchEscapeAction('')).toBe('close');
+
+    const emptyResponse = await fetch(new URL('/api/search?query=', view.url));
+    expect((await emptyResponse.json()) as ViewSearchResponse).toEqual({
+      query: '',
+      results: [],
+    });
+    expect(runIndex).not.toHaveBeenCalled();
+
+    const response = await fetch(
+      new URL('/api/search?query=runner%20details', view.url),
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()) as ViewSearchResponse).toEqual({
+      query: 'runner details',
+      results: [
+        {
+          sectionId: 'lat.md/guide#Guide#Details',
+          title: 'Details',
+          path: 'guide.md',
+          breadcrumbs: ['guide', 'Guide', 'Details'],
+          description: 'Relative Markdown links preserve heading fragments.',
+          url: '/docs/guide.md#details',
+        },
+      ],
+    });
+    expect(runIndex).toHaveBeenCalledTimes(1);
+    expect(runSearch).toHaveBeenCalledWith(latDir, 'runner details', 10, {
+      buildIndex: false,
+    });
+
+    await fetch(new URL('/api/search?query=another', view.url));
+    expect(runIndex).toHaveBeenCalledTimes(1);
   });
 
   // @lat: [[view#Renders Markdown with navigable local links]]

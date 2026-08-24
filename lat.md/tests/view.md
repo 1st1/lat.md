@@ -15,6 +15,14 @@ The loopback server exposes the visible Markdown file index, redirects its root 
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their authored destinations and fragments.
 
+## Searches sections with embeddings
+
+The separate search route debounces input, lazily prepares the existing embedding index once, and renders ranked section summaries that navigate to their document anchors.
+
+The latest query replaces the current `/search` URL so opening a result and navigating Back restores the input and reruns its search without adding history entries for every keystroke.
+
+Search entries remember the in-app page that opened them. Escape first clears a non-empty query; on an empty input it dismisses search through history to restore that page. Direct search URLs fall back to the vault index.
+
 ## Exposes code-mention frontmatter as metadata
 
 Documents expose [[markdown#Frontmatter#require-code-mention]] separately from rendered HTML so the browser can badge files whose leaf sections require code references.

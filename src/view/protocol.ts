@@ -3,6 +3,20 @@ export type ViewIndex = {
   entry: string;
 };
 
+export type ViewSearchResult = {
+  sectionId: string;
+  title: string;
+  path: string;
+  breadcrumbs: string[];
+  description: string;
+  url: string;
+};
+
+export type ViewSearchResponse = {
+  query: string;
+  results: ViewSearchResult[];
+};
+
 export type ViewDocument = {
   path: string;
   title: string;

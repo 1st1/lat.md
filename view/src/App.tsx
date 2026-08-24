@@ -9,14 +9,18 @@ import { FileTree } from './FileTree';
 import {
   documentPath,
   documentUrl,
+  searchHistoryState,
+  searchReturnTo,
   scrollToDocumentLocation,
   sourcePath,
   sourceSymbol,
 } from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
+import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
 
 type ViewRoute =
+  | { kind: 'search' }
   | { kind: 'markdown'; path: string }
   | {
       kind: 'source';
@@ -28,6 +32,7 @@ type ViewRoute =
     };
 
 type ViewPage =
+  | { kind: 'search' }
   | { kind: 'markdown'; document: ViewDocument }
   | { kind: 'source'; source: ViewSourceDocument };
 
@@ -53,6 +58,7 @@ export function App() {
   const [page, setPage] = useState<ViewPage | null>(null);
   const [error, setError] = useState('');
   const route = useMemo<ViewRoute | null>(() => {
+    if (window.location.pathname === '/search') return { kind: 'search' };
     const markdown = documentPath(window.location.pathname);
     if (markdown) return { kind: 'markdown', path: markdown };
     const source = sourcePath(window.location.pathname);
@@ -106,6 +112,12 @@ export function App() {
       return;
     }
 
+    if (route.kind === 'search') {
+      setError('');
+      setPage({ kind: 'search' });
+      return;
+    }
+
     const controller = new AbortController();
     setError('');
     setPage(null);
@@ -128,10 +140,16 @@ export function App() {
   useEffect(() => {
     if (!page) return;
     window.document.title =
-      page.kind === 'markdown'
-        ? `${page.document.title} · lat.md`
-        : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
+      page.kind === 'search'
+        ? 'Search · lat.md'
+        : page.kind === 'markdown'
+          ? `${page.document.title} · lat.md`
+          : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
     requestAnimationFrame(() => {
+      if (page.kind === 'search') {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        return;
+      }
       if (page.kind === 'markdown') {
         scrollToDocumentLocation(window.location.hash, {
           getElementById: (id) => window.document.getElementById(id),
@@ -151,7 +169,24 @@ export function App() {
   }, [page, location]);
 
   function navigate(url: URL): void {
-    window.history.pushState(null, '', url);
+    const state =
+      url.pathname === '/search' && window.location.pathname !== '/search'
+        ? searchHistoryState(currentLocation())
+        : null;
+    window.history.pushState(state, '', url);
+    setLocation(currentLocation());
+  }
+
+  function closeSearch(): void {
+    if (searchReturnTo(window.history.state)) {
+      window.history.back();
+      return;
+    }
+    if (!index) {
+      window.location.assign('/');
+      return;
+    }
+    window.history.replaceState(null, '', documentUrl(index.entry));
     setLocation(currentLocation());
   }
 
@@ -213,13 +248,28 @@ export function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a
-          className="brand"
-          href={index ? documentUrl(index.entry) : '/'}
-          onClick={index ? onNavigationClick : undefined}
-        >
-          lat<span>.md</span>
-        </a>
+        <div className="sidebar-header">
+          <a
+            className="brand"
+            href={index ? documentUrl(index.entry) : '/'}
+            onClick={index ? onNavigationClick : undefined}
+          >
+            lat<span>.md</span>
+          </a>
+          <a
+            aria-current={route?.kind === 'search' ? 'page' : undefined}
+            aria-label="Search"
+            className="sidebar-search"
+            href="/search"
+            onClick={onNavigationClick}
+            title="Search"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </a>
+        </div>
         <nav aria-label="Markdown files">
           {index && (
             <FileTree
@@ -250,6 +300,8 @@ export function App() {
             <strong>Could not open this document</strong>
             <span>{error}</span>
           </div>
+        ) : page?.kind === 'search' ? (
+          <SearchPage onClose={closeSearch} onNavigate={onNavigationClick} />
         ) : page?.kind === 'markdown' ? (
           <article
             className="markdown"
