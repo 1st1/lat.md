@@ -6,6 +6,8 @@ Development workflow, tooling, and conventions for the lat.md project.
 
 Local development requires Git, Node.js 22, pnpm through Corepack, and Rust with Cargo installed through [rustup](https://rustup.rs/).
 
+Rust compilation also requires the platform's native linker and build tools; rustup will prompt for these where needed.
+
 The required pnpm version comes exclusively from `packageManager` in the root `package.json`. The root `rust-toolchain.toml` selects stable Rust and the `wasm32-unknown-unknown` target.
 
 From the repository root, bootstrap and verify the full project with:
