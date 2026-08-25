@@ -75,7 +75,7 @@ function backReferenceMarkup(
   const count = section.references.length;
   const panelId = `section-back-references-${index}`;
   const button = `<button class="section-back-reference-toggle" type="button" aria-controls="${panelId}" aria-expanded="false" data-section-back-references>
-    <span>References</span><span class="section-back-reference-count">${count}</span>
+    <span>Refs</span><span class="section-back-reference-count">${count}</span>
   </button>`;
   const items = section.references
     .map((reference) =>

@@ -571,7 +571,7 @@ a {
   font-weight: 650;
   line-height: 1.3;
   letter-spacing: 0.01em;
-  vertical-align: 0.25em;
+  vertical-align: middle;
   cursor: pointer;
   background: var(--accent-soft);
   border: 0;

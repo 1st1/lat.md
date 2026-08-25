@@ -47,6 +47,8 @@ The `Other references` control sits centered in the lower divider of the context
 
 Every referenced section shows a count that expands into distinct linking Markdown paragraphs, wiki references, and `@lat:` code locations, with rendered context and exact source-line navigation.
 
+The compact `Refs` label stays vertically centered beside its heading at every heading level.
+
 ## Places context within a collapsed source window
 
 Focused source views place reference context directly before the highlighted definition, retain five surrounding lines, and offer controls that reveal code collapsed above or below the window.

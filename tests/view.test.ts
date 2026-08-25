@@ -319,6 +319,7 @@ describe('lat view', () => {
       document.backReferences,
     );
     expect(rendered).toContain('data-section-back-references');
+    expect(rendered).toContain('<span>Refs</span>');
     expect(rendered).toContain('section-back-reference-count">5</span>');
     expect(rendered).toContain('id="section-back-references-1"');
     expect(rendered).toContain('href="/code/src/app.ts?at=5"');
