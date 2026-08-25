@@ -33,7 +33,7 @@ function filePart(id: string): string {
 }
 
 /** Format an ambiguous-ref error as structured markdown-like text. */
-function ambiguousMessage(
+export function ambiguousRefMessage(
   target: string,
   candidates: string[],
   suggested: string | null,
@@ -89,7 +89,7 @@ function isSourcePath(target: string): boolean {
  * Try resolving a wiki link target as a source code reference.
  * Returns null if the reference is valid, or an error message string.
  */
-async function tryResolveSourceRef(
+export async function sourceRefError(
   target: string,
   projectRoot: string,
 ): Promise<string | null> {
@@ -169,11 +169,11 @@ export async function checkMd(
           file: relPath,
           line: ref.line,
           target: ref.target,
-          message: ambiguousMessage(ref.target, ambiguous, suggested),
+          message: ambiguousRefMessage(ref.target, ambiguous, suggested),
         });
       } else if (!sectionIds.has(resolved.toLowerCase())) {
         // Try resolving as a source code reference (e.g. [[src/foo.ts#bar]])
-        const sourceErr = await tryResolveSourceRef(ref.target, projectRoot);
+        const sourceErr = await sourceRefError(ref.target, projectRoot);
         if (sourceErr !== null) {
           errors.push({
             file: relPath,
@@ -354,7 +354,7 @@ export async function checkCodeRefs(
         file: displayPath,
         line: ref.line,
         target: ref.target,
-        message: ambiguousMessage(ref.target, ambiguous, suggested),
+        message: ambiguousRefMessage(ref.target, ambiguous, suggested),
       });
     } else if (!sectionIds.has(resolved.toLowerCase())) {
       errors.push({

@@ -7,4 +7,5 @@ This directory defines the high-level concepts, business logic, and architecture
 - [[markdown]] — Markdown extensions (wiki links, frontmatter) used in lat.md files
 - [[parser]] — Markdown parsing architecture, section tree construction, and ref extraction
 - [[tests]] — High-level test specifications mapped to code via require-code-mention
+- [[view]] — Local browser architecture and test specifications
 - [[website]] — Standalone Next.js marketing site deployed to Vercel
