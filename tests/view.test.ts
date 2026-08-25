@@ -19,6 +19,8 @@ import {
   expandDirectory,
 } from '../view/src/file-tree.js';
 import {
+  historyScrollPosition,
+  historyStateWithScroll,
   scrollToDocumentLocation,
   searchEscapeAction,
   searchHistoryState,
@@ -465,6 +467,20 @@ describe('lat view', () => {
       block: 'start',
     });
     expect(scrollTo).not.toHaveBeenCalled();
+  });
+
+  // @lat: [[view#Restores history scroll positions]]
+  it('preserves scroll positions in navigation history state', () => {
+    const state = historyStateWithScroll(
+      searchHistoryState('/docs/guide.md#details'),
+      { left: 12, top: 480 },
+    );
+
+    expect(searchReturnTo(state)).toBe('/docs/guide.md#details');
+    expect(historyScrollPosition(state)).toEqual({ left: 12, top: 480 });
+    expect(historyScrollPosition({ latScrollPosition: { top: '480' } })).toBe(
+      null,
+    );
   });
 
   // @lat: [[view#Rejects files outside the Markdown vault]]

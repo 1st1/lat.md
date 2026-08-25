@@ -1,10 +1,21 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 import type {
   ViewError,
   ViewSearchResponse,
   ViewSearchResult,
 } from '../../src/view/protocol';
-import { searchEscapeAction, searchQuery, searchUrl } from './navigation';
+import {
+  searchEscapeAction,
+  searchQuery,
+  searchUrl,
+  type ViewScrollPosition,
+} from './navigation';
 
 const SEARCH_DEBOUNCE_MS = 250;
 
@@ -24,9 +35,13 @@ function SearchBreadcrumbs({ result }: { result: ViewSearchResult }) {
 export function SearchPage({
   onClose,
   onNavigate,
+  onScrollRestored,
+  restoreScroll,
 }: {
   onClose: () => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onScrollRestored: () => void;
+  restoreScroll: ViewScrollPosition | null;
 }) {
   const [query, setQuery] = useState(() => searchQuery(window.location.search));
   const [results, setResults] = useState<ViewSearchResult[]>([]);
@@ -38,6 +53,13 @@ export function SearchPage({
   useEffect(() => {
     input.current?.focus();
   }, []);
+
+  useLayoutEffect(() => {
+    if (!restoreScroll) return;
+    if (query.trim() && !searched && !error) return;
+    window.scrollTo({ ...restoreScroll, behavior: 'instant' });
+    onScrollRestored();
+  }, [error, onScrollRestored, query, restoreScroll, searched]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

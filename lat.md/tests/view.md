@@ -69,6 +69,12 @@ Clicking a directory label expands it and renders its `name/name.md` index in th
 
 Fragment links position the newly rendered document without smooth scrolling so text selection and further link clicks work as soon as navigation completes.
 
+## Restores history scroll positions
+
+In-app navigation records the current viewport on its history entry, and Back restores it before revealing the returned content instead of visibly jumping from new-page scroll defaults.
+
+Search results finish loading before their saved viewport is restored.
+
 ## Rejects files outside the Markdown vault
 
 The document API rejects traversal attempts and non-Markdown targets so browser requests cannot read arbitrary project files.

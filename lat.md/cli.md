@@ -73,6 +73,8 @@ Source links carry their enclosing section id and authored line as provenance. T
 
 Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
 
+Before pushing an in-app route, the browser records the current viewport on its history entry. Back restores that position before revealing ready Markdown, source, or asynchronous search content, avoiding a visible top-of-page jump.
+
 YAML stays out of the rendered body. When [[markdown#Frontmatter#require-code-mention]] is `true`, the browser exposes it as document metadata and shows a `Code mentions required` badge beside the file path.
 
 For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.

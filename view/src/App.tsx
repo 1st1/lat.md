@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 import type {
   ViewDocument,
   ViewError,
@@ -9,11 +16,14 @@ import { FileTree } from './FileTree';
 import {
   documentPath,
   documentUrl,
+  historyScrollPosition,
+  historyStateWithScroll,
   searchHistoryState,
   searchReturnTo,
   scrollToDocumentLocation,
   sourcePath,
   sourceSymbol,
+  type ViewScrollPosition,
 } from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
@@ -57,6 +67,10 @@ export function App() {
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
   const [error, setError] = useState('');
+  const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
+    null,
+  );
+  const positionedLocation = useRef<string | null>(null);
   const route = useMemo<ViewRoute | null>(() => {
     if (window.location.pathname === '/search') return { kind: 'search' };
     const markdown = documentPath(window.location.pathname);
@@ -93,7 +107,12 @@ export function App() {
   );
 
   useEffect(() => {
-    const onPopState = () => setLocation(currentLocation());
+    const onPopState = (event: PopStateEvent) => {
+      positionedLocation.current = null;
+      setHistoryScroll(historyScrollPosition(event.state));
+      setPage(null);
+      setLocation(currentLocation());
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
@@ -108,6 +127,7 @@ export function App() {
 
   useEffect(() => {
     if (!route) {
+      setHistoryScroll(null);
       setError('This is not a document URL.');
       return;
     }
@@ -132,7 +152,10 @@ export function App() {
             controller.signal,
           ).then((source) => setPage({ kind: 'source', source }));
     request.catch((reason: Error) => {
-      if (reason.name !== 'AbortError') setError(reason.message);
+      if (reason.name !== 'AbortError') {
+        setHistoryScroll(null);
+        setError(reason.message);
+      }
     });
     return () => controller.abort();
   }, [route]);
@@ -145,18 +168,28 @@ export function App() {
         : page.kind === 'markdown'
           ? `${page.document.title} · lat.md`
           : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
-    requestAnimationFrame(() => {
-      if (page.kind === 'search') {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        return;
-      }
-      if (page.kind === 'markdown') {
-        scrollToDocumentLocation(window.location.hash, {
-          getElementById: (id) => window.document.getElementById(id),
-          scrollTo: (options) => window.scrollTo(options),
-        });
-        return;
-      }
+  }, [page]);
+
+  useLayoutEffect(() => {
+    if (!page || positionedLocation.current === location) return;
+    if (page.kind === 'search') {
+      if (historyScroll) return;
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      positionedLocation.current = location;
+      return;
+    }
+    if (historyScroll) {
+      window.scrollTo({ ...historyScroll, behavior: 'instant' });
+      positionedLocation.current = location;
+      setHistoryScroll(null);
+      return;
+    }
+    if (page.kind === 'markdown') {
+      scrollToDocumentLocation(window.location.hash, {
+        getElementById: (id) => window.document.getElementById(id),
+        scrollTo: (options) => window.scrollTo(options),
+      });
+    } else {
       const line = page.source.focus?.startLine;
       if (line) {
         window.document
@@ -165,20 +198,39 @@ export function App() {
       } else {
         window.scrollTo({ top: 0, behavior: 'instant' });
       }
-    });
-  }, [page, location]);
+    }
+    positionedLocation.current = location;
+  }, [historyScroll, location, page]);
+
+  function saveCurrentScroll(): void {
+    window.history.replaceState(
+      historyStateWithScroll(window.history.state, {
+        left: window.scrollX,
+        top: window.scrollY,
+      }),
+      '',
+      currentLocation(),
+    );
+  }
 
   function navigate(url: URL): void {
+    saveCurrentScroll();
+    const nextLocation = `${url.pathname}${url.search}${url.hash}`;
+    if (nextLocation === currentLocation()) return;
+    positionedLocation.current = null;
+    setHistoryScroll(null);
     const state =
       url.pathname === '/search' && window.location.pathname !== '/search'
         ? searchHistoryState(currentLocation())
         : null;
     window.history.pushState(state, '', url);
+    setPage(null);
     setLocation(currentLocation());
   }
 
   function closeSearch(): void {
     if (searchReturnTo(window.history.state)) {
+      saveCurrentScroll();
       window.history.back();
       return;
     }
@@ -186,7 +238,10 @@ export function App() {
       window.location.assign('/');
       return;
     }
+    positionedLocation.current = null;
+    setHistoryScroll(null);
     window.history.replaceState(null, '', documentUrl(index.entry));
+    setPage(null);
     setLocation(currentLocation());
   }
 
@@ -281,7 +336,9 @@ export function App() {
         </nav>
       </aside>
 
-      <main className="main">
+      <main
+        className={historyScroll ? 'main restoring-history-scroll' : 'main'}
+      >
         {page?.kind === 'markdown' && (
           <div className="document-metadata">
             <div className="document-path">{page.document.path}</div>
@@ -301,7 +358,15 @@ export function App() {
             <span>{error}</span>
           </div>
         ) : page?.kind === 'search' ? (
-          <SearchPage onClose={closeSearch} onNavigate={onNavigationClick} />
+          <SearchPage
+            onClose={closeSearch}
+            onNavigate={onNavigationClick}
+            onScrollRestored={() => {
+              positionedLocation.current = location;
+              setHistoryScroll(null);
+            }}
+            restoreScroll={historyScroll}
+          />
         ) : page?.kind === 'markdown' ? (
           <article
             className="markdown"

@@ -218,6 +218,10 @@ a {
   padding: 46px clamp(28px, 6vw, 82px) 100px;
 }
 
+.main.restoring-history-scroll {
+  visibility: hidden;
+}
+
 .document-metadata {
   display: flex;
   margin-bottom: 34px;
