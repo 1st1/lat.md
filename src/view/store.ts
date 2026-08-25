@@ -293,6 +293,7 @@ export class ViewStore {
       this.latDir,
       requestedPath,
       snapshot.allSections,
+      snapshot.references,
     );
     const rendered = await renderMarkdown(
       file.content,
@@ -327,6 +328,7 @@ export class ViewStore {
             this.latDir,
             path,
             snapshot.allSections,
+            snapshot.references,
           ),
       ),
       frontmatter: {

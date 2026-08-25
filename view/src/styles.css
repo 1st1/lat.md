@@ -995,6 +995,29 @@ a.wiki-link-segmented > .wiki-link-leaf {
   text-underline-offset: 3px;
 }
 
+.wiki-link-ref-count {
+  display: inline-flex;
+  min-width: 1.45em;
+  height: 1.45em;
+  padding: 0 0.34em;
+  margin-left: 0.4em;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.66em;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none;
+  vertical-align: 0.15em;
+  background: color-mix(in srgb, var(--muted) 14%, transparent);
+  border-radius: 999px;
+}
+
+.markdown a:hover .wiki-link-ref-count {
+  color: var(--text);
+}
+
 .code-link-language {
   display: inline-flex;
   width: 1.55em;

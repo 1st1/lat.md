@@ -31,6 +31,10 @@ Resolved Markdown sections and validated source definitions become client-side l
 
 Unaliased code links show a language badge and visually separate muted path context from the final target.
 
+Every resolved wiki link shows the total number of distinct reference locations for its canonical target. The current paragraph counts once, duplicate links in one paragraph do not inflate the total, and section totals include `@lat:` code references.
+
+Source-symbol totals cover the exact symbol, while file-only source totals include references to any symbol in that file. Zero totals, unresolved links, and ambiguous links show no count.
+
 ## Serves source definitions securely
 
 Source routes return supported project files and optional symbol ranges while rejecting traversal, unsupported extensions, missing symbols, and files outside the project root.

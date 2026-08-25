@@ -44,6 +44,16 @@ The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` 
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
 
+## Wiki-link reference counts
+
+Every resolved wiki link with indexed references carries a compact count of distinct locations that reference its canonical target, sourced from the cached [[src/view/references.ts#buildViewReferenceIndex|reverse-reference snapshot]].
+
+The total includes the current link. Markdown references deduplicate by source paragraph, while `@lat:` references deduplicate by source file and line, matching the count shown on target section headings.
+
+Source-symbol links count references to that exact symbol. File-only source links aggregate references to the file and its symbols. Zero counts are omitted, while unresolved or ambiguous links remain authored text without a count.
+
+The wiki-link resolver returns the target URL and count together, letting [[src/view/markdown.ts#renderMarkdown]] append a non-interactive badge inside the existing anchor without extra I/O or document rescans.
+
 ## Source navigation
 
 Validated [[markdown#Wiki Links#Source Code Links]] open highlighted source definitions with the originating lat paragraph rendered as context.

@@ -227,13 +227,16 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.html).toContain(
-      '<a href="/docs/guide.md">wiki navigation</a>',
+      '<a href="/docs/guide.md">wiki navigation<span class="wiki-link-ref-count" aria-label="2 references">2</span></a>',
     );
     expect(document.html).toContain(
-      '<a href="/docs/guide.md#details">wiki heading links</a>',
+      '<a href="/docs/guide.md#details">wiki heading links<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(document.html).toContain(
-      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span></a>',
+      '<a href="/docs/guide.md#details">the same heading again<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
+    );
+    expect(document.html).toContain(
+      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span><span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(document.html).toContain(
       'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
@@ -246,6 +249,24 @@ describe('lat ui', () => {
       'class="code-link-language code-language-ts"',
     );
     expect(document.html).toContain('aria-hidden="true"');
+    expect(document.html).toContain(
+      '<span class="wiki-link-leaf">run</span><span class="wiki-link-ref-count" aria-label="2 references">2</span>',
+    );
+    expect(document.html).toContain(
+      'runner file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+    );
+    expect(document.html).toContain(
+      'same file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+    );
+
+    const zeroReferences = await renderMarkdown(
+      '[[orphan]]',
+      'lat.md',
+      async () => ({ href: '/docs/orphan.md', referenceCount: 0 }),
+    );
+    expect(zeroReferences.html).toBe(
+      '<p><a href="/docs/orphan.md">orphan</a></p>',
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Serves source definitions securely]]

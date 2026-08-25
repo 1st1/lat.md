@@ -12,10 +12,15 @@ import { parse } from '../parser.js';
 
 export type WikiLinkContext = { line: number };
 
+export type WikiLinkResolution = {
+  href: string;
+  referenceCount: number;
+};
+
 export type WikiLinkResolver = (
   target: string,
   context: WikiLinkContext,
-) => string | null | Promise<string | null>;
+) => WikiLinkResolution | null | Promise<WikiLinkResolution | null>;
 
 export type MarkdownRenderOptions = {
   activeMarkdownLink?: string;
@@ -92,10 +97,12 @@ const sanitizeSchema: SanitizeSchema = {
     span: [
       ...(defaultSchema.attributes?.span ?? []),
       'ariaHidden',
+      'ariaLabel',
       [
         'className',
         'wiki-link-context',
         'wiki-link-leaf',
+        'wiki-link-ref-count',
         ...CODE_LINK_CLASSES.slice(2),
         ERROR_CLASS,
         ...GIT_CLASSES,
@@ -199,6 +206,20 @@ function languageIcon(language: {
       },
     },
     children: [{ type: 'text', value: language.label }],
+  } as RootContent;
+}
+
+function referenceCountBadge(count: number): RootContent {
+  return {
+    type: 'emphasis',
+    data: {
+      hName: 'span',
+      hProperties: {
+        className: ['wiki-link-ref-count'],
+        ariaLabel: `${count} ${count === 1 ? 'reference' : 'references'}`,
+      },
+    },
+    children: [{ type: 'text', value: String(count) }],
   } as RootContent;
 }
 
@@ -317,7 +338,7 @@ export async function renderMarkdown(
     ? nodeText(firstHeading)
     : basename(filePath, '.md');
 
-  const resolvedLinks = new Map<WikiLink, string | null>();
+  const resolvedLinks = new Map<WikiLink, WikiLinkResolution | null>();
   if (resolveWikiLink) {
     const wikiLinks: WikiLink[] = [];
     visit(tree, 'wikiLink', (node: WikiLink) => {
@@ -335,11 +356,12 @@ export async function renderMarkdown(
 
   visit(tree, 'wikiLink', (node: WikiLink, index, parent) => {
     if (index === undefined || !parent || !('children' in parent)) return;
-    const href = resolvedLinks.get(node);
+    const resolution = resolvedLinks.get(node);
     const markedProperties = node.data?.hProperties as
       | Record<string, unknown>
       | undefined;
-    if (href) {
+    if (resolution) {
+      const { href, referenceCount } = resolution;
       const content = wikiLinkContent(node);
       const language = href.startsWith('/code/')
         ? codeLanguage(node.value)
@@ -369,9 +391,11 @@ export async function renderMarkdown(
                 },
               }
             : undefined,
-        children: language
-          ? [languageIcon(language), ...content.children]
-          : content.children,
+        children: [
+          ...(language ? [languageIcon(language)] : []),
+          ...content.children,
+          ...(referenceCount > 0 ? [referenceCountBadge(referenceCount)] : []),
+        ],
       } as RootContent;
       return;
     }
