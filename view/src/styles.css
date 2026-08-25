@@ -319,7 +319,7 @@ a {
   width: 100%;
   max-width: 980px;
   min-width: 0;
-  padding: 46px clamp(28px, 6vw, 82px) 100px;
+  padding: 28px clamp(28px, 6vw, 82px) 100px;
 }
 
 .main.restoring-history-scroll {
@@ -333,6 +333,7 @@ a {
 
 .document-metadata {
   display: flex;
+  min-height: 28px;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
@@ -605,6 +606,10 @@ a {
   border: 1px solid var(--panel-border);
   border-radius: 10px;
   overflow-anchor: none;
+}
+
+.document-metadata + .source-code {
+  margin-top: 14px;
 }
 
 .source-collapse {

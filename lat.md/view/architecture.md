@@ -44,6 +44,8 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 
 [[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.
 
+Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
+
 The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory.
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
