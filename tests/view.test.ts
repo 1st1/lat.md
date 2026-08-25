@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
-import { viewCommand } from '../src/cli/view.js';
+import { uiCommand } from '../src/cli/ui.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
 import { highlightSource } from '../src/view/highlight.js';
 import type {
@@ -45,7 +45,7 @@ function testContext(): CmdContext {
   return { latDir, projectRoot, styler: plainStyler, mode: 'cli' };
 }
 
-describe('lat view', () => {
+describe('lat ui', () => {
   let clientDir: string;
   let view: ViewServer;
   const runIndex = vi.fn(async () => {});
@@ -72,7 +72,7 @@ describe('lat view', () => {
 
   beforeAll(async () => {
     clientDir = mkdtempSync(join(tmpdir(), 'lat-view-client-'));
-    writeFileSync(join(clientDir, 'index.html'), '<main>lat view shell</main>');
+    writeFileSync(join(clientDir, 'index.html'), '<main>lat ui shell</main>');
     view = await startViewServer(testContext(), {
       clientDir,
       search: createViewSearch(latDir, { runIndex, runSearch }),
@@ -99,15 +99,15 @@ describe('lat view', () => {
 
     const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
     expect(shellResponse.status).toBe(200);
-    expect(await shellResponse.text()).toContain('lat view shell');
+    expect(await shellResponse.text()).toContain('lat ui shell');
 
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);
-    expect(await sourceShell.text()).toContain('lat view shell');
+    expect(await sourceShell.text()).toContain('lat ui shell');
 
     const searchShell = await fetch(new URL('/search', view.url));
     expect(searchShell.status).toBe(200);
-    expect(await searchShell.text()).toContain('lat view shell');
+    expect(await searchShell.text()).toContain('lat ui shell');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
@@ -523,7 +523,7 @@ describe('lat view', () => {
     const openBrowser = vi.fn(async () => {});
     let started: ViewServer | undefined;
 
-    const result = await viewCommand(testContext(), {
+    const result = await uiCommand(testContext(), {
       clientDir,
       openBrowser,
       onStarted(server) {
@@ -538,7 +538,7 @@ describe('lat view', () => {
   });
 });
 
-describe('lat view live project index', () => {
+describe('lat ui live project index', () => {
   // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally]]
   it('updates cached files, backlinks, code refs, and clients incrementally', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-live-'));

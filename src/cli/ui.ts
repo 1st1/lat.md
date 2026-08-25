@@ -6,9 +6,9 @@ import {
   type ViewServerOptions,
 } from '../view/server.js';
 
-type ViewCommandOptions = ViewServerOptions & {
+type UiCommandOptions = ViewServerOptions & {
   openBrowser?: (url: string) => Promise<void>;
-  onStarted?: (view: ViewServer) => void;
+  onStarted?: (server: ViewServer) => void;
 };
 
 /** Launch the platform browser without passing the URL through a shell. */
@@ -33,17 +33,17 @@ export function openBrowser(url: string): Promise<void> {
   });
 }
 
-/** Start `lat view`, report its URL, and launch the default browser. */
-export async function viewCommand(
+/** Start `lat ui`, report its URL, and launch the default browser. */
+export async function uiCommand(
   ctx: CmdContext,
-  options: ViewCommandOptions = {},
+  options: UiCommandOptions = {},
 ): Promise<CmdResult> {
-  const view = await startViewServer(ctx, options);
-  options.onStarted?.(view);
+  const server = await startViewServer(ctx, options);
+  options.onStarted?.(server);
 
-  const lines = [`Viewing lat.md at ${view.url}`];
+  const lines = [`Viewing lat.md at ${server.url}`];
   try {
-    await (options.openBrowser ?? openBrowser)(view.url);
+    await (options.openBrowser ?? openBrowser)(server.url);
   } catch (error) {
     lines.push(`Could not open the browser: ${(error as Error).message}`);
   }

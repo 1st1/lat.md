@@ -122,7 +122,7 @@ async function sendClientFile(
   }
 }
 
-/** Start the read-only loopback server used by `lat view`. */
+/** Start the read-only loopback server used by `lat ui`. */
 export async function startViewServer(
   ctx: CmdContext,
   options: ViewServerOptions = {},
@@ -313,7 +313,7 @@ export async function startViewServer(
     );
     unsubscribeStore();
     await store.close();
-    throw new Error('Could not determine lat view server address');
+    throw new Error('Could not determine lat ui server address');
   }
 
   return {

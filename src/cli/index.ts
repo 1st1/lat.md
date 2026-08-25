@@ -111,12 +111,12 @@ program
   });
 
 program
-  .command('view')
+  .command('ui')
   .description('Open lat.md in a local browser')
   .action(async () => {
     const ctx = resolveContext(program.opts());
-    const { viewCommand } = await import('./view.js');
-    handleResult(await viewCommand(ctx));
+    const { uiCommand } = await import('./ui.js');
+    handleResult(await uiCommand(ctx));
   });
 
 program

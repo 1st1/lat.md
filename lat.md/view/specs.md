@@ -5,7 +5,7 @@ lat:
 
 # View Tests
 
-Functional specifications for the local browser server, client navigation, and `lat view` startup.
+Functional specifications for the local browser server, client navigation, and `lat ui` startup.
 
 ## Serves the document index and browser shell
 
@@ -83,4 +83,4 @@ The document API rejects traversal and non-Markdown targets so browser requests 
 
 ## Launches the browser after the server starts
 
-The command starts listening before passing the loopback URL to the platform browser launcher and reports the same URL to the terminal.
+`lat ui` starts listening before passing the loopback URL to the platform browser launcher and reports the same URL to the terminal.

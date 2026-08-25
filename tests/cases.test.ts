@@ -71,6 +71,18 @@ function testCtx(name: string): CmdContext {
   };
 }
 
+describe('cli command surface', () => {
+  it('exposes ui and removes view', () => {
+    const ui = runCli('basic-project', ['ui', '--help']);
+    expect(ui.exitCode).toBe(0);
+    expect(ui.stdout).toContain('Usage: lat ui');
+
+    const view = runCli('basic-project', ['view']);
+    expect(view.exitCode).toBe(1);
+    expect(view.stderr).toContain("unknown command 'view'");
+  });
+});
+
 // --- basic-project ---
 
 describe('basic-project', () => {

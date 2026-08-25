@@ -54,7 +54,7 @@ function viewSearchResult(
   };
 }
 
-/** Create the lazily indexed semantic search service used by `lat view`. */
+/** Create the lazily indexed semantic search service used by `lat ui`. */
 export function createViewSearch(
   latDir: string,
   dependencies: ViewSearchDependencies = defaultDependencies,

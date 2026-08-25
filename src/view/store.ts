@@ -174,7 +174,7 @@ function buildSnapshot(
   };
 }
 
-/** Own the immutable, incrementally refreshed project snapshot for `lat view`. */
+/** Own the immutable, incrementally refreshed project snapshot for `lat ui`. */
 export class ViewStore {
   private snapshotValue: ViewProjectSnapshot;
   private codeFiles: Map<string, ViewCodeReferenceFile>;
@@ -218,10 +218,10 @@ export class ViewStore {
         (_event, filename) => this.scheduleRefresh(filename?.toString() ?? ''),
       );
       this.watcher.on('error', (error) => {
-        process.stderr.write(`lat view watcher: ${error.message}\n`);
+        process.stderr.write(`lat ui watcher: ${error.message}\n`);
       });
     } catch (error) {
-      process.stderr.write(`lat view watcher: ${(error as Error).message}\n`);
+      process.stderr.write(`lat ui watcher: ${(error as Error).message}\n`);
     }
   }
 
@@ -330,7 +330,7 @@ export class ViewStore {
       const paths = [...this.pendingPaths];
       this.pendingPaths.clear();
       void this.refresh(paths).catch((error: unknown) => {
-        process.stderr.write(`lat view refresh: ${(error as Error).message}\n`);
+        process.stderr.write(`lat ui refresh: ${(error as Error).message}\n`);
       });
     }, this.options.debounceMs ?? DEFAULT_DEBOUNCE_MS);
   }

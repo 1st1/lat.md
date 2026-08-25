@@ -1,10 +1,10 @@
 # Browser Architecture
 
-`lat view` serves the current vault on loopback and opens a prebuilt React client for local documentation browsing.
+`lat ui` serves the current vault on loopback and opens a prebuilt React client for local documentation browsing.
 
 ## Runtime boundary
 
-[[src/cli/view.ts#viewCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
+[[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
 
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
