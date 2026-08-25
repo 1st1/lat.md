@@ -54,7 +54,7 @@ Every resolved wiki link with indexed references carries a compact count of dist
 
 The total includes the current link. Markdown references deduplicate by source paragraph, while `@lat:` references deduplicate by source file and line, matching the count shown on target section headings.
 
-Source-symbol links count references to that exact symbol. File-only source links aggregate references to the file and its symbols. Zero counts are omitted, while unresolved or ambiguous links remain authored text without a count.
+Source-symbol links count references to that exact symbol. File-only source links aggregate references to the file and its symbols. Counts below two are omitted, while unresolved or ambiguous links remain authored text without a count.
 
 The wiki-link resolver returns the target URL and count together, letting [[src/view/markdown.ts#renderMarkdown]] append a non-interactive badge inside the existing anchor without extra I/O or document rescans.
 

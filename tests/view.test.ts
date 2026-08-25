@@ -253,14 +253,16 @@ describe('lat ui', () => {
       'same file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
     );
 
-    const zeroReferences = await renderMarkdown(
-      '[[orphan]]',
-      'lat.md',
-      async () => ({ href: '/docs/orphan.md', referenceCount: 0 }),
-    );
-    expect(zeroReferences.html).toBe(
-      '<p><a href="/docs/orphan.md">orphan</a></p>',
-    );
+    for (const referenceCount of [0, 1]) {
+      const sparseReferences = await renderMarkdown(
+        '[[orphan]]',
+        'lat.md',
+        async () => ({ href: '/docs/orphan.md', referenceCount }),
+      );
+      expect(sparseReferences.html).toBe(
+        '<p><a href="/docs/orphan.md">orphan</a></p>',
+      );
+    }
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Serves source definitions securely]]

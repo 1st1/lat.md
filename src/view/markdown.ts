@@ -394,7 +394,7 @@ export async function renderMarkdown(
         children: [
           ...(language ? [languageIcon(language)] : []),
           ...content.children,
-          ...(referenceCount > 0 ? [referenceCountBadge(referenceCount)] : []),
+          ...(referenceCount > 1 ? [referenceCountBadge(referenceCount)] : []),
         ],
       } as RootContent;
       return;
