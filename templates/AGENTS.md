@@ -17,6 +17,8 @@ After EVERY task, before responding to the user:
 
 This project uses [lat.md](https://www.npmjs.com/package/lat.md) to maintain a structured knowledge graph of its architecture, design decisions, and test specs in the `lat.md/` directory. It is a set of cross-linked markdown files that describe **what** this project does and **why** — the domain concepts, key design decisions, business logic, and test specifications. Use it to ground your work in the actual architecture rather than guessing. Do not treat `lat.md/` as a journal or changelog; it should be a focused snapshot of current or planned state, and should not grow just to note insignificant details.
 
+Project-specific lat documentation belongs in `lat.md/`. Do not modify this generated instruction file or a generated `lat-md` `SKILL.md` to record project guidance: both are owned by lat tooling and may be replaced by a later `lat init`.
+
 # Commands
 
 ```bash
