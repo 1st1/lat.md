@@ -10,6 +10,20 @@ The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highli
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
+## Live project index
+
+A server-lifetime [[src/view/store.ts#createViewStore|ViewStore]] keeps document navigation and reverse references current without rescanning the project for every request.
+
+At startup the store reads each Markdown file once, extracts its sections, paragraphs, and outgoing links from one syntax tree, scans code references once, then resolves those cached occurrences into an immutable reverse-reference snapshot.
+
+The store watches the project with a short debounce and serializes updates. Existing Markdown and code files are reread individually; file additions trigger a lightweight scope refresh, and deletions remove their cached contributions.
+
+Every update atomically replaces the snapshot. Section identity changes rebuild the global resolution maps and re-resolve cached occurrences from memory, but never force unchanged files to be reread or reparsed.
+
+Browser clients subscribe to snapshot generations over server-sent events. A new generation refreshes the sidebar and current route while preserving the active URL and viewport.
+
+Markdown generations also dirty semantic search. The next query shares one incremental indexing pass across concurrent requests, then searches the updated index.
+
 ## Markdown navigation
 
 [[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.

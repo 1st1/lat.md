@@ -36,11 +36,13 @@ export function SearchPage({
   onClose,
   onNavigate,
   onScrollRestored,
+  markdownGeneration,
   restoreScroll,
 }: {
   onClose: () => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   onScrollRestored: () => void;
+  markdownGeneration: number;
   restoreScroll: ViewScrollPosition | null;
 }) {
   const [query, setQuery] = useState(() => searchQuery(window.location.search));
@@ -124,7 +126,7 @@ export function SearchPage({
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [query]);
+  }, [markdownGeneration, query]);
 
   return (
     <section className="search-page">

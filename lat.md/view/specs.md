@@ -43,6 +43,16 @@ Source links preserve their originating section and line so the code view can re
 
 Referenced sections expose distinct linking Markdown paragraphs, wiki references, and `@lat:` code locations with navigable context.
 
+## Updates long-running views incrementally
+
+Changing, adding, or deleting project files updates cached documents, navigation, source references, and backlinks without rereading unchanged Markdown files.
+
+Browser clients receive a change event and refresh the current route while keeping its URL and viewport stable.
+
+## Refreshes search after Markdown changes
+
+The first search indexes lazily, while a later Markdown generation triggers exactly one shared incremental indexing pass before new queries run.
+
 ## Places context within a collapsed source window
 
 Focused source views place reference context before the highlighted definition, keep five surrounding lines, and reveal collapsed code without moving the visible anchor.

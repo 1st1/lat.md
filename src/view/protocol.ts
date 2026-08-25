@@ -17,6 +17,11 @@ export type ViewSearchResponse = {
   results: ViewSearchResult[];
 };
 
+export type ViewProjectChange = {
+  generation: number;
+  markdownGeneration: number;
+};
+
 export type ViewDocument = {
   path: string;
   title: string;

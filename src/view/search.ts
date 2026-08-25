@@ -58,17 +58,26 @@ function viewSearchResult(
 export function createViewSearch(
   latDir: string,
   dependencies: ViewSearchDependencies = defaultDependencies,
+  getGeneration: () => number = () => 0,
 ): ViewSearch {
   let indexReady: Promise<void> | null = null;
+  let indexedGeneration = -1;
 
-  const prepareIndex = (): Promise<void> => {
-    if (!indexReady) {
-      indexReady = dependencies.runIndex(latDir).catch((error: unknown) => {
-        indexReady = null;
-        throw error;
-      });
+  const prepareIndex = async (): Promise<void> => {
+    while (indexedGeneration < getGeneration() || indexedGeneration < 0) {
+      if (!indexReady) {
+        const generation = getGeneration();
+        indexReady = dependencies
+          .runIndex(latDir)
+          .then(() => {
+            indexedGeneration = Math.max(indexedGeneration, generation);
+          })
+          .finally(() => {
+            indexReady = null;
+          });
+      }
+      await indexReady;
     }
-    return indexReady;
   };
 
   return async (rawQuery) => {

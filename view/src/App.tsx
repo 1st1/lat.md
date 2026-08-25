@@ -10,6 +10,7 @@ import type {
   ViewDocument,
   ViewError,
   ViewIndex,
+  ViewProjectChange,
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
@@ -66,6 +67,10 @@ export function App() {
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
+  const [projectChange, setProjectChange] = useState<ViewProjectChange>({
+    generation: 0,
+    markdownGeneration: 0,
+  });
   const [error, setError] = useState('');
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
@@ -118,12 +123,33 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const events = new EventSource('/api/events');
+    const updateGeneration = (event: MessageEvent<string>) => {
+      const change = JSON.parse(event.data) as ViewProjectChange;
+      setProjectChange((current) => {
+        const generation = Math.max(current.generation, change.generation);
+        const markdownGeneration = Math.max(
+          current.markdownGeneration,
+          change.markdownGeneration,
+        );
+        return generation === current.generation &&
+          markdownGeneration === current.markdownGeneration
+          ? current
+          : { generation, markdownGeneration };
+      });
+    };
+    events.addEventListener('ready', updateGeneration);
+    events.addEventListener('change', updateGeneration);
+    return () => events.close();
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
     fetchJson<ViewIndex>('/api/index', controller.signal)
       .then(setIndex)
       .catch((reason: Error) => setError(reason.message));
     return () => controller.abort();
-  }, []);
+  }, [projectChange.generation]);
 
   useEffect(() => {
     if (!route) {
@@ -140,7 +166,6 @@ export function App() {
 
     const controller = new AbortController();
     setError('');
-    setPage(null);
     const request =
       route.kind === 'markdown'
         ? fetchJson<ViewDocument>(
@@ -158,7 +183,7 @@ export function App() {
       }
     });
     return () => controller.abort();
-  }, [route]);
+  }, [projectChange.generation, route]);
 
   useEffect(() => {
     if (!page) return;
@@ -365,6 +390,7 @@ export function App() {
               positionedLocation.current = location;
               setHistoryScroll(null);
             }}
+            markdownGeneration={projectChange.markdownGeneration}
             restoreScroll={historyScroll}
           />
         ) : page?.kind === 'markdown' ? (

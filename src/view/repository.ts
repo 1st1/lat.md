@@ -1,6 +1,5 @@
 import { readFile, realpath } from 'node:fs/promises';
 import {
-  basename,
   dirname,
   extname,
   isAbsolute,
@@ -12,9 +11,6 @@ import {
   buildFileIndex,
   buildSectionSlugIndex,
   flattenSections,
-  listLatticeFiles,
-  loadAllSections,
-  parseFrontmatter,
   resolveRef,
   type Section,
 } from '../lattice.js';
@@ -24,17 +20,12 @@ import {
   type SourceSymbol,
 } from '../source-parser.js';
 import { toPosix } from '../walk.js';
-import type {
-  ViewDocument,
-  ViewIndex,
-  ViewSourceDocument,
-} from './protocol.js';
+import type { ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
-import { renderMarkdown } from './markdown.js';
 import {
-  getSectionBackReferences,
-  getSourceReferenceContext,
+  renderSourceReferenceContext,
   type SourceReferenceOrigin,
+  type ViewReferenceIndex,
 } from './references.js';
 
 export class ViewDocumentNotFoundError extends Error {}
@@ -45,13 +36,6 @@ function isInside(root: string, candidate: string): boolean {
   return (
     rel === '' ||
     (!isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`))
-  );
-}
-
-async function markdownFiles(latDir: string): Promise<Map<string, string>> {
-  const files = await listLatticeFiles(latDir);
-  return new Map(
-    files.map((file) => [toPosix(relative(latDir, file)), file] as const),
   );
 }
 
@@ -101,20 +85,18 @@ function matchingSymbol(
   return undefined;
 }
 
-async function markdownWikiLinkResolver(
+export async function createMarkdownWikiLinkResolver(
   latDir: string,
   requestedPath: string,
-  loadedSections?: Section[],
+  loadedSections: Section[],
 ): Promise<
   (target: string, context: { line: number }) => Promise<string | null>
 > {
   const projectRoot = dirname(latDir);
-  const sections =
-    loadedSections ?? (await loadAllSections(latDir, projectRoot));
-  const flat = flattenSections(sections);
+  const flat = flattenSections(loadedSections);
   const sectionIds = new Set(flat.map((section) => section.id.toLowerCase()));
-  const fileIndex = buildFileIndex(sections);
-  const slugIndex = buildSectionSlugIndex(sections);
+  const fileIndex = buildFileIndex(loadedSections);
+  const slugIndex = buildSectionSlugIndex(loadedSections);
   const byId = new Map(
     flat.map((section) => [section.id.toLowerCase(), section]),
   );
@@ -248,6 +230,8 @@ export async function getViewSource(
   requestedSymbol = '',
   origin?: SourceReferenceOrigin,
   requestedLine = 0,
+  allSections: Section[] = [],
+  referenceIndex?: ViewReferenceIndex,
 ): Promise<ViewSourceDocument> {
   const source = await readViewSource(
     projectRoot,
@@ -255,90 +239,19 @@ export async function getViewSource(
     requestedSymbol,
     requestedLine,
   );
-  const references = await getSourceReferenceContext(
-    latDir,
-    projectRoot,
-    `${source.path}${requestedSymbol ? `#${requestedSymbol}` : ''}`,
-    origin,
-    (requestedPath) => markdownWikiLinkResolver(latDir, requestedPath),
-  );
+  const references = referenceIndex
+    ? await renderSourceReferenceContext(
+        referenceIndex,
+        `${source.path}${requestedSymbol ? `#${requestedSymbol}` : ''}`,
+        origin,
+        latDir,
+        projectRoot,
+        (path) => createMarkdownWikiLinkResolver(latDir, path, allSections),
+      )
+    : { context: null, otherReferences: [] };
   return {
     ...source,
     highlightedHtmlLines: highlightSource(source.path, source.content),
     ...references,
-  };
-}
-
-/** List browser-visible Markdown files and choose the conventional root index. */
-export async function getViewIndex(latDir: string): Promise<ViewIndex> {
-  const files = [...(await markdownFiles(latDir)).keys()].sort();
-  if (files.length === 0) {
-    throw new Error(`No Markdown files found in ${latDir}`);
-  }
-
-  const directoryName = basename(latDir);
-  const indexName = directoryName.endsWith('.md')
-    ? directoryName
-    : `${directoryName}.md`;
-  return { files, entry: files.includes(indexName) ? indexName : files[0] };
-}
-
-/** Read and render one Markdown file after constraining it to the lat.md vault. */
-export async function getViewDocument(
-  latDir: string,
-  requestedPath: string,
-): Promise<ViewDocument> {
-  if (
-    !requestedPath ||
-    requestedPath.includes('\\') ||
-    isAbsolute(requestedPath) ||
-    !requestedPath.toLowerCase().endsWith('.md')
-  ) {
-    throw new ViewDocumentNotFoundError('Markdown document not found');
-  }
-
-  const files = await markdownFiles(latDir);
-  const filePath = files.get(requestedPath);
-  if (!filePath) {
-    throw new ViewDocumentNotFoundError('Markdown document not found');
-  }
-
-  const [realRoot, realFile] = await Promise.all([
-    realpath(latDir),
-    realpath(filePath),
-  ]);
-  if (!isInside(realRoot, realFile)) {
-    throw new ViewDocumentNotFoundError('Markdown document not found');
-  }
-
-  const [markdown, allSections] = await Promise.all([
-    readFile(resolve(filePath), 'utf-8'),
-    loadAllSections(latDir, dirname(latDir)),
-  ]);
-  const wikiLinkResolver = await markdownWikiLinkResolver(
-    latDir,
-    requestedPath,
-    allSections,
-  );
-  const rendered = await renderMarkdown(
-    markdown,
-    requestedPath,
-    wikiLinkResolver,
-  );
-  const backReferences = await getSectionBackReferences(
-    latDir,
-    dirname(latDir),
-    requestedPath,
-    allSections,
-    (path) => markdownWikiLinkResolver(latDir, path, allSections),
-  );
-  return {
-    path: requestedPath,
-    ...rendered,
-    backReferences,
-    frontmatter: {
-      requireCodeMention:
-        parseFrontmatter(markdown).requireCodeMention === true,
-    },
   };
 }

@@ -1,5 +1,5 @@
 import { basename, extname } from 'node:path';
-import type { Link, RootContent } from 'mdast';
+import type { Link, Root, RootContent } from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
@@ -167,8 +167,9 @@ export async function renderMarkdown(
   filePath: string,
   resolveWikiLink?: WikiLinkResolver,
   options: MarkdownRenderOptions = {},
+  parsedTree?: Root,
 ): Promise<{ html: string; title: string }> {
-  const tree = parse(markdown);
+  const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
 
   if (options.rewriteMarkdownLink || options.activeMarkdownLink) {

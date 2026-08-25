@@ -10,6 +10,7 @@ import type {
   Heading,
   Image,
   Link,
+  Root,
   RootContent,
   Text,
 } from 'mdast';
@@ -150,8 +151,8 @@ export function parseSections(
   filePath: string,
   content: string,
   projectRoot?: string,
+  tree: Root = parse(content),
 ): Section[] {
-  const tree = parse(content);
   const file = projectRoot
     ? toPosix(relative(projectRoot, filePath)).replace(/\.md$/, '')
     : basename(filePath, '.md');
@@ -784,8 +785,8 @@ export function extractRefs(
   filePath: string,
   content: string,
   projectRoot?: string,
+  tree: Root = parse(content),
 ): Ref[] {
-  const tree = parse(content);
   const file = projectRoot
     ? toPosix(relative(projectRoot, filePath)).replace(/\.md$/, '')
     : basename(filePath, '.md');

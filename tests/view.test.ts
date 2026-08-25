@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
@@ -153,6 +153,30 @@ describe('lat view', () => {
 
     await fetch(new URL('/api/search?query=another', view.url));
     expect(runIndex).toHaveBeenCalledTimes(1);
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Refreshes search after Markdown changes]]
+  it('shares one incremental search index update per Markdown generation', async () => {
+    let generation = 0;
+    const index = vi.fn(async () => {});
+    const search = vi.fn(async (_latDir: string, query: string) => ({
+      query,
+      matches: [],
+    }));
+    const viewSearch = createViewSearch(
+      latDir,
+      { runIndex: index, runSearch: search },
+      () => generation,
+    );
+
+    await viewSearch('first');
+    await viewSearch('second');
+    expect(index).toHaveBeenCalledTimes(1);
+
+    generation++;
+    await Promise.all([viewSearch('third'), viewSearch('fourth')]);
+    expect(index).toHaveBeenCalledTimes(2);
+    expect(search).toHaveBeenCalledTimes(4);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Renders Markdown with navigable local links]]
@@ -511,5 +535,97 @@ describe('lat view', () => {
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(`Viewing lat.md at ${started!.url}`);
     await started!.close();
+  });
+});
+
+describe('lat view live project index', () => {
+  // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally]]
+  it('updates cached files, backlinks, code refs, and clients incrementally', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'lat-view-live-'));
+    const liveLatDir = join(root, 'lat.md');
+    const nestedDir = join(liveLatDir, 'nested');
+    const sourceDir = join(root, 'src');
+    mkdirSync(liveLatDir);
+    mkdirSync(sourceDir);
+    writeFileSync(
+      join(liveLatDir, 'lat.md'),
+      '# Live\n\nThe root links to [the target](target.md#target).\n',
+    );
+    writeFileSync(
+      join(liveLatDir, 'target.md'),
+      '# Target\n\nThe target section.\n',
+    );
+    writeFileSync(
+      join(sourceDir, 'app.ts'),
+      ['// @', 'lat: [[target#Target]]\nexport const value = 1;\n'].join(''),
+    );
+
+    const live = await startViewServer(
+      {
+        latDir: liveLatDir,
+        projectRoot: root,
+        styler: plainStyler,
+        mode: 'cli',
+      },
+      { clientDir: root, watch: false },
+    );
+    const events = await fetch(new URL('/api/events', live.url));
+    const reader = events.body!.getReader();
+    const decoder = new TextDecoder();
+
+    try {
+      const ready = await reader.read();
+      expect(decoder.decode(ready.value)).toContain('event: ready');
+
+      const initial = (await (
+        await fetch(new URL('/api/document?path=target.md', live.url))
+      ).json()) as ViewDocument;
+      expect(initial.backReferences[0].references).toHaveLength(2);
+      expect(initial.backReferences[0].references[0].kind).toBe('markdown');
+      const unchangedTarget = live.store.snapshot.files.get('target.md');
+
+      mkdirSync(nestedDir);
+      writeFileSync(
+        join(nestedDir, 'target.md'),
+        '# Target\n\nA second target makes the short code ref ambiguous.\n',
+      );
+      await live.store.refresh(['lat.md/nested']);
+
+      const changed = await reader.read();
+      expect(decoder.decode(changed.value)).toContain('event: change');
+      expect(live.store.snapshot.files.get('target.md')).toBe(unchangedTarget);
+      expect(live.store.getIndex().files).toEqual([
+        'lat.md',
+        'nested/target.md',
+        'target.md',
+      ]);
+      const ambiguous = (await (
+        await fetch(new URL('/api/document?path=target.md', live.url))
+      ).json()) as ViewDocument;
+      expect(ambiguous.backReferences[0].references).toHaveLength(1);
+
+      rmSync(join(nestedDir, 'target.md'));
+      await live.store.refresh(['lat.md/nested/target.md']);
+      writeFileSync(
+        join(liveLatDir, 'lat.md'),
+        '# Live\n\nThe root links to [the target](target.md#target).\n\nA second [target link](target.md#target) lives in another paragraph.\n',
+      );
+      await live.store.refresh(['lat.md/lat.md']);
+      const restored = (await (
+        await fetch(new URL('/api/document?path=target.md', live.url))
+      ).json()) as ViewDocument;
+      expect(restored.backReferences[0].references).toHaveLength(3);
+
+      writeFileSync(join(sourceDir, 'app.ts'), 'export const value = 2;\n');
+      await live.store.refresh(['src/app.ts']);
+      const withoutCode = (await (
+        await fetch(new URL('/api/document?path=target.md', live.url))
+      ).json()) as ViewDocument;
+      expect(withoutCode.backReferences[0].references).toHaveLength(2);
+    } finally {
+      await reader.cancel();
+      await live.close();
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

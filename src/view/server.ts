@@ -3,21 +3,20 @@ import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CmdContext } from '../context.js';
-import type { ViewError } from './protocol.js';
+import type { ViewError, ViewProjectChange } from './protocol.js';
 import {
-  getViewDocument,
-  getViewSource,
-  getViewIndex,
   ViewDocumentNotFoundError,
   ViewSourceNotFoundError,
 } from './repository.js';
 import { createViewSearch, type ViewSearch } from './search.js';
+import { createViewStore, type ViewStore } from './store.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
 
 export type ViewServer = {
   server: Server;
+  store: ViewStore;
   url: string;
   close: () => Promise<void>;
 };
@@ -27,6 +26,7 @@ export type ViewServerOptions = {
   host?: string;
   port?: number;
   search?: ViewSearch;
+  watch?: boolean;
 };
 
 function documentUrl(path: string): string {
@@ -129,8 +129,18 @@ export async function startViewServer(
 ): Promise<ViewServer> {
   const host = options.host ?? DEFAULT_HOST;
   const clientDir = options.clientDir ?? defaultClientDir;
-  const index = await getViewIndex(ctx.latDir);
-  const search = options.search ?? createViewSearch(ctx.latDir);
+  const store = await createViewStore(ctx.latDir, ctx.projectRoot, {
+    watch: options.watch,
+  });
+  const search =
+    options.search ??
+    createViewSearch(ctx.latDir, undefined, () => store.markdownGeneration);
+  const eventClients = new Set<ServerResponse>();
+  const broadcastChange = (change: ViewProjectChange) => {
+    const message = `event: change\ndata: ${JSON.stringify(change)}\n\n`;
+    for (const client of eventClients) client.write(message);
+  };
+  const unsubscribeStore = store.subscribe(broadcastChange);
 
   const server = createServer((req, res) => {
     void (async () => {
@@ -145,21 +155,49 @@ export async function startViewServer(
 
       const url = new URL(req.url ?? '/', `http://${host}`);
       if (url.pathname === '/') {
+        const entry = store.getIndex().entry;
+        if (!entry) {
+          send(
+            res,
+            404,
+            'text/plain; charset=utf-8',
+            'No Markdown files found',
+          );
+          return;
+        }
         res.statusCode = 302;
-        res.setHeader('Location', documentUrl(index.entry));
+        res.setHeader('Location', documentUrl(entry));
         res.end();
         return;
       }
 
       if (url.pathname === '/api/index') {
-        sendJson(res, 200, index, headOnly);
+        sendJson(res, 200, store.getIndex(), headOnly);
+        return;
+      }
+
+      if (url.pathname === '/api/events') {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.flushHeaders();
+        if (headOnly) {
+          res.end();
+          return;
+        }
+        eventClients.add(res);
+        res.write(
+          `event: ready\ndata: ${JSON.stringify({ generation: store.snapshot.generation, markdownGeneration: store.markdownGeneration })}\n\n`,
+        );
+        req.once('close', () => eventClients.delete(res));
         return;
       }
 
       if (url.pathname === '/api/document') {
         const path = url.searchParams.get('path') ?? '';
         try {
-          sendJson(res, 200, await getViewDocument(ctx.latDir, path), headOnly);
+          sendJson(res, 200, await store.getDocument(path), headOnly);
         } catch (error) {
           if (!(error instanceof ViewDocumentNotFoundError)) throw error;
           sendJson(
@@ -205,14 +243,7 @@ export async function startViewServer(
           sendJson(
             res,
             200,
-            await getViewSource(
-              ctx.latDir,
-              ctx.projectRoot,
-              path,
-              symbol,
-              origin,
-              focusLine,
-            ),
+            await store.getSource(path, symbol, origin, focusLine),
             headOnly,
           );
         } catch (error) {
@@ -261,28 +292,42 @@ export async function startViewServer(
     });
   });
 
-  await new Promise<void>((resolveListen, reject) => {
-    server.once('error', reject);
-    server.listen(options.port ?? 0, host, () => {
-      server.off('error', reject);
-      resolveListen();
+  try {
+    await new Promise<void>((resolveListen, reject) => {
+      server.once('error', reject);
+      server.listen(options.port ?? 0, host, () => {
+        server.off('error', reject);
+        resolveListen();
+      });
     });
-  });
+  } catch (error) {
+    unsubscribeStore();
+    await store.close();
+    throw error;
+  }
 
   const address = server.address();
   if (!address || typeof address === 'string') {
     await new Promise<void>((resolveClose) =>
       server.close(() => resolveClose()),
     );
+    unsubscribeStore();
+    await store.close();
     throw new Error('Could not determine lat view server address');
   }
 
   return {
     server,
+    store,
     url: `http://${host}:${address.port}/`,
-    close: () =>
-      new Promise<void>((resolveClose, reject) => {
+    close: async () => {
+      unsubscribeStore();
+      for (const client of eventClients) client.end();
+      eventClients.clear();
+      await store.close();
+      await new Promise<void>((resolveClose, reject) => {
         server.close((error) => (error ? reject(error) : resolveClose()));
-      }),
+      });
+    },
   };
 }
