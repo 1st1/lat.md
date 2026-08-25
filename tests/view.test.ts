@@ -786,6 +786,37 @@ describe('lat ui git state', () => {
       '<p class="git-added">Shared new four five six.</p>',
     );
   });
+
+  it('marks every rendered block in a new Markdown file as added', async () => {
+    const current = [
+      '# New file',
+      '',
+      '## Section',
+      '',
+      '- Unordered item',
+      '',
+      '1. Ordered item',
+      '',
+      '```text',
+      'code block',
+      '```',
+      '',
+    ].join('\n');
+    const rendered = await renderMarkdown(
+      current,
+      'fresh.md',
+      undefined,
+      {},
+      buildGitDiffTree('', current),
+    );
+
+    expect(rendered.html).toContain('<h2 class="git-added"');
+    expect(rendered.html).toContain('<ul class="git-added">');
+    expect(rendered.html).toContain('<ol class="git-added"');
+    expect(rendered.html).toContain(
+      '<code class="language-text git-added">code block',
+    );
+  });
 });
 
 describe('lat ui live project index', () => {

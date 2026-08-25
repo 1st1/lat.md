@@ -963,6 +963,8 @@ a {
 .markdown h4.git-added,
 .markdown h5.git-added,
 .markdown h6.git-added,
+.markdown ul.git-added,
+.markdown ol.git-added,
 .markdown li.git-added {
   padding-left: 10px;
   color: var(--success);
@@ -970,15 +972,30 @@ a {
   box-shadow: inset 3px 0 0 var(--success);
 }
 
+.markdown pre:has(> code.git-added) {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, var(--code));
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
 .markdown p.git-removed,
 .markdown div.git-removed,
 .markdown blockquote.git-removed,
 .markdown pre.git-removed,
+.markdown ul.git-removed,
+.markdown ol.git-removed,
 .markdown li.git-removed {
   padding-left: 10px;
   color: var(--danger);
   text-decoration: line-through;
   background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.markdown pre:has(> code.git-removed) {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, var(--code));
   box-shadow: inset 3px 0 0 var(--danger);
 }
 

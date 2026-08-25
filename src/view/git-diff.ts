@@ -233,6 +233,9 @@ function addClass(node: RootContent, kind: DiffKind): RootContent {
     : current
       ? [String(current)]
       : [];
+  if (result.type === 'code' && result.lang) {
+    classes.push(`language-${result.lang}`);
+  }
   classes.push(`git-${kind}`);
   result.data = {
     ...result.data,

@@ -53,9 +53,18 @@ const GIT_CLASSES = ['git-added', 'git-removed'];
 function classAttributes(
   tag: string,
 ): NonNullable<SanitizeSchema['attributes']>[string] {
+  const attributes = defaultSchema.attributes?.[tag] ?? [];
+  const allowedClasses = attributes.flatMap((attribute) =>
+    Array.isArray(attribute) && attribute[0] === 'className'
+      ? attribute.slice(1)
+      : [],
+  );
   return [
-    ...(defaultSchema.attributes?.[tag] ?? []),
-    ['className', ERROR_CLASS, ...GIT_CLASSES],
+    ...attributes.filter(
+      (attribute) =>
+        !(Array.isArray(attribute) && attribute[0] === 'className'),
+    ),
+    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES],
   ];
 }
 
@@ -92,6 +101,7 @@ const sanitizeSchema: SanitizeSchema = {
     img: classAttributes('img'),
     ins: classAttributes('ins'),
     li: classAttributes('li'),
+    ol: classAttributes('ol'),
     p: classAttributes('p'),
     pre: classAttributes('pre'),
     span: [
@@ -108,6 +118,7 @@ const sanitizeSchema: SanitizeSchema = {
         ...GIT_CLASSES,
       ],
     ],
+    ul: classAttributes('ul'),
   },
 };
 

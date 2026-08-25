@@ -67,6 +67,8 @@ The initial snapshot and every refresh recompute diagnostics from cached syntax 
 
 Git worktrees show cached HEAD changes as yellow modified or green new-file markers, split with red for validation errors, while rendered Markdown highlights removed and added words inline.
 
+Every rendered block in a new Markdown file inherits the added state, including headings, unordered and ordered lists with their markers, and fenced code blocks.
+
 Blocks with less than 20% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
 
 Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.
