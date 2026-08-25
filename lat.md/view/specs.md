@@ -67,7 +67,9 @@ The initial snapshot and every refresh recompute diagnostics from cached syntax 
 
 Git worktrees show cached HEAD changes as yellow modified or green new-file markers, split with red for validation errors, while rendered Markdown highlights removed and added words inline.
 
-Startup reads Git once, and a later vault change refreshes that state. The top Git toggle hides or reveals both sidebar markers and inline diffs without changing the underlying files.
+Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.
+
+The top Git toggle hides or reveals both sidebar markers and inline diffs without changing the underlying files.
 
 The Git button retains an orange notification dot whenever changes exist, independent of the toggle state.
 

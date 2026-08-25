@@ -49,6 +49,7 @@ import {
 } from './references.js';
 
 const DEFAULT_DEBOUNCE_MS = 75;
+const DEFAULT_GIT_POLL_MS = 2_000;
 
 export type ViewProjectSnapshot = {
   generation: number;
@@ -64,6 +65,7 @@ export type ViewProjectSnapshot = {
 export type ViewStoreOptions = {
   debounceMs?: number;
   git?: boolean;
+  gitPollMs?: number;
   watch?: boolean;
 };
 
@@ -224,6 +226,8 @@ export class ViewStore {
   private watcher: FSWatcher | null = null;
   private pendingPaths = new Set<string>();
   private debounceTimer: NodeJS.Timeout | null = null;
+  private gitPollTimer: NodeJS.Timeout | null = null;
+  private gitPollQueued = false;
   private refreshTail: Promise<void> = Promise.resolve();
   private closed = false;
 
@@ -251,6 +255,7 @@ export class ViewStore {
   }
 
   startWatching(): void {
+    this.startGitPolling();
     if (this.options.watch === false || this.watcher) return;
     try {
       this.watcher = watchFiles(
@@ -362,7 +367,13 @@ export class ViewStore {
     const normalized = paths.map((path) =>
       path ? projectPath(this.projectRoot, path) : '',
     );
-    const refresh = this.refreshTail.then(() => this.applyRefresh(normalized));
+    return this.queueRefresh(normalized, false);
+  }
+
+  private queueRefresh(paths: string[], pollGit: boolean): Promise<void> {
+    const refresh = this.refreshTail.then(() =>
+      this.applyRefresh(paths, pollGit),
+    );
     this.refreshTail = refresh.catch(() => {});
     return refresh;
   }
@@ -371,6 +382,8 @@ export class ViewStore {
     this.closed = true;
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = null;
+    if (this.gitPollTimer) clearInterval(this.gitPollTimer);
+    this.gitPollTimer = null;
     this.watcher?.close();
     this.watcher = null;
     await this.refreshTail;
@@ -389,6 +402,23 @@ export class ViewStore {
         process.stderr.write(`lat ui refresh: ${(error as Error).message}\n`);
       });
     }, this.options.debounceMs ?? DEFAULT_DEBOUNCE_MS);
+  }
+
+  private startGitPolling(): void {
+    const interval = this.options.gitPollMs ?? DEFAULT_GIT_POLL_MS;
+    if (!this.gitRepository || interval <= 0 || this.gitPollTimer) return;
+    this.gitPollTimer = setInterval(() => {
+      if (this.closed || this.gitPollQueued) return;
+      this.gitPollQueued = true;
+      void this.queueRefresh([], true)
+        .catch((error: unknown) => {
+          process.stderr.write(`lat ui git: ${(error as Error).message}\n`);
+        })
+        .finally(() => {
+          this.gitPollQueued = false;
+        });
+    }, interval);
+    this.gitPollTimer.unref();
   }
 
   private async readMarkdownFile(
@@ -410,7 +440,7 @@ export class ViewStore {
     );
   }
 
-  private async applyRefresh(paths: string[]): Promise<void> {
+  private async applyRefresh(paths: string[], pollGit: boolean): Promise<void> {
     const fullRefresh = paths.includes('');
     const latPath = projectPath(this.projectRoot, this.latDir);
     const touchesMarkdown =
@@ -473,7 +503,7 @@ export class ViewStore {
       );
     }
 
-    if (touchesMarkdown && this.gitRepository) {
+    if ((touchesMarkdown || pollGit) && this.gitRepository) {
       try {
         const nextGit = await readViewGitSnapshot(
           this.gitRepository,

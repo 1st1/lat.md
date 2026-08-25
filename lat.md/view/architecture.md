@@ -32,6 +32,8 @@ When the vault belongs to a Git worktree, the server caches its [[src/view/git.t
 
 The initial snapshot runs Git once, using argument-array subprocesses without a shell. A debounced change anywhere inside `lat.md/` refreshes the full-vault diff together with porcelain status for untracked files; unrelated project changes reuse the cache.
 
+An unreferenced two-second timer also refreshes Git through the store's serialized queue, catching commits and other repository-state changes that do not alter vault files. Unchanged snapshots neither increment the generation nor notify clients.
+
 The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|inline word diffs]] and sidebar state. Modified files are yellow, new files are green, and validation errors split the same marker red without hiding its Git state.
 
 Whenever cached changes exist, the toggle keeps an orange notification dot whether Git rendering is enabled or hidden.

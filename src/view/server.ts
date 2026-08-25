@@ -24,6 +24,7 @@ export type ViewServer = {
 export type ViewServerOptions = {
   clientDir?: string;
   git?: boolean;
+  gitPollMs?: number;
   host?: string;
   port?: number;
   search?: ViewSearch;
@@ -132,6 +133,7 @@ export async function startViewServer(
   const clientDir = options.clientDir ?? defaultClientDir;
   const store = await createViewStore(ctx.latDir, ctx.projectRoot, {
     git: options.git,
+    gitPollMs: options.gitPollMs,
     watch: options.watch,
   });
   const search =

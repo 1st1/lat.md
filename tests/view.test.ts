@@ -1,11 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import {
-  mkdirSync,
-  mkdtempSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -683,7 +677,7 @@ describe('lat ui git state', () => {
         styler: plainStyler,
         mode: 'cli',
       },
-      { clientDir: root, watch: false },
+      { clientDir: root, gitPollMs: 20, watch: false },
     );
 
     try {
@@ -715,11 +709,20 @@ describe('lat ui git state', () => {
       const added = await gitView.store.getDocument('fresh.md');
       expect(added.gitHtml).toContain('class="git-added"');
 
-      writeFileSync(rootFile, baseline);
-      unlinkSync(newFile);
-      execFileSync('git', ['add', 'lat.md/lat.md'], { cwd: root });
-      await gitView.store.refresh(['lat.md/lat.md', 'lat.md/fresh.md']);
-      expect(gitView.store.getIndex().git).toEqual({ files: {} });
+      const dirtyGeneration = gitView.store.snapshot.generation;
+      execFileSync('git', ['add', 'lat.md'], { cwd: root });
+      execFileSync('git', ['commit', '--quiet', '-m', 'updated'], {
+        cwd: root,
+      });
+      await vi.waitFor(
+        () => {
+          expect(gitView.store.getIndex().git).toEqual({ files: {} });
+        },
+        { interval: 10, timeout: 1_000 },
+      );
+      expect(gitView.store.snapshot.generation).toBe(dirtyGeneration + 1);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(gitView.store.snapshot.generation).toBe(dirtyGeneration + 1);
     } finally {
       await gitView.close();
       rmSync(root, { recursive: true, force: true });
