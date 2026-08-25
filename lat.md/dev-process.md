@@ -2,19 +2,80 @@
 
 Development workflow, tooling, and conventions for the lat.md project.
 
+## Development Setup
+
+Local development requires Git, Node.js 22, pnpm through Corepack, and Rust with Cargo installed through [rustup](https://rustup.rs/).
+
+The required pnpm version comes exclusively from `packageManager` in the root `package.json`. The root `rust-toolchain.toml` selects stable Rust and the `wasm32-unknown-unknown` target.
+
+From the repository root, bootstrap and verify the full project with:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm setup:rust
+pnpm buildall
+pnpm test
+```
+
+`pnpm setup:rust` verifies the WASM target and installs the exact `wasm-bindgen-cli` version from `packages/embed/crate/Cargo.lock` under `packages/embed/.cargo-tools`. WASM builds run this setup automatically, so they never use a global CLI.
+
+The first full build downloads Rust crates and the MiniLM source model, converts the model to fp16, and creates ignored WASM/model artifacts that later builds reuse. Hosted embedding credentials are not required.
+
+Ripgrep is optional but recommended for faster source-reference scans; [[dev-process#File Walking]] provides a tested TypeScript fallback when `rg` is unavailable.
+
 ## Tooling
 
 TypeScript ESM project with a Rust-to-WASM embedding engine. Local development mirrors CI so package builds and tests exercise the complete published toolchain.
 
-Node 22 and pnpm through Corepack drive the workspace; `package.json#packageManager` is the sole pnpm version source. Rustup and Cargo are required for `@lat.md/embed`; root `rust-toolchain.toml` selects stable Rust and `wasm32-unknown-unknown`.
-
-`pnpm setup:rust` verifies the target and installs `wasm-bindgen-cli` under `packages/embed/.cargo-tools`, deriving its exact version from `Cargo.lock`. WASM builds run setup automatically and never depend on a global CLI.
-
-The first full build downloads Rust crates and the MiniLM source model, converts the model to fp16, and creates ignored WASM/model artifacts that later builds reuse. Ripgrep is optional because [[dev-process#File Walking]] provides a TypeScript fallback. Hosted embedding credentials are not required.
+The root workspace contains the TypeScript CLI, the `@lat.md/embed` Rust/WASM engine, and the `@lat.md/embed-minilm-fp16` model package. The `website/` Next.js app is a separate project with its own lockfile.
 
 ## Package Manager
 
 pnpm is the only supported package manager. Never use npm or yarn.
+
+## Contribution Workflow
+
+Contributions start from the knowledge graph and keep its design and test specifications synchronized with meaningful implementation changes.
+
+Before changing code, find the relevant intent and expand wiki references in the task:
+
+```bash
+pnpm exec lat search "topic or behavior"
+pnpm exec lat expand "the task, including any [[refs]]"
+```
+
+Use `pnpm exec lat locate "Section Name"` for direct lookup. Update `lat.md/` for meaningful functionality, architecture, behavior, tests, or planned work; keep it a current snapshot rather than a changelog. Follow `AGENTS.md` for section and code-reference conventions.
+
+Add or update tests with behavior changes. Important tests have a specification under `lat.md/tests/` and exactly one nearby `@lat:` comment in the corresponding test.
+
+Before opening or updating a pull request, run:
+
+```bash
+pnpm buildall
+pnpm test
+pnpm exec lat check
+```
+
+Keep pull requests focused and explain user-visible behavior and rationale. Do not commit generated `dist/`, `model/`, `wasm-dist/`, `.cargo-tools/`, or Cargo `target/` artifacts. Version bumps are reserved for maintainer-led releases.
+
+## Development Commands
+
+The root scripts provide focused checks and builds as well as the complete CI-equivalent workflow.
+
+- `pnpm test -- tests/parser.test.ts` — run a focused test file once
+- `pnpm test:watch` — run Vitest in watch mode
+- `pnpm typecheck` — check TypeScript without emitting files
+- `pnpm format` — format `src/**/*.ts`
+- `pnpm format:check` — check source formatting
+- `pnpm build` — compile the root TypeScript package only
+- `pnpm setup:rust` — prepare the Rust target and project-local build tools
+- `pnpm build:wasm` — rebuild the Rust/WASM engine only
+- `pnpm build:weights` — rebuild or reuse the MiniLM model package
+- `pnpm buildall` — build both workspace packages and the CLI
+- `pnpm exec lat check` — validate the knowledge graph and code references
+
+Set `LAT_FORCE_WEIGHTS=1` when running `pnpm build:weights` to download and convert the model again instead of reusing existing artifacts.
 
 ## Testing
 
@@ -33,12 +94,6 @@ Commands for running the test suite.
 - `pnpm test` — run all tests once
 - `pnpm test:watch` — run in watch mode
 
-### Contribution Workflow
-
-Contributions begin by searching and expanding the knowledge graph, then keep design docs and test specs synchronized with meaningful behavior changes.
-
-The complete setup and command guide is in [CONTRIBUTING.md](../CONTRIBUTING.md). Before a pull request, run `pnpm buildall`, `pnpm test`, and `pnpm exec lat check`; CI repeats the full build and suite on Linux and Windows.
-
 ### Typecheck Test
 
 Every test run includes a full `tsc --noEmit` pass over the entire codebase. If it doesn't typecheck, it doesn't pass.
@@ -48,6 +103,17 @@ Every test run includes a full `tsc --noEmit` pass over the entire codebase. If 
 CI (`.github/workflows/ci.yml`) runs the full `pnpm buildall` + `vitest` suite on a `[ubuntu-latest, windows-latest]` matrix (`fail-fast: false`) so platform-specific regressions — path separators (see [[parser#Short Ref Resolution]]) and line endings — are caught before release.
 
 Cross-platform correctness relies on two conventions: stored paths are always POSIX ([[src/walk.ts#toPosix]]), and a repo-root `.gitattributes` (`eol=lf`) keeps Windows checkouts from rewriting line endings and breaking the markdown roundtrip. Functional init tests run the built CLI and database seeding in child processes so native libsql handles close before temp cleanup. Lower-level tests that retain handles or spawn a fake `git` use [[tests/util.ts#rmDirBestEffort]].
+
+## Website Development
+
+The [[website]] is outside the root pnpm workspace, so install, run, and build it from its own directory.
+
+```bash
+cd website
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm build
+```
 
 ## File Walking
 
