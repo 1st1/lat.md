@@ -9,7 +9,7 @@
 After EVERY task, before responding to the user:
 
 - [ ] Update `lat.md/` if you added or changed meaningful functionality, architecture, tests, behavior, or planned work. Keep it a focused snapshot of current/planned state, not a journal/changelog.
-- [ ] Run `lat check` — all wiki links and code refs must pass
+- [ ] Run `lat check` — all validations must pass
 - [ ] Do not skip these steps. Do not consider your task done until both are complete.
 
 ---
@@ -25,7 +25,7 @@ lat locate "Section Name"      # find a section by name (exact, fuzzy)
 lat refs "file#Section"        # find what references a section
 lat search "natural language"  # semantic search across all sections
 lat expand "user prompt text"  # expand [[refs]] to resolved locations
-lat check                      # validate all links and code refs
+lat check                      # run full graph and documentation validation
 ```
 
 Run `lat --help` when in doubt about available commands or options.
