@@ -8,6 +8,7 @@ import {
 } from 'react';
 import type {
   ViewDocument,
+  ViewDocumentError,
   ViewError,
   ViewIndex,
   ViewProjectChange,
@@ -47,6 +48,37 @@ type ViewPage =
   | { kind: 'markdown'; document: ViewDocument }
   | { kind: 'source'; source: ViewSourceDocument };
 
+function DocumentErrorPanel({
+  errors,
+  onNavigate,
+}: {
+  errors: ViewDocumentError[];
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+}) {
+  return (
+    <section
+      aria-label="Validation errors"
+      className="document-error-panel"
+      id="document-errors"
+    >
+      <div className="document-error-header">Validation errors</div>
+      <div className="document-error-list">
+        {errors.map((error, index) => (
+          <a
+            className="document-error-item"
+            href={`#${error.anchor}`}
+            key={`${error.anchor}-${index}`}
+            onClick={onNavigate}
+          >
+            <span className="document-error-location">Line {error.line}</span>
+            <span className="document-error-message">{error.message}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 async function fetchJson<T extends object>(
   url: string,
   signal?: AbortSignal,
@@ -72,6 +104,7 @@ export function App() {
     markdownGeneration: 0,
   });
   const [error, setError] = useState('');
+  const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
   );
@@ -100,6 +133,11 @@ export function App() {
     return null;
   }, [location]);
   const activePath = route?.kind === 'markdown' ? route.path : null;
+  const errorPanelKey =
+    page?.kind === 'markdown'
+      ? `${page.document.path}@${projectChange.generation}`
+      : null;
+  const errorsOpen = errorPanelKey !== null && openErrorsFor === errorPanelKey;
   const documentHtml = useMemo(
     () =>
       page?.kind === 'markdown'
@@ -354,6 +392,7 @@ export function App() {
           {index && (
             <FileTree
               activePath={activePath}
+              errorCounts={index.errorCounts}
               files={index.files}
               onNavigate={onNavigationClick}
             />
@@ -365,15 +404,37 @@ export function App() {
         className={historyScroll ? 'main restoring-history-scroll' : 'main'}
       >
         {page?.kind === 'markdown' && (
-          <div className="document-metadata">
-            <div className="document-path">{page.document.path}</div>
-            {page.document.frontmatter.requireCodeMention && (
-              <div
-                className="document-flag"
-                title="Every leaf section must have an @lat code reference"
-              >
-                Code mentions required
-              </div>
+          <div className="document-header">
+            <div className="document-metadata">
+              <div className="document-path">{page.document.path}</div>
+              {page.document.frontmatter.requireCodeMention && (
+                <div
+                  className="document-flag"
+                  title="Every leaf section must have an @lat code reference"
+                >
+                  Code mentions required
+                </div>
+              )}
+              {page.document.errors.length > 0 && (
+                <button
+                  aria-controls="document-errors"
+                  aria-expanded={errorsOpen}
+                  className="document-error-toggle"
+                  onClick={() =>
+                    setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
+                  }
+                  type="button"
+                >
+                  {page.document.errors.length}{' '}
+                  {page.document.errors.length === 1 ? 'error' : 'errors'}
+                </button>
+              )}
+            </div>
+            {errorsOpen && (
+              <DocumentErrorPanel
+                errors={page.document.errors}
+                onNavigate={onNavigationClick}
+              />
             )}
           </div>
         )}

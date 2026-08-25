@@ -20,6 +20,8 @@ The store watches the project with a short debounce and serializes updates. Exis
 
 Every update atomically replaces the snapshot. Section identity changes rebuild the global resolution maps and re-resolve cached occurrences from memory, but never force unchanged files to be reread or reparsed.
 
+Each snapshot also validates cached Markdown links, wiki targets, section structure, and required code mentions. Diagnostics carry source lines so the client can mark files, list errors in the top metadata, and highlight the authored content.
+
 Browser clients subscribe to snapshot generations over server-sent events. A new generation refreshes the sidebar and current route while preserving the active URL and viewport.
 
 Markdown generations also dirty semantic search. The next query shares one incremental indexing pass across concurrent requests, then searches the updated index.

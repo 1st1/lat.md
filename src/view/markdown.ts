@@ -20,6 +20,12 @@ export type WikiLinkResolver = (
 export type MarkdownRenderOptions = {
   activeMarkdownLink?: string;
   activeWikiLink?: string;
+  errors?: {
+    anchor: string;
+    line: number;
+    marker: 'heading' | 'line' | 'target';
+    target: string;
+  }[];
   lineOffset?: number;
   rewriteMarkdownLink?: (url: string) => string;
 };
@@ -36,20 +42,47 @@ const CODE_LINK_CLASSES = [
   'code-language-c',
 ];
 
+const ERROR_CLASS = 'markdown-error';
+
+function classAttributes(
+  tag: string,
+): NonNullable<SanitizeSchema['attributes']>[string] {
+  return [
+    ...(defaultSchema.attributes?.[tag] ?? []),
+    ['className', ERROR_CLASS],
+  ];
+}
+
 const sanitizeSchema: SanitizeSchema = {
   ...defaultSchema,
   attributes: {
     ...defaultSchema.attributes,
-    a: (defaultSchema.attributes?.a ?? []).map((attribute) =>
-      Array.isArray(attribute) && attribute[0] === 'className'
-        ? [
-            ...attribute,
-            'wiki-link-segmented',
-            'wiki-link-code',
-            'wiki-link-active',
-          ]
-        : attribute,
-    ),
+    a: [
+      ...(defaultSchema.attributes?.a ?? []).filter(
+        (attribute) =>
+          !(Array.isArray(attribute) && attribute[0] === 'className'),
+      ),
+      [
+        'className',
+        'data-footnote-backref',
+        'wiki-link-segmented',
+        'wiki-link-code',
+        'wiki-link-active',
+        ERROR_CLASS,
+      ],
+    ],
+    blockquote: classAttributes('blockquote'),
+    code: classAttributes('code'),
+    h1: classAttributes('h1'),
+    h2: classAttributes('h2'),
+    h3: classAttributes('h3'),
+    h4: classAttributes('h4'),
+    h5: classAttributes('h5'),
+    h6: classAttributes('h6'),
+    img: classAttributes('img'),
+    li: classAttributes('li'),
+    p: classAttributes('p'),
+    pre: classAttributes('pre'),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
       'ariaHidden',
@@ -58,6 +91,7 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-context',
         'wiki-link-leaf',
         ...CODE_LINK_CLASSES.slice(2),
+        ERROR_CLASS,
       ],
     ],
   },
@@ -161,6 +195,83 @@ function languageIcon(language: {
   } as RootContent;
 }
 
+type MarkableNode = RootContent & {
+  data?: {
+    hName?: string;
+    hProperties?: Record<string, unknown>;
+  };
+};
+
+function targetMatches(node: MarkableNode, target: string): boolean {
+  if (node.type === 'wikiLink') {
+    return (node as WikiLink).value.toLowerCase() === target.toLowerCase();
+  }
+  if (node.type === 'link' || node.type === 'image') {
+    return node.url === target;
+  }
+  if (node.type === 'linkReference' || node.type === 'imageReference') {
+    return node.identifier.toLowerCase() === target.toLowerCase();
+  }
+  return false;
+}
+
+function errorNodeScore(
+  node: MarkableNode,
+  error: NonNullable<MarkdownRenderOptions['errors']>[number],
+): number | null {
+  const { line, marker, target } = error;
+  const start = node.position?.start.line;
+  const end = node.position?.end.line;
+  if (!start || !end || line < start || line > end) return null;
+  if (marker === 'heading') {
+    return start === line && node.type === 'heading' ? 0 : null;
+  }
+  if (marker === 'target' && targetMatches(node, target)) return 0;
+  if (node.type === 'paragraph') return marker === 'line' ? 1 : 3;
+  if (start === line) return 4;
+  return 5 + (end - start);
+}
+
+function markMarkdownErrors(
+  tree: Root,
+  errors: NonNullable<MarkdownRenderOptions['errors']>,
+): void {
+  for (const error of errors) {
+    let selected: MarkableNode | null = null;
+    let selectedScore = Number.POSITIVE_INFINITY;
+    visit(tree, (candidate) => {
+      if (candidate.type === 'root' || candidate.type === 'text') return;
+      const node = candidate as MarkableNode;
+      const score = errorNodeScore(node, error);
+      if (score === null || score >= selectedScore) return;
+      selected = node;
+      selectedScore = score;
+    });
+    if (!selected) continue;
+
+    const node = selected as MarkableNode;
+    const properties = node.data?.hProperties ?? {};
+    const currentClasses = properties.className;
+    const classes = Array.isArray(currentClasses)
+      ? currentClasses.map(String)
+      : currentClasses
+        ? [String(currentClasses)]
+        : [];
+    if (!classes.includes(ERROR_CLASS)) classes.push(ERROR_CLASS);
+    const generatedAnchor = error.anchor.startsWith('user-content-');
+    node.data = {
+      ...node.data,
+      hProperties: {
+        ...properties,
+        className: classes,
+        ...(node.type === 'heading' && !generatedAnchor
+          ? {}
+          : { id: error.anchor.replace(/^user-content-/, '') }),
+      },
+    };
+  }
+}
+
 /** Render a lat.md file as safe HTML with resolved wiki links. */
 export async function renderMarkdown(
   markdown: string,
@@ -171,6 +282,7 @@ export async function renderMarkdown(
 ): Promise<{ html: string; title: string }> {
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
+  if (options.errors) markMarkdownErrors(tree, options.errors);
 
   if (options.rewriteMarkdownLink || options.activeMarkdownLink) {
     visit(tree, 'link', (node: Link) => {
@@ -217,6 +329,9 @@ export async function renderMarkdown(
   visit(tree, 'wikiLink', (node: WikiLink, index, parent) => {
     if (index === undefined || !parent || !('children' in parent)) return;
     const href = resolvedLinks.get(node);
+    const markedProperties = node.data?.hProperties as
+      | Record<string, unknown>
+      | undefined;
     if (href) {
       const content = wikiLinkContent(node);
       const language = href.startsWith('/code/')
@@ -234,8 +349,18 @@ export async function renderMarkdown(
         type: 'link',
         url: href,
         data:
-          classes.length > 0
-            ? { hProperties: { className: classes } }
+          classes.length > 0 || markedProperties
+            ? {
+                hProperties: {
+                  ...markedProperties,
+                  className: [
+                    ...classes,
+                    ...(Array.isArray(markedProperties?.className)
+                      ? markedProperties.className.map(String)
+                      : []),
+                  ],
+                },
+              }
             : undefined,
         children: language
           ? [languageIcon(language), ...content.children]
@@ -245,10 +370,19 @@ export async function renderMarkdown(
     }
 
     const alias = node.data.alias ? `|${node.data.alias}` : '';
-    parent.children[index] = {
-      type: 'text',
-      value: `[[${node.value}${alias}]]`,
-    } as RootContent;
+    parent.children[index] = markedProperties
+      ? ({
+          type: 'emphasis',
+          data: {
+            hName: 'span',
+            hProperties: markedProperties,
+          },
+          children: [{ type: 'text', value: `[[${node.value}${alias}]]` }],
+        } as RootContent)
+      : ({
+          type: 'text',
+          value: `[[${node.value}${alias}]]`,
+        } as RootContent);
   });
 
   const hast = await htmlProcessor.run(tree);

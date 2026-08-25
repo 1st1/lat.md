@@ -71,6 +71,18 @@ export function expandDirectory(directory: { open: boolean } | null): void {
   if (directory) directory.open = true;
 }
 
+/** Sum validation errors below a file or directory for propagated markers. */
+export function fileTreeErrorCount(
+  node: FileTreeNode,
+  errorCounts: Readonly<Record<string, number>>,
+): number {
+  if (node.kind === 'file') return errorCounts[node.path] ?? 0;
+  return node.children.reduce(
+    (count, child) => count + fileTreeErrorCount(child, errorCounts),
+    0,
+  );
+}
+
 /** Convert vault-relative file paths into the hierarchy shown in the sidebar. */
 export function buildFileTree(files: string[]): FileTreeNode[] {
   const root = new Map<string, MutableNode>();

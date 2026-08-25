@@ -2,7 +2,6 @@ import { watch as watchFiles, type FSWatcher } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
 import {
   basename,
-  dirname,
   extname,
   isAbsolute,
   relative,
@@ -18,8 +17,10 @@ import {
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
+import { buildViewDiagnostics } from './diagnostics.js';
 import type {
   ViewDocument,
+  ViewDocumentError,
   ViewIndex,
   ViewProjectChange,
   ViewSourceDocument,
@@ -46,6 +47,7 @@ export type ViewProjectSnapshot = {
   files: ReadonlyMap<string, ViewParsedMarkdownFile>;
   allSections: Section[];
   references: ViewReferenceIndex;
+  diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>;
   index: ViewIndex;
 };
 
@@ -137,7 +139,11 @@ async function scanCodeState(projectRoot: string): Promise<{
   };
 }
 
-function viewIndex(latDir: string, paths: string[]): ViewIndex {
+function viewIndex(
+  latDir: string,
+  paths: string[],
+  diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
+): ViewIndex {
   const files = [...paths].sort();
   const directoryName = basename(latDir);
   const indexName = directoryName.endsWith('.md')
@@ -146,20 +152,32 @@ function viewIndex(latDir: string, paths: string[]): ViewIndex {
   return {
     files,
     entry: files.includes(indexName) ? indexName : (files[0] ?? ''),
+    errorCounts: Object.fromEntries(
+      [...diagnostics]
+        .filter(([, errors]) => errors.length > 0)
+        .map(([path, errors]) => [path, errors.length]),
+    ),
   };
 }
 
-function buildSnapshot(
+async function buildSnapshot(
   latDir: string,
+  projectRoot: string,
   markdownFiles: Map<string, ViewParsedMarkdownFile>,
   codeFiles: Map<string, ViewCodeReferenceFile>,
   generation: number,
   markdownGeneration: number,
-): ViewProjectSnapshot {
+): Promise<ViewProjectSnapshot> {
   const files = new Map(
     [...markdownFiles].sort(([left], [right]) => left.localeCompare(right)),
   );
   const allSections = [...files.values()].flatMap((file) => file.sections);
+  const diagnostics = await buildViewDiagnostics(
+    files.values(),
+    codeFiles.values(),
+    allSections,
+    projectRoot,
+  );
   return {
     generation,
     markdownGeneration,
@@ -170,7 +188,8 @@ function buildSnapshot(
       codeFiles.values(),
       allSections,
     ),
-    index: viewIndex(latDir, [...files.keys()]),
+    diagnostics,
+    index: viewIndex(latDir, [...files.keys()], diagnostics),
   };
 }
 
@@ -257,12 +276,14 @@ export class ViewStore {
       file.content,
       requestedPath,
       resolver,
-      {},
+      { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
       file.tree,
     );
+    const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     return {
       path: requestedPath,
       ...rendered,
+      errors,
       backReferences: await renderSectionBackReferences(
         snapshot.references,
         file.sections,
@@ -364,6 +385,7 @@ export class ViewStore {
     let codeFiles = new Map(this.codeFiles);
     let markdownChanged = false;
     let codeChanged = false;
+    let linkedResourceChanged = false;
 
     if (touchesMarkdown) {
       const discovered = new Map(
@@ -408,6 +430,10 @@ export class ViewStore {
         markdownFiles.set(path, next);
         markdownChanged = true;
       }
+      linkedResourceChanged = paths.some(
+        (path) =>
+          path.startsWith(`${latPath}/`) && !path.toLowerCase().endsWith('.md'),
+      );
     }
 
     const codePaths = paths.filter(
@@ -460,10 +486,11 @@ export class ViewStore {
       }
     }
 
-    if (!markdownChanged && !codeChanged) return;
+    if (!markdownChanged && !codeChanged && !linkedResourceChanged) return;
     this.codeFiles = codeFiles;
-    this.snapshotValue = buildSnapshot(
+    this.snapshotValue = await buildSnapshot(
       this.latDir,
+      this.projectRoot,
       markdownFiles,
       codeFiles,
       this.snapshotValue.generation + 1,
@@ -515,7 +542,14 @@ export async function createViewStore(
     latDir,
     projectRoot,
     realLatDir,
-    buildSnapshot(latDir, markdownFiles, codeState.files, 0, 0),
+    await buildSnapshot(
+      latDir,
+      projectRoot,
+      markdownFiles,
+      codeState.files,
+      0,
+      0,
+    ),
     codeState.files,
     codeState.scope,
     options,

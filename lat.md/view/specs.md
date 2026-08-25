@@ -53,6 +53,12 @@ Browser clients receive a change event and refresh the current route while keepi
 
 The first search indexes lazily, while a later Markdown generation triggers exactly one shared incremental indexing pass before new queries run.
 
+## Shows live validation errors
+
+Invalid Markdown files show a sidebar marker propagated through every ancestor directory, plus a top metadata error label whose entries jump to red-marked authored content.
+
+The initial snapshot and every refresh recompute diagnostics from cached syntax trees, removing markers immediately when errors are fixed.
+
 ## Places context within a collapsed source window
 
 Focused source views place reference context before the highlighted definition, keep five surrounding lines, and reveal collapsed code without moving the visible anchor.

@@ -17,6 +17,7 @@ import {
   buildFileTree,
   directoryIndex,
   expandDirectory,
+  fileTreeErrorCount,
 } from '../view/src/file-tree.js';
 import {
   historyScrollPosition,
@@ -91,6 +92,7 @@ describe('lat ui', () => {
     expect((await indexResponse.json()) as ViewIndex).toEqual({
       files: ['guide.md', 'lat.md'],
       entry: 'lat.md',
+      errorCounts: {},
     });
 
     const rootResponse = await fetch(view.url, { redirect: 'manual' });
@@ -469,6 +471,25 @@ describe('lat ui', () => {
       expect(directoryIndex(guides)?.path).toBe('guides/guides.md');
     }
 
+    const nested = buildFileTree([
+      'area/area.md',
+      'area/deep/deep.md',
+      'area/deep/broken.md',
+    ]);
+    const area = nested[0];
+    expect(
+      fileTreeErrorCount(area, {
+        'area/area.md': 1,
+        'area/deep/broken.md': 2,
+      }),
+    ).toBe(3);
+    if (area.kind === 'directory') {
+      const deep = area.children.find((node) => node.path === 'area/deep');
+      expect(
+        deep && fileTreeErrorCount(deep, { 'area/deep/broken.md': 2 }),
+      ).toBe(2);
+    }
+
     const directory = { open: false };
     expandDirectory(directory);
     expect(directory.open).toBe(true);
@@ -535,6 +556,60 @@ describe('lat ui', () => {
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(`Viewing lat.md at ${started!.url}`);
     await started!.close();
+  });
+});
+
+describe('lat ui validation diagnostics', () => {
+  // @lat: [[lat.md/view/specs#View Tests#Shows live validation errors]]
+  it('marks invalid files and refreshes their clickable diagnostics', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'lat-view-errors-'));
+    const errorsLatDir = join(root, 'lat.md');
+    const rootFile = join(errorsLatDir, 'lat.md');
+    mkdirSync(errorsLatDir);
+    writeFileSync(
+      rootFile,
+      '# Broken\n\nA valid overview.\n\nA [missing file](missing.md).\n\nA [[missing#Section]] reference.\n',
+    );
+
+    const errorsView = await startViewServer(
+      {
+        latDir: errorsLatDir,
+        projectRoot: root,
+        styler: plainStyler,
+        mode: 'cli',
+      },
+      { clientDir: root, watch: false },
+    );
+
+    try {
+      const initialIndex = errorsView.store.getIndex();
+      expect(initialIndex.errorCounts).toEqual({ 'lat.md': 2 });
+
+      const initial = await errorsView.store.getDocument('lat.md');
+      expect(initial.errors).toHaveLength(2);
+      expect(initial.html).toContain('class="markdown-error"');
+      expect(initial.html).toContain('id="user-content-markdown-error-5"');
+      expect(initial.html).toContain('id="user-content-markdown-error-7"');
+      writeFileSync(
+        rootFile,
+        '# Fixed\n\nA valid overview with no broken links.\n',
+      );
+      await errorsView.store.refresh(['lat.md/lat.md']);
+      expect(errorsView.store.getIndex().errorCounts).toEqual({});
+      const fixed = await errorsView.store.getDocument('lat.md');
+      expect(fixed.errors).toEqual([]);
+      expect(fixed.html).not.toContain('markdown-error');
+
+      writeFileSync(
+        rootFile,
+        '# Broken again\n\nA valid overview.\n\nAnother [[missing#Section]] reference.\n',
+      );
+      await errorsView.store.refresh(['lat.md/lat.md']);
+      expect(errorsView.store.getIndex().errorCounts).toEqual({ 'lat.md': 1 });
+    } finally {
+      await errorsView.close();
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });
 

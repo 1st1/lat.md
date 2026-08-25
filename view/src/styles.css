@@ -18,6 +18,9 @@
   --muted: #777268;
   --accent: #7357d9;
   --accent-soft: #e7e0ff;
+  --danger: #b72f3d;
+  --danger-soft: #f8dfe2;
+  --danger-border: #e7a5ad;
   --code: #ece9e1;
   --syntax-built-in: #9a3f75;
   --syntax-comment: #777268;
@@ -38,6 +41,9 @@
     --muted: #9c978d;
     --accent: #ad9aff;
     --accent-soft: #332b52;
+    --danger: #ff7e8a;
+    --danger-soft: #49262b;
+    --danger-border: #713941;
     --code: #25241f;
     --syntax-built-in: #e6a2cc;
     --syntax-comment: #88847c;
@@ -157,6 +163,13 @@ a {
   text-decoration: none;
 }
 
+.tree-directory > summary > a,
+.tree-directory > summary > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .tree-directory > summary::before {
   content: '›';
   display: inline-block;
@@ -189,8 +202,10 @@ a {
 }
 
 .document-link {
-  display: block;
+  display: flex;
   padding: 7px 10px;
+  align-items: center;
+  gap: 8px;
   overflow: hidden;
   color: var(--muted);
   font-size: 13px;
@@ -199,6 +214,23 @@ a {
   text-overflow: ellipsis;
   white-space: nowrap;
   border-radius: 7px;
+}
+
+.document-link-name {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.document-error-disc {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  background: var(--danger);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 12%, transparent);
 }
 
 .document-link:hover,
@@ -222,9 +254,13 @@ a {
   visibility: hidden;
 }
 
+.document-header {
+  max-width: 760px;
+  margin-bottom: 34px;
+}
+
 .document-metadata {
   display: flex;
-  margin-bottom: 34px;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
@@ -246,6 +282,82 @@ a {
   background: var(--accent-soft);
   border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
   border-radius: 999px;
+}
+
+.document-error-toggle {
+  display: inline-flex;
+  padding: 3px 8px;
+  align-items: center;
+  color: var(--danger);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  background: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  border-radius: 999px;
+}
+
+.document-error-toggle:hover,
+.document-error-toggle[aria-expanded='true'] {
+  color: var(--text);
+}
+
+.document-error-panel {
+  margin-top: 12px;
+  overflow: hidden;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background: color-mix(in srgb, var(--danger-soft) 55%, var(--background));
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+}
+
+.document-error-header {
+  padding: 9px 13px 7px;
+  color: var(--danger);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.document-error-item {
+  display: grid;
+  padding: 10px 13px 11px;
+  gap: 5px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.document-error-item + .document-error-item {
+  border-top: 1px solid var(--danger-border);
+}
+
+.document-error-item:hover {
+  background: color-mix(in srgb, var(--danger-soft) 75%, transparent);
+}
+
+.document-error-location {
+  color: var(--danger);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.document-error-message {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .source-context {
@@ -713,6 +825,37 @@ a {
 .markdown a {
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+}
+
+.markdown .markdown-error {
+  color: var(--danger);
+  scroll-margin-top: 24px;
+  text-decoration-color: currentColor;
+}
+
+.markdown p.markdown-error,
+.markdown li.markdown-error,
+.markdown blockquote.markdown-error,
+.markdown pre.markdown-error,
+.markdown h1.markdown-error,
+.markdown h2.markdown-error,
+.markdown h3.markdown-error,
+.markdown h4.markdown-error,
+.markdown h5.markdown-error,
+.markdown h6.markdown-error {
+  padding-left: 10px;
+  background: color-mix(in srgb, var(--danger-soft) 42%, transparent);
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.markdown a.markdown-error,
+.markdown span.markdown-error {
+  padding: 0.08em 0.2em;
+  margin: -0.08em -0.2em;
+  background: var(--danger-soft);
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 .wiki-link-context {

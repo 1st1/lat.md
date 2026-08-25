@@ -1,6 +1,15 @@
 export type ViewIndex = {
   files: string[];
   entry: string;
+  errorCounts: Record<string, number>;
+};
+
+export type ViewDocumentError = {
+  anchor: string;
+  line: number;
+  marker: 'heading' | 'line' | 'target';
+  message: string;
+  target: string;
 };
 
 export type ViewSearchResult = {
@@ -26,6 +35,7 @@ export type ViewDocument = {
   path: string;
   title: string;
   html: string;
+  errors: ViewDocumentError[];
   backReferences: ViewSectionBackReferences[];
   frontmatter: {
     requireCodeMention: boolean;

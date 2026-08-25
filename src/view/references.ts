@@ -6,10 +6,12 @@ import {
   buildFileIndex,
   buildSectionSlugIndex,
   extractRefs,
+  extractLinks,
   flattenSections,
   parseSections,
   resolveRef,
   type Ref,
+  type MdLink,
   type Section,
 } from '../lattice.js';
 import { parse } from '../parser.js';
@@ -36,6 +38,7 @@ type ParagraphContent = {
 };
 
 type MarkdownLink = {
+  kind: 'image' | 'link';
   line: number;
   url: string;
 };
@@ -50,6 +53,7 @@ export type ViewParsedMarkdownFile = {
   wikiRefs: Ref[];
   paragraphs: Map<number, ParagraphContent>;
   markdownLinks: MarkdownLink[];
+  validationLinks: MdLink[];
 };
 
 export type ViewCodeReferenceFile = {
@@ -118,14 +122,30 @@ function markdownLinks(tree: Root): MarkdownLink[] {
 
   const links: MarkdownLink[] = [];
   visit(tree, (node) => {
-    if (node.type !== 'link' && node.type !== 'linkReference') return;
+    if (
+      node.type !== 'link' &&
+      node.type !== 'image' &&
+      node.type !== 'linkReference' &&
+      node.type !== 'imageReference'
+    ) {
+      return;
+    }
     const line = node.position?.start.line;
     if (!line) return;
     const url =
-      node.type === 'link'
+      node.type === 'link' || node.type === 'image'
         ? node.url
         : definitions.get(node.identifier.toLowerCase());
-    if (url) links.push({ line, url });
+    if (url) {
+      links.push({
+        kind:
+          node.type === 'image' || node.type === 'imageReference'
+            ? 'image'
+            : 'link',
+        line,
+        url,
+      });
+    }
   });
   return links;
 }
@@ -148,6 +168,7 @@ export function parseViewMarkdownFile(
     wikiRefs: extractRefs(absolutePath, content, projectRoot, tree),
     paragraphs: paragraphs(content, tree),
     markdownLinks: markdownLinks(tree),
+    validationLinks: extractLinks(content, tree),
   };
 }
 
@@ -329,6 +350,7 @@ export function buildViewReferenceIndex(
     }
 
     for (const link of file.markdownLinks) {
+      if (link.kind !== 'link') continue;
       const targetSection = linkedSection(link.url, file.path, sectionsByPath);
       if (!targetSection) continue;
       const section = fileSections

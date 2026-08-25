@@ -862,8 +862,10 @@ function closingBracket(value: string, open: number): number {
 }
 
 /** Extract link destinations and undefined full/collapsed references. */
-export function extractLinks(content: string): MdLink[] {
-  const tree = parse(content);
+export function extractLinks(
+  content: string,
+  tree: Root = parse(content),
+): MdLink[] {
   const links: MdLink[] = [];
 
   visit(tree, ['link', 'image', 'definition'], (node) => {

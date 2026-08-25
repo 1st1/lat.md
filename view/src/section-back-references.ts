@@ -100,7 +100,7 @@ export function renderSectionBackReferences(
     if (!section.headingId || section.references.length === 0) return rendered;
     const encodedId = escapeHtml(section.headingId);
     const heading = new RegExp(
-      `<h([1-6]) id="${escapeRegExp(encodedId)}">([\\s\\S]*?)</h\\1>`,
+      `<h([1-6])([^>]*)\\bid="${escapeRegExp(encodedId)}"([^>]*)>([\\s\\S]*?)</h\\1>`,
     );
     const markup = backReferenceMarkup(section, index);
     return rendered.replace(heading, (match, level: string) => {
