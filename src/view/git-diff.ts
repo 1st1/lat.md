@@ -22,7 +22,9 @@ type DataNode = RootContent & {
 };
 
 const MAX_DIFF_CELLS = 1_000_000;
+const MIN_INLINE_WORD_OVERLAP = 0.2;
 const WORDS = /\s+|[\p{L}\p{N}_]+|[^\s\p{L}\p{N}_]+/gu;
+const WORD_TOKENS = /[\p{L}\p{N}_]+/gu;
 
 function sequenceDiff<T>(
   oldValues: T[],
@@ -124,6 +126,18 @@ function nodeText(node: RootContent): string {
   if (node.type === 'wikiLink') return wikiText(node as WikiLink);
   if ('value' in node && typeof node.value === 'string') return node.value;
   return withChildren(node) ? node.children.map(nodeText).join('') : '';
+}
+
+function inlineWordOverlap(oldNode: RootContent, newNode: RootContent): number {
+  const oldWords = nodeText(oldNode).toLowerCase().match(WORD_TOKENS) ?? [];
+  const newWords = nodeText(newNode).toLowerCase().match(WORD_TOKENS) ?? [];
+  if (oldWords.length === 0 || newWords.length === 0) {
+    return oldWords.length === newWords.length ? 1 : 0;
+  }
+  const shared = sequenceDiff(oldWords, newWords, (word) => word).filter(
+    (change) => change.kind === 'same',
+  ).length;
+  return shared / (oldWords.length + newWords.length - shared);
 }
 
 function wrapperSignature(node: RootContent): string {
@@ -249,6 +263,9 @@ function pairedNode(
     withChildren(oldNode) &&
     withChildren(newNode)
   ) {
+    if (inlineWordOverlap(oldNode, newNode) < MIN_INLINE_WORD_OVERLAP) {
+      return null;
+    }
     return {
       ...structuredClone(newNode),
       children: diffInline(oldNode.children, newNode.children),

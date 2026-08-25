@@ -729,7 +729,7 @@ describe('lat ui git state', () => {
     }
   });
 
-  it('preserves Markdown structure while highlighting changed words', async () => {
+  it('uses word diffs only for blocks with enough overlap', async () => {
     const current = '# Title\n\nThe [new link](guide.md) stays clickable.\n';
     const tree = buildGitDiffTree(
       '# Title\n\nThe [old link](guide.md) stays clickable.\n',
@@ -750,6 +750,39 @@ describe('lat ui git state', () => {
       '<ins class="git-added"><a href="guide.md">new</a></ins>',
     );
     expect(rendered.html).toContain('href="guide.md"');
+
+    const replacement =
+      'Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.';
+    const replaced = await renderMarkdown(
+      replacement,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(
+        'The top Git toggle hides or reveals both sidebar markers and inline diffs without changing the underlying files.',
+        replacement,
+      ),
+    );
+    expect(replaced.html).toContain('<p class="git-removed">The top Git');
+    expect(replaced.html).toContain(
+      '<p class="git-added">Polling also detects commits',
+    );
+    expect(replaced.html).not.toContain('<del class="git-removed">');
+
+    const borderlineReplacement = 'Shared new four five six.';
+    const borderline = await renderMarkdown(
+      borderlineReplacement,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree('Shared old one two three.', borderlineReplacement),
+    );
+    expect(borderline.html).toContain(
+      '<p class="git-removed">Shared old one two three.</p>',
+    );
+    expect(borderline.html).toContain(
+      '<p class="git-added">Shared new four five six.</p>',
+    );
   });
 });
 
