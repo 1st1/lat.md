@@ -33,4 +33,3 @@ Shared patterns for writing and organizing tests in this project.
 - [[init]] — Initialization defaults for local-first semantic search
 - [[config]] — User-level configuration and repository embedding preference persistence
 - [[ts-fallback]] — Pure-TypeScript code-ref scanner fallback without ripgrep
-- [[view]] — Local browser startup, Markdown rendering, navigation, and path containment

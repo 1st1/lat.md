@@ -39,52 +39,6 @@ Usage: `lat section <query>`
 
 Core logic in [[src/cli/section.ts#getSection]] (returns structured result), used by both the CLI command and [[cli#mcp]] `lat_section` tool.
 
-## view
-
-Open the discovered `lat.md/` as rendered documentation in the default browser.
-
-Usage: `lat view`
-
-The command starts [[src/view/server.ts#startViewServer]] on an ephemeral loopback port, prints the URL, and launches the platform browser without routing the URL through a shell. The server remains active until the CLI process exits.
-
-The React client is compiled by Vite into publishable static assets under `dist/src/view/client`; frontend build tooling is not part of the installed runtime. The server itself uses Node's HTTP implementation rather than a web framework.
-
-### Markdown navigation
-
-The browser groups discovered Markdown files into an expandable directory tree and renders documents through [[src/view/markdown.ts#renderMarkdown]]. The active document's ancestors open automatically.
-
-Root `lat.md` and each nested `name/name.md` directory index stay first; remaining files and folders use case-insensitive natural name order. Clicking a directory label expands it and renders its index, even when that index is already active.
-
-Sidebar rows keep a two-pixel vertical gap and compact padding so adjacent hover and active backgrounds remain visually distinct without loosening the tree.
-
-A magnifying-glass link beside the brand opens `/search`. The client debounces input before requesting ranked embedding matches; the server lazily updates the vector index once, then reuses it for read-only queries. Results link to exact section anchors.
-
-The latest input is stored in the search URL with `replaceState`, so navigating Back from a result restores and reruns that query without making every keystroke a separate history entry.
-
-Search history records the page that opened it. Escape first clears non-empty input; from an empty input it dismisses search back to that exact page. A directly loaded search URL falls back to the vault index.
-
-Ordinary relative Markdown links navigate within `/docs/` and preserve heading fragments. Headings receive GitHub-style ids. Wiki links resolved by [[src/lattice.ts#resolveRef]] to Markdown sections become clickable document links using their alias when present; unresolved wiki targets remain authored text.
-
-Referenced headings carry a compact count derived from incoming ordinary Markdown links, wiki links, and `@lat:` code mentions. Activating it opens a context panel with each distinct referencing paragraph or source line; Markdown context keeps its links interactive, and code entries navigate to the highlighted line.
-
-Validated [[markdown#Wiki Links#Source Code Links]] navigate within `/code/` and carry compact, extension-derived language badges. The source API constrains reads to supported source extensions inside the project root, then uses [[src/source-parser.ts#resolveSourceSymbol]] to return a symbol's definition range. Server-side highlighting registers only the supported languages and returns escaped HTML lines; the client adds line numbers and highlights the resolved range without shipping grammars in its bundle.
-
-Source links carry their enclosing section id and authored line as provenance. The code view validates that provenance against the vault, then safely renders the referencing paragraph immediately before the highlighted definition with working Markdown and wiki links; the selected code link is visually emphasized. It keeps five surrounding lines visible, collapses distant lines behind separate expansion controls, and preserves the current visual anchor when inserting hidden lines above. `Other references` sits in a centered lower divider that expands to links for the other lat sections targeting the same source symbol.
-
-Client-side navigation positions heading fragments instantly after rendering. The document does not remain in motion, so its text and links are immediately interactive.
-
-Before pushing an in-app route, the browser records the current viewport on its history entry. Back restores that position before revealing ready Markdown, source, or asynchronous search content, avoiding a visible top-of-page jump.
-
-YAML stays out of the rendered body. When [[markdown#Frontmatter#require-code-mention]] is `true`, the browser exposes it as document metadata and shows a `Code mentions required` badge beside the file path.
-
-For an unaliased target such as `markdown#Frontmatter`, the browser visually mutes `markdown#` and emphasizes the final `Frontmatter` segment. Each segment's underline follows its text color. Explicit aliases render as authored without this split treatment.
-
-Search, graph visualization, and Git diffs are outside this slice.
-
-Only Markdown files returned by the vault walker can be read. The document API rejects absolute paths, backslashes, non-Markdown targets, ignored files, and symlinks that resolve outside `lat.md/`.
-
-CLI orchestration is in [[src/cli/view.ts#viewCommand]].
-
 ## refs
 
 Find sections that reference a given target via [[parser#Wiki Links]]. The query can be a section id or a source file path.
@@ -459,7 +413,7 @@ Rebuilds the embedding index — the single write/rebuild path (`lat search` onl
 Backend selection honors the **durable per-repo preference**: a repo pinned to local rebuilds local
 and ignores `LAT_LLM_KEY` (printing a note when a key is nonetheless set). Flags override: `--local`
 forces the offline model; `--remote` re-resolves from the key (the escape hatch back to hosted, and
-errors if no key is set). A bare run on an _unpinned_ repo decides from the environment. This is how
+errors if no key is set). A bare run on an *unpinned* repo decides from the environment. This is how
 a user migrates — e.g. after removing a key, or when a key is rejected.
 
 If a key is used but rejected, `lat reindex` verifies it with a probe embed first (so an invalid key

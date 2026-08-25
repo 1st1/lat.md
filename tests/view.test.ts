@@ -84,7 +84,7 @@ describe('lat view', () => {
     rmSync(clientDir, { recursive: true, force: true });
   });
 
-  // @lat: [[view#Serves the document index and browser shell]]
+  // @lat: [[lat.md/view/specs#View Tests#Serves the document index and browser shell]]
   it('serves the document index and browser shell', async () => {
     const indexResponse = await fetch(new URL('/api/index', view.url));
     expect(indexResponse.status).toBe(200);
@@ -110,7 +110,7 @@ describe('lat view', () => {
     expect(await searchShell.text()).toContain('lat view shell');
   });
 
-  // @lat: [[view#Searches sections with embeddings]]
+  // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
   it('serves lazily indexed semantic section search', async () => {
     expect(searchUrl('runner details')).toBe('/search?q=runner+details');
     expect(searchQuery('?q=runner+details')).toBe('runner details');
@@ -155,7 +155,7 @@ describe('lat view', () => {
     expect(runIndex).toHaveBeenCalledTimes(1);
   });
 
-  // @lat: [[view#Renders Markdown with navigable local links]]
+  // @lat: [[lat.md/view/specs#View Tests#Renders Markdown with navigable local links]]
   it('renders Markdown with navigable local links', async () => {
     const response = await fetch(
       new URL('/api/document?path=lat.md', view.url),
@@ -170,7 +170,7 @@ describe('lat view', () => {
     expect(document.html).not.toContain('require-code-mention');
   });
 
-  // @lat: [[view#Exposes code-mention frontmatter as metadata]]
+  // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
   it('exposes code-mention frontmatter as document metadata', async () => {
     const response = await fetch(
       new URL('/api/document?path=guide.md', view.url),
@@ -181,7 +181,7 @@ describe('lat view', () => {
     expect(document.html).not.toContain('require-code-mention');
   });
 
-  // @lat: [[view#Resolves Markdown and source wiki links]]
+  // @lat: [[lat.md/view/specs#View Tests#Resolves Markdown and source wiki links]]
   it('resolves Markdown and source wiki links', async () => {
     const response = await fetch(
       new URL('/api/document?path=lat.md', view.url),
@@ -210,7 +210,7 @@ describe('lat view', () => {
     expect(document.html).toContain('aria-hidden="true"');
   });
 
-  // @lat: [[view#Serves source definitions securely]]
+  // @lat: [[lat.md/view/specs#View Tests#Serves source definitions securely]]
   it('serves source definitions with symbol ranges', async () => {
     const response = await fetch(
       new URL('/api/source?path=src/app.ts&symbol=run', view.url),
@@ -237,7 +237,7 @@ describe('lat view', () => {
     });
   });
 
-  // @lat: [[view#Shows source reference context]]
+  // @lat: [[lat.md/view/specs#View Tests#Shows source reference context]]
   it('shows the originating paragraph and other section references', async () => {
     const url = new URL('/api/source', view.url);
     url.searchParams.set('path', 'src/app.ts');
@@ -278,7 +278,7 @@ describe('lat view', () => {
     );
   });
 
-  // @lat: [[view#Shows section back-references]]
+  // @lat: [[lat.md/view/specs#View Tests#Shows section back-references]]
   it('shows Markdown and code references on every referenced section', async () => {
     const response = await fetch(
       new URL('/api/document?path=guide.md', view.url),
@@ -339,7 +339,7 @@ describe('lat view', () => {
     });
   });
 
-  // @lat: [[view#Places context within a collapsed source window]]
+  // @lat: [[lat.md/view/specs#View Tests#Places context within a collapsed source window]]
   it('places context before the focused lines and collapses distant code', () => {
     const focus = {
       symbol: 'run',
@@ -395,7 +395,7 @@ describe('lat view', () => {
     });
   });
 
-  // @lat: [[view#Highlights source syntax safely]]
+  // @lat: [[lat.md/view/specs#View Tests#Highlights source syntax safely]]
   it('highlights source syntax without emitting executable markup', () => {
     const lines = highlightSource(
       'src/example.ts',
@@ -410,7 +410,7 @@ describe('lat view', () => {
     expect(lines[2]).toContain('hljs-comment');
   });
 
-  // @lat: [[view#Builds a nested file tree]]
+  // @lat: [[lat.md/view/specs#View Tests#Builds a nested file tree]]
   it('builds a nested file tree', () => {
     const tree = buildFileTree([
       'lat.md',
@@ -450,7 +450,7 @@ describe('lat view', () => {
     expect(directory.open).toBe(true);
   });
 
-  // @lat: [[view#Stabilizes fragment navigation immediately]]
+  // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately]]
   it('positions fragment navigation without smooth scrolling', () => {
     const scrollIntoView = vi.fn();
     const getElementById = vi.fn(() => ({ scrollIntoView }));
@@ -469,7 +469,7 @@ describe('lat view', () => {
     expect(scrollTo).not.toHaveBeenCalled();
   });
 
-  // @lat: [[view#Restores history scroll positions]]
+  // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]
   it('preserves scroll positions in navigation history state', () => {
     const state = historyStateWithScroll(
       searchHistoryState('/docs/guide.md#details'),
@@ -483,7 +483,7 @@ describe('lat view', () => {
     );
   });
 
-  // @lat: [[view#Rejects files outside the Markdown vault]]
+  // @lat: [[lat.md/view/specs#View Tests#Rejects files outside the Markdown vault]]
   it('rejects files outside the Markdown vault', async () => {
     const outside = await fetch(
       new URL('/api/document?path=../package.json', view.url),
@@ -494,7 +494,7 @@ describe('lat view', () => {
     });
   });
 
-  // @lat: [[view#Launches the browser after the server starts]]
+  // @lat: [[lat.md/view/specs#View Tests#Launches the browser after the server starts]]
   it('launches the browser after the server starts', async () => {
     const openBrowser = vi.fn(async () => {});
     let started: ViewServer | undefined;
