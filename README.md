@@ -85,10 +85,13 @@ Switch backends any time with `lat reindex` (`--local` to force the offline mode
 
 ## Development
 
-Requires Node.js 22+ and pnpm.
+Development requires Node.js 22, pnpm, and Rust installed through rustup. The
+pnpm setup installs the matching WASM target and build tools project-locally.
+See the [development process](lat.md/dev-process.md) for complete setup and
+contribution guidance.
 
 ```bash
 pnpm install
-pnpm build
+pnpm buildall
 pnpm test
 ```

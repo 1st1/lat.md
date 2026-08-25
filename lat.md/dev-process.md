@@ -2,13 +2,82 @@
 
 Development workflow, tooling, and conventions for the lat.md project.
 
+## Development Setup
+
+Local development requires Git, Node.js 22, pnpm through Corepack, and Rust with Cargo installed through [rustup](https://rustup.rs/).
+
+Rust compilation also requires the platform's native linker and build tools; rustup will prompt for these where needed.
+
+The required pnpm version comes exclusively from `packageManager` in the root `package.json`. The root `rust-toolchain.toml` selects stable Rust and the `wasm32-unknown-unknown` target.
+
+From the repository root, bootstrap and verify the full project with:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm setup:rust
+pnpm buildall
+pnpm test
+```
+
+`pnpm setup:rust` verifies the WASM target and installs the exact `wasm-bindgen-cli` version from `packages/embed/crate/Cargo.lock` under `packages/embed/.cargo-tools`. WASM builds run this setup automatically, so they never use a global CLI.
+
+The first full build downloads Rust crates and the MiniLM source model, converts the model to fp16, and creates ignored WASM/model artifacts that later builds reuse. Hosted embedding credentials are not required.
+
+Ripgrep is optional but recommended for faster source-reference scans; [[dev-process#File Walking]] provides a tested TypeScript fallback when `rg` is unavailable.
+
 ## Tooling
 
-TypeScript ESM project (`"type": "module"`). Strict types enforced — `tsc --noEmit` runs as a [[dev-process#Testing#Typecheck Test]].
+TypeScript ESM project with a Rust-to-WASM embedding engine. Local development mirrors CI so package builds and tests exercise the complete published toolchain.
+
+The root workspace contains the TypeScript CLI, the `@lat.md/embed` Rust/WASM engine, and the `@lat.md/embed-minilm-fp16` model package. The `website/` Next.js app is a separate project with its own lockfile.
 
 ## Package Manager
 
 pnpm is the only supported package manager. Never use npm or yarn.
+
+## Contribution Workflow
+
+Contributions start from the knowledge graph and keep its design and test specifications synchronized with meaningful implementation changes.
+
+Before changing code, find the relevant intent and expand wiki references in the task:
+
+```bash
+pnpm exec lat search "topic or behavior"
+pnpm exec lat expand "the task, including any [[refs]]"
+```
+
+Use `pnpm exec lat locate "Section Name"` for direct lookup. Update `lat.md/` for meaningful functionality, architecture, behavior, tests, or planned work; keep it a current snapshot rather than a changelog. Follow `AGENTS.md` for section and code-reference conventions.
+
+Add or update tests with behavior changes. Important tests have a specification under `lat.md/tests/` and exactly one nearby `@lat:` comment in the corresponding test.
+
+Before opening or updating a pull request, run:
+
+```bash
+pnpm buildall
+pnpm test
+pnpm exec lat check
+```
+
+Keep pull requests focused and explain user-visible behavior and rationale. Do not commit generated `dist/`, `model/`, `wasm-dist/`, `.cargo-tools/`, or Cargo `target/` artifacts. Version bumps are reserved for maintainer-led releases.
+
+## Development Commands
+
+The root scripts provide focused checks and builds as well as the complete CI-equivalent workflow.
+
+- `pnpm test -- tests/parser.test.ts` — run a focused test file once
+- `pnpm test:watch` — run Vitest in watch mode
+- `pnpm typecheck` — check TypeScript without emitting files
+- `pnpm format` — format `src/**/*.ts`
+- `pnpm format:check` — check source formatting
+- `pnpm build` — compile the root TypeScript package only
+- `pnpm setup:rust` — prepare the Rust target and project-local build tools
+- `pnpm build:wasm` — rebuild the Rust/WASM engine only
+- `pnpm build:weights` — rebuild or reuse the MiniLM model package
+- `pnpm buildall` — build both workspace packages and the CLI
+- `pnpm exec lat check` — validate the knowledge graph and code references
+
+Set `LAT_FORCE_WEIGHTS=1` when running `pnpm build:weights` to download and convert the model again instead of reusing existing artifacts.
 
 ## Testing
 
@@ -36,6 +105,17 @@ Every test run includes a full `tsc --noEmit` pass over the entire codebase. If 
 CI (`.github/workflows/ci.yml`) runs the full `pnpm buildall` + `vitest` suite on a `[ubuntu-latest, windows-latest]` matrix (`fail-fast: false`) so platform-specific regressions — path separators (see [[parser#Short Ref Resolution]]) and line endings — are caught before release.
 
 Cross-platform correctness relies on two conventions: stored paths are always POSIX ([[src/walk.ts#toPosix]]), and a repo-root `.gitattributes` (`eol=lf`) keeps Windows checkouts from rewriting line endings and breaking the markdown roundtrip. Functional init tests run the built CLI and database seeding in child processes so native libsql handles close before temp cleanup. Lower-level tests that retain handles or spawn a fake `git` use [[tests/util.ts#rmDirBestEffort]].
+
+## Website Development
+
+The [[website]] is outside the root pnpm workspace, so install, run, and build it from its own directory.
+
+```bash
+cd website
+pnpm install --frozen-lockfile
+pnpm dev
+pnpm build
+```
 
 ## File Walking
 
@@ -79,7 +159,7 @@ Version numbers follow semver. While pre-1.0, bump the patch for fixes and the m
 
 GitHub Actions workflow at `.github/workflows/publish.yml`. Runs on every push to `main`:
 
-1. **Set up the toolchain** — Node 22 + pnpm, a Rust toolchain with the `wasm32-unknown-unknown` target, and `wasm-bindgen-cli` pinned to the `Cargo.lock` version (`0.2.126`), needed to build the `@lat.md/embed` WASM engine. Also installs ripgrep (`apt-get install ripgrep`) so both the rg and TS-fallback code paths are exercised
+1. **Set up the toolchain** — Node 22 + pnpm and a Rust toolchain with the `wasm32-unknown-unknown` target. `pnpm buildall` installs the Cargo-locked `wasm-bindgen-cli` into the project. The workflow also installs ripgrep so both scan paths are exercised
 2. **Build and test** — `pnpm install --frozen-lockfile`, then `pnpm buildall` (builds the WASM engine + fp16 weights + the top-level `lat` via `tsc`), then `pnpm vitest run`
 3. **Publish changed packages** — a `publish_if_new` shell helper publishes each package **in dependency order** (`packages/embed-minilm-fp16` → `packages/embed` → root `.`), skipping any whose `version` is already on npm (checked via `npm view <name>@<version>`). Each publishes with `pnpm publish --provenance --access public --no-git-checks`. Because `workspace:*` is rewritten at publish time, publishing the leaf packages first guarantees the root's rewritten pins already resolve on npm
 4. **Create GitHub release** — if a `vX.Y.Z` tag/release for the root version does not yet exist, creates one with auto-generated notes

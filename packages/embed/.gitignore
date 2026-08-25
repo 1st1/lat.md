@@ -1,3 +1,4 @@
 dist/
 wasm-dist/
 crate/target/
+.cargo-tools/

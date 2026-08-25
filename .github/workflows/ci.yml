@@ -30,8 +30,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: packages/embed/crate
-      - name: Install wasm-bindgen-cli (matches Cargo.lock)
-        run: cargo install wasm-bindgen-cli --version 0.2.126 --locked
 
       # Cache the ~90 MB MiniLM weights fetched + converted by build-weights.mjs
       # (the script is idempotent and skips the fetch when model/ is present), so
