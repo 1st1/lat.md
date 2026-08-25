@@ -14,5 +14,10 @@
     "strict": true,
     "types": ["vite/client", "node"]
   },
-  "include": ["src", "vite.config.ts", "../src/view/protocol.ts"]
+  "include": [
+    "src",
+    "vite.config.ts",
+    "highlight.vite.config.ts",
+    "../src/view/protocol.ts"
+  ]
 }

@@ -6,7 +6,9 @@
 
 [[src/cli/view.ts#viewCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
 
-The installed runtime uses Node HTTP and prebuilt Vite assets. Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
+The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
+
+Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
 ## Markdown navigation
 
