@@ -48,6 +48,8 @@ type ViewPage =
   | { kind: 'markdown'; document: ViewDocument }
   | { kind: 'source'; source: ViewSourceDocument };
 
+const NO_GIT_FILES = {};
+
 function DocumentErrorPanel({
   errors,
   onNavigate,
@@ -104,6 +106,7 @@ export function App() {
     markdownGeneration: 0,
   });
   const [error, setError] = useState('');
+  const [gitEnabled, setGitEnabled] = useState(true);
   const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
@@ -133,6 +136,8 @@ export function App() {
     return null;
   }, [location]);
   const activePath = route?.kind === 'markdown' ? route.path : null;
+  const gitHasChanges =
+    Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
   const errorPanelKey =
     page?.kind === 'markdown'
       ? `${page.document.path}@${projectChange.generation}`
@@ -142,11 +147,13 @@ export function App() {
     () =>
       page?.kind === 'markdown'
         ? renderSectionBackReferences(
-            page.document.html,
+            gitEnabled && page.document.gitHtml
+              ? page.document.gitHtml
+              : page.document.html,
             page.document.backReferences,
           )
         : '',
-    [page],
+    [gitEnabled, page],
   );
 
   useEffect(() => {
@@ -374,19 +381,39 @@ export function App() {
           >
             lat<span>.md</span>
           </a>
-          <a
-            aria-current={route?.kind === 'search' ? 'page' : undefined}
-            aria-label="Search"
-            className="sidebar-search"
-            href="/search"
-            onClick={onNavigationClick}
-            title="Search"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="6.5" />
-              <path d="m16 16 4 4" />
-            </svg>
-          </a>
+          <div className="sidebar-actions">
+            {index?.git && (
+              <button
+                aria-label={`${gitEnabled ? 'Hide' : 'Show'} Git changes${gitHasChanges ? ', changes available' : ''}`}
+                aria-pressed={gitEnabled}
+                className="sidebar-git"
+                data-has-changes={gitHasChanges || undefined}
+                onClick={() => setGitEnabled((enabled) => !enabled)}
+                title={`${gitEnabled ? 'Hide' : 'Show'} Git changes`}
+                type="button"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <circle cx="7" cy="5" r="2" />
+                  <circle cx="7" cy="19" r="2" />
+                  <circle cx="17" cy="9" r="2" />
+                  <path d="M7 7v10M9 15c5 0 8-1.5 8-4" />
+                </svg>
+              </button>
+            )}
+            <a
+              aria-current={route?.kind === 'search' ? 'page' : undefined}
+              aria-label="Search"
+              className="sidebar-search"
+              href="/search"
+              onClick={onNavigationClick}
+              title="Search"
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="6.5" />
+                <path d="m16 16 4 4" />
+              </svg>
+            </a>
+          </div>
         </div>
         <nav aria-label="Markdown files">
           {index && (
@@ -394,6 +421,9 @@ export function App() {
               activePath={activePath}
               errorCounts={index.errorCounts}
               files={index.files}
+              gitFiles={
+                gitEnabled ? (index.git?.files ?? NO_GIT_FILES) : NO_GIT_FILES
+              }
               onNavigate={onNavigationClick}
             />
           )}

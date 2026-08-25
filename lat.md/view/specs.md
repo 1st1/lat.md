@@ -59,6 +59,14 @@ Invalid Markdown files show a sidebar marker propagated through every ancestor d
 
 The initial snapshot and every refresh recompute diagnostics from cached syntax trees, removing markers immediately when errors are fixed.
 
+## Shows live Git state
+
+Git worktrees show cached HEAD changes as yellow modified or green new-file markers, split with red for validation errors, while rendered Markdown highlights removed and added words inline.
+
+Startup reads Git once, and a later vault change refreshes that state. The top Git toggle hides or reveals both sidebar markers and inline diffs without changing the underlying files.
+
+The Git button retains an orange notification dot whenever changes exist, independent of the toggle state.
+
 ## Places context within a collapsed source window
 
 Focused source views place reference context before the highlighted definition, keep five surrounding lines, and reveal collapsed code without moving the visible anchor.

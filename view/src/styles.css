@@ -21,6 +21,11 @@
   --danger: #b72f3d;
   --danger-soft: #f8dfe2;
   --danger-border: #e7a5ad;
+  --warning: #a87000;
+  --warning-soft: #f5e7b8;
+  --success: #2f7a48;
+  --success-soft: #dceede;
+  --git-notification: #e47f19;
   --code: #ece9e1;
   --syntax-built-in: #9a3f75;
   --syntax-comment: #777268;
@@ -44,6 +49,11 @@
     --danger: #ff7e8a;
     --danger-soft: #49262b;
     --danger-border: #713941;
+    --warning: #e9bd4c;
+    --warning-soft: #43391e;
+    --success: #83d79a;
+    --success-soft: #213d29;
+    --git-notification: #f0a044;
     --code: #25241f;
     --syntax-built-in: #e6a2cc;
     --syntax-comment: #88847c;
@@ -107,23 +117,56 @@ a {
   color: var(--accent);
 }
 
-.sidebar-search {
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.sidebar-search,
+.sidebar-git {
   display: inline-flex;
   width: 28px;
   height: 28px;
   align-items: center;
   justify-content: center;
   color: var(--muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
   border-radius: 6px;
 }
 
 .sidebar-search:hover,
-.sidebar-search[aria-current='page'] {
+.sidebar-search[aria-current='page'],
+.sidebar-git:hover {
   color: var(--accent);
   background: var(--accent-soft);
 }
 
-.sidebar-search svg {
+.sidebar-git[aria-pressed='true'] {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.sidebar-git {
+  position: relative;
+}
+
+.sidebar-git[data-has-changes='true']::after {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  content: '';
+  background: var(--git-notification);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px var(--panel);
+}
+
+.sidebar-search svg,
+.sidebar-git svg {
   width: 17px;
   height: 17px;
   fill: none;
@@ -224,13 +267,42 @@ a {
   white-space: nowrap;
 }
 
-.document-error-disc {
+.document-state-disc {
   width: 7px;
   height: 7px;
   flex: 0 0 auto;
-  background: var(--danger);
   border-radius: 50%;
+}
+
+.document-state-disc.has-errors {
+  background: var(--danger);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.document-state-disc.git-modified {
+  background: var(--warning);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--warning) 12%, transparent);
+}
+
+.document-state-disc.git-new {
+  background: var(--success);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.document-state-disc.has-errors.git-modified {
+  background: linear-gradient(
+    90deg,
+    var(--danger) 0 50%,
+    var(--warning) 50% 100%
+  );
+}
+
+.document-state-disc.has-errors.git-new {
+  background: linear-gradient(
+    90deg,
+    var(--danger) 0 50%,
+    var(--success) 50% 100%
+  );
 }
 
 .document-link:hover,
@@ -856,6 +928,55 @@ a {
   border-radius: 3px;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+.markdown ins.git-added,
+.markdown del.git-removed {
+  padding: 0.08em 0.12em;
+  margin: -0.08em -0.04em;
+  border-radius: 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.markdown ins.git-added {
+  color: var(--success);
+  text-decoration: none;
+  background: var(--success-soft);
+}
+
+.markdown del.git-removed {
+  color: var(--danger);
+  background: var(--danger-soft);
+  text-decoration-thickness: 1px;
+}
+
+.markdown p.git-added,
+.markdown blockquote.git-added,
+.markdown pre.git-added,
+.markdown h1.git-added,
+.markdown h2.git-added,
+.markdown h3.git-added,
+.markdown h4.git-added,
+.markdown h5.git-added,
+.markdown h6.git-added,
+.markdown li.git-added {
+  padding-left: 10px;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.markdown p.git-removed,
+.markdown div.git-removed,
+.markdown blockquote.git-removed,
+.markdown pre.git-removed,
+.markdown li.git-removed {
+  padding-left: 10px;
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--danger);
 }
 
 .wiki-link-context {

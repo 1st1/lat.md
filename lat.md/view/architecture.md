@@ -26,6 +26,16 @@ Browser clients subscribe to snapshot generations over server-sent events. A new
 
 Markdown generations also dirty semantic search. The next query shares one incremental indexing pass across concurrent requests, then searches the updated index.
 
+## Git working tree
+
+When the vault belongs to a Git worktree, the server caches its [[src/view/git.ts#readViewGitSnapshot|HEAD comparison]] so Git subprocesses never run during document requests.
+
+The initial snapshot runs Git once, using argument-array subprocesses without a shell. A debounced change anywhere inside `lat.md/` refreshes the full-vault diff together with porcelain status for untracked files; unrelated project changes reuse the cache.
+
+The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|inline word diffs]] and sidebar state. Modified files are yellow, new files are green, and validation errors split the same marker red without hiding its Git state.
+
+Whenever cached changes exist, the toggle keeps an orange notification dot whether Git rendering is enabled or hidden.
+
 ## Markdown navigation
 
 [[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.

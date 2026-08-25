@@ -18,6 +18,15 @@ import { SOURCE_EXTENSIONS } from '../source-parser.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
+import { buildGitDiffTree } from './git-diff.js';
+import {
+  emptyViewGitSnapshot,
+  findViewGitRepository,
+  readViewGitSnapshot,
+  sameViewGitSnapshot,
+  type ViewGitRepository,
+  type ViewGitSnapshot,
+} from './git.js';
 import type {
   ViewDocument,
   ViewDocumentError,
@@ -48,11 +57,13 @@ export type ViewProjectSnapshot = {
   allSections: Section[];
   references: ViewReferenceIndex;
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>;
+  git: ViewGitSnapshot;
   index: ViewIndex;
 };
 
 export type ViewStoreOptions = {
   debounceMs?: number;
+  git?: boolean;
   watch?: boolean;
 };
 
@@ -143,6 +154,7 @@ function viewIndex(
   latDir: string,
   paths: string[],
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
+  git: ViewGitSnapshot,
 ): ViewIndex {
   const files = [...paths].sort();
   const directoryName = basename(latDir);
@@ -157,6 +169,13 @@ function viewIndex(
         .filter(([, errors]) => errors.length > 0)
         .map(([path, errors]) => [path, errors.length]),
     ),
+    git: git.available
+      ? {
+          files: Object.fromEntries(
+            [...git.files].map(([path, file]) => [path, file.status]),
+          ),
+        }
+      : null,
   };
 }
 
@@ -165,6 +184,7 @@ async function buildSnapshot(
   projectRoot: string,
   markdownFiles: Map<string, ViewParsedMarkdownFile>,
   codeFiles: Map<string, ViewCodeReferenceFile>,
+  git: ViewGitSnapshot,
   generation: number,
   markdownGeneration: number,
 ): Promise<ViewProjectSnapshot> {
@@ -189,7 +209,8 @@ async function buildSnapshot(
       allSections,
     ),
     diagnostics,
-    index: viewIndex(latDir, [...files.keys()], diagnostics),
+    git,
+    index: viewIndex(latDir, [...files.keys()], diagnostics, git),
   };
 }
 
@@ -213,6 +234,7 @@ export class ViewStore {
     snapshot: ViewProjectSnapshot,
     codeFiles: Map<string, ViewCodeReferenceFile>,
     codeScope: Set<string>,
+    private readonly gitRepository: ViewGitRepository | null,
     private readonly options: ViewStoreOptions,
   ) {
     this.snapshotValue = snapshot;
@@ -279,10 +301,21 @@ export class ViewStore {
       { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
       file.tree,
     );
+    const gitFile = snapshot.git.files.get(requestedPath);
+    const gitRendered = gitFile
+      ? await renderMarkdown(
+          file.content,
+          requestedPath,
+          resolver,
+          { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
+          buildGitDiffTree(gitFile.baseContent, file.content, file.tree),
+        )
+      : null;
     const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     return {
       path: requestedPath,
       ...rendered,
+      gitHtml: gitRendered?.html ?? null,
       errors,
       backReferences: await renderSectionBackReferences(
         snapshot.references,
@@ -385,6 +418,8 @@ export class ViewStore {
     let codeFiles = new Map(this.codeFiles);
     let markdownChanged = false;
     let codeChanged = false;
+    let git = this.snapshotValue.git;
+    let gitChanged = false;
     let linkedResourceChanged = false;
 
     if (touchesMarkdown) {
@@ -434,6 +469,19 @@ export class ViewStore {
         (path) =>
           path.startsWith(`${latPath}/`) && !path.toLowerCase().endsWith('.md'),
       );
+    }
+
+    if (touchesMarkdown && this.gitRepository) {
+      try {
+        const nextGit = await readViewGitSnapshot(
+          this.gitRepository,
+          markdownFiles,
+        );
+        gitChanged = !sameViewGitSnapshot(git, nextGit);
+        git = nextGit;
+      } catch (error) {
+        process.stderr.write(`lat ui git: ${(error as Error).message}\n`);
+      }
     }
 
     const codePaths = paths.filter(
@@ -486,13 +534,20 @@ export class ViewStore {
       }
     }
 
-    if (!markdownChanged && !codeChanged && !linkedResourceChanged) return;
+    if (
+      !markdownChanged &&
+      !codeChanged &&
+      !gitChanged &&
+      !linkedResourceChanged
+    )
+      return;
     this.codeFiles = codeFiles;
     this.snapshotValue = await buildSnapshot(
       this.latDir,
       this.projectRoot,
       markdownFiles,
       codeFiles,
+      git,
       this.snapshotValue.generation + 1,
       this.snapshotValue.markdownGeneration + (markdownChanged ? 1 : 0),
     );
@@ -510,11 +565,15 @@ export async function createViewStore(
   projectRoot: string,
   options: ViewStoreOptions = {},
 ): Promise<ViewStore> {
-  const [realLatDir, markdownPaths, codeState] = await Promise.all([
-    realpath(latDir),
-    listLatticeFiles(latDir),
-    scanCodeState(projectRoot),
-  ]);
+  const [realLatDir, markdownPaths, codeState, gitRepository] =
+    await Promise.all([
+      realpath(latDir),
+      listLatticeFiles(latDir),
+      scanCodeState(projectRoot),
+      options.git === false
+        ? Promise.resolve(null)
+        : findViewGitRepository(projectRoot, latDir),
+    ]);
   if (markdownPaths.length === 0) {
     throw new Error(`No Markdown files found in ${latDir}`);
   }
@@ -538,6 +597,15 @@ export async function createViewStore(
     throw new Error(`No readable Markdown files found in ${latDir}`);
   }
 
+  let git = emptyViewGitSnapshot();
+  if (gitRepository) {
+    try {
+      git = await readViewGitSnapshot(gitRepository, markdownFiles);
+    } catch (error) {
+      process.stderr.write(`lat ui git: ${(error as Error).message}\n`);
+    }
+  }
+
   const store = new ViewStore(
     latDir,
     projectRoot,
@@ -547,11 +615,13 @@ export async function createViewStore(
       projectRoot,
       markdownFiles,
       codeState.files,
+      git,
       0,
       0,
     ),
     codeState.files,
     codeState.scope,
+    gitRepository,
     options,
   );
   store.startWatching();

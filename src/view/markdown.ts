@@ -43,18 +43,20 @@ const CODE_LINK_CLASSES = [
 ];
 
 const ERROR_CLASS = 'markdown-error';
+const GIT_CLASSES = ['git-added', 'git-removed'];
 
 function classAttributes(
   tag: string,
 ): NonNullable<SanitizeSchema['attributes']>[string] {
   return [
     ...(defaultSchema.attributes?.[tag] ?? []),
-    ['className', ERROR_CLASS],
+    ['className', ERROR_CLASS, ...GIT_CLASSES],
   ];
 }
 
 const sanitizeSchema: SanitizeSchema = {
   ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), 'ins'],
   attributes: {
     ...defaultSchema.attributes,
     a: [
@@ -69,10 +71,13 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-code',
         'wiki-link-active',
         ERROR_CLASS,
+        ...GIT_CLASSES,
       ],
     ],
     blockquote: classAttributes('blockquote'),
     code: classAttributes('code'),
+    del: classAttributes('del'),
+    div: classAttributes('div'),
     h1: classAttributes('h1'),
     h2: classAttributes('h2'),
     h3: classAttributes('h3'),
@@ -80,6 +85,7 @@ const sanitizeSchema: SanitizeSchema = {
     h5: classAttributes('h5'),
     h6: classAttributes('h6'),
     img: classAttributes('img'),
+    ins: classAttributes('ins'),
     li: classAttributes('li'),
     p: classAttributes('p'),
     pre: classAttributes('pre'),
@@ -92,6 +98,7 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-leaf',
         ...CODE_LINK_CLASSES.slice(2),
         ERROR_CLASS,
+        ...GIT_CLASSES,
       ],
     ],
   },

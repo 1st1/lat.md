@@ -1,3 +1,5 @@
+import type { ViewGitFileStatus } from '../../src/view/protocol';
+
 export type FileTreeNode =
   | {
       kind: 'directory';
@@ -81,6 +83,21 @@ export function fileTreeErrorCount(
     (count, child) => count + fileTreeErrorCount(child, errorCounts),
     0,
   );
+}
+
+/** Collapse descendant Git state into one directory marker. */
+export function fileTreeGitStatus(
+  node: FileTreeNode,
+  gitFiles: Readonly<Record<string, ViewGitFileStatus>>,
+): ViewGitFileStatus | null {
+  if (node.kind === 'file') return gitFiles[node.path] ?? null;
+  let status: ViewGitFileStatus | null = null;
+  for (const child of node.children) {
+    const childStatus = fileTreeGitStatus(child, gitFiles);
+    if (childStatus === 'modified') return 'modified';
+    if (childStatus === 'new') status = 'new';
+  }
+  return status;
 }
 
 /** Convert vault-relative file paths into the hierarchy shown in the sidebar. */

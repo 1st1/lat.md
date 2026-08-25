@@ -1,11 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
 import { uiCommand } from '../src/cli/ui.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
 import { highlightSource } from '../src/view/highlight.js';
+import { buildGitDiffTree } from '../src/view/git-diff.js';
+import { renderMarkdown } from '../src/view/markdown.js';
 import type {
   ViewDocument,
   ViewIndex,
@@ -18,6 +27,7 @@ import {
   directoryIndex,
   expandDirectory,
   fileTreeErrorCount,
+  fileTreeGitStatus,
 } from '../view/src/file-tree.js';
 import {
   historyScrollPosition,
@@ -76,6 +86,7 @@ describe('lat ui', () => {
     writeFileSync(join(clientDir, 'index.html'), '<main>lat ui shell</main>');
     view = await startViewServer(testContext(), {
       clientDir,
+      git: false,
       search: createViewSearch(latDir, { runIndex, runSearch }),
     });
   });
@@ -93,6 +104,7 @@ describe('lat ui', () => {
       files: ['guide.md', 'lat.md'],
       entry: 'lat.md',
       errorCounts: {},
+      git: null,
     });
 
     const rootResponse = await fetch(view.url, { redirect: 'manual' });
@@ -488,6 +500,18 @@ describe('lat ui', () => {
       expect(
         deep && fileTreeErrorCount(deep, { 'area/deep/broken.md': 2 }),
       ).toBe(2);
+      expect(
+        fileTreeGitStatus(area, {
+          'area/deep/broken.md': 'new',
+        }),
+      ).toBe('new');
+      expect(
+        deep &&
+          fileTreeGitStatus(deep, {
+            'area/deep/broken.md': 'new',
+            'area/deep/deep.md': 'modified',
+          }),
+      ).toBe('modified');
     }
 
     const directory = { open: false };
@@ -610,6 +634,98 @@ describe('lat ui validation diagnostics', () => {
       await errorsView.close();
       rmSync(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe('lat ui git state', () => {
+  // @lat: [[lat.md/view/specs#View Tests#Shows live Git state]]
+  it('refreshes file state and renders HEAD changes as inline word diffs', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'lat-view-git-'));
+    const gitLatDir = join(root, 'lat.md');
+    const rootFile = join(gitLatDir, 'lat.md');
+    const newFile = join(gitLatDir, 'fresh.md');
+    const baseline = '# Notes\n\nThe old paragraph has blue words.\n';
+    mkdirSync(gitLatDir);
+    writeFileSync(rootFile, baseline);
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    execFileSync('git', ['config', 'user.email', 'lat-ui@example.test'], {
+      cwd: root,
+    });
+    execFileSync('git', ['config', 'user.name', 'lat ui test'], { cwd: root });
+    execFileSync('git', ['add', 'lat.md'], { cwd: root });
+    execFileSync('git', ['commit', '--quiet', '-m', 'baseline'], { cwd: root });
+
+    const gitView = await startViewServer(
+      {
+        latDir: gitLatDir,
+        projectRoot: root,
+        styler: plainStyler,
+        mode: 'cli',
+      },
+      { clientDir: root, watch: false },
+    );
+
+    try {
+      expect(gitView.store.getIndex().git).toEqual({ files: {} });
+      writeFileSync(
+        rootFile,
+        '# Notes\n\nThe new paragraph has green words and [[missing#Target]].\n',
+      );
+      writeFileSync(newFile, '# Fresh\n\nA fresh document.\n');
+      execFileSync('git', ['add', 'lat.md/lat.md'], { cwd: root });
+      await gitView.store.refresh(['lat.md/lat.md', 'lat.md/fresh.md']);
+
+      expect(gitView.store.getIndex()).toMatchObject({
+        errorCounts: { 'lat.md': 1 },
+        git: {
+          files: {
+            'fresh.md': 'new',
+            'lat.md': 'modified',
+          },
+        },
+      });
+      const modified = await gitView.store.getDocument('lat.md');
+      expect(modified.html).not.toContain('git-added');
+      expect(modified.gitHtml).toContain('class="git-removed"');
+      expect(modified.gitHtml).toContain('class="git-added"');
+      expect(modified.gitHtml).toContain('old');
+      expect(modified.gitHtml).toContain('new');
+
+      const added = await gitView.store.getDocument('fresh.md');
+      expect(added.gitHtml).toContain('class="git-added"');
+
+      writeFileSync(rootFile, baseline);
+      unlinkSync(newFile);
+      execFileSync('git', ['add', 'lat.md/lat.md'], { cwd: root });
+      await gitView.store.refresh(['lat.md/lat.md', 'lat.md/fresh.md']);
+      expect(gitView.store.getIndex().git).toEqual({ files: {} });
+    } finally {
+      await gitView.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves Markdown structure while highlighting changed words', async () => {
+    const current = '# Title\n\nThe [new link](guide.md) stays clickable.\n';
+    const tree = buildGitDiffTree(
+      '# Title\n\nThe [old link](guide.md) stays clickable.\n',
+      current,
+    );
+    const rendered = await renderMarkdown(
+      current,
+      'lat.md',
+      undefined,
+      {},
+      tree,
+    );
+
+    expect(rendered.html).toContain(
+      '<del class="git-removed"><a href="guide.md">old</a></del>',
+    );
+    expect(rendered.html).toContain(
+      '<ins class="git-added"><a href="guide.md">new</a></ins>',
+    );
+    expect(rendered.html).toContain('href="guide.md"');
   });
 });
 

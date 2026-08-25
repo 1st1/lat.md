@@ -1,7 +1,14 @@
+export type ViewGitFileStatus = 'modified' | 'new';
+
+export type ViewGitState = {
+  files: Record<string, ViewGitFileStatus>;
+};
+
 export type ViewIndex = {
   files: string[];
   entry: string;
   errorCounts: Record<string, number>;
+  git: ViewGitState | null;
 };
 
 export type ViewDocumentError = {
@@ -35,6 +42,7 @@ export type ViewDocument = {
   path: string;
   title: string;
   html: string;
+  gitHtml: string | null;
   errors: ViewDocumentError[];
   backReferences: ViewSectionBackReferences[];
   frontmatter: {
