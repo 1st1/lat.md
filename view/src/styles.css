@@ -429,6 +429,7 @@ a {
   font-weight: 520;
   line-height: 17px;
   text-decoration: none;
+  transition: color 140ms ease;
   overflow-wrap: anywhere;
 }
 
@@ -1708,6 +1709,12 @@ a.wiki-link-active {
 .graph-state {
   height: calc(100vh - 84px);
   min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .document-toc-link {
+    transition: none;
+  }
 }
 
 @media (width <= 1100px) and (width > 760px) {
