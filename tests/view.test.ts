@@ -653,6 +653,31 @@ describe('lat ui', () => {
     ]);
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Adapts navigation to mobile screens]]
+  it('keeps mobile navigation accessible without compressing desktop rails', () => {
+    const app = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'App.tsx'),
+      'utf8',
+    );
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+
+    expect(app).toContain('aria-controls="mobile-file-navigation"');
+    expect(app).toContain("body.classList.add('mobile-navigation-open')");
+    expect(styles).toContain('@media (width < 64rem)');
+    expect(styles).toContain(
+      ".sidebar[data-mobile-navigation-open='true'] nav",
+    );
+    expect(styles).toContain(".document-toc[data-expanded='true']");
+    expect(app.indexOf('<DocumentToc')).toBeLessThan(
+      app.indexOf('<div className="document-column">'),
+    );
+    expect(styles).not.toContain('order: -1');
+    expect(styles).toContain('min-height: 44px');
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
   it('exposes code-mention frontmatter as document metadata', async () => {
     const response = await fetch(

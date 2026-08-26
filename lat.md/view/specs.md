@@ -41,6 +41,14 @@ The fixed-width desktop rail fills the available viewport height without program
 
 Sections containing rendered Git changes carry an orange disc when Git is enabled, while sections owning validation errors carry a red disc. Both remain visible together when both states apply.
 
+## Adapts navigation to mobile screens
+
+Below 64rem, files remain reachable through a sticky two-row header and a scrollable full-viewport navigation overlay instead of a compressed or hidden desktop sidebar.
+
+The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally, and the graph stacks above its inspector.
+
+When the desktop TOC rail no longer fits, an `On this page` row expands its existing links in a bounded scrolling panel. On mobile it stays below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
+
 ## Renders the graph workspace
 
 The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.

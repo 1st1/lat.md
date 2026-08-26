@@ -16,6 +16,20 @@ import {
 
 type TocLinkStyle = CSSProperties & { '--toc-depth': number };
 
+function TocIcon() {
+  return (
+    // Tabler Icons "list-tree" (MIT): https://tabler.io/icons
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M9 6h11" />
+      <path d="M12 12h8" />
+      <path d="M15 18h5" />
+      <path d="M5 6v.01" />
+      <path d="M8 12v.01" />
+      <path d="M11 18v.01" />
+    </svg>
+  );
+}
+
 export function DocumentToc({
   gitEnabled,
   items,
@@ -32,7 +46,21 @@ export function DocumentToc({
   const minimumSubsectionDepth =
     subsectionDepths.length > 0 ? Math.min(...subsectionDepths) : 2;
   const [activeId, setActiveId] = useState(ids[0] ?? '');
+  const [expanded, setExpanded] = useState(false);
   const navigationRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setExpanded(false);
+  }, [ids]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const closeForEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setExpanded(false);
+    };
+    window.addEventListener('keydown', closeForEscape);
+    return () => window.removeEventListener('keydown', closeForEscape);
+  }, [expanded]);
 
   useEffect(() => {
     let frame = 0;
@@ -72,7 +100,7 @@ export function DocumentToc({
     const activeLink = navigation?.querySelector<HTMLElement>(
       '[aria-current="location"]',
     );
-    if (!navigation || !activeLink) return;
+    if (!navigation || !activeLink || navigation.clientHeight === 0) return;
 
     const navigationRect = navigation.getBoundingClientRect();
     const activeRect = activeLink.getBoundingClientRect();
@@ -85,27 +113,33 @@ export function DocumentToc({
     if (Math.abs(navigation.scrollTop - top) < 1) return;
 
     navigation.scrollTo({ behavior: 'smooth', top });
-  }, [activeId]);
+  }, [activeId, expanded]);
 
   if (items.length === 0) return null;
 
   return (
-    <aside className="document-toc">
-      <div className="document-toc-title">
-        {/* Tabler Icons "list-tree" (MIT): https://tabler.io/icons */}
-        <svg aria-hidden="true" viewBox="0 0 24 24">
-          <path d="M9 6h11" />
-          <path d="M12 12h8" />
-          <path d="M15 18h5" />
-          <path d="M5 6v.01" />
-          <path d="M8 12v.01" />
-          <path d="M11 18v.01" />
-        </svg>
+    <aside className="document-toc" data-expanded={expanded || undefined}>
+      <div className="document-toc-title document-toc-heading">
+        <TocIcon />
         <span>On this page</span>
       </div>
+      <button
+        aria-controls="document-table-of-contents"
+        aria-expanded={expanded}
+        className="document-toc-title document-toc-toggle"
+        onClick={() => setExpanded((open) => !open)}
+        type="button"
+      >
+        <TocIcon />
+        <span>On this page</span>
+        <span aria-hidden="true" className="document-toc-chevron">
+          ›
+        </span>
+      </button>
       <nav
         aria-label="On this page"
         className="document-toc-list"
+        id="document-table-of-contents"
         ref={navigationRef}
       >
         {items.map((item) => {
@@ -119,6 +153,7 @@ export function DocumentToc({
               key={item.id}
               onClick={(event) => {
                 setActiveId(item.id);
+                setExpanded(false);
                 onNavigate(event);
                 if (item.depth === 1 && event.defaultPrevented) {
                   window.scrollTo({ top: 0, behavior: 'instant' });

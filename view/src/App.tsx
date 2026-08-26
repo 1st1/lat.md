@@ -163,6 +163,46 @@ function AppHeader({
   );
 }
 
+function MobileNavigationTrigger({
+  label,
+  onToggle,
+  open,
+}: {
+  label: string;
+  onToggle: () => void;
+  open: boolean;
+}) {
+  return (
+    <button
+      aria-controls="mobile-file-navigation"
+      aria-expanded={open}
+      className="mobile-navigation-trigger"
+      onClick={onToggle}
+      type="button"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        {open ? (
+          <>
+            <path d="M6 6l12 12" />
+            <path d="M18 6 6 18" />
+          </>
+        ) : (
+          <>
+            <path d="M4 7h16" />
+            <path d="M4 12h16" />
+            <path d="M4 17h16" />
+          </>
+        )}
+      </svg>
+      <span className="mobile-navigation-context">
+        <span>Files</span>
+        <span aria-hidden="true">›</span>
+        <span className="mobile-navigation-current">{label}</span>
+      </span>
+    </button>
+  );
+}
+
 function DocumentErrorPanel({
   errors,
   onNavigate,
@@ -209,6 +249,7 @@ export function App() {
   });
   const [error, setError] = useState('');
   const [gitEnabled, setGitEnabled] = useState(true);
+  const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
@@ -292,12 +333,53 @@ export function App() {
     return graphUrl();
   }, [location, page, route]);
   const graphExitHref = index ? documentUrl(index.entry) : '/';
+  const mobileNavigationLabel =
+    route?.kind === 'markdown' || route?.kind === 'source'
+      ? route.path
+      : route?.kind === 'search'
+        ? 'Search'
+        : 'Files';
 
   useEffect(() => {
     void preloadViewGraph().catch(() => {
       // GraphView reports the error if the user opens it before a later retry.
     });
   }, []);
+
+  useEffect(() => {
+    setMobileNavigationOpen(false);
+  }, [routeLocation]);
+
+  useEffect(() => {
+    if (!mobileNavigationOpen) return;
+    const body = window.document.body;
+    const navigation = window.document.getElementById('mobile-file-navigation');
+    const activeLink = navigation?.querySelector<HTMLElement>(
+      '.document-link.active',
+    );
+    body.classList.add('mobile-navigation-open');
+    (activeLink ?? navigation)?.focus({ preventScroll: true });
+    activeLink?.scrollIntoView({ block: 'center', behavior: 'instant' });
+
+    const desktop = window.matchMedia('(min-width: 64rem)');
+    const closeForDesktop = () => {
+      if (desktop.matches) setMobileNavigationOpen(false);
+    };
+    const closeForEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMobileNavigationOpen(false);
+      window.document
+        .querySelector<HTMLElement>('.mobile-navigation-trigger')
+        ?.focus();
+    };
+    desktop.addEventListener('change', closeForDesktop);
+    window.addEventListener('keydown', closeForEscape);
+    return () => {
+      body.classList.remove('mobile-navigation-open');
+      desktop.removeEventListener('change', closeForDesktop);
+      window.removeEventListener('keydown', closeForEscape);
+    };
+  }, [mobileNavigationOpen]);
 
   useEffect(() => {
     const onPopState = (event: PopStateEvent) => {
@@ -506,6 +588,7 @@ export function App() {
     ) {
       return;
     }
+    setMobileNavigationOpen(false);
     event.preventDefault();
     navigate(new URL(event.currentTarget.href));
   }
@@ -627,7 +710,10 @@ export function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside
+        className="sidebar"
+        data-mobile-navigation-open={mobileNavigationOpen || undefined}
+      >
         <AppHeader
           className="sidebar-header"
           graphHref={graphHref}
@@ -641,7 +727,16 @@ export function App() {
           route={route}
           searchEnabled={!staticView}
         />
-        <nav aria-label="Markdown files">
+        <MobileNavigationTrigger
+          label={mobileNavigationLabel}
+          onToggle={() => setMobileNavigationOpen((open) => !open)}
+          open={mobileNavigationOpen}
+        />
+        <nav
+          aria-label="Markdown files"
+          id="mobile-file-navigation"
+          tabIndex={-1}
+        >
           {index && (
             <FileTree
               activePath={activePath}
@@ -677,6 +772,11 @@ export function App() {
           />
         ) : page?.kind === 'markdown' ? (
           <div className="document-layout">
+            <DocumentToc
+              gitEnabled={gitEnabled}
+              items={page.document.tableOfContents}
+              onNavigate={onNavigationClick}
+            />
             <div className="document-column">
               <div className="document-header">
                 <div className="document-metadata">
@@ -717,11 +817,6 @@ export function App() {
                 dangerouslySetInnerHTML={{ __html: documentHtml }}
               />
             </div>
-            <DocumentToc
-              gitEnabled={gitEnabled}
-              items={page.document.tableOfContents}
-              onNavigate={onNavigationClick}
-            />
           </div>
         ) : page?.kind === 'source' ? (
           <SourceView

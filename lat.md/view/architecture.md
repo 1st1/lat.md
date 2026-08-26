@@ -86,6 +86,18 @@ The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` 
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
 
+## Responsive layout
+
+Below 64rem, the browser replaces desktop navigation rails with a persistent, touch-oriented header while preserving every route and control.
+
+The first row keeps the logo and Git, Search, and Graph actions. A second row shows the current route and opens the file tree as an independently scrolling viewport overlay; navigation, Escape, or returning to desktop closes it and restores document scrolling.
+
+Mobile content uses narrower gutters, fixed heading metrics, wrapped links, and horizontally scrollable code instead of shrinking text. The desktop TOC collapses into a sticky `On this page` row with its own scrollable list and preserved section state.
+
+Selecting a collapsed TOC entry closes the list before positioning the heading. Its sticky-header offset keeps direct fragments visible below both mobile navigation rows and the TOC trigger.
+
+The graph changes from a 50/50 workspace to a bounded canvas above its full-width inspector. Search inputs retain a zoom-safe font size and canvas, filter, navigation, and source controls keep touch-sized targets.
+
 ## Wiki-link reference counts
 
 Every resolved wiki link with indexed references carries a compact count of distinct locations that reference its canonical target, sourced from the cached [[src/view/references.ts#buildViewReferenceIndex|reverse-reference snapshot]].
