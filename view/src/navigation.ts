@@ -25,6 +25,24 @@ export function documentPath(pathname: string): string | null {
   }
 }
 
+/** Keep Markdown route identity stable when only its fragment changes. */
+export function viewRouteIdentity(location: string): string {
+  const url = new URL(location, 'http://lat.local');
+  return documentPath(url.pathname)
+    ? `${url.pathname}${url.search}`
+    : `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Whether navigation stays within one rendered Markdown document. */
+export function isSameMarkdownDocument(current: URL, next: URL): boolean {
+  return (
+    documentPath(current.pathname) !== null &&
+    current.origin === next.origin &&
+    current.pathname === next.pathname &&
+    current.search === next.search
+  );
+}
+
 export function sourcePath(pathname: string): string | null {
   if (!pathname.startsWith(SOURCE_PREFIX)) return null;
   try {

@@ -38,6 +38,7 @@ import {
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
+  isSameMarkdownDocument,
   scrollToDocumentLocation,
   searchButtonAction,
   searchEscapeAction,
@@ -45,6 +46,7 @@ import {
   searchQuery,
   searchReturnTo,
   searchUrl,
+  viewRouteIdentity,
 } from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
@@ -770,6 +772,26 @@ describe('lat ui', () => {
       block: 'start',
     });
     expect(scrollTo).not.toHaveBeenCalled();
+
+    expect(viewRouteIdentity('/docs/guide.md#features')).toBe('/docs/guide.md');
+    expect(viewRouteIdentity('/docs/guide.md#installation')).toBe(
+      '/docs/guide.md',
+    );
+    expect(viewRouteIdentity('/code/parser.ts#parse')).toBe(
+      '/code/parser.ts#parse',
+    );
+    expect(
+      isSameMarkdownDocument(
+        new URL('http://lat.local/docs/guide.md#features'),
+        new URL('http://lat.local/docs/guide.md#installation'),
+      ),
+    ).toBe(true);
+    expect(
+      isSameMarkdownDocument(
+        new URL('http://lat.local/docs/guide.md'),
+        new URL('http://lat.local/docs/other.md'),
+      ),
+    ).toBe(false);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]

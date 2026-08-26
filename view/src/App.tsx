@@ -25,6 +25,7 @@ import {
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
+  isSameMarkdownDocument,
   searchButtonAction,
   searchHistoryState,
   searchReturnTo,
@@ -32,6 +33,7 @@ import {
   sourcePath,
   sourceSymbol,
   type ViewScrollPosition,
+  viewRouteIdentity,
 } from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
@@ -206,26 +208,30 @@ export function App() {
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
   );
+  const pageRef = useRef<ViewPage | null>(page);
+  pageRef.current = page;
   const positionedLocation = useRef<string | null>(null);
+  const routeLocation = useMemo(() => viewRouteIdentity(location), [location]);
   const route = useMemo<ViewRoute | null>(() => {
-    if (window.location.pathname === '/search') return { kind: 'search' };
-    if (window.location.pathname === '/graph') {
+    const url = new URL(routeLocation, window.location.origin);
+    if (url.pathname === '/search') return { kind: 'search' };
+    if (url.pathname === '/graph') {
       return {
         kind: 'graph',
-        nodeId: graphNode(window.location.search),
+        nodeId: graphNode(url.search),
       };
     }
-    const markdown = documentPath(window.location.pathname);
+    const markdown = documentPath(url.pathname);
     if (markdown) return { kind: 'markdown', path: markdown };
-    const source = sourcePath(window.location.pathname);
+    const source = sourcePath(url.pathname);
     if (source) {
-      const query = new URLSearchParams(window.location.search);
+      const query = new URLSearchParams(url.search);
       const parsedLine = Number(query.get('line'));
       const parsedFocusLine = Number(query.get('at'));
       return {
         kind: 'source',
         path: source,
-        symbol: sourceSymbol(window.location.hash),
+        symbol: sourceSymbol(url.hash),
         from: query.get('from') ?? '',
         line: Number.isInteger(parsedLine) && parsedLine > 0 ? parsedLine : 0,
         at:
@@ -235,7 +241,7 @@ export function App() {
       };
     }
     return null;
-  }, [location]);
+  }, [routeLocation]);
   const activePath = route?.kind === 'markdown' ? route.path : null;
   const gitHasChanges =
     Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
@@ -258,7 +264,7 @@ export function App() {
   );
   const graphHref = useMemo(() => {
     if (route?.kind === 'markdown' && page?.kind === 'markdown') {
-      let headingId = window.location.hash.slice(1);
+      let headingId = new URL(location, window.location.origin).hash.slice(1);
       try {
         headingId = decodeURIComponent(headingId);
       } catch {
@@ -278,7 +284,7 @@ export function App() {
       );
     }
     return '/graph';
-  }, [page, route]);
+  }, [location, page, route]);
   const graphExitHref = index ? documentUrl(index.entry) : '/';
 
   useEffect(() => {
@@ -291,7 +297,13 @@ export function App() {
     const onPopState = (event: PopStateEvent) => {
       positionedLocation.current = null;
       setHistoryScroll(historyScrollPosition(event.state));
-      if (window.location.pathname !== '/graph') setPage(null);
+      const nextDocumentPath = documentPath(window.location.pathname);
+      const preservesDocument =
+        pageRef.current?.kind === 'markdown' &&
+        pageRef.current.document.path === nextDocumentPath;
+      if (window.location.pathname !== '/graph' && !preservesDocument) {
+        setPage(null);
+      }
       setLocation(currentLocation());
     };
     window.addEventListener('popstate', onPopState);
@@ -418,6 +430,10 @@ export function App() {
 
   function navigate(url: URL): void {
     const returnTo = currentLocation();
+    const preservesDocument =
+      page?.kind === 'markdown' &&
+      page.document.path === documentPath(url.pathname) &&
+      isSameMarkdownDocument(new URL(window.location.href), url);
     saveCurrentScroll();
     const nextLocation = `${url.pathname}${url.search}${url.hash}`;
     if (nextLocation === currentLocation()) return;
@@ -428,7 +444,7 @@ export function App() {
         ? searchHistoryState(returnTo)
         : null;
     window.history.pushState(state, '', url);
-    setPage(null);
+    if (!preservesDocument) setPage(null);
     setLocation(currentLocation());
   }
 
