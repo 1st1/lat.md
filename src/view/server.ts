@@ -3,7 +3,11 @@ import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CmdContext } from '../context.js';
-import type { ViewError, ViewProjectChange } from './protocol.js';
+import {
+  DEFAULT_VIEW_LOGO_TEXT,
+  type ViewError,
+  type ViewProjectChange,
+} from './protocol.js';
 import {
   ViewDocumentNotFoundError,
   ViewSourceNotFoundError,
@@ -24,7 +28,9 @@ export type ViewServer = {
 export type ViewServerOptions = {
   clientDir?: string;
   git?: boolean;
+  gitPollMs?: number;
   host?: string;
+  logoText?: string;
   port?: number;
   search?: ViewSearch;
   watch?: boolean;
@@ -37,7 +43,7 @@ function documentUrl(path: string): string {
 function setSecurityHeaders(res: ServerResponse): void {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
   );
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -130,8 +136,10 @@ export async function startViewServer(
 ): Promise<ViewServer> {
   const host = options.host ?? DEFAULT_HOST;
   const clientDir = options.clientDir ?? defaultClientDir;
+  const logoText = options.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
   const store = await createViewStore(ctx.latDir, ctx.projectRoot, {
     git: options.git,
+    gitPollMs: options.gitPollMs,
     watch: options.watch,
   });
   const search =
@@ -174,7 +182,12 @@ export async function startViewServer(
       }
 
       if (url.pathname === '/api/index') {
-        sendJson(res, 200, store.getIndex(), headOnly);
+        sendJson(res, 200, { ...store.getIndex(), logoText }, headOnly);
+        return;
+      }
+
+      if (url.pathname === '/api/graph') {
+        sendJson(res, 200, store.getGraph(), headOnly);
         return;
       }
 
@@ -272,6 +285,7 @@ export async function startViewServer(
 
       if (
         url.pathname === '/search' ||
+        url.pathname === '/graph' ||
         url.pathname.startsWith('/docs/') ||
         url.pathname.startsWith('/code/')
       ) {

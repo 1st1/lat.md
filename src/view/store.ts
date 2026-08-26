@@ -19,6 +19,8 @@ import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
 import { buildGitDiffTree } from './git-diff.js';
+import { buildViewGraph } from './graph.js';
+import { buildViewTableOfContents } from './table-of-contents.js';
 import {
   emptyViewGitSnapshot,
   findViewGitRepository,
@@ -30,10 +32,12 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
+  ViewGraph,
   ViewIndex,
   ViewProjectChange,
   ViewSourceDocument,
 } from './protocol.js';
+import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import {
   createMarkdownWikiLinkResolver,
   getViewSource,
@@ -49,6 +53,7 @@ import {
 } from './references.js';
 
 const DEFAULT_DEBOUNCE_MS = 75;
+const DEFAULT_GIT_POLL_MS = 2_000;
 
 export type ViewProjectSnapshot = {
   generation: number;
@@ -56,14 +61,17 @@ export type ViewProjectSnapshot = {
   files: ReadonlyMap<string, ViewParsedMarkdownFile>;
   allSections: Section[];
   references: ViewReferenceIndex;
+  graph: ViewGraph;
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>;
   git: ViewGitSnapshot;
   index: ViewIndex;
 };
 
 export type ViewStoreOptions = {
+  codeExcludePaths?: string[];
   debounceMs?: number;
   git?: boolean;
+  gitPollMs?: number;
   watch?: boolean;
 };
 
@@ -80,6 +88,15 @@ function isInside(root: string, candidate: string): boolean {
 function projectPath(projectRoot: string, path: string): string {
   const normalized = isAbsolute(path) ? relative(projectRoot, path) : path;
   return toPosix(normalized).replace(/^\.\//, '');
+}
+
+function excludedCodePath(
+  projectRoot: string,
+  path: string,
+  excludedPaths: readonly string[],
+): boolean {
+  const absolutePath = resolve(projectRoot, path);
+  return excludedPaths.some((root) => isInside(resolve(root), absolutePath));
 }
 
 function sourcePath(path: string): boolean {
@@ -136,16 +153,21 @@ async function loadCodeReferenceFiles(
   return files;
 }
 
-async function scanCodeState(projectRoot: string): Promise<{
+async function scanCodeState(
+  projectRoot: string,
+  excludedPaths: readonly string[] = [],
+): Promise<{
   files: Map<string, ViewCodeReferenceFile>;
   scope: Set<string>;
 }> {
   const scan = await scanCodeRefs(projectRoot);
-  const scope = new Set(
-    scan.files.map((path) => projectPath(projectRoot, path)),
-  );
+  const allowed = (path: string) =>
+    !excludedCodePath(projectRoot, path, excludedPaths);
+  const files = scan.files.filter(allowed);
+  const refs = scan.refs.filter((ref) => allowed(ref.file));
+  const scope = new Set(files.map((path) => projectPath(projectRoot, path)));
   return {
-    files: await loadCodeReferenceFiles(projectRoot, scan.refs),
+    files: await loadCodeReferenceFiles(projectRoot, refs),
     scope,
   };
 }
@@ -176,6 +198,7 @@ function viewIndex(
           ),
         }
       : null,
+    logoText: DEFAULT_VIEW_LOGO_TEXT,
   };
 }
 
@@ -198,15 +221,24 @@ async function buildSnapshot(
     allSections,
     projectRoot,
   );
+  const references = buildViewReferenceIndex(
+    files.values(),
+    codeFiles.values(),
+    allSections,
+  );
   return {
     generation,
     markdownGeneration,
     files,
     allSections,
-    references: buildViewReferenceIndex(
+    references,
+    graph: buildViewGraph(
       files.values(),
       codeFiles.values(),
       allSections,
+      diagnostics,
+      git,
+      generation,
     ),
     diagnostics,
     git,
@@ -224,6 +256,8 @@ export class ViewStore {
   private watcher: FSWatcher | null = null;
   private pendingPaths = new Set<string>();
   private debounceTimer: NodeJS.Timeout | null = null;
+  private gitPollTimer: NodeJS.Timeout | null = null;
+  private gitPollQueued = false;
   private refreshTail: Promise<void> = Promise.resolve();
   private closed = false;
 
@@ -251,6 +285,7 @@ export class ViewStore {
   }
 
   startWatching(): void {
+    this.startGitPolling();
     if (this.options.watch === false || this.watcher) return;
     try {
       this.watcher = watchFiles(
@@ -275,6 +310,10 @@ export class ViewStore {
     return this.snapshotValue.index;
   }
 
+  getGraph(): ViewGraph {
+    return this.snapshotValue.graph;
+  }
+
   async getDocument(requestedPath: string): Promise<ViewDocument> {
     if (
       !requestedPath ||
@@ -293,6 +332,7 @@ export class ViewStore {
       this.latDir,
       requestedPath,
       snapshot.allSections,
+      snapshot.references,
     );
     const rendered = await renderMarkdown(
       file.content,
@@ -301,21 +341,45 @@ export class ViewStore {
       { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
       file.tree,
     );
+    const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     const gitFile = snapshot.git.files.get(requestedPath);
-    const gitRendered = gitFile
+    const gitTree = gitFile
+      ? buildGitDiffTree(gitFile.baseContent, file.content, file.tree)
+      : null;
+    const gitRendered = gitTree
       ? await renderMarkdown(
           file.content,
           requestedPath,
           resolver,
-          { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
-          buildGitDiffTree(gitFile.baseContent, file.content, file.tree),
+          { errors },
+          gitTree,
         )
       : null;
-    const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     return {
       path: requestedPath,
       ...rendered,
       gitHtml: gitRendered?.html ?? null,
+      tableOfContents: buildViewTableOfContents(file.sections, file.tree, {
+        errors,
+        gitTree,
+      }),
+      graphNodeIds: Object.fromEntries(
+        snapshot.graph.nodes
+          .filter(
+            (node) =>
+              node.documentPath === requestedPath && node.kind === 'document',
+          )
+          .map((node) => {
+            const hash = new URL(node.url, 'http://lat.local').hash.slice(1);
+            let headingId = hash;
+            try {
+              headingId = decodeURIComponent(hash);
+            } catch {
+              // Keep malformed fragments as-is; they cannot collide with valid ids.
+            }
+            return [headingId, node.id];
+          }),
+      ),
       errors,
       backReferences: await renderSectionBackReferences(
         snapshot.references,
@@ -327,6 +391,7 @@ export class ViewStore {
             this.latDir,
             path,
             snapshot.allSections,
+            snapshot.references,
           ),
       ),
       frontmatter: {
@@ -360,7 +425,13 @@ export class ViewStore {
     const normalized = paths.map((path) =>
       path ? projectPath(this.projectRoot, path) : '',
     );
-    const refresh = this.refreshTail.then(() => this.applyRefresh(normalized));
+    return this.queueRefresh(normalized, false);
+  }
+
+  private queueRefresh(paths: string[], pollGit: boolean): Promise<void> {
+    const refresh = this.refreshTail.then(() =>
+      this.applyRefresh(paths, pollGit),
+    );
     this.refreshTail = refresh.catch(() => {});
     return refresh;
   }
@@ -369,6 +440,8 @@ export class ViewStore {
     this.closed = true;
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = null;
+    if (this.gitPollTimer) clearInterval(this.gitPollTimer);
+    this.gitPollTimer = null;
     this.watcher?.close();
     this.watcher = null;
     await this.refreshTail;
@@ -387,6 +460,23 @@ export class ViewStore {
         process.stderr.write(`lat ui refresh: ${(error as Error).message}\n`);
       });
     }, this.options.debounceMs ?? DEFAULT_DEBOUNCE_MS);
+  }
+
+  private startGitPolling(): void {
+    const interval = this.options.gitPollMs ?? DEFAULT_GIT_POLL_MS;
+    if (!this.gitRepository || interval <= 0 || this.gitPollTimer) return;
+    this.gitPollTimer = setInterval(() => {
+      if (this.closed || this.gitPollQueued) return;
+      this.gitPollQueued = true;
+      void this.queueRefresh([], true)
+        .catch((error: unknown) => {
+          process.stderr.write(`lat ui git: ${(error as Error).message}\n`);
+        })
+        .finally(() => {
+          this.gitPollQueued = false;
+        });
+    }, interval);
+    this.gitPollTimer.unref();
   }
 
   private async readMarkdownFile(
@@ -408,7 +498,7 @@ export class ViewStore {
     );
   }
 
-  private async applyRefresh(paths: string[]): Promise<void> {
+  private async applyRefresh(paths: string[], pollGit: boolean): Promise<void> {
     const fullRefresh = paths.includes('');
     const latPath = projectPath(this.projectRoot, this.latDir);
     const touchesMarkdown =
@@ -471,7 +561,7 @@ export class ViewStore {
       );
     }
 
-    if (touchesMarkdown && this.gitRepository) {
+    if ((touchesMarkdown || pollGit) && this.gitRepository) {
       try {
         const nextGit = await readViewGitSnapshot(
           this.gitRepository,
@@ -486,7 +576,14 @@ export class ViewStore {
 
     const codePaths = paths.filter(
       (path) =>
-        path && sourcePath(path) && !obviouslyIgnoredCodePath(path, latPath),
+        path &&
+        sourcePath(path) &&
+        !obviouslyIgnoredCodePath(path, latPath) &&
+        !excludedCodePath(
+          this.projectRoot,
+          path,
+          this.options.codeExcludePaths ?? [],
+        ),
     );
     const refreshCodeScope =
       fullRefresh ||
@@ -498,7 +595,10 @@ export class ViewStore {
       );
 
     if (refreshCodeScope) {
-      const nextCode = await scanCodeState(this.projectRoot);
+      const nextCode = await scanCodeState(
+        this.projectRoot,
+        this.options.codeExcludePaths,
+      );
       codeFiles = nextCode.files;
       this.codeScope = nextCode.scope;
       this.ignoredCodePaths.clear();
@@ -569,7 +669,7 @@ export async function createViewStore(
     await Promise.all([
       realpath(latDir),
       listLatticeFiles(latDir),
-      scanCodeState(projectRoot),
+      scanCodeState(projectRoot, options.codeExcludePaths),
       options.git === false
         ? Promise.resolve(null)
         : findViewGitRepository(projectRoot, latDir),

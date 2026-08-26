@@ -110,7 +110,7 @@ async function withDb<T>(
 /** Resolve raw search hits (by id) to full section matches. */
 async function resolveMatches(
   latDir: string,
-  results: { id: string }[],
+  results: { id: string; score: number }[],
 ): Promise<SectionMatch[]> {
   if (results.length === 0) return [];
 
@@ -118,10 +118,12 @@ async function resolveMatches(
   const flat = flattenSections(allSections);
   const byId = new Map(flat.map((s) => [s.id, s]));
 
-  return results
-    .map((r) => byId.get(r.id))
-    .filter((s): s is NonNullable<typeof s> => !!s)
-    .map((s) => ({ section: s, reason: 'semantic match' }));
+  return results.flatMap((result) => {
+    const section = byId.get(result.id);
+    return section
+      ? [{ section, reason: 'semantic match', score: result.score }]
+      : [];
+  });
 }
 
 /**

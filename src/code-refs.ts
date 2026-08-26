@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
-import { join, relative } from 'node:path';
+import { join, posix, relative } from 'node:path';
 import { toPosix, walkEntries } from './walk.js';
 
 /** Glob patterns used to exclude directories/files from code-ref scanning.
@@ -11,7 +11,12 @@ const EXCLUDE_GLOBS = ['*.md'];
 /** Walk project files for code-ref scanning. Uses walkEntries for .gitignore
  *  support, then additionally skips .md files, lat.md/, .claude/, and sub-projects. */
 export async function walkFiles(dir: string): Promise<string[]> {
-  const entries = await walkEntries(dir);
+  const entries = (await walkEntries(dir)).map(toPosix);
+  const generatedOutputs = new Set(
+    entries
+      .filter((entry) => entry.endsWith('/.lat-ui-build'))
+      .map((entry) => `${posix.dirname(entry)}/`),
+  );
 
   // Collect directories that contain their own lat.md/ (sub-projects)
   const subProjects = new Set<string>();
@@ -26,6 +31,7 @@ export async function walkFiles(dir: string): Promise<string[]> {
         !e.endsWith('.md') &&
         !e.startsWith('lat.md/') &&
         !e.startsWith('.claude/') &&
+        ![...generatedOutputs].some((prefix) => e.startsWith(prefix)) &&
         ![...subProjects].some((prefix) => e.startsWith(prefix)),
     )
     .map((e) => join(dir, e));
@@ -125,12 +131,37 @@ async function findSubProjects(projectRoot: string): Promise<string[]> {
   return [...subProjects];
 }
 
+/** Find static UI exports so generated JSON and bundles never become code refs. */
+async function findGeneratedOutputs(projectRoot: string): Promise<string[]> {
+  const out = await tryExec(
+    'rg',
+    ['--files', '--hidden', '--glob', '**/.lat-ui-build', '.'],
+    projectRoot,
+  );
+  if (!out) return [];
+
+  return [
+    ...new Set(
+      out
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => toPosix(line).replace(/^\.\//, ''))
+        .filter((line) => line.endsWith('/.lat-ui-build'))
+        .map((line) => posix.dirname(line)),
+    ),
+  ];
+}
+
 /** Build rg glob exclusion args. */
-function rgExcludeArgs(subProjects: string[]): string[] {
+function rgExcludeArgs(
+  subProjects: string[],
+  generatedOutputs: string[],
+): string[] {
   const args: string[] = [];
   for (const dir of EXCLUDE_DIRS) args.push('--glob', `!${dir}/`);
   for (const glob of EXCLUDE_GLOBS) args.push('--glob', `!${glob}`);
   for (const sp of subProjects) args.push('--glob', `!${sp}/`);
+  for (const output of generatedOutputs) args.push('--glob', `!${output}/`);
   return args;
 }
 
@@ -144,7 +175,8 @@ async function tryRipgrep(
 ): Promise<{ refs: CodeRef[]; files: string[] } | null> {
   // Detect sub-projects first so we can exclude them from all rg calls
   const subProjects = await findSubProjects(projectRoot);
-  const excludes = rgExcludeArgs(subProjects);
+  const generatedOutputs = await findGeneratedOutputs(projectRoot);
+  const excludes = rgExcludeArgs(subProjects, generatedOutputs);
 
   // Search for @lat refs
   const searchArgs = [

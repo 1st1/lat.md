@@ -1,27 +1,50 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
+  cpSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
-  unlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
+import { scanCodeRefs } from '../src/code-refs.js';
 import { uiCommand } from '../src/cli/ui.js';
+import { uiBuildCommand } from '../src/cli/ui-build.js';
+import { parseSections } from '../src/lattice.js';
+import { parse } from '../src/parser.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
+import {
+  normalizeStaticViewBasePath,
+  staticViewUrl,
+} from '../src/view/static-build.js';
+import type {
+  ViewStaticManifest,
+  ViewStaticSourceFile,
+  ViewStaticSourceView,
+} from '../src/view/static-protocol.js';
 import { highlightSource } from '../src/view/highlight.js';
 import { buildGitDiffTree } from '../src/view/git-diff.js';
 import { renderMarkdown } from '../src/view/markdown.js';
 import type {
   ViewDocument,
+  ViewGraph,
   ViewIndex,
   ViewSearchResponse,
   ViewSourceDocument,
 } from '../src/view/protocol.js';
 import { createViewSearch } from '../src/view/search.js';
+import { buildViewTableOfContents } from '../src/view/table-of-contents.js';
+import {
+  activeDocumentTocId,
+  centeredDocumentTocScrollTop,
+  documentTocActivationLine,
+  documentTocIndentationDepth,
+} from '../view/src/document-toc.js';
 import {
   buildFileTree,
   directoryIndex,
@@ -30,14 +53,19 @@ import {
   fileTreeGitStatus,
 } from '../view/src/file-tree.js';
 import {
+  graphNode,
+  graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
+  isSameMarkdownDocument,
   scrollToDocumentLocation,
+  searchButtonAction,
   searchEscapeAction,
   searchHistoryState,
   searchQuery,
   searchReturnTo,
   searchUrl,
+  viewRouteIdentity,
 } from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
@@ -48,6 +76,15 @@ import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
+import {
+  deterministicGraphPosition,
+  graphDisplayLabel,
+  graphNodeSize,
+  graphSearchNodeScores,
+  graphSearchNodeSizes,
+  staticGraphPositions,
+  validGraphPosition,
+} from '../view/src/graph-layout.js';
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
@@ -65,6 +102,7 @@ describe('lat ui', () => {
     matches: [
       {
         reason: 'semantic match',
+        score: 0.82,
         section: {
           id: 'lat.md/guide#Guide#Details',
           heading: 'Details',
@@ -83,7 +121,12 @@ describe('lat ui', () => {
 
   beforeAll(async () => {
     clientDir = mkdtempSync(join(tmpdir(), 'lat-view-client-'));
-    writeFileSync(join(clientDir, 'index.html'), '<main>lat ui shell</main>');
+    mkdirSync(join(clientDir, 'assets'));
+    writeFileSync(
+      join(clientDir, 'index.html'),
+      '<!doctype html><html><head><script type="module" src="/assets/app.js"></script></head><body><main>lat ui shell</main></body></html>',
+    );
+    writeFileSync(join(clientDir, 'assets', 'app.js'), 'export {};');
     view = await startViewServer(testContext(), {
       clientDir,
       git: false,
@@ -105,6 +148,7 @@ describe('lat ui', () => {
       entry: 'lat.md',
       errorCounts: {},
       git: null,
+      logoText: 'lat.md',
     });
 
     const rootResponse = await fetch(view.url, { redirect: 'manual' });
@@ -124,6 +168,267 @@ describe('lat ui', () => {
     expect(await searchShell.text()).toContain('lat ui shell');
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
+  it('builds a static deployment without live Git or search services', async () => {
+    expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
+    expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
+      '/project/graph/?node=document%3Alat.md',
+    );
+    expect(() => normalizeStaticViewBasePath('project')).toThrow(
+      'absolute URL path',
+    );
+
+    const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-build-test-'));
+    const staticProjectRoot = join(buildRoot, 'project');
+    cpSync(projectRoot, staticProjectRoot, { recursive: true });
+    const staticContext: CmdContext = {
+      ...testContext(),
+      projectRoot: staticProjectRoot,
+      latDir: join(staticProjectRoot, 'lat.md'),
+    };
+    const outputDir = join(staticProjectRoot, 'site');
+    try {
+      const result = await uiBuildCommand(staticContext, outputDir, {
+        basePath: '/project',
+        clientDir,
+        logoText: 'Project Atlas',
+      });
+      expect(result.output).toMatch(
+        /Built 2 documents and [1-9]\d* source views/,
+      );
+      expect(result.output).toContain(outputDir);
+
+      const payloadDir = join(outputDir, 'project');
+      const manifest = JSON.parse(
+        readFileSync(join(payloadDir, 'data', 'manifest.json'), 'utf8'),
+      ) as ViewStaticManifest;
+      expect(manifest.version).toBe(1);
+      expect(manifest.index).toEqual({
+        files: ['guide.md', 'lat.md'],
+        entry: 'lat.md',
+        errorCounts: {},
+        git: null,
+        logoText: 'Project Atlas',
+      });
+      expect(Object.keys(manifest.documents).sort()).toEqual([
+        'guide.md',
+        'lat.md',
+      ]);
+      const sourceEntries = Object.values(manifest.sources);
+      expect(sourceEntries.length).toBeGreaterThan(1);
+      const sourceFilePaths = new Set(sourceEntries.map((entry) => entry.file));
+      expect(sourceFilePaths.size).toBe(1);
+      expect([...sourceFilePaths][0]).toMatch(
+        /^data\/source-files\/[a-f0-9]{20}\.json$/,
+      );
+      expect(new Set(sourceEntries.map((entry) => entry.view)).size).toBe(
+        sourceEntries.length,
+      );
+
+      const sourceFile = JSON.parse(
+        readFileSync(join(payloadDir, sourceEntries[0].file), 'utf8'),
+      ) as ViewStaticSourceFile;
+      const sourceView = JSON.parse(
+        readFileSync(join(payloadDir, sourceEntries[0].view), 'utf8'),
+      ) as ViewStaticSourceView;
+      expect(sourceFile.path).toBe('src/app.ts');
+      expect(sourceFile.content).toContain('export function run');
+      expect(sourceFile.highlightedHtmlLines.length).toBeGreaterThan(0);
+      expect(sourceView).toHaveProperty('focus');
+      expect(sourceView).not.toHaveProperty('content');
+      expect({ ...sourceFile, ...sourceView }).toHaveProperty(
+        'otherReferences',
+      );
+
+      const document = JSON.parse(
+        readFileSync(join(payloadDir, manifest.documents['lat.md']), 'utf8'),
+      ) as ViewDocument;
+      expect(document.gitHtml).toBeNull();
+      expect(document.html).toContain('href="/project/docs/guide.md/#details"');
+      expect(document.html).toContain('href="/project/code/src/app.ts/?from=');
+
+      const graph = JSON.parse(
+        readFileSync(join(payloadDir, manifest.graph), 'utf8'),
+      ) as ViewGraph;
+      expect(graph.nodes.every((node) => node.gitStatus === undefined)).toBe(
+        true,
+      );
+      expect(graph.nodes.map((node) => node.url)).toContain(
+        '/project/docs/lat.md/',
+      );
+      expect(graph.nodes.some((node) => node.kind === 'source')).toBe(true);
+
+      expect(existsSync(join(payloadDir, 'docs', 'lat.md', 'index.html'))).toBe(
+        true,
+      );
+      expect(
+        existsSync(join(payloadDir, 'code', 'src', 'app.ts', 'index.html')),
+      ).toBe(true);
+      expect(existsSync(join(payloadDir, 'data', 'source-files'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'data', 'source-views'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'graph', 'index.html'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'search', 'index.html'))).toBe(false);
+      expect(existsSync(join(payloadDir, 'assets', 'app.js'))).toBe(true);
+      expect(existsSync(join(outputDir, 'assets'))).toBe(false);
+      expect(existsSync(join(outputDir, 'data'))).toBe(false);
+
+      const shell = readFileSync(
+        join(payloadDir, 'docs', 'lat.md', 'index.html'),
+        'utf8',
+      );
+      expect(shell).toContain('/project/assets/app.js');
+      expect(shell).toContain(
+        'globalThis.__LAT_STATIC_VIEW__={"basePath":"/project/"}',
+      );
+      expect(readFileSync(join(outputDir, 'index.html'), 'utf8')).toContain(
+        '/project/docs/lat.md/',
+      );
+      expect(readFileSync(join(payloadDir, 'index.html'), 'utf8')).toContain(
+        '/project/docs/lat.md/',
+      );
+
+      const scanned = await scanCodeRefs(staticProjectRoot);
+      expect(
+        scanned.refs.some((reference) => reference.file.startsWith('site/')),
+      ).toBe(false);
+      expect(
+        scanned.files.some((path) => path.startsWith(`${outputDir}/`)),
+      ).toBe(false);
+      const disableRipgrep = process.env._LAT_DISABLE_RG;
+      process.env._LAT_DISABLE_RG = '1';
+      try {
+        const fallbackScan = await scanCodeRefs(staticProjectRoot);
+        expect(fallbackScan.usedRg).toBe(false);
+        expect(
+          fallbackScan.files.some((path) => path.startsWith(`${outputDir}/`)),
+        ).toBe(false);
+      } finally {
+        if (disableRipgrep === undefined) delete process.env._LAT_DISABLE_RG;
+        else process.env._LAT_DISABLE_RG = disableRipgrep;
+      }
+
+      await expect(
+        uiBuildCommand(staticContext, outputDir, {
+          basePath: '/project',
+          clientDir,
+        }),
+      ).resolves.toEqual({
+        output: `Static UI output already exists: ${outputDir}`,
+        isError: true,
+      });
+
+      const emptyOutput = join(staticProjectRoot, 'empty-output');
+      mkdirSync(emptyOutput);
+      await expect(
+        uiBuildCommand(staticContext, emptyOutput, {
+          basePath: '/project',
+          clientDir: join(staticProjectRoot, 'missing-client'),
+        }),
+      ).resolves.toEqual({
+        output: `Static UI output already exists: ${emptyOutput}`,
+        isError: true,
+      });
+    } finally {
+      rmSync(buildRoot, { recursive: true, force: true });
+    }
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
+  it('serves the cached graph projection and graph shell', async () => {
+    const shell = await fetch(new URL('/graph', view.url));
+    expect(shell.status).toBe(200);
+    expect(await shell.text()).toContain('lat ui shell');
+
+    const response = await fetch(new URL('/api/graph', view.url));
+    expect(response.status).toBe(200);
+    const graph = (await response.json()) as ViewGraph;
+    expect(graph.generation).toBe(view.store.snapshot.generation);
+    expect(graph.nodes.map((node) => [node.id, node.kind])).toEqual([
+      ['code-ref:src/app.ts:5', 'code-reference'],
+      ['document:guide.md', 'document'],
+      ['document:lat.md', 'document'],
+      ['source:src/app.ts', 'source'],
+      ['source:src/app.ts#run', 'source'],
+    ]);
+    expect(
+      graph.edges.find(
+        (edge) =>
+          edge.from === 'document:lat.md' &&
+          edge.to === 'document:guide.md' &&
+          edge.kind === 'wiki',
+      ),
+    ).toMatchObject({ weight: 5 });
+    expect(
+      graph.edges.find((edge) => edge.kind === 'code-mention'),
+    ).toMatchObject({
+      from: 'code-ref:src/app.ts:5',
+      to: 'document:guide.md',
+      weight: 1,
+    });
+    expect(graph.edges.some((edge) => edge.from === edge.to)).toBe(false);
+    expect(
+      graph.nodes.find((node) => node.id === 'document:lat.md'),
+    ).toMatchObject({ inDegree: 1, outDegree: 10 });
+    expect(
+      graph.nodes.find((node) => node.id === 'document:guide.md'),
+    ).toMatchObject({ inDegree: 8, outDegree: 2 });
+
+    expect(graphUrl('document:guide.md')).toBe(
+      '/graph?node=document%3Aguide.md',
+    );
+    expect(graphNode('?node=document%3Aguide.md')).toBe('document:guide.md');
+    expect(
+      graphDisplayLabel({
+        kind: 'document',
+        label: 'Graph',
+        breadcrumbs: ['view', 'graph'],
+      }),
+    ).toBe('view › Graph');
+    expect(
+      graphDisplayLabel({
+        kind: 'code-reference',
+        label: 'app.ts:5',
+        breadcrumbs: ['src', 'app.ts', 'line 5'],
+        sourcePath: 'src/app.ts',
+      }),
+    ).toBe('src › app.ts:5');
+    expect(
+      validGraphPosition(deterministicGraphPosition('code-ref:src/app.ts:5')),
+    ).toBe(true);
+    expect(validGraphPosition({ x: Number.NaN, y: 1 })).toBe(false);
+    expect(graphNodeSize(0)).toBe(5);
+    expect(graphNodeSize(7)).toBeGreaterThan(graphNodeSize(1));
+    expect(graphNodeSize(-1)).toBe(5);
+    const positions = staticGraphPositions(graph);
+    expect(positions.size).toBe(graph.nodes.length);
+    expect([...positions.values()].every(validGraphPosition)).toBe(true);
+    expect([...staticGraphPositions(graph)]).toEqual([...positions]);
+    const searchScores = graphSearchNodeScores(
+      graph,
+      new Map([['guide.md', 0.82]]),
+    );
+    expect([...searchScores.keys()].sort()).toEqual([
+      'code-ref:src/app.ts:5',
+      'document:guide.md',
+      'source:src/app.ts#run',
+    ]);
+    expect([...searchScores.values()]).toEqual([0.82, 0.82, 0.82]);
+    expect(
+      graphSearchNodeSizes(
+        new Map([
+          ['weak', 0.2],
+          ['strong', 0.8],
+        ]),
+      ),
+    ).toEqual(
+      new Map([
+        ['weak', 5],
+        ['strong', 14],
+      ]),
+    );
+    expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(14);
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
   it('serves lazily indexed semantic section search', async () => {
     expect(searchUrl('runner details')).toBe('/search?q=runner+details');
@@ -135,6 +440,8 @@ describe('lat ui', () => {
     expect(searchReturnTo(null)).toBeNull();
     expect(searchEscapeAction('runner details')).toBe('clear');
     expect(searchEscapeAction('')).toBe('close');
+    expect(searchButtonAction('/docs/guide.md')).toBe('open');
+    expect(searchButtonAction('/search')).toBe('close');
 
     const emptyResponse = await fetch(new URL('/api/search?query=', view.url));
     expect((await emptyResponse.json()) as ViewSearchResponse).toEqual({
@@ -157,6 +464,7 @@ describe('lat ui', () => {
           breadcrumbs: ['guide', 'Guide', 'Details'],
           description: 'Relative Markdown links preserve heading fragments.',
           url: '/docs/guide.md#details',
+          score: 0.82,
         },
       ],
     });
@@ -203,9 +511,146 @@ describe('lat ui', () => {
 
     expect(document.title).toBe('View Project');
     expect(document.frontmatter.requireCodeMention).toBe(false);
+    expect(document.graphNodeIds).toEqual({ '': 'document:lat.md' });
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
     expect(document.html).not.toContain('require-code-mention');
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
+  it('builds nested document navigation and tracks the active heading', async () => {
+    const content =
+      '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
+    const tree = parse(content);
+    const sections = parseSections('guide.md', content, undefined, tree);
+    expect(
+      buildViewTableOfContents(sections, tree, {
+        errors: [
+          {
+            anchor: 'user-content-markdown-error-11',
+            line: 11,
+            marker: 'line',
+            message: 'Invalid strict details',
+            target: '',
+          },
+        ],
+        gitTree: buildGitDiffTree(
+          '# Guide\n\nOverview.\n\n## Features\n\nOld details.\n\n### `strict`\n\nMore details.',
+          content,
+          tree,
+        ),
+      }),
+    ).toEqual([
+      {
+        id: 'guide',
+        title: 'Guide',
+        depth: 1,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
+      {
+        id: 'features',
+        title: 'Features',
+        depth: 2,
+        errorCount: 0,
+        hasGitChanges: true,
+      },
+      {
+        id: 'strict',
+        title: 'strict',
+        depth: 3,
+        errorCount: 1,
+        hasGitChanges: false,
+      },
+    ]);
+    expect(
+      [1, 2, 3].map((depth) => documentTocIndentationDepth(depth, 2)),
+    ).toEqual([0, 0, 1]);
+    expect(
+      activeDocumentTocId(
+        ['features', 'strict'],
+        new Map([
+          ['features', -120],
+          ['strict', 24],
+        ]),
+      ),
+    ).toBe('strict');
+
+    const shortFinalHeadings = [
+      ['first', 680],
+      ['second', 760],
+      ['third', 840],
+      ['fourth', 920],
+    ] as const;
+    const ids = shortFinalHeadings.map(([id]) => id);
+    const activeAt = (scrollTop: number) => {
+      const threshold = documentTocActivationLine({
+        scrollTop,
+        viewportHeight: 400,
+        scrollHeight: 1000,
+      });
+      return activeDocumentTocId(
+        ids,
+        new Map(
+          shortFinalHeadings.map(([id, documentTop]) => [
+            id,
+            documentTop - scrollTop,
+          ]),
+        ),
+        threshold,
+      );
+    };
+
+    expect([450, 500, 550, 600].map(activeAt)).toEqual([
+      'first',
+      'second',
+      'third',
+      'fourth',
+    ]);
+    expect(
+      documentTocActivationLine({
+        scrollTop: 0,
+        viewportHeight: 400,
+        scrollHeight: 500,
+      }),
+    ).toBe(96);
+    expect(
+      centeredDocumentTocScrollTop({
+        containerHeight: 200,
+        contentHeight: 600,
+        itemHeight: 20,
+        itemTop: 300,
+      }),
+    ).toBe(210);
+    expect(
+      centeredDocumentTocScrollTop({
+        containerHeight: 200,
+        contentHeight: 600,
+        itemHeight: 20,
+        itemTop: 580,
+      }),
+    ).toBe(400);
+
+    const response = await fetch(
+      new URL('/api/document?path=guide.md', view.url),
+    );
+    const document = (await response.json()) as ViewDocument;
+    expect(document.tableOfContents).toEqual([
+      {
+        id: 'guide',
+        title: 'Guide',
+        depth: 1,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
+      {
+        id: 'details',
+        title: 'Details',
+        depth: 2,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
+    ]);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
@@ -216,6 +661,7 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.frontmatter.requireCodeMention).toBe(true);
+    expect(document.graphNodeIds).toEqual({ '': 'document:guide.md' });
     expect(document.html).not.toContain('require-code-mention');
   });
 
@@ -227,13 +673,16 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.html).toContain(
-      '<a href="/docs/guide.md">wiki navigation</a>',
+      '<a href="/docs/guide.md">wiki navigation<span class="wiki-link-ref-count" aria-label="2 references">2</span></a>',
     );
     expect(document.html).toContain(
-      '<a href="/docs/guide.md#details">wiki heading links</a>',
+      '<a href="/docs/guide.md#details">wiki heading links<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(document.html).toContain(
-      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span></a>',
+      '<a href="/docs/guide.md#details">the same heading again<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
+    );
+    expect(document.html).toContain(
+      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span><span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(document.html).toContain(
       'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
@@ -246,6 +695,26 @@ describe('lat ui', () => {
       'class="code-link-language code-language-ts"',
     );
     expect(document.html).toContain('aria-hidden="true"');
+    expect(document.html).toContain(
+      '<span class="wiki-link-leaf">run</span><span class="wiki-link-ref-count" aria-label="2 references">2</span>',
+    );
+    expect(document.html).toContain(
+      'runner file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+    );
+    expect(document.html).toContain(
+      'same file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+    );
+
+    for (const referenceCount of [0, 1]) {
+      const sparseReferences = await renderMarkdown(
+        '[[orphan]]',
+        'lat.md',
+        async () => ({ href: '/docs/orphan.md', referenceCount }),
+      );
+      expect(sparseReferences.html).toBe(
+        '<p><a href="/docs/orphan.md">orphan</a></p>',
+      );
+    }
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Serves source definitions securely]]
@@ -536,6 +1005,43 @@ describe('lat ui', () => {
       block: 'start',
     });
     expect(scrollTo).not.toHaveBeenCalled();
+
+    getElementById.mockClear();
+    scrollIntoView.mockClear();
+    scrollToDocumentLocation(
+      '#guide',
+      {
+        getElementById,
+        scrollTo,
+      },
+      'guide',
+    );
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'instant',
+    });
+    expect(getElementById).not.toHaveBeenCalled();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    expect(viewRouteIdentity('/docs/guide.md#features')).toBe('/docs/guide.md');
+    expect(viewRouteIdentity('/docs/guide.md#installation')).toBe(
+      '/docs/guide.md',
+    );
+    expect(viewRouteIdentity('/code/parser.ts#parse')).toBe(
+      '/code/parser.ts#parse',
+    );
+    expect(
+      isSameMarkdownDocument(
+        new URL('http://lat.local/docs/guide.md#features'),
+        new URL('http://lat.local/docs/guide.md#installation'),
+      ),
+    ).toBe(true);
+    expect(
+      isSameMarkdownDocument(
+        new URL('http://lat.local/docs/guide.md'),
+        new URL('http://lat.local/docs/other.md'),
+      ),
+    ).toBe(false);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]
@@ -570,6 +1076,7 @@ describe('lat ui', () => {
 
     const result = await uiCommand(testContext(), {
       clientDir,
+      logoText: 'Project Atlas',
       openBrowser,
       onStarted(server) {
         started = server;
@@ -578,7 +1085,14 @@ describe('lat ui', () => {
 
     expect(started).toBeDefined();
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
-    expect(result.output).toBe(`Viewing lat.md at ${started!.url}`);
+    expect(result.output).toBe(
+      `Viewing lat.md at ${started!.url}\n` +
+        'Note: you can use `lat ui build` to build a static version of the UI',
+    );
+    const index = (await (
+      await fetch(new URL('/api/index', started!.url))
+    ).json()) as ViewIndex;
+    expect(index.logoText).toBe('Project Atlas');
     await started!.close();
   });
 });
@@ -662,7 +1176,7 @@ describe('lat ui git state', () => {
         styler: plainStyler,
         mode: 'cli',
       },
-      { clientDir: root, watch: false },
+      { clientDir: root, gitPollMs: 20, watch: false },
     );
 
     try {
@@ -694,18 +1208,27 @@ describe('lat ui git state', () => {
       const added = await gitView.store.getDocument('fresh.md');
       expect(added.gitHtml).toContain('class="git-added"');
 
-      writeFileSync(rootFile, baseline);
-      unlinkSync(newFile);
-      execFileSync('git', ['add', 'lat.md/lat.md'], { cwd: root });
-      await gitView.store.refresh(['lat.md/lat.md', 'lat.md/fresh.md']);
-      expect(gitView.store.getIndex().git).toEqual({ files: {} });
+      const dirtyGeneration = gitView.store.snapshot.generation;
+      execFileSync('git', ['add', 'lat.md'], { cwd: root });
+      execFileSync('git', ['commit', '--quiet', '-m', 'updated'], {
+        cwd: root,
+      });
+      await vi.waitFor(
+        () => {
+          expect(gitView.store.getIndex().git).toEqual({ files: {} });
+        },
+        { interval: 10, timeout: 1_000 },
+      );
+      expect(gitView.store.snapshot.generation).toBe(dirtyGeneration + 1);
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(gitView.store.snapshot.generation).toBe(dirtyGeneration + 1);
     } finally {
       await gitView.close();
       rmSync(root, { recursive: true, force: true });
     }
   });
 
-  it('preserves Markdown structure while highlighting changed words', async () => {
+  it('uses word diffs only for blocks with enough overlap', async () => {
     const current = '# Title\n\nThe [new link](guide.md) stays clickable.\n';
     const tree = buildGitDiffTree(
       '# Title\n\nThe [old link](guide.md) stays clickable.\n',
@@ -726,6 +1249,70 @@ describe('lat ui git state', () => {
       '<ins class="git-added"><a href="guide.md">new</a></ins>',
     );
     expect(rendered.html).toContain('href="guide.md"');
+
+    const replacement =
+      'Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.';
+    const replaced = await renderMarkdown(
+      replacement,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(
+        'The top Git toggle hides or reveals both sidebar markers and inline diffs without changing the underlying files.',
+        replacement,
+      ),
+    );
+    expect(replaced.html).toContain('<p class="git-removed">The top Git');
+    expect(replaced.html).toContain(
+      '<p class="git-added">Polling also detects commits',
+    );
+    expect(replaced.html).not.toContain('<del class="git-removed">');
+
+    const borderlineReplacement = 'Shared new four five six.';
+    const borderline = await renderMarkdown(
+      borderlineReplacement,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree('Shared old one two three.', borderlineReplacement),
+    );
+    expect(borderline.html).toContain(
+      '<p class="git-removed">Shared old one two three.</p>',
+    );
+    expect(borderline.html).toContain(
+      '<p class="git-added">Shared new four five six.</p>',
+    );
+  });
+
+  it('marks every rendered block in a new Markdown file as added', async () => {
+    const current = [
+      '# New file',
+      '',
+      '## Section',
+      '',
+      '- Unordered item',
+      '',
+      '1. Ordered item',
+      '',
+      '```text',
+      'code block',
+      '```',
+      '',
+    ].join('\n');
+    const rendered = await renderMarkdown(
+      current,
+      'fresh.md',
+      undefined,
+      {},
+      buildGitDiffTree('', current),
+    );
+
+    expect(rendered.html).toContain('<h2 class="git-added"');
+    expect(rendered.html).toContain('<ul class="git-added">');
+    expect(rendered.html).toContain('<ol class="git-added"');
+    expect(rendered.html).toContain(
+      '<code class="language-text git-added">code block',
+    );
   });
 });
 

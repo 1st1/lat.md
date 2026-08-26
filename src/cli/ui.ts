@@ -41,7 +41,10 @@ export async function uiCommand(
   const server = await startViewServer(ctx, options);
   options.onStarted?.(server);
 
-  const lines = [`Viewing lat.md at ${server.url}`];
+  const lines = [
+    `Viewing lat.md at ${server.url}`,
+    'Note: you can use `lat ui build` to build a static version of the UI',
+  ];
   try {
     await (options.openBrowser ?? openBrowser)(server.url);
   } catch (error) {

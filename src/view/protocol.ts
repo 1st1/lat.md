@@ -9,7 +9,10 @@ export type ViewIndex = {
   entry: string;
   errorCounts: Record<string, number>;
   git: ViewGitState | null;
+  logoText: string;
 };
+
+export const DEFAULT_VIEW_LOGO_TEXT = 'lat.md';
 
 export type ViewDocumentError = {
   anchor: string;
@@ -26,6 +29,7 @@ export type ViewSearchResult = {
   breadcrumbs: string[];
   description: string;
   url: string;
+  score: number;
 };
 
 export type ViewSearchResponse = {
@@ -38,11 +42,57 @@ export type ViewProjectChange = {
   markdownGeneration: number;
 };
 
+export type ViewGraphNodeKind = 'document' | 'source' | 'code-reference';
+
+export type ViewGraphNode = {
+  id: string;
+  kind: ViewGraphNodeKind;
+  label: string;
+  url: string;
+  breadcrumbs: string[];
+  inDegree: number;
+  outDegree: number;
+  documentPath?: string;
+  sectionId?: string;
+  sourcePath?: string;
+  symbol?: string;
+  line?: number;
+  snippet?: string;
+  gitStatus?: ViewGitFileStatus;
+  errorCount?: number;
+};
+
+export type ViewGraphEdgeKind = 'wiki' | 'markdown' | 'source' | 'code-mention';
+
+export type ViewGraphEdge = {
+  id: string;
+  from: string;
+  to: string;
+  kind: ViewGraphEdgeKind;
+  weight: number;
+};
+
+export type ViewGraph = {
+  generation: number;
+  nodes: ViewGraphNode[];
+  edges: ViewGraphEdge[];
+};
+
+export type ViewDocumentTocItem = {
+  id: string;
+  title: string;
+  depth: number;
+  errorCount: number;
+  hasGitChanges: boolean;
+};
+
 export type ViewDocument = {
   path: string;
   title: string;
   html: string;
   gitHtml: string | null;
+  graphNodeIds: Record<string, string>;
+  tableOfContents: ViewDocumentTocItem[];
   errors: ViewDocumentError[];
   backReferences: ViewSectionBackReferences[];
   frontmatter: {

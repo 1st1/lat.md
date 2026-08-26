@@ -9,30 +9,41 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
-  ViewError,
+  ViewGraphNode,
   ViewIndex,
   ViewProjectChange,
   ViewSourceDocument,
 } from '../../src/view/protocol';
+import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
+import { DocumentToc } from './DocumentToc';
+import { fetchViewJson } from './data-source';
+import GraphView, { preloadViewGraph } from './GraphView';
 import {
   documentPath,
   documentUrl,
+  graphNode,
+  graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
+  isSameMarkdownDocument,
+  searchButtonAction,
   searchHistoryState,
   searchReturnTo,
   scrollToDocumentLocation,
   sourcePath,
   sourceSymbol,
   type ViewScrollPosition,
+  viewRouteIdentity,
 } from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
+import { isStaticView, viewPathname } from './static-mode';
 
 type ViewRoute =
   | { kind: 'search' }
+  | { kind: 'graph'; nodeId: string }
   | { kind: 'markdown'; path: string }
   | {
       kind: 'source';
@@ -45,10 +56,112 @@ type ViewRoute =
 
 type ViewPage =
   | { kind: 'search' }
+  | { kind: 'graph' }
   | { kind: 'markdown'; document: ViewDocument }
   | { kind: 'source'; source: ViewSourceDocument };
 
 const NO_GIT_FILES = {};
+
+function BrandText({ text }: { text: string }) {
+  const suffix = '.md';
+  if (!text.endsWith(suffix)) return text;
+  return (
+    <>
+      {text.slice(0, -suffix.length)}
+      <span>{suffix}</span>
+    </>
+  );
+}
+
+function AppHeader({
+  className,
+  graphHref,
+  gitEnabled,
+  gitHasChanges,
+  index,
+  onGitToggle,
+  onGraphNavigate,
+  onNavigate,
+  onSearchNavigate,
+  route,
+  searchEnabled,
+}: {
+  className: string;
+  graphHref: string;
+  gitEnabled: boolean;
+  gitHasChanges: boolean;
+  index: ViewIndex | null;
+  onGitToggle: () => void;
+  onGraphNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onSearchNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  route: ViewRoute | null;
+  searchEnabled: boolean;
+}) {
+  return (
+    <div className={className}>
+      <a
+        className="brand"
+        href={index ? documentUrl(index.entry) : '/'}
+        onClick={index ? onNavigate : undefined}
+        title={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT}
+      >
+        <BrandText text={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT} />
+      </a>
+      <div className="sidebar-actions">
+        {route?.kind !== 'graph' && index?.git && (
+          <button
+            aria-label={`${gitEnabled ? 'Hide' : 'Show'} Git changes${gitHasChanges ? ', changes available' : ''}`}
+            aria-pressed={gitEnabled}
+            className="sidebar-git"
+            data-has-changes={gitHasChanges || undefined}
+            onClick={onGitToggle}
+            title={`${gitEnabled ? 'Hide' : 'Show'} Git changes`}
+            type="button"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="7" cy="5" r="2" />
+              <circle cx="7" cy="19" r="2" />
+              <circle cx="17" cy="9" r="2" />
+              <path d="M7 7v10M9 15c5 0 8-1.5 8-4" />
+            </svg>
+          </button>
+        )}
+        {route?.kind !== 'graph' && searchEnabled && (
+          <a
+            aria-current={route?.kind === 'search' ? 'page' : undefined}
+            aria-label="Search"
+            className="sidebar-search"
+            href="/search"
+            onClick={onSearchNavigate}
+            title="Search"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </a>
+        )}
+        <a
+          aria-current={route?.kind === 'graph' ? 'page' : undefined}
+          aria-label="Graph"
+          className="sidebar-graph"
+          href={graphHref}
+          onClick={onGraphNavigate}
+          title="Graph"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="6" cy="7" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="16" cy="18" r="2" />
+            <circle cx="7" cy="17" r="2" />
+            <path d="m8 7 8-1M17 8l-1 8M14 18l-5-1M8 9l7 7" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  );
+}
 
 function DocumentErrorPanel({
   errors,
@@ -81,23 +194,12 @@ function DocumentErrorPanel({
   );
 }
 
-async function fetchJson<T extends object>(
-  url: string,
-  signal?: AbortSignal,
-): Promise<T> {
-  const response = await fetch(url, { signal });
-  const value = (await response.json()) as T | ViewError;
-  if (!response.ok) {
-    throw new Error('error' in value ? value.error : 'Request failed');
-  }
-  return value as T;
-}
-
 function currentLocation(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
 export function App() {
+  const staticView = isStaticView();
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
@@ -111,20 +213,31 @@ export function App() {
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
   );
+  const pageRef = useRef<ViewPage | null>(page);
+  pageRef.current = page;
   const positionedLocation = useRef<string | null>(null);
+  const routeLocation = useMemo(() => viewRouteIdentity(location), [location]);
   const route = useMemo<ViewRoute | null>(() => {
-    if (window.location.pathname === '/search') return { kind: 'search' };
-    const markdown = documentPath(window.location.pathname);
+    const url = new URL(routeLocation, window.location.origin);
+    const pathname = viewPathname(url.pathname);
+    if (pathname === '/search') return { kind: 'search' };
+    if (pathname === '/graph') {
+      return {
+        kind: 'graph',
+        nodeId: graphNode(url.search),
+      };
+    }
+    const markdown = documentPath(url.pathname);
     if (markdown) return { kind: 'markdown', path: markdown };
-    const source = sourcePath(window.location.pathname);
+    const source = sourcePath(url.pathname);
     if (source) {
-      const query = new URLSearchParams(window.location.search);
+      const query = new URLSearchParams(url.search);
       const parsedLine = Number(query.get('line'));
       const parsedFocusLine = Number(query.get('at'));
       return {
         kind: 'source',
         path: source,
-        symbol: sourceSymbol(window.location.hash),
+        symbol: sourceSymbol(url.hash),
         from: query.get('from') ?? '',
         line: Number.isInteger(parsedLine) && parsedLine > 0 ? parsedLine : 0,
         at:
@@ -134,7 +247,7 @@ export function App() {
       };
     }
     return null;
-  }, [location]);
+  }, [routeLocation]);
   const activePath = route?.kind === 'markdown' ? route.path : null;
   const gitHasChanges =
     Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
@@ -155,12 +268,51 @@ export function App() {
         : '',
     [gitEnabled, page],
   );
+  const graphHref = useMemo(() => {
+    if (route?.kind === 'markdown' && page?.kind === 'markdown') {
+      let headingId = new URL(location, window.location.origin).hash.slice(1);
+      try {
+        headingId = decodeURIComponent(headingId);
+      } catch {
+        // A malformed fragment falls back to the document node.
+      }
+      return graphUrl(
+        page.document.graphNodeIds[headingId] ??
+          page.document.graphNodeIds[''] ??
+          `document:${route.path}`,
+      );
+    }
+    if (route?.kind === 'source') {
+      return graphUrl(
+        route.at > 0
+          ? `code-ref:${route.path}:${route.at}`
+          : `source:${route.path}${route.symbol ? `#${route.symbol}` : ''}`,
+      );
+    }
+    return graphUrl();
+  }, [location, page, route]);
+  const graphExitHref = index ? documentUrl(index.entry) : '/';
+
+  useEffect(() => {
+    void preloadViewGraph().catch(() => {
+      // GraphView reports the error if the user opens it before a later retry.
+    });
+  }, []);
 
   useEffect(() => {
     const onPopState = (event: PopStateEvent) => {
       positionedLocation.current = null;
       setHistoryScroll(historyScrollPosition(event.state));
-      setPage(null);
+      const nextDocumentPath = documentPath(window.location.pathname);
+      const preservesDocument =
+        pageRef.current?.kind === 'markdown' &&
+        pageRef.current.document.path === nextDocumentPath;
+      if (
+        viewPathname(window.location.pathname) !== '/graph' &&
+        !preservesDocument
+      ) {
+        setPage(null);
+      }
       setLocation(currentLocation());
     };
     window.addEventListener('popstate', onPopState);
@@ -168,6 +320,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (staticView) return;
     const events = new EventSource('/api/events');
     const updateGeneration = (event: MessageEvent<string>) => {
       const change = JSON.parse(event.data) as ViewProjectChange;
@@ -186,11 +339,11 @@ export function App() {
     events.addEventListener('ready', updateGeneration);
     events.addEventListener('change', updateGeneration);
     return () => events.close();
-  }, []);
+  }, [staticView]);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchJson<ViewIndex>('/api/index', controller.signal)
+    fetchViewJson<ViewIndex>('/api/index', controller.signal)
       .then(setIndex)
       .catch((reason: Error) => setError(reason.message));
     return () => controller.abort();
@@ -203,9 +356,9 @@ export function App() {
       return;
     }
 
-    if (route.kind === 'search') {
+    if (route.kind === 'search' || route.kind === 'graph') {
       setError('');
-      setPage({ kind: 'search' });
+      setPage({ kind: route.kind });
       return;
     }
 
@@ -213,11 +366,11 @@ export function App() {
     setError('');
     const request =
       route.kind === 'markdown'
-        ? fetchJson<ViewDocument>(
+        ? fetchViewJson<ViewDocument>(
             `/api/document?path=${encodeURIComponent(route.path)}`,
             controller.signal,
           ).then((document) => setPage({ kind: 'markdown', document }))
-        : fetchJson<ViewSourceDocument>(
+        : fetchViewJson<ViewSourceDocument>(
             `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
             controller.signal,
           ).then((source) => setPage({ kind: 'source', source }));
@@ -235,14 +388,16 @@ export function App() {
     window.document.title =
       page.kind === 'search'
         ? 'Search · lat.md'
-        : page.kind === 'markdown'
-          ? `${page.document.title} · lat.md`
-          : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
+        : page.kind === 'graph'
+          ? 'Graph · lat.md'
+          : page.kind === 'markdown'
+            ? `${page.document.title} · lat.md`
+            : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
   }, [page]);
 
   useLayoutEffect(() => {
     if (!page || positionedLocation.current === location) return;
-    if (page.kind === 'search') {
+    if (page.kind === 'search' || page.kind === 'graph') {
       if (historyScroll) return;
       window.scrollTo({ top: 0, behavior: 'instant' });
       positionedLocation.current = location;
@@ -255,10 +410,14 @@ export function App() {
       return;
     }
     if (page.kind === 'markdown') {
-      scrollToDocumentLocation(window.location.hash, {
-        getElementById: (id) => window.document.getElementById(id),
-        scrollTo: (options) => window.scrollTo(options),
-      });
+      scrollToDocumentLocation(
+        window.location.hash,
+        {
+          getElementById: (id) => window.document.getElementById(id),
+          scrollTo: (options) => window.scrollTo(options),
+        },
+        page.document.tableOfContents.find((item) => item.depth === 1)?.id,
+      );
     } else {
       const line = page.source.focus?.startLine;
       if (line) {
@@ -284,6 +443,11 @@ export function App() {
   }
 
   function navigate(url: URL): void {
+    const returnTo = currentLocation();
+    const preservesDocument =
+      page?.kind === 'markdown' &&
+      page.document.path === documentPath(url.pathname) &&
+      isSameMarkdownDocument(new URL(window.location.href), url);
     saveCurrentScroll();
     const nextLocation = `${url.pathname}${url.search}${url.hash}`;
     if (nextLocation === currentLocation()) return;
@@ -291,10 +455,10 @@ export function App() {
     setHistoryScroll(null);
     const state =
       url.pathname === '/search' && window.location.pathname !== '/search'
-        ? searchHistoryState(currentLocation())
+        ? searchHistoryState(returnTo)
         : null;
     window.history.pushState(state, '', url);
-    setPage(null);
+    if (!preservesDocument) setPage(null);
     setLocation(currentLocation());
   }
 
@@ -315,6 +479,23 @@ export function App() {
     setLocation(currentLocation());
   }
 
+  function switchView(url: URL): void {
+    const nextLocation = `${url.pathname}${url.search}${url.hash}`;
+    if (nextLocation === currentLocation()) return;
+    positionedLocation.current = null;
+    setHistoryScroll(null);
+    window.history.replaceState(null, '', url);
+    setPage(null);
+    setLocation(currentLocation());
+  }
+
+  function selectGraphNode(nodeId: string): void {
+    const next = graphUrl(nodeId);
+    if (next === currentLocation()) return;
+    window.history.replaceState(window.history.state, '', next);
+    setLocation(currentLocation());
+  }
+
   function onNavigationClick(event: MouseEvent<HTMLAnchorElement>): void {
     if (
       event.button !== 0 ||
@@ -327,6 +508,48 @@ export function App() {
     }
     event.preventDefault();
     navigate(new URL(event.currentTarget.href));
+  }
+
+  function onSearchToggleClick(event: MouseEvent<HTMLAnchorElement>): void {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (searchButtonAction(window.location.pathname) === 'close') {
+      closeSearch();
+      return;
+    }
+    navigate(new URL(event.currentTarget.href));
+  }
+
+  function onGraphToggleClick(event: MouseEvent<HTMLAnchorElement>): void {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const url = new URL(event.currentTarget.href);
+    if (viewPathname(window.location.pathname) === '/graph') {
+      switchView(url);
+      return;
+    }
+    const from = currentLocation();
+    void preloadViewGraph(projectChange.generation)
+      .catch(() => null)
+      .then(() => {
+        if (currentLocation() === from) switchView(url);
+      });
   }
 
   function onDocumentClick(event: MouseEvent<HTMLElement>): void {
@@ -370,51 +593,54 @@ export function App() {
     navigate(url);
   }
 
+  if (route?.kind === 'graph') {
+    const header = (selectedNode: ViewGraphNode | null) => (
+      <AppHeader
+        className="graph-header"
+        graphHref={selectedNode?.url ?? graphExitHref}
+        gitEnabled={gitEnabled}
+        gitHasChanges={gitHasChanges}
+        index={index}
+        onGitToggle={() => setGitEnabled((enabled) => !enabled)}
+        onGraphNavigate={onGraphToggleClick}
+        onNavigate={onNavigationClick}
+        onSearchNavigate={onSearchToggleClick}
+        route={route}
+        searchEnabled={!staticView}
+      />
+    );
+    return (
+      <div className="graph-shell">
+        <GraphView
+          generation={projectChange.generation}
+          gitEnabled={gitEnabled}
+          header={header}
+          markdownGeneration={projectChange.markdownGeneration}
+          onNavigate={navigate}
+          onSelect={selectGraphNode}
+          searchEnabled={!staticView}
+          selectedNodeId={route.nodeId}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="sidebar-header">
-          <a
-            className="brand"
-            href={index ? documentUrl(index.entry) : '/'}
-            onClick={index ? onNavigationClick : undefined}
-          >
-            lat<span>.md</span>
-          </a>
-          <div className="sidebar-actions">
-            {index?.git && (
-              <button
-                aria-label={`${gitEnabled ? 'Hide' : 'Show'} Git changes${gitHasChanges ? ', changes available' : ''}`}
-                aria-pressed={gitEnabled}
-                className="sidebar-git"
-                data-has-changes={gitHasChanges || undefined}
-                onClick={() => setGitEnabled((enabled) => !enabled)}
-                title={`${gitEnabled ? 'Hide' : 'Show'} Git changes`}
-                type="button"
-              >
-                <svg aria-hidden="true" viewBox="0 0 24 24">
-                  <circle cx="7" cy="5" r="2" />
-                  <circle cx="7" cy="19" r="2" />
-                  <circle cx="17" cy="9" r="2" />
-                  <path d="M7 7v10M9 15c5 0 8-1.5 8-4" />
-                </svg>
-              </button>
-            )}
-            <a
-              aria-current={route?.kind === 'search' ? 'page' : undefined}
-              aria-label="Search"
-              className="sidebar-search"
-              href="/search"
-              onClick={onNavigationClick}
-              title="Search"
-            >
-              <svg aria-hidden="true" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="6.5" />
-                <path d="m16 16 4 4" />
-              </svg>
-            </a>
-          </div>
-        </div>
+        <AppHeader
+          className="sidebar-header"
+          graphHref={graphHref}
+          gitEnabled={gitEnabled}
+          gitHasChanges={gitHasChanges}
+          index={index}
+          onGitToggle={() => setGitEnabled((enabled) => !enabled)}
+          onGraphNavigate={onGraphToggleClick}
+          onNavigate={onNavigationClick}
+          onSearchNavigate={onSearchToggleClick}
+          route={route}
+          searchEnabled={!staticView}
+        />
         <nav aria-label="Markdown files">
           {index && (
             <FileTree
@@ -433,41 +659,6 @@ export function App() {
       <main
         className={historyScroll ? 'main restoring-history-scroll' : 'main'}
       >
-        {page?.kind === 'markdown' && (
-          <div className="document-header">
-            <div className="document-metadata">
-              <div className="document-path">{page.document.path}</div>
-              {page.document.frontmatter.requireCodeMention && (
-                <div
-                  className="document-flag"
-                  title="Every leaf section must have an @lat code reference"
-                >
-                  Code mentions required
-                </div>
-              )}
-              {page.document.errors.length > 0 && (
-                <button
-                  aria-controls="document-errors"
-                  aria-expanded={errorsOpen}
-                  className="document-error-toggle"
-                  onClick={() =>
-                    setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
-                  }
-                  type="button"
-                >
-                  {page.document.errors.length}{' '}
-                  {page.document.errors.length === 1 ? 'error' : 'errors'}
-                </button>
-              )}
-            </div>
-            {errorsOpen && (
-              <DocumentErrorPanel
-                errors={page.document.errors}
-                onNavigate={onNavigationClick}
-              />
-            )}
-          </div>
-        )}
         {error ? (
           <div className="state error" role="alert">
             <strong>Could not open this document</strong>
@@ -485,11 +676,53 @@ export function App() {
             restoreScroll={historyScroll}
           />
         ) : page?.kind === 'markdown' ? (
-          <article
-            className="markdown"
-            onClick={onDocumentClick}
-            dangerouslySetInnerHTML={{ __html: documentHtml }}
-          />
+          <div className="document-layout">
+            <div className="document-column">
+              <div className="document-header">
+                <div className="document-metadata">
+                  <div className="document-path">{page.document.path}</div>
+                  {page.document.frontmatter.requireCodeMention && (
+                    <div
+                      className="document-flag"
+                      title="Every leaf section must have an @lat code reference"
+                    >
+                      Code mentions required
+                    </div>
+                  )}
+                  {page.document.errors.length > 0 && (
+                    <button
+                      aria-controls="document-errors"
+                      aria-expanded={errorsOpen}
+                      className="document-error-toggle"
+                      onClick={() =>
+                        setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
+                      }
+                      type="button"
+                    >
+                      {page.document.errors.length}{' '}
+                      {page.document.errors.length === 1 ? 'error' : 'errors'}
+                    </button>
+                  )}
+                </div>
+                {errorsOpen && (
+                  <DocumentErrorPanel
+                    errors={page.document.errors}
+                    onNavigate={onNavigationClick}
+                  />
+                )}
+              </div>
+              <article
+                className="markdown"
+                onClick={onDocumentClick}
+                dangerouslySetInnerHTML={{ __html: documentHtml }}
+              />
+            </div>
+            <DocumentToc
+              gitEnabled={gitEnabled}
+              items={page.document.tableOfContents}
+              onNavigate={onNavigationClick}
+            />
+          </div>
         ) : page?.kind === 'source' ? (
           <SourceView
             key={`${page.source.path}#${page.source.focus?.symbol ?? ''}@${page.source.focus?.startLine ?? 0}`}

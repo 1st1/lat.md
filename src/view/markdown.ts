@@ -12,10 +12,15 @@ import { parse } from '../parser.js';
 
 export type WikiLinkContext = { line: number };
 
+export type WikiLinkResolution = {
+  href: string;
+  referenceCount: number;
+};
+
 export type WikiLinkResolver = (
   target: string,
   context: WikiLinkContext,
-) => string | null | Promise<string | null>;
+) => WikiLinkResolution | null | Promise<WikiLinkResolution | null>;
 
 export type MarkdownRenderOptions = {
   activeMarkdownLink?: string;
@@ -48,9 +53,18 @@ const GIT_CLASSES = ['git-added', 'git-removed'];
 function classAttributes(
   tag: string,
 ): NonNullable<SanitizeSchema['attributes']>[string] {
+  const attributes = defaultSchema.attributes?.[tag] ?? [];
+  const allowedClasses = attributes.flatMap((attribute) =>
+    Array.isArray(attribute) && attribute[0] === 'className'
+      ? attribute.slice(1)
+      : [],
+  );
   return [
-    ...(defaultSchema.attributes?.[tag] ?? []),
-    ['className', ERROR_CLASS, ...GIT_CLASSES],
+    ...attributes.filter(
+      (attribute) =>
+        !(Array.isArray(attribute) && attribute[0] === 'className'),
+    ),
+    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES],
   ];
 }
 
@@ -87,20 +101,24 @@ const sanitizeSchema: SanitizeSchema = {
     img: classAttributes('img'),
     ins: classAttributes('ins'),
     li: classAttributes('li'),
+    ol: classAttributes('ol'),
     p: classAttributes('p'),
     pre: classAttributes('pre'),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
       'ariaHidden',
+      'ariaLabel',
       [
         'className',
         'wiki-link-context',
         'wiki-link-leaf',
+        'wiki-link-ref-count',
         ...CODE_LINK_CLASSES.slice(2),
         ERROR_CLASS,
         ...GIT_CLASSES,
       ],
     ],
+    ul: classAttributes('ul'),
   },
 };
 
@@ -199,6 +217,20 @@ function languageIcon(language: {
       },
     },
     children: [{ type: 'text', value: language.label }],
+  } as RootContent;
+}
+
+function referenceCountBadge(count: number): RootContent {
+  return {
+    type: 'emphasis',
+    data: {
+      hName: 'span',
+      hProperties: {
+        className: ['wiki-link-ref-count'],
+        ariaLabel: `${count} ${count === 1 ? 'reference' : 'references'}`,
+      },
+    },
+    children: [{ type: 'text', value: String(count) }],
   } as RootContent;
 }
 
@@ -317,7 +349,7 @@ export async function renderMarkdown(
     ? nodeText(firstHeading)
     : basename(filePath, '.md');
 
-  const resolvedLinks = new Map<WikiLink, string | null>();
+  const resolvedLinks = new Map<WikiLink, WikiLinkResolution | null>();
   if (resolveWikiLink) {
     const wikiLinks: WikiLink[] = [];
     visit(tree, 'wikiLink', (node: WikiLink) => {
@@ -335,11 +367,12 @@ export async function renderMarkdown(
 
   visit(tree, 'wikiLink', (node: WikiLink, index, parent) => {
     if (index === undefined || !parent || !('children' in parent)) return;
-    const href = resolvedLinks.get(node);
+    const resolution = resolvedLinks.get(node);
     const markedProperties = node.data?.hProperties as
       | Record<string, unknown>
       | undefined;
-    if (href) {
+    if (resolution) {
+      const { href, referenceCount } = resolution;
       const content = wikiLinkContent(node);
       const language = href.startsWith('/code/')
         ? codeLanguage(node.value)
@@ -369,9 +402,11 @@ export async function renderMarkdown(
                 },
               }
             : undefined,
-        children: language
-          ? [languageIcon(language), ...content.children]
-          : content.children,
+        children: [
+          ...(language ? [languageIcon(language)] : []),
+          ...content.children,
+          ...(referenceCount > 1 ? [referenceCountBadge(referenceCount)] : []),
+        ],
       } as RootContent;
       return;
     }

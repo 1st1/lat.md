@@ -1,3 +1,5 @@
+import { staticViewRoute, viewPathname } from './static-mode';
+
 const DOCUMENT_PREFIX = '/docs/';
 const SOURCE_PREFIX = '/code/';
 
@@ -9,10 +11,12 @@ type DocumentScroller = {
 };
 
 export function documentUrl(path: string): string {
-  return `${DOCUMENT_PREFIX}${path.split('/').map(encodeURIComponent).join('/')}`;
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  return staticViewRoute(`docs/${encoded}/`) ?? `${DOCUMENT_PREFIX}${encoded}`;
 }
 
 export function documentPath(pathname: string): string | null {
+  pathname = viewPathname(pathname);
   if (!pathname.startsWith(DOCUMENT_PREFIX)) return null;
   try {
     return pathname
@@ -25,7 +29,26 @@ export function documentPath(pathname: string): string | null {
   }
 }
 
+/** Keep Markdown route identity stable when only its fragment changes. */
+export function viewRouteIdentity(location: string): string {
+  const url = new URL(location, 'http://lat.local');
+  return documentPath(url.pathname)
+    ? `${url.pathname}${url.search}`
+    : `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Whether navigation stays within one rendered Markdown document. */
+export function isSameMarkdownDocument(current: URL, next: URL): boolean {
+  return (
+    documentPath(current.pathname) !== null &&
+    current.origin === next.origin &&
+    current.pathname === next.pathname &&
+    current.search === next.search
+  );
+}
+
 export function sourcePath(pathname: string): string | null {
+  pathname = viewPathname(pathname);
   if (!pathname.startsWith(SOURCE_PREFIX)) return null;
   try {
     return pathname
@@ -55,6 +78,17 @@ export function searchUrl(query: string): string {
   if (!query) return '/search';
   const search = new URLSearchParams({ q: query });
   return `/search?${search}`;
+}
+
+export function graphNode(search: string): string {
+  return new URLSearchParams(search).get('node') ?? '';
+}
+
+export function graphUrl(nodeId = ''): string {
+  const path = staticViewRoute('graph/') ?? '/graph';
+  if (!nodeId) return path;
+  const search = new URLSearchParams({ node: nodeId });
+  return `${path}?${search}`;
 }
 
 const SEARCH_RETURN_KEY = 'latSearchReturnTo';
@@ -107,10 +141,15 @@ export function searchEscapeAction(query: string): 'clear' | 'close' {
   return query ? 'clear' : 'close';
 }
 
+export function searchButtonAction(pathname: string): 'close' | 'open' {
+  return pathname === '/search' ? 'close' : 'open';
+}
+
 /** Position a newly rendered document without leaving its content in motion. */
 export function scrollToDocumentLocation(
   hash: string,
   scroller: DocumentScroller,
+  topHeadingId = '',
 ): void {
   if (!hash) {
     scroller.scrollTo({ top: 0, behavior: 'instant' });
@@ -122,6 +161,10 @@ export function scrollToDocumentLocation(
     id = decodeURIComponent(id);
   } catch {
     // Leave malformed fragments untouched; they simply will not match.
+  }
+  if (id === topHeadingId) {
+    scroller.scrollTo({ top: 0, behavior: 'instant' });
+    return;
   }
   scroller
     .getElementById(id)

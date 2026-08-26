@@ -25,6 +25,7 @@ import type {
   ViewSectionBackReferences,
   ViewSourceReference,
 } from './protocol.js';
+import { viewSourceTarget } from './source-target.js';
 
 export type SourceReferenceOrigin = {
   sectionId: string;
@@ -77,6 +78,7 @@ type IndexedBackReference = IndexedMarkdownReference | ViewCodeBackReference;
 export type ViewReferenceIndex = {
   incomingBySection: ReadonlyMap<string, readonly IndexedBackReference[]>;
   sourceByTarget: ReadonlyMap<string, readonly IndexedMarkdownReference[]>;
+  sourceReferenceCounts: ReadonlyMap<string, number>;
 };
 
 function inlineText(node: RootContent | WikiLink): string {
@@ -219,7 +221,7 @@ function sourceLineUrl(path: string, line: number): string {
   return `/code/${encoded}?at=${line}`;
 }
 
-function linkedSection(
+export function linkedSection(
   url: string,
   sourcePath: string,
   sectionsByPath: ReadonlyMap<string, Section[]>,
@@ -300,7 +302,10 @@ export function buildViewReferenceIndex(
   }
 
   const incoming = new Map<string, Map<string, IndexedBackReference>>();
-  const sourceByTarget = new Map<string, IndexedMarkdownReference[]>();
+  const sourceByTarget = new Map<
+    string,
+    Map<string, IndexedMarkdownReference>
+  >();
   const addIncoming = (
     targetId: string,
     key: string,
@@ -311,6 +316,18 @@ export function buildViewReferenceIndex(
     if (!references) {
       references = new Map();
       incoming.set(target, references);
+    }
+    if (!references.has(key)) references.set(key, reference);
+  };
+  const addSourceReference = (
+    target: string,
+    key: string,
+    reference: IndexedMarkdownReference,
+  ) => {
+    let references = sourceByTarget.get(target);
+    if (!references) {
+      references = new Map();
+      sourceByTarget.set(target, references);
     }
     if (!references.has(key)) references.set(key, reference);
   };
@@ -330,10 +347,14 @@ export function buildViewReferenceIndex(
         paragraph: paragraphFor(file, section, ref.line),
         activeWikiLink: ref.target,
       };
-      const sourceKey = ref.target.toLowerCase();
-      const sourceReferences = sourceByTarget.get(sourceKey) ?? [];
-      sourceReferences.push(reference);
-      sourceByTarget.set(sourceKey, sourceReferences);
+      const locationKey = `markdown:${section.filePath}:${reference.paragraph.startLine}`;
+      const source = viewSourceTarget(ref.target);
+      if (source) {
+        addSourceReference(source.key, locationKey, reference);
+        if (source.symbol) {
+          addSourceReference(source.fileKey, locationKey, reference);
+        }
+      }
 
       const resolved = resolveRef(ref.target, sectionIds, fileIndex, slugIndex);
       if (
@@ -342,11 +363,7 @@ export function buildViewReferenceIndex(
       ) {
         continue;
       }
-      addIncoming(
-        resolved.resolved,
-        `markdown:${section.filePath}:${reference.paragraph.startLine}`,
-        reference,
-      );
+      addIncoming(resolved.resolved, locationKey, reference);
     }
 
     for (const link of file.markdownLinks) {
@@ -401,7 +418,18 @@ export function buildViewReferenceIndex(
         [...references.values()],
       ]),
     ),
-    sourceByTarget,
+    sourceByTarget: new Map(
+      [...sourceByTarget].map(([target, references]) => [
+        target,
+        [...references.values()],
+      ]),
+    ),
+    sourceReferenceCounts: new Map(
+      [...sourceByTarget].map(([target, references]) => [
+        target,
+        references.size,
+      ]),
+    ),
   };
 }
 
@@ -493,7 +521,8 @@ export async function renderSourceReferenceContext(
   context: ViewSourceReference | null;
   otherReferences: ViewSourceReference[];
 }> {
-  const indexed = index.sourceByTarget.get(target.toLowerCase()) ?? [];
+  const source = viewSourceTarget(target);
+  const indexed = source ? (index.sourceByTarget.get(source.key) ?? []) : [];
   const resolverByPath = new Map<string, Promise<WikiLinkResolver>>();
   const located: { line: number; reference: ViewSourceReference }[] = [];
 

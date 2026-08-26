@@ -27,6 +27,7 @@ import {
   type SourceReferenceOrigin,
   type ViewReferenceIndex,
 } from './references.js';
+import { viewSourceTarget } from './source-target.js';
 
 export class ViewDocumentNotFoundError extends Error {}
 export class ViewSourceNotFoundError extends Error {}
@@ -59,16 +60,6 @@ function sourceUrl(
   return `/code/${encodedPath}${search}${fragment}`;
 }
 
-function sourceTarget(target: string): {
-  path: string;
-  symbol: string;
-} | null {
-  const hash = target.indexOf('#');
-  const path = hash === -1 ? target : target.slice(0, hash);
-  if (!SOURCE_EXTENSIONS.has(extname(path))) return null;
-  return { path, symbol: hash === -1 ? '' : target.slice(hash + 1) };
-}
-
 function matchingSymbol(
   symbols: SourceSymbol[],
   symbolPath: string,
@@ -89,8 +80,12 @@ export async function createMarkdownWikiLinkResolver(
   latDir: string,
   requestedPath: string,
   loadedSections: Section[],
+  referenceIndex?: ViewReferenceIndex,
 ): Promise<
-  (target: string, context: { line: number }) => Promise<string | null>
+  (
+    target: string,
+    context: { line: number },
+  ) => Promise<{ href: string; referenceCount: number } | null>
 > {
   const projectRoot = dirname(latDir);
   const flat = flattenSections(loadedSections);
@@ -119,10 +114,15 @@ export async function createMarkdownWikiLinkResolver(
         target.includes('#') && section.githubSlug
           ? `#${encodeURIComponent(section.githubSlug)}`
           : '';
-      return `${documentUrl(file)}${fragment}`;
+      return {
+        href: `${documentUrl(file)}${fragment}`,
+        referenceCount:
+          referenceIndex?.incomingBySection.get(section.id.toLowerCase())
+            ?.length ?? 0,
+      };
     }
 
-    const source = sourceTarget(target);
+    const source = viewSourceTarget(target);
     if (!source) return null;
     try {
       await readViewSource(projectRoot, source.path, source.symbol);
@@ -134,7 +134,11 @@ export async function createMarkdownWikiLinkResolver(
       const origin = section
         ? { sectionId: section.id, line: context.line }
         : undefined;
-      return sourceUrl(source.path, source.symbol, origin);
+      return {
+        href: sourceUrl(source.path, source.symbol, origin),
+        referenceCount:
+          referenceIndex?.sourceReferenceCounts.get(source.key) ?? 0,
+      };
     } catch (error) {
       if (error instanceof ViewSourceNotFoundError) return null;
       throw error;
@@ -246,7 +250,13 @@ export async function getViewSource(
         origin,
         latDir,
         projectRoot,
-        (path) => createMarkdownWikiLinkResolver(latDir, path, allSections),
+        (path) =>
+          createMarkdownWikiLinkResolver(
+            latDir,
+            path,
+            allSections,
+            referenceIndex,
+          ),
       )
     : { context: null, otherReferences: [] };
   return {
