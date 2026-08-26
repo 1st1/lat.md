@@ -1,8 +1,9 @@
 :root {
-  color: #25231f;
-  background: #f8f7f3;
+  color: #171717;
+  background: #fff;
   font-family:
-    Inter,
+    Geist,
+    'Geist Sans',
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -11,24 +12,33 @@
     sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --background: #f8f7f3;
-  --panel: #f0eee8;
-  --panel-border: #dedbd1;
-  --text: #25231f;
-  --muted: #777268;
-  --accent: #7357d9;
-  --accent-soft: #e7e0ff;
-  --danger: #b72f3d;
-  --danger-soft: #f8dfe2;
-  --danger-border: #e7a5ad;
-  --warning: #a87000;
-  --warning-soft: #f5e7b8;
-  --success: #2f7a48;
-  --success-soft: #dceede;
+  color-scheme: light dark;
+  --background: #fff;
+  --panel: #fafafa;
+  --sidebar: #fafafa;
+  --sidebar-selection: #eaeaea;
+  --panel-border: #eaeaea;
+  --text: #171717;
+  --muted: #666;
+  --accent: #171717;
+  --accent-soft: #ededed;
+  --link: #0070f3;
+  --danger: #e5484d;
+  --danger-soft: #ffebe9;
+  --danger-border: #f3b8b8;
+  --warning: #b7791f;
+  --warning-soft: #fff4ce;
+  --success: #2e7d46;
+  --success-soft: #e9f9ee;
   --git-notification: #e47f19;
-  --code: #ece9e1;
+  --code: #f5f5f5;
+  --context-surface: #f7f7f7;
+  --inline-code: #ededed;
+  --reference-control: #e5e5e5;
+  --graph-document: #0070f3;
+  --graph-code: #d97706;
   --syntax-built-in: #9a3f75;
-  --syntax-comment: #777268;
+  --syntax-comment: #737373;
   --syntax-keyword: #6c4bc2;
   --syntax-number: #a85414;
   --syntax-string: #397348;
@@ -37,26 +47,34 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #e8e6df;
-    background: #181816;
-    --background: #181816;
-    --panel: #201f1c;
-    --panel-border: #34322d;
-    --text: #e8e6df;
-    --muted: #9c978d;
-    --accent: #ad9aff;
-    --accent-soft: #332b52;
-    --danger: #ff7e8a;
-    --danger-soft: #49262b;
-    --danger-border: #713941;
-    --warning: #e9bd4c;
-    --warning-soft: #43391e;
-    --success: #83d79a;
-    --success-soft: #213d29;
+    color: #ededed;
+    background: #000;
+    --background: #000;
+    --panel: #0a0a0a;
+    --sidebar: #141414;
+    --sidebar-selection: #333;
+    --panel-border: #262626;
+    --text: #ededed;
+    --muted: #888;
+    --accent: #fff;
+    --accent-soft: #1f1f1f;
+    --link: rgb(82, 168, 255);
+    --danger: #ff6166;
+    --danger-soft: #2a1314;
+    --danger-border: #5c2628;
+    --warning: #f5a623;
+    --warning-soft: #2a210f;
+    --success: #62c073;
+    --success-soft: #12261a;
     --git-notification: #f0a044;
-    --code: #25241f;
+    --code: #111;
+    --context-surface: #111;
+    --inline-code: #1f1f1f;
+    --reference-control: #262626;
+    --graph-document: rgb(82, 168, 255);
+    --graph-code: #f5a623;
     --syntax-built-in: #e6a2cc;
-    --syntax-comment: #88847c;
+    --syntax-comment: #888;
     --syntax-keyword: #c2adff;
     --syntax-number: #efb271;
     --syntax-string: #9fd0a5;
@@ -74,10 +92,16 @@ body {
   min-height: 100vh;
   color: var(--text);
   background: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  color: var(--background);
+  background: var(--text);
 }
 
 a {
-  color: var(--accent);
+  color: var(--link);
 }
 
 .app-shell {
@@ -92,7 +116,7 @@ a {
   height: 100vh;
   padding: 28px 18px;
   overflow-y: auto;
-  background: var(--panel);
+  background: var(--sidebar);
   border-right: 1px solid var(--panel-border);
 }
 
@@ -118,7 +142,7 @@ a {
 }
 
 .brand span {
-  color: var(--accent);
+  color: inherit;
 }
 
 .sidebar-actions {
@@ -149,7 +173,7 @@ a {
 .sidebar-graph[aria-current='page'],
 .sidebar-git:hover {
   color: var(--accent);
-  background: var(--accent-soft);
+  background: var(--sidebar-selection);
 }
 
 .sidebar-git[aria-pressed='true'] {
@@ -170,7 +194,7 @@ a {
   content: '';
   background: var(--git-notification);
   border-radius: 50%;
-  box-shadow: 0 0 0 1.5px var(--panel);
+  box-shadow: 0 0 0 1.5px var(--sidebar);
 }
 
 .sidebar-search svg,
@@ -238,7 +262,7 @@ a {
 
 .tree-directory > summary:hover {
   color: var(--text);
-  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  background: var(--sidebar-selection);
 }
 
 .tree-children {
@@ -317,7 +341,7 @@ a {
 .document-link:hover,
 .document-link.active {
   color: var(--text);
-  background: var(--accent-soft);
+  background: var(--sidebar-selection);
 }
 
 .document-link.active {
@@ -426,11 +450,11 @@ a {
 }
 
 .document-toc-link[aria-current='location'] {
-  color: var(--accent);
+  color: var(--link);
 }
 
 .document-toc-link[aria-current='location']::before {
-  background: var(--accent);
+  background: var(--link);
 }
 
 .document-metadata {
@@ -483,7 +507,8 @@ a {
   margin-top: 12px;
   overflow: hidden;
   font-family:
-    Inter,
+    Geist,
+    'Geist Sans',
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -543,14 +568,15 @@ a {
   margin: 12px 16px 12px 4.25rem;
   overflow: visible;
   font-family:
-    Inter,
+    Geist,
+    'Geist Sans',
     ui-sans-serif,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background: color-mix(in srgb, var(--code) 72%, transparent);
+  background: var(--context-surface);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
 }
@@ -609,7 +635,7 @@ a {
   letter-spacing: 0.02em;
   text-transform: none;
   cursor: pointer;
-  background: var(--accent-soft);
+  background: var(--reference-control);
   border: 0;
   border-radius: 5px;
 }
@@ -642,7 +668,7 @@ a {
   align-items: center;
   gap: 5px;
   overflow: hidden;
-  color: var(--accent);
+  color: var(--link);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   font-weight: 650;
@@ -868,7 +894,7 @@ a {
   letter-spacing: 0.01em;
   vertical-align: middle;
   cursor: pointer;
-  background: var(--accent-soft);
+  background: var(--reference-control);
   border: 0;
   border-radius: 5px;
 }
@@ -891,14 +917,15 @@ a {
   margin: -0.15em 0 1.5em;
   overflow: hidden;
   font-family:
-    Inter,
+    Geist,
+    'Geist Sans',
     ui-sans-serif,
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  background: color-mix(in srgb, var(--code) 72%, transparent);
+  background: var(--context-surface);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
 }
@@ -929,7 +956,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--accent);
+  color: var(--link);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   font-weight: 650;
@@ -1147,7 +1174,7 @@ a.wiki-link-segmented > .wiki-link-leaf {
   margin-right: 0.38em;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--background);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.62em;
   font-style: normal;
@@ -1155,34 +1182,8 @@ a.wiki-link-segmented > .wiki-link-leaf {
   line-height: 1;
   text-decoration: none;
   vertical-align: 0.12em;
-  background: var(--muted);
+  background: var(--text);
   border-radius: 3px;
-}
-
-.code-language-ts {
-  background: #3178c6;
-}
-
-.code-language-js {
-  color: #25231f;
-  background: #f0db4f;
-}
-
-.code-language-py {
-  background: #3776ab;
-}
-
-.code-language-rs {
-  background: #9a4b2f;
-}
-
-.code-language-go {
-  color: #15343b;
-  background: #6ad7e5;
-}
-
-.code-language-c {
-  background: #5968ba;
 }
 
 a.wiki-link-active {
@@ -1205,7 +1206,7 @@ a.wiki-link-active {
   padding: 0.16em 0.36em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.9em;
-  background: var(--code);
+  background: var(--inline-code);
   border-radius: 5px;
 }
 
@@ -1258,7 +1259,7 @@ a.wiki-link-active {
   color: var(--muted);
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 10px;
+  border-radius: 6px;
   box-shadow: 0 1px 1px color-mix(in srgb, var(--text) 5%, transparent);
 }
 
@@ -1318,7 +1319,7 @@ a.wiki-link-active {
   text-decoration: none;
   background: color-mix(in srgb, var(--panel) 72%, transparent);
   border: 1px solid var(--panel-border);
-  border-radius: 9px;
+  border-radius: 6px;
   transition:
     border-color 120ms ease,
     background 120ms ease,
@@ -1336,7 +1337,7 @@ a.wiki-link-active {
   align-items: center;
   gap: 5px;
   overflow: hidden;
-  color: var(--accent);
+  color: var(--link);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   font-weight: 650;
@@ -1602,19 +1603,19 @@ a.wiki-link-active {
 }
 
 .graph-legend .document {
-  color: var(--accent);
+  color: var(--graph-document);
 }
 
 .graph-legend .code {
-  color: var(--warning);
+  color: var(--graph-code);
 }
 
 .graph-legend .document input:checked + span {
-  color: var(--accent);
+  color: var(--graph-document);
 }
 
 .graph-legend .code input:checked + span {
-  color: var(--warning);
+  color: var(--graph-code);
 }
 
 .graph-legend input:not(:checked) + span {

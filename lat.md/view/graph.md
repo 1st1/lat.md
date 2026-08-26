@@ -72,7 +72,7 @@ The graph canvas and inspector share route state but keep rendering responsibili
 
 The client prefetches the graph projection after startup and includes `GraphView` in its main bundle. A deterministic linear-time layout places documents on a ring and clusters code around its strongest document neighbor, so Sigma can paint immediately without physics or animation.
 
-Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neighbors, distinguish document and code nodes by color, and keep the selected node labeled. Every visible label uses white text and shadow on an 80%-opaque black plate; highly referenced nodes receive default labels.
+Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neighbors, render documents in Vercel blue and code in warm orange, and keep the selected node labeled. Every visible label uses white text and shadow on an 80%-opaque black plate; highly referenced nodes receive default labels.
 
 With no semantic filter, node radius reflects incoming references. Search preserves each hit's cosine score, rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set.
 

@@ -182,12 +182,12 @@ function GraphCanvas({
     if (!target) return;
     const styles = window.getComputedStyle(target);
     const colors: Record<GraphCategory, string> = {
-      document: colorValue(styles, '--accent', '#7357d9'),
-      code: colorValue(styles, '--warning', '#a87000'),
+      document: colorValue(styles, '--graph-document', '#ededed'),
+      code: colorValue(styles, '--graph-code', '#737373'),
     };
-    const text = colorValue(styles, '--text', '#25231f');
-    const muted = colorValue(styles, '--muted', '#777268');
-    const edgeColor = colorValue(styles, '--panel-border', '#dedbd1');
+    const text = colorValue(styles, '--text', '#ededed');
+    const muted = colorValue(styles, '--muted', '#888888');
+    const edgeColor = colorValue(styles, '--panel-border', '#262626');
     const graph = new MultiDirectedGraph<
       GraphNodeAttributes,
       GraphEdgeAttributes
@@ -246,7 +246,7 @@ function GraphCanvas({
         labelColor: { color: '#fff' },
         labelDensity: 0.12,
         labelFont:
-          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+          'Geist, "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
         labelRenderedSizeThreshold: 6,
         labelSize: 11,
         labelWeight: '600',

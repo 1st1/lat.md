@@ -8,6 +8,8 @@
 
 `--logo-text` overrides the top-left `lat.md` label as plain text for both the live server and static export; omitting it preserves the default.
 
+The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
+
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
