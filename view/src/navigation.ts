@@ -57,6 +57,16 @@ export function searchUrl(query: string): string {
   return `/search?${search}`;
 }
 
+export function graphNode(search: string): string {
+  return new URLSearchParams(search).get('node') ?? '';
+}
+
+export function graphUrl(nodeId = ''): string {
+  if (!nodeId) return '/graph';
+  const search = new URLSearchParams({ node: nodeId });
+  return `/graph?${search}`;
+}
+
 const SEARCH_RETURN_KEY = 'latSearchReturnTo';
 const SCROLL_POSITION_KEY = 'latScrollPosition';
 

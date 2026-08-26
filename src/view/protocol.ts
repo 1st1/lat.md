@@ -38,11 +38,48 @@ export type ViewProjectChange = {
   markdownGeneration: number;
 };
 
+export type ViewGraphNodeKind = 'document' | 'source' | 'code-reference';
+
+export type ViewGraphNode = {
+  id: string;
+  kind: ViewGraphNodeKind;
+  label: string;
+  url: string;
+  breadcrumbs: string[];
+  inDegree: number;
+  outDegree: number;
+  documentPath?: string;
+  sectionId?: string;
+  sourcePath?: string;
+  symbol?: string;
+  line?: number;
+  snippet?: string;
+  gitStatus?: ViewGitFileStatus;
+  errorCount?: number;
+};
+
+export type ViewGraphEdgeKind = 'wiki' | 'markdown' | 'source' | 'code-mention';
+
+export type ViewGraphEdge = {
+  id: string;
+  from: string;
+  to: string;
+  kind: ViewGraphEdgeKind;
+  weight: number;
+};
+
+export type ViewGraph = {
+  generation: number;
+  nodes: ViewGraphNode[];
+  edges: ViewGraphEdge[];
+};
+
 export type ViewDocument = {
   path: string;
   title: string;
   html: string;
   gitHtml: string | null;
+  graphNodeIds: Record<string, string>;
   errors: ViewDocumentError[];
   backReferences: ViewSectionBackReferences[];
   frontmatter: {

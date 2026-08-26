@@ -11,6 +11,7 @@ import { buildGitDiffTree } from '../src/view/git-diff.js';
 import { renderMarkdown } from '../src/view/markdown.js';
 import type {
   ViewDocument,
+  ViewGraph,
   ViewIndex,
   ViewSearchResponse,
   ViewSourceDocument,
@@ -24,6 +25,8 @@ import {
   fileTreeGitStatus,
 } from '../view/src/file-tree.js';
 import {
+  graphNode,
+  graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
   scrollToDocumentLocation,
@@ -42,6 +45,14 @@ import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
+import {
+  deterministicGraphPosition,
+  graphDisplayLabel,
+  graphNodeSize,
+  graphSearchNodeIds,
+  staticGraphPositions,
+  validGraphPosition,
+} from '../view/src/graph-layout.js';
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
@@ -116,6 +127,85 @@ describe('lat ui', () => {
     const searchShell = await fetch(new URL('/search', view.url));
     expect(searchShell.status).toBe(200);
     expect(await searchShell.text()).toContain('lat ui shell');
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
+  it('serves the cached graph projection and graph shell', async () => {
+    const shell = await fetch(new URL('/graph', view.url));
+    expect(shell.status).toBe(200);
+    expect(await shell.text()).toContain('lat ui shell');
+
+    const response = await fetch(new URL('/api/graph', view.url));
+    expect(response.status).toBe(200);
+    const graph = (await response.json()) as ViewGraph;
+    expect(graph.generation).toBe(view.store.snapshot.generation);
+    expect(graph.nodes.map((node) => [node.id, node.kind])).toEqual([
+      ['code-ref:src/app.ts:5', 'code-reference'],
+      ['document:guide.md', 'document'],
+      ['document:lat.md', 'document'],
+      ['source:src/app.ts', 'source'],
+      ['source:src/app.ts#run', 'source'],
+    ]);
+    expect(
+      graph.edges.find(
+        (edge) =>
+          edge.from === 'document:lat.md' &&
+          edge.to === 'document:guide.md' &&
+          edge.kind === 'wiki',
+      ),
+    ).toMatchObject({ weight: 5 });
+    expect(
+      graph.edges.find((edge) => edge.kind === 'code-mention'),
+    ).toMatchObject({
+      from: 'code-ref:src/app.ts:5',
+      to: 'document:guide.md',
+      weight: 1,
+    });
+    expect(graph.edges.some((edge) => edge.from === edge.to)).toBe(false);
+    expect(
+      graph.nodes.find((node) => node.id === 'document:lat.md'),
+    ).toMatchObject({ inDegree: 1, outDegree: 10 });
+    expect(
+      graph.nodes.find((node) => node.id === 'document:guide.md'),
+    ).toMatchObject({ inDegree: 8, outDegree: 2 });
+
+    expect(graphUrl('document:guide.md')).toBe(
+      '/graph?node=document%3Aguide.md',
+    );
+    expect(graphNode('?node=document%3Aguide.md')).toBe('document:guide.md');
+    expect(
+      graphDisplayLabel({
+        kind: 'document',
+        label: 'Graph',
+        breadcrumbs: ['view', 'graph'],
+      }),
+    ).toBe('view › Graph');
+    expect(
+      graphDisplayLabel({
+        kind: 'code-reference',
+        label: 'app.ts:5',
+        breadcrumbs: ['src', 'app.ts', 'line 5'],
+        sourcePath: 'src/app.ts',
+      }),
+    ).toBe('src › app.ts:5');
+    expect(
+      validGraphPosition(deterministicGraphPosition('code-ref:src/app.ts:5')),
+    ).toBe(true);
+    expect(validGraphPosition({ x: Number.NaN, y: 1 })).toBe(false);
+    expect(graphNodeSize(0)).toBe(5);
+    expect(graphNodeSize(7)).toBeGreaterThan(graphNodeSize(1));
+    expect(graphNodeSize(-1)).toBe(5);
+    const positions = staticGraphPositions(graph);
+    expect(positions.size).toBe(graph.nodes.length);
+    expect([...positions.values()].every(validGraphPosition)).toBe(true);
+    expect([...staticGraphPositions(graph)]).toEqual([...positions]);
+    expect(
+      [...graphSearchNodeIds(graph, new Set(['guide.md']))].sort(),
+    ).toEqual([
+      'code-ref:src/app.ts:5',
+      'document:guide.md',
+      'source:src/app.ts#run',
+    ]);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
@@ -197,6 +287,7 @@ describe('lat ui', () => {
 
     expect(document.title).toBe('View Project');
     expect(document.frontmatter.requireCodeMention).toBe(false);
+    expect(document.graphNodeIds).toEqual({ '': 'document:lat.md' });
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
     expect(document.html).not.toContain('require-code-mention');
@@ -210,6 +301,7 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.frontmatter.requireCodeMention).toBe(true);
+    expect(document.graphNodeIds).toEqual({ '': 'document:guide.md' });
     expect(document.html).not.toContain('require-code-mention');
   });
 

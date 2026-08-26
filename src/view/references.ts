@@ -221,7 +221,7 @@ function sourceLineUrl(path: string, line: number): string {
   return `/code/${encoded}?at=${line}`;
 }
 
-function linkedSection(
+export function linkedSection(
   url: string,
   sourcePath: string,
   sectionsByPath: ReadonlyMap<string, Section[]>,

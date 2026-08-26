@@ -19,6 +19,7 @@ import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
 import { buildGitDiffTree } from './git-diff.js';
+import { buildViewGraph } from './graph.js';
 import {
   emptyViewGitSnapshot,
   findViewGitRepository,
@@ -30,6 +31,7 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
+  ViewGraph,
   ViewIndex,
   ViewProjectChange,
   ViewSourceDocument,
@@ -57,6 +59,7 @@ export type ViewProjectSnapshot = {
   files: ReadonlyMap<string, ViewParsedMarkdownFile>;
   allSections: Section[];
   references: ViewReferenceIndex;
+  graph: ViewGraph;
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>;
   git: ViewGitSnapshot;
   index: ViewIndex;
@@ -200,15 +203,24 @@ async function buildSnapshot(
     allSections,
     projectRoot,
   );
+  const references = buildViewReferenceIndex(
+    files.values(),
+    codeFiles.values(),
+    allSections,
+  );
   return {
     generation,
     markdownGeneration,
     files,
     allSections,
-    references: buildViewReferenceIndex(
+    references,
+    graph: buildViewGraph(
       files.values(),
       codeFiles.values(),
       allSections,
+      diagnostics,
+      git,
+      generation,
     ),
     diagnostics,
     git,
@@ -280,6 +292,10 @@ export class ViewStore {
     return this.snapshotValue.index;
   }
 
+  getGraph(): ViewGraph {
+    return this.snapshotValue.graph;
+  }
+
   async getDocument(requestedPath: string): Promise<ViewDocument> {
     if (
       !requestedPath ||
@@ -322,6 +338,23 @@ export class ViewStore {
       path: requestedPath,
       ...rendered,
       gitHtml: gitRendered?.html ?? null,
+      graphNodeIds: Object.fromEntries(
+        snapshot.graph.nodes
+          .filter(
+            (node) =>
+              node.documentPath === requestedPath && node.kind === 'document',
+          )
+          .map((node) => {
+            const hash = new URL(node.url, 'http://lat.local').hash.slice(1);
+            let headingId = hash;
+            try {
+              headingId = decodeURIComponent(hash);
+            } catch {
+              // Keep malformed fragments as-is; they cannot collide with valid ids.
+            }
+            return [headingId, node.id];
+          }),
+      ),
       errors,
       backReferences: await renderSectionBackReferences(
         snapshot.references,

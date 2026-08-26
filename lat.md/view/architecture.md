@@ -73,3 +73,9 @@ The source view keeps five surrounding lines, collapses distant code, preserves 
 Search debounces embedding queries, links results to exact sections, and stores the latest query in the URL so Back restores it.
 
 Escape clears a non-empty query, then returns to the page that opened search. In-app history records viewport positions and restores them before revealing returned Markdown, source, or search content.
+
+## Graph workspace
+
+[[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
+
+The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so `/graph` switches without I/O or layout work. Its embedding filter reuses `/api/search`; selection remains in the URL and exits through the selected node's normal route.

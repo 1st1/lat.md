@@ -38,7 +38,7 @@ function documentUrl(path: string): string {
 function setSecurityHeaders(res: ServerResponse): void {
   res.setHeader(
     'Content-Security-Policy',
-    "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
   );
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -180,6 +180,11 @@ export async function startViewServer(
         return;
       }
 
+      if (url.pathname === '/api/graph') {
+        sendJson(res, 200, store.getGraph(), headOnly);
+        return;
+      }
+
       if (url.pathname === '/api/events') {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -274,6 +279,7 @@ export async function startViewServer(
 
       if (
         url.pathname === '/search' ||
+        url.pathname === '/graph' ||
         url.pathname.startsWith('/docs/') ||
         url.pathname.startsWith('/code/')
       ) {

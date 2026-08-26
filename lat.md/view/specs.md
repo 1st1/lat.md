@@ -15,6 +15,20 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments.
 
+## Renders the graph workspace
+
+The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
+
+The client renders a 50/50 graph and inspector. Logo, app actions, and semantic search float over the full-height graph, while the right panel begins directly with the selected node preview and never renders an inspector toolbar.
+
+The graph button replaces the current route instead of navigating through browser history. Toggling it off opens the selected node's normal URL, activating the selected Markdown file in the tree for document nodes.
+
+Document and code radii grow only with incoming references. Every rendered label stays white over an 80%-opaque black plate with a text shadow in normal, selected, and hover states.
+
+The graph payload is prefetched after UI startup and a linear-time deterministic layout requires no force simulation, so toggling Graph paints immediately without a partial-page loading state, settling animation, or blocking pause.
+
+Graph search debounces through the embedding-backed `/api/search` service used by `lat search`. Matching sections filter to their owning documents and adjacent code nodes without rendering a result popup.
+
 ## Searches sections with embeddings
 
 Search debounces embedding queries and renders ranked section summaries linked to their document anchors.
