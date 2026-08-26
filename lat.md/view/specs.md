@@ -159,4 +159,6 @@ The document API rejects traversal and non-Markdown targets so browser requests 
 
 ## Launches the browser after the server starts
 
-`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.
+`lat ui` prefers loopback port 4242, advances when an implicit default is occupied, and starts listening before passing the final URL to the platform browser launcher.
+
+An explicit `--port <number>` accepts 1–65535 and fails clearly rather than selecting another port when occupied. Startup reports the URL and points users to `lat ui build` for static export.

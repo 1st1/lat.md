@@ -4,7 +4,7 @@
 
 ## Runtime boundary
 
-[[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
+[[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on loopback port 4242 and launches the browser without a shell. An occupied default advances to the next available port; an explicit `--port` is strict and reports the conflict.
 
 `--logo-text` overrides the top-left `lat.md` label as plain text for both the live server and static export; omitting it preserves the default.
 

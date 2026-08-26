@@ -78,6 +78,7 @@ describe('cli command surface', () => {
     expect(ui.stdout).toContain('Usage: lat ui');
     expect(ui.stdout).toContain('build');
     expect(ui.stdout).toContain('--logo-text <text>');
+    expect(ui.stdout).toContain('--port <number>');
 
     const build = runCli('basic-project', ['ui', 'build', '--help']);
     expect(build.exitCode).toBe(0);
@@ -93,6 +94,12 @@ describe('cli command surface', () => {
     ]);
     expect(existingOutput.exitCode).toBe(1);
     expect(existingOutput.stderr).toContain('Static UI output already exists:');
+
+    const invalidPort = runCli('basic-project', ['ui', '--port', '0']);
+    expect(invalidPort.exitCode).toBe(1);
+    expect(invalidPort.stderr).toContain(
+      'port must be an integer from 1 to 65535',
+    );
 
     const view = runCli('basic-project', ['view']);
     expect(view.exitCode).toBe(1);

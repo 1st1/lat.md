@@ -17,7 +17,11 @@ import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
 import { parseSections } from '../src/lattice.js';
 import { parse } from '../src/parser.js';
-import { startViewServer, type ViewServer } from '../src/view/server.js';
+import {
+  DEFAULT_VIEW_PORT,
+  startViewServer,
+  type ViewServer,
+} from '../src/view/server.js';
 import {
   normalizeStaticViewBasePath,
   staticViewUrl,
@@ -1109,6 +1113,10 @@ describe('lat ui', () => {
     });
 
     expect(started).toBeDefined();
+    expect(Number(new URL(started!.url).port)).toBeGreaterThanOrEqual(
+      DEFAULT_VIEW_PORT,
+    );
+    expect(new URL(started!.url).port).not.toBe(new URL(view.url).port);
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(
       `Viewing lat.md at ${started!.url}\n` +
@@ -1118,6 +1126,18 @@ describe('lat ui', () => {
       await fetch(new URL('/api/index', started!.url))
     ).json()) as ViewIndex;
     expect(index.logoText).toBe('Project Atlas');
+
+    const occupiedPort = Number(new URL(view.url).port);
+    const conflict = await uiCommand(testContext(), {
+      clientDir,
+      openBrowser,
+      port: occupiedPort,
+    });
+    expect(conflict).toEqual({
+      isError: true,
+      output: `Port ${occupiedPort} is already in use. Choose another with --port <number>.`,
+    });
+    expect(openBrowser).toHaveBeenCalledTimes(1);
     await started!.close();
   });
 });
