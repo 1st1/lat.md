@@ -20,6 +20,7 @@ import type {
   ViewSourceDocument,
   ViewSourceReference,
 } from './protocol.js';
+import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import {
   viewStaticSourceKey,
   type ViewStaticManifest,
@@ -33,6 +34,7 @@ const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
 export type StaticViewBuildOptions = {
   basePath?: string;
   clientDir?: string;
+  logoText?: string;
 };
 
 export type StaticViewBuildResult = {
@@ -440,6 +442,7 @@ export async function buildStaticView(
   const outputDir = resolve(ctx.projectRoot, requestedOutput);
   const basePath = normalizeStaticViewBasePath(options.basePath ?? '/');
   const clientDir = options.clientDir ?? defaultClientDir;
+  const logoText = options.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
   await validateOutput(outputDir, ctx.projectRoot);
 
   await mkdir(dirname(outputDir), { recursive: true });
@@ -456,7 +459,7 @@ export async function buildStaticView(
     await mkdir(payloadDir, { recursive: true });
     await cp(clientDir, payloadDir, { recursive: true });
     const shell = clientShell(clientHtml, basePath);
-    const index = { ...store.getIndex(), git: null };
+    const index = { ...store.getIndex(), git: null, logoText };
     const documents = new Map<string, ViewDocument>();
     const sourceRequests = new Map<string, ViewStaticSourceRequest>();
 

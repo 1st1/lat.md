@@ -148,6 +148,7 @@ describe('lat ui', () => {
       entry: 'lat.md',
       errorCounts: {},
       git: null,
+      logoText: 'lat.md',
     });
 
     const rootResponse = await fetch(view.url, { redirect: 'manual' });
@@ -190,6 +191,7 @@ describe('lat ui', () => {
       const result = await uiBuildCommand(staticContext, outputDir, {
         basePath: '/project',
         clientDir,
+        logoText: 'Project Atlas',
       });
       expect(result.output).toMatch(
         /Built 2 documents and [1-9]\d* source views/,
@@ -206,6 +208,7 @@ describe('lat ui', () => {
         entry: 'lat.md',
         errorCounts: {},
         git: null,
+        logoText: 'Project Atlas',
       });
       expect(Object.keys(manifest.documents).sort()).toEqual([
         'guide.md',
@@ -1013,6 +1016,7 @@ describe('lat ui', () => {
 
     const result = await uiCommand(testContext(), {
       clientDir,
+      logoText: 'Project Atlas',
       openBrowser,
       onStarted(server) {
         started = server;
@@ -1022,6 +1026,10 @@ describe('lat ui', () => {
     expect(started).toBeDefined();
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(`Viewing lat.md at ${started!.url}`);
+    const index = (await (
+      await fetch(new URL('/api/index', started!.url))
+    ).json()) as ViewIndex;
+    expect(index.logoText).toBe('Project Atlas');
     await started!.close();
   });
 });

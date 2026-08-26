@@ -3,7 +3,11 @@ import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CmdContext } from '../context.js';
-import type { ViewError, ViewProjectChange } from './protocol.js';
+import {
+  DEFAULT_VIEW_LOGO_TEXT,
+  type ViewError,
+  type ViewProjectChange,
+} from './protocol.js';
 import {
   ViewDocumentNotFoundError,
   ViewSourceNotFoundError,
@@ -26,6 +30,7 @@ export type ViewServerOptions = {
   git?: boolean;
   gitPollMs?: number;
   host?: string;
+  logoText?: string;
   port?: number;
   search?: ViewSearch;
   watch?: boolean;
@@ -131,6 +136,7 @@ export async function startViewServer(
 ): Promise<ViewServer> {
   const host = options.host ?? DEFAULT_HOST;
   const clientDir = options.clientDir ?? defaultClientDir;
+  const logoText = options.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
   const store = await createViewStore(ctx.latDir, ctx.projectRoot, {
     git: options.git,
     gitPollMs: options.gitPollMs,
@@ -176,7 +182,7 @@ export async function startViewServer(
       }
 
       if (url.pathname === '/api/index') {
-        sendJson(res, 200, store.getIndex(), headOnly);
+        sendJson(res, 200, { ...store.getIndex(), logoText }, headOnly);
         return;
       }
 

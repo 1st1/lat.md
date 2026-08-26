@@ -98,19 +98,23 @@ a {
 
 .sidebar-header {
   display: flex;
-  margin: 0 10px 34px;
+  margin: 0 2px 34px 10px;
   align-items: center;
   justify-content: space-between;
 }
 
 .brand {
   display: inline-block;
+  min-width: 0;
+  overflow: hidden;
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 21px;
   font-weight: 750;
   letter-spacing: -0.04em;
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand span {
@@ -119,6 +123,7 @@ a {
 
 .sidebar-actions {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 3px;
 }

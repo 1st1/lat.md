@@ -113,20 +113,28 @@ program
 const ui = program
   .command('ui')
   .description('Open lat.md in a local browser')
-  .action(async () => {
+  .option('--logo-text <text>', 'top-left logo text')
+  .action(async (opts: { logoText?: string }) => {
     const ctx = resolveContext(program.opts());
     const { uiCommand } = await import('./ui.js');
-    handleResult(await uiCommand(ctx));
+    handleResult(await uiCommand(ctx, { logoText: opts.logoText }));
   });
 
 ui.command('build')
   .description('Export lat.md as a static website')
   .argument('[output]', 'output directory relative to the project', 'lat-ui')
   .option('--base <path>', 'deployment base path', '/')
-  .action(async (output: string, opts: { base: string }) => {
+  .option('--logo-text <text>', 'top-left logo text')
+  .action(async (output: string, opts: { base: string; logoText?: string }) => {
     const ctx = resolveContext(program.opts());
     const { uiBuildCommand } = await import('./ui-build.js');
-    handleResult(await uiBuildCommand(ctx, output, { basePath: opts.base }));
+    handleResult(
+      await uiBuildCommand(ctx, output, {
+        basePath: opts.base,
+        logoText:
+          opts.logoText ?? (ui.opts() as { logoText?: string }).logoText,
+      }),
+    );
   });
 
 program

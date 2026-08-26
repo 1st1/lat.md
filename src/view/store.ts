@@ -37,6 +37,7 @@ import type {
   ViewProjectChange,
   ViewSourceDocument,
 } from './protocol.js';
+import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import {
   createMarkdownWikiLinkResolver,
   getViewSource,
@@ -197,6 +198,7 @@ function viewIndex(
           ),
         }
       : null,
+    logoText: DEFAULT_VIEW_LOGO_TEXT,
   };
 }
 

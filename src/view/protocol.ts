@@ -9,7 +9,10 @@ export type ViewIndex = {
   entry: string;
   errorCounts: Record<string, number>;
   git: ViewGitState | null;
+  logoText: string;
 };
+
+export const DEFAULT_VIEW_LOGO_TEXT = 'lat.md';
 
 export type ViewDocumentError = {
   anchor: string;

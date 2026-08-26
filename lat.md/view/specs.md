@@ -11,6 +11,8 @@ Functional specifications for the browser server, static export, client navigati
 
 The loopback server exposes the visible Markdown index, redirects its root to the vault index, and serves the client shell for document routes.
 
+`lat ui --logo-text <text>` replaces the top-left `lat.md` label with safely rendered plain text; omitting the option preserves the default.
+
 ## Builds a static deployment
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical document, source, and graph routes plus lazy JSON data.
@@ -18,6 +20,8 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
 
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
+
+`lat ui build --logo-text <text>` persists the same label override in the static manifest.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
 

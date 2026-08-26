@@ -14,6 +14,7 @@ import type {
   ViewProjectChange,
   ViewSourceDocument,
 } from '../../src/view/protocol';
+import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
 import { DocumentToc } from './DocumentToc';
 import { fetchViewJson } from './data-source';
@@ -61,6 +62,17 @@ type ViewPage =
 
 const NO_GIT_FILES = {};
 
+function BrandText({ text }: { text: string }) {
+  const suffix = '.md';
+  if (!text.endsWith(suffix)) return text;
+  return (
+    <>
+      {text.slice(0, -suffix.length)}
+      <span>{suffix}</span>
+    </>
+  );
+}
+
 function AppHeader({
   className,
   graphHref,
@@ -92,8 +104,9 @@ function AppHeader({
         className="brand"
         href={index ? documentUrl(index.entry) : '/'}
         onClick={index ? onNavigate : undefined}
+        title={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT}
       >
-        lat<span>.md</span>
+        <BrandText text={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT} />
       </a>
       <div className="sidebar-actions">
         {route?.kind !== 'graph' && index?.git && (

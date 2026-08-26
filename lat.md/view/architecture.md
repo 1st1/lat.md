@@ -6,6 +6,8 @@
 
 [[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
 
+`--logo-text` overrides the top-left `lat.md` label as plain text for both the live server and static export; omitting it preserves the default.
+
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
@@ -17,6 +19,8 @@ Read APIs accept only walked vault files or supported project source paths and r
 The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document, source path, and graph route gets a physical `index.html` shell.
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
+
+The manifest stores the selected logo text with the document index so the static client renders the same branding as the live server.
 
 The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git and search controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
 

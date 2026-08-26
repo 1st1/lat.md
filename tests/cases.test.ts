@@ -77,12 +77,20 @@ describe('cli command surface', () => {
     expect(ui.exitCode).toBe(0);
     expect(ui.stdout).toContain('Usage: lat ui');
     expect(ui.stdout).toContain('build');
+    expect(ui.stdout).toContain('--logo-text <text>');
 
     const build = runCli('basic-project', ['ui', 'build', '--help']);
     expect(build.exitCode).toBe(0);
     expect(build.stdout).toContain('Usage: lat ui build');
+    expect(build.stdout).toContain('--logo-text <text>');
 
-    const existingOutput = runCli('basic-project', ['ui', 'build', 'lat.md']);
+    const existingOutput = runCli('basic-project', [
+      'ui',
+      'build',
+      'lat.md',
+      '--logo-text',
+      'Project Atlas',
+    ]);
     expect(existingOutput.exitCode).toBe(1);
     expect(existingOutput.stderr).toContain('Static UI output already exists:');
 
