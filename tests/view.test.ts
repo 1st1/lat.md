@@ -1085,7 +1085,10 @@ describe('lat ui', () => {
 
     expect(started).toBeDefined();
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
-    expect(result.output).toBe(`Viewing lat.md at ${started!.url}`);
+    expect(result.output).toBe(
+      `Viewing lat.md at ${started!.url}\n` +
+        'Note: you can use `lat ui build` to build a static version of the UI',
+    );
     const index = (await (
       await fetch(new URL('/api/index', started!.url))
     ).json()) as ViewIndex;

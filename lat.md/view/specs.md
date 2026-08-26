@@ -151,4 +151,4 @@ The document API rejects traversal and non-Markdown targets so browser requests 
 
 ## Launches the browser after the server starts
 
-`lat ui` starts listening before passing the loopback URL to the platform browser launcher and reports the same URL to the terminal.
+`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.
