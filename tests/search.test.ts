@@ -86,6 +86,8 @@ describe('search (rag, local)', () => {
     );
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].id).toContain('Authentication');
+    expect(Number.isFinite(results[0].score)).toBe(true);
+    expect(results[0].score).toBeGreaterThanOrEqual(results.at(-1)!.score);
   });
 
   // @lat: [[search#RAG Tests#Finds performance section for latency query]]

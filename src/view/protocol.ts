@@ -26,6 +26,7 @@ export type ViewSearchResult = {
   breadcrumbs: string[];
   description: string;
   url: string;
+  score: number;
 };
 
 export type ViewSearchResponse = {

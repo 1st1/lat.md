@@ -50,7 +50,8 @@ import {
   deterministicGraphPosition,
   graphDisplayLabel,
   graphNodeSize,
-  graphSearchNodeIds,
+  graphSearchNodeScores,
+  graphSearchNodeSizes,
   staticGraphPositions,
   validGraphPosition,
 } from '../view/src/graph-layout.js';
@@ -71,6 +72,7 @@ describe('lat ui', () => {
     matches: [
       {
         reason: 'semantic match',
+        score: 0.82,
         section: {
           id: 'lat.md/guide#Guide#Details',
           heading: 'Details',
@@ -200,13 +202,30 @@ describe('lat ui', () => {
     expect(positions.size).toBe(graph.nodes.length);
     expect([...positions.values()].every(validGraphPosition)).toBe(true);
     expect([...staticGraphPositions(graph)]).toEqual([...positions]);
-    expect(
-      [...graphSearchNodeIds(graph, new Set(['guide.md']))].sort(),
-    ).toEqual([
+    const searchScores = graphSearchNodeScores(
+      graph,
+      new Map([['guide.md', 0.82]]),
+    );
+    expect([...searchScores.keys()].sort()).toEqual([
       'code-ref:src/app.ts:5',
       'document:guide.md',
       'source:src/app.ts#run',
     ]);
+    expect([...searchScores.values()]).toEqual([0.82, 0.82, 0.82]);
+    expect(
+      graphSearchNodeSizes(
+        new Map([
+          ['weak', 0.2],
+          ['strong', 0.8],
+        ]),
+      ),
+    ).toEqual(
+      new Map([
+        ['weak', 5],
+        ['strong', 14],
+      ]),
+    );
+    expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(14);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
@@ -244,6 +263,7 @@ describe('lat ui', () => {
           breadcrumbs: ['guide', 'Guide', 'Details'],
           description: 'Relative Markdown links preserve heading fragments.',
           url: '/docs/guide.md#details',
+          score: 0.82,
         },
       ],
     });

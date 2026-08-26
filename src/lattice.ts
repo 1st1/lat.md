@@ -492,6 +492,7 @@ const MAX_DISTANCE_RATIO = 0.4;
 export type SectionMatch = {
   section: Section;
   reason: string;
+  score?: number;
 };
 
 export function findSections(

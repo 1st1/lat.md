@@ -27,11 +27,11 @@ Document and code radii grow only with incoming references. Every rendered label
 
 The graph payload is prefetched after UI startup and a linear-time deterministic layout requires no force simulation, so toggling Graph paints immediately without a partial-page loading state, settling animation, or blocking pause.
 
-Graph search debounces through the embedding-backed `/api/search` service used by `lat search`. Matching sections filter to their owning documents and adjacent code nodes without rendering a result popup.
+Graph search debounces through the embedding-backed `/api/search` service used by `lat search`. Matching sections filter to their owning documents and adjacent code nodes without rendering a result popup. Their radii normalize by hit score; clearing search restores backlink sizing.
 
 ## Searches sections with embeddings
 
-Search debounces embedding queries and renders ranked section summaries linked to their document anchors.
+Search debounces embedding queries and renders ranked section summaries linked to their document anchors. Each result carries its finite cosine score so graph consumers can scale relevance without recomputing embeddings.
 
 The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search. Clicking the active Search icon closes the search immediately without clearing first.
 

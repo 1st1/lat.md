@@ -78,4 +78,4 @@ Escape clears a non-empty query, then returns to the page that opened search. Cl
 
 [[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
 
-The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so `/graph` switches without I/O or layout work. Its embedding filter reuses `/api/search`; selection remains in the URL and exits through the selected node's normal route.
+The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so `/graph` switches without I/O or layout work. Its embedding filter reuses `/api/search`, propagates cosine scores into result sizing, and keeps selection in the URL.

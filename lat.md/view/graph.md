@@ -74,6 +74,8 @@ The client prefetches the graph projection after startup and includes `GraphView
 
 Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neighbors, distinguish document and code nodes by color, and keep the selected node labeled. Every visible label uses white text and shadow on an 80%-opaque black plate; highly referenced nodes receive default labels.
 
+With no semantic filter, node radius reflects incoming references. Search preserves each hit's cosine score, rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set.
+
 A node click replaces the query-string id and renders the right pane with existing APIs and presentation: documents reuse the Markdown payload, while source and code-reference nodes reuse the source payload and focused line or symbol. Links inside the inspector select a represented graph node in place; modified clicks may open the normal document or source route.
 
 The graph pane remains fixed while the inspector scrolls from the top edge. The preview keeps current Git rendering, validation markers, backlinks, source context, and code expansion without wrapping them in another title toolbar.

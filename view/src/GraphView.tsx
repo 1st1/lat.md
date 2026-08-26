@@ -28,7 +28,8 @@ import {
   deterministicGraphPosition,
   graphDisplayLabel,
   graphNodeSize,
-  graphSearchNodeIds,
+  graphSearchNodeScores,
+  graphSearchNodeSizes,
   staticGraphPositions,
   validGraphPosition,
 } from './graph-layout';
@@ -137,11 +138,13 @@ const drawGraphNodeLabel: NodeLabelDrawingFunction<
 function GraphCanvas({
   graph: viewGraph,
   onSelect,
+  searchNodeSizes,
   selectedNodeId,
   visibleNodes,
 }: {
   graph: ViewGraph;
   onSelect: (nodeId: string) => void;
+  searchNodeSizes: ReadonlyMap<string, number> | null;
   selectedNodeId: string;
   visibleNodes: ReadonlySet<string>;
 }) {
@@ -151,6 +154,7 @@ function GraphCanvas({
     GraphEdgeAttributes
   > | null>(null);
   const selected = useRef(selectedNodeId);
+  const searchSizes = useRef(searchNodeSizes);
   const visible = useRef(visibleNodes);
   const onSelectRef = useRef(onSelect);
 
@@ -163,6 +167,11 @@ function GraphCanvas({
     visible.current = visibleNodes;
     renderer.current?.refresh();
   }, [visibleNodes]);
+
+  useEffect(() => {
+    searchSizes.current = searchNodeSizes;
+    renderer.current?.refresh();
+  }, [searchNodeSizes]);
 
   useEffect(() => {
     onSelectRef.current = onSelect;
@@ -248,10 +257,13 @@ function GraphCanvas({
         zIndex: true,
         nodeReducer: (node, data) => {
           if (!visible.current.has(node)) return { ...data, hidden: true };
+          const searchSize = searchSizes.current?.get(node);
+          const renderedData =
+            searchSize === undefined ? data : { ...data, size: searchSize };
           const focus = hoveredNode || selected.current;
           if (focus && node !== focus && !graph.areNeighbors(node, focus)) {
             return {
-              ...data,
+              ...renderedData,
               color: withAlpha(muted, '48'),
               label: null,
               zIndex: 0,
@@ -259,15 +271,15 @@ function GraphCanvas({
           }
           if (node === focus) {
             return {
-              ...data,
+              ...renderedData,
               forceLabel: true,
               highlighted: true,
-              size: data.size + 2.5,
+              size: renderedData.size + 2.5,
               zIndex: 3,
             };
           }
           return {
-            ...data,
+            ...renderedData,
             forceLabel: data.backlinks >= 4,
             zIndex: data.backlinks >= 4 ? 2 : 1,
           };
@@ -594,7 +606,7 @@ export default function GraphView({
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [searchMatch, setSearchMatch] = useState<{
-    paths: Set<string>;
+    pathScores: Map<string, number>;
     query: string;
   } | null>(null);
   const [searching, setSearching] = useState(false);
@@ -635,8 +647,15 @@ export default function GraphView({
         controller.signal,
       )
         .then((response) => {
+          const pathScores = new Map<string, number>();
+          for (const result of response.results) {
+            pathScores.set(
+              result.path,
+              Math.max(pathScores.get(result.path) ?? -Infinity, result.score),
+            );
+          }
           setSearchMatch({
-            paths: new Set(response.results.map((result) => result.path)),
+            pathScores,
             query: normalizedQuery,
           });
         })
@@ -654,12 +673,17 @@ export default function GraphView({
     };
   }, [markdownGeneration, normalizedQuery]);
 
-  const semanticNodeIds = useMemo(() => {
+  const semanticNodeScores = useMemo(() => {
     if (!graph || !normalizedQuery || searchMatch?.query !== normalizedQuery) {
       return null;
     }
-    return graphSearchNodeIds(graph, searchMatch.paths);
+    return graphSearchNodeScores(graph, searchMatch.pathScores);
   }, [graph, normalizedQuery, searchMatch]);
+  const searchNodeSizes = useMemo(
+    () =>
+      semanticNodeScores ? graphSearchNodeSizes(semanticNodeScores) : null,
+    [semanticNodeScores],
+  );
 
   const visibleNodes = useMemo(
     () =>
@@ -668,11 +692,11 @@ export default function GraphView({
           .filter(
             (node) =>
               categories[nodeCategory(node.kind)] &&
-              (!semanticNodeIds || semanticNodeIds.has(node.id)),
+              (!semanticNodeScores || semanticNodeScores.has(node.id)),
           )
           .map((node) => node.id),
       ),
-    [categories, graph, semanticNodeIds],
+    [categories, graph, semanticNodeScores],
   );
   const selectedNode =
     graph?.nodes.find((node) => node.id === selectedNodeId) ?? null;
@@ -721,6 +745,7 @@ export default function GraphView({
             <GraphCanvas
               graph={graph}
               onSelect={onSelect}
+              searchNodeSizes={searchNodeSizes}
               selectedNodeId={selectedNodeId}
               visibleNodes={visibleNodes}
             />

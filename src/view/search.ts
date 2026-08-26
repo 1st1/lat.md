@@ -51,6 +51,7 @@ function viewSearchResult(
     breadcrumbs: [...fileBreadcrumbs, ...section.id.split('#').slice(1)],
     description: section.firstParagraph,
     url: documentUrl(path, section.githubSlug),
+    score: match.score ?? 0,
   };
 }
 

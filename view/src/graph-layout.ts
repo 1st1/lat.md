@@ -117,32 +117,65 @@ export function staticGraphPositions(
   return positions;
 }
 
-/** Keep semantic document matches and the code nodes directly attached to them. */
-export function graphSearchNodeIds(
+/** Give semantic document matches and their attached code nodes a relevance score. */
+export function graphSearchNodeScores(
   graph: Pick<ViewGraph, 'edges' | 'nodes'>,
-  documentPaths: ReadonlySet<string>,
-): Set<string> {
-  const documentIds = new Set(
-    graph.nodes
-      .filter(
-        (node) =>
-          node.kind === 'document' &&
-          node.documentPath &&
-          documentPaths.has(node.documentPath),
-      )
-      .map((node) => node.id),
+  documentScores: ReadonlyMap<string, number>,
+): Map<string, number> {
+  const documentNodeScores = new Map(
+    graph.nodes.flatMap((node) => {
+      if (node.kind !== 'document' || !node.documentPath) return [];
+      const score = documentScores.get(node.documentPath);
+      return score === undefined || !Number.isFinite(score)
+        ? []
+        : [[node.id, score] as const];
+    }),
   );
-  const matches = new Set(documentIds);
+  const matches = new Map(documentNodeScores);
   const nodeKinds = new Map(graph.nodes.map((node) => [node.id, node.kind]));
   for (const edge of graph.edges) {
-    if (documentIds.has(edge.from) && nodeKinds.get(edge.to) !== 'document') {
-      matches.add(edge.to);
+    const fromScore = documentNodeScores.get(edge.from);
+    if (fromScore !== undefined && nodeKinds.get(edge.to) !== 'document') {
+      matches.set(
+        edge.to,
+        Math.max(matches.get(edge.to) ?? -Infinity, fromScore),
+      );
     }
-    if (documentIds.has(edge.to) && nodeKinds.get(edge.from) !== 'document') {
-      matches.add(edge.from);
+    const toScore = documentNodeScores.get(edge.to);
+    if (toScore !== undefined && nodeKinds.get(edge.from) !== 'document') {
+      matches.set(
+        edge.from,
+        Math.max(matches.get(edge.from) ?? -Infinity, toScore),
+      );
     }
   }
   return matches;
+}
+
+/** Stretch the current result scores across a legible node-size range. */
+export function graphSearchNodeSizes(
+  scores: ReadonlyMap<string, number>,
+): Map<string, number> {
+  const values = [...scores.values()].filter(Number.isFinite);
+  if (values.length === 0) return new Map();
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const sizeMinimum = 5;
+  const sizeMaximum = 14;
+  const spread = maximum - minimum;
+
+  return new Map(
+    [...scores].flatMap(([nodeId, score]) => {
+      if (!Number.isFinite(score)) return [];
+      const relevance = spread === 0 ? 1 : (score - minimum) / spread;
+      return [
+        [
+          nodeId,
+          sizeMinimum + relevance * (sizeMaximum - sizeMinimum),
+        ] as const,
+      ];
+    }),
+  );
 }
 
 export function deterministicGraphPosition(id: string): GraphPosition {
