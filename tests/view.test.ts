@@ -1006,6 +1006,23 @@ describe('lat ui', () => {
     });
     expect(scrollTo).not.toHaveBeenCalled();
 
+    getElementById.mockClear();
+    scrollIntoView.mockClear();
+    scrollToDocumentLocation(
+      '#guide',
+      {
+        getElementById,
+        scrollTo,
+      },
+      'guide',
+    );
+    expect(scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'instant',
+    });
+    expect(getElementById).not.toHaveBeenCalled();
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
     expect(viewRouteIdentity('/docs/guide.md#features')).toBe('/docs/guide.md');
     expect(viewRouteIdentity('/docs/guide.md#installation')).toBe(
       '/docs/guide.md',

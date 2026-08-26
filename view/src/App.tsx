@@ -410,10 +410,14 @@ export function App() {
       return;
     }
     if (page.kind === 'markdown') {
-      scrollToDocumentLocation(window.location.hash, {
-        getElementById: (id) => window.document.getElementById(id),
-        scrollTo: (options) => window.scrollTo(options),
-      });
+      scrollToDocumentLocation(
+        window.location.hash,
+        {
+          getElementById: (id) => window.document.getElementById(id),
+          scrollTo: (options) => window.scrollTo(options),
+        },
+        page.document.tableOfContents.find((item) => item.depth === 1)?.id,
+      );
     } else {
       const line = page.source.focus?.startLine;
       if (line) {

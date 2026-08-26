@@ -149,6 +149,7 @@ export function searchButtonAction(pathname: string): 'close' | 'open' {
 export function scrollToDocumentLocation(
   hash: string,
   scroller: DocumentScroller,
+  topHeadingId = '',
 ): void {
   if (!hash) {
     scroller.scrollTo({ top: 0, behavior: 'instant' });
@@ -160,6 +161,10 @@ export function scrollToDocumentLocation(
     id = decodeURIComponent(id);
   } catch {
     // Leave malformed fragments untouched; they simply will not match.
+  }
+  if (id === topHeadingId) {
+    scroller.scrollTo({ top: 0, behavior: 'instant' });
+    return;
   }
   scroller
     .getElementById(id)

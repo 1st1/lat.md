@@ -137,6 +137,8 @@ Fragment links position rendered documents without smooth scrolling so content i
 
 Changing only a Markdown fragment preserves the mounted document and cached response through direct clicks and Back or Forward navigation, avoiding a loading state or full-content repaint.
 
+Selecting the H1 entry in the page TOC keeps its canonical fragment while positioning the document at scroll-top zero instead of aligning the rendered heading.
+
 ## Restores history scroll positions
 
 In-app navigation records each viewport and restores it before revealing content reached through Back.

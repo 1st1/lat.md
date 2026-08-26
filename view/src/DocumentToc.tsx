@@ -120,6 +120,9 @@ export function DocumentToc({
               onClick={(event) => {
                 setActiveId(item.id);
                 onNavigate(event);
+                if (item.depth === 1 && event.defaultPrevented) {
+                  window.scrollTo({ top: 0, behavior: 'instant' });
+                }
               }}
               style={
                 {
