@@ -1313,19 +1313,42 @@ describe('lat ui git state', () => {
     );
     expect(replaced.html).not.toContain('<del class="git-removed">');
 
-    const borderlineReplacement = 'Shared new four five six.';
-    const borderline = await renderMarkdown(
-      borderlineReplacement,
+    const moderateReplacement =
+      'The server prefers port 4242 and launches the default browser.';
+    const moderate = await renderMarkdown(
+      moderateReplacement,
       'lat.md',
       undefined,
       {},
-      buildGitDiffTree('Shared old one two three.', borderlineReplacement),
+      buildGitDiffTree(
+        'The server starts on port 4242 and opens the browser.',
+        moderateReplacement,
+      ),
     );
-    expect(borderline.html).toContain(
-      '<p class="git-removed">Shared old one two three.</p>',
+    expect(moderate.html).toContain(
+      '<p class="git-removed">The server starts on port 4242',
     );
-    expect(borderline.html).toContain(
-      '<p class="git-added">Shared new four five six.</p>',
+    expect(moderate.html).toContain(
+      '<p class="git-added">The server prefers port 4242',
+    );
+
+    const portDescription =
+      '`lat ui` prefers loopback port 4242, advances when an implicit default is occupied, and starts listening before passing the final URL to the platform browser launcher.';
+    const portRewrite = await renderMarkdown(
+      portDescription,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(
+        '`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.',
+        portDescription,
+      ),
+    );
+    expect(portRewrite.html).toContain(
+      '<p class="git-removed"><code>lat ui</code> starts listening',
+    );
+    expect(portRewrite.html).toContain(
+      '<p class="git-added"><code>lat ui</code> prefers loopback port 4242',
     );
   });
 

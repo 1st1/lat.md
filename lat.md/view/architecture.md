@@ -58,7 +58,7 @@ The initial snapshot runs Git once, using argument-array subprocesses without a 
 
 An unreferenced two-second timer also refreshes Git through the store's serialized queue, catching commits and other repository-state changes that do not alter vault files. Unchanged snapshots neither increment the generation nor notify clients.
 
-The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|rendered diffs]] and sidebar state. Changed blocks use inline word diffs only with at least 20% ordered word-token overlap; otherwise the old and new blocks render separately.
+The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|rendered diffs]] and sidebar state. Changed blocks use inline word diffs only with at least 60% ordered word-token overlap; otherwise the old and new blocks render separately.
 
 Modified files are yellow, new files are green, and validation errors split the same marker red without hiding its Git state.
 
