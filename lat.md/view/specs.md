@@ -39,6 +39,8 @@ Markdown documents expose their H1 plus nested subsection headings in a sticky r
 
 The fixed-width desktop rail fills the available viewport height without programmatic resizing. Its list stays content-height when short and scrolls without a visible scrollbar when long; fixed link metrics never compress, and short final sections activate in sequence.
 
+Sections containing rendered Git changes carry an orange disc when Git is enabled, while sections owning validation errors carry a red disc. Both remain visible together when both states apply.
+
 ## Renders the graph workspace
 
 The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.

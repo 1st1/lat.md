@@ -17,9 +17,11 @@ import {
 type TocLinkStyle = CSSProperties & { '--toc-depth': number };
 
 export function DocumentToc({
+  gitEnabled,
   items,
   onNavigate,
 }: {
+  gitEnabled: boolean;
   items: ViewDocumentTocItem[];
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
 }) {
@@ -106,29 +108,52 @@ export function DocumentToc({
         className="document-toc-list"
         ref={navigationRef}
       >
-        {items.map((item) => (
-          <a
-            aria-current={activeId === item.id ? 'location' : undefined}
-            className="document-toc-link"
-            data-depth={item.depth}
-            href={`#${encodeURIComponent(item.id)}`}
-            key={item.id}
-            onClick={(event) => {
-              setActiveId(item.id);
-              onNavigate(event);
-            }}
-            style={
-              {
-                '--toc-depth': documentTocIndentationDepth(
-                  item.depth,
-                  minimumSubsectionDepth,
-                ),
-              } as TocLinkStyle
-            }
-          >
-            {item.title}
-          </a>
-        ))}
+        {items.map((item) => {
+          const showGit = gitEnabled && item.hasGitChanges;
+          return (
+            <a
+              aria-current={activeId === item.id ? 'location' : undefined}
+              className="document-toc-link"
+              data-depth={item.depth}
+              href={`#${encodeURIComponent(item.id)}`}
+              key={item.id}
+              onClick={(event) => {
+                setActiveId(item.id);
+                onNavigate(event);
+              }}
+              style={
+                {
+                  '--toc-depth': documentTocIndentationDepth(
+                    item.depth,
+                    minimumSubsectionDepth,
+                  ),
+                } as TocLinkStyle
+              }
+            >
+              <span className="document-toc-link-label">{item.title}</span>
+              {(showGit || item.errorCount > 0) && (
+                <span className="document-toc-states">
+                  {showGit && (
+                    <span
+                      aria-label="Git changes"
+                      className="document-toc-state git"
+                      role="img"
+                      title="Git changes"
+                    />
+                  )}
+                  {item.errorCount > 0 && (
+                    <span
+                      aria-label={`${item.errorCount} validation ${item.errorCount === 1 ? 'error' : 'errors'}`}
+                      className="document-toc-state error"
+                      role="img"
+                      title={`${item.errorCount} validation ${item.errorCount === 1 ? 'error' : 'errors'}`}
+                    />
+                  )}
+                </span>
+              )}
+            </a>
+          );
+        })}
       </nav>
     </aside>
   );

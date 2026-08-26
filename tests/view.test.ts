@@ -522,15 +522,46 @@ describe('lat ui', () => {
     const content =
       '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
     const tree = parse(content);
+    const sections = parseSections('guide.md', content, undefined, tree);
     expect(
-      buildViewTableOfContents(
-        parseSections('guide.md', content, undefined, tree),
-        tree,
-      ),
+      buildViewTableOfContents(sections, tree, {
+        errors: [
+          {
+            anchor: 'user-content-markdown-error-11',
+            line: 11,
+            marker: 'line',
+            message: 'Invalid strict details',
+            target: '',
+          },
+        ],
+        gitTree: buildGitDiffTree(
+          '# Guide\n\nOverview.\n\n## Features\n\nOld details.\n\n### `strict`\n\nMore details.',
+          content,
+          tree,
+        ),
+      }),
     ).toEqual([
-      { id: 'guide', title: 'Guide', depth: 1 },
-      { id: 'features', title: 'Features', depth: 2 },
-      { id: 'strict', title: 'strict', depth: 3 },
+      {
+        id: 'guide',
+        title: 'Guide',
+        depth: 1,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
+      {
+        id: 'features',
+        title: 'Features',
+        depth: 2,
+        errorCount: 0,
+        hasGitChanges: true,
+      },
+      {
+        id: 'strict',
+        title: 'strict',
+        depth: 3,
+        errorCount: 1,
+        hasGitChanges: false,
+      },
     ]);
     expect(
       [1, 2, 3].map((depth) => documentTocIndentationDepth(depth, 2)),
@@ -605,8 +636,20 @@ describe('lat ui', () => {
     );
     const document = (await response.json()) as ViewDocument;
     expect(document.tableOfContents).toEqual([
-      { id: 'guide', title: 'Guide', depth: 1 },
-      { id: 'details', title: 'Details', depth: 2 },
+      {
+        id: 'guide',
+        title: 'Guide',
+        depth: 1,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
+      {
+        id: 'details',
+        title: 'Details',
+        depth: 2,
+        errorCount: 0,
+        hasGitChanges: false,
+      },
     ]);
   });
 

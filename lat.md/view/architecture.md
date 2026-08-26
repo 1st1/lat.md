@@ -74,6 +74,8 @@ Rendered sections use heading scale and whitespace without horizontal separators
 
 Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
 
+TOC entries show an orange disc when their section contains a rendered Git change and a red disc when it owns validation errors. Git discs follow the Git visibility toggle; error discs remain visible.
+
 Same-document fragment navigation updates history and scroll position without clearing, refetching, or remounting the rendered Markdown. Source fragments remain part of route identity because they select code symbols.
 
 Wide layouts give the sticky TOC a fixed 286px column and the available viewport height. Its list uses normal block flow, stays content-height when short, and scrolls behind a hidden scrollbar when long. Fixed link metrics never shrink to fit overflow.

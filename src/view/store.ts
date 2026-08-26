@@ -341,22 +341,28 @@ export class ViewStore {
       { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
       file.tree,
     );
+    const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     const gitFile = snapshot.git.files.get(requestedPath);
-    const gitRendered = gitFile
+    const gitTree = gitFile
+      ? buildGitDiffTree(gitFile.baseContent, file.content, file.tree)
+      : null;
+    const gitRendered = gitTree
       ? await renderMarkdown(
           file.content,
           requestedPath,
           resolver,
-          { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
-          buildGitDiffTree(gitFile.baseContent, file.content, file.tree),
+          { errors },
+          gitTree,
         )
       : null;
-    const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     return {
       path: requestedPath,
       ...rendered,
       gitHtml: gitRendered?.html ?? null,
-      tableOfContents: buildViewTableOfContents(file.sections, file.tree),
+      tableOfContents: buildViewTableOfContents(file.sections, file.tree, {
+        errors,
+        gitTree,
+      }),
       graphNodeIds: Object.fromEntries(
         snapshot.graph.nodes
           .filter(

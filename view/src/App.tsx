@@ -714,6 +714,7 @@ export function App() {
               />
             </div>
             <DocumentToc
+              gitEnabled={gitEnabled}
               items={page.document.tableOfContents}
               onNavigate={onNavigationClick}
             />

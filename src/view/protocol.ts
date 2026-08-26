@@ -82,6 +82,8 @@ export type ViewDocumentTocItem = {
   id: string;
   title: string;
   depth: number;
+  errorCount: number;
+  hasGitChanges: boolean;
 };
 
 export type ViewDocument = {
