@@ -1,6 +1,6 @@
 # Browser Architecture
 
-`lat ui` serves the current vault on loopback and opens a prebuilt React client for local documentation browsing.
+`lat ui` serves the current vault on loopback, while `lat ui build` exports the same browser as an immutable static deployment.
 
 ## Runtime boundary
 
@@ -9,6 +9,24 @@
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
+
+## Static export
+
+[[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
+
+The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document, source path, and graph route gets a physical `index.html` shell.
+
+Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
+
+The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git and search controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
+
+`--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path, so deploying the output directory at a host's root serves the UI from that subpath. `/` is the default.
+
+Relative Markdown links are rewritten against their source document so the extra static route directory does not change their target. Both the deployment root and a non-root base directory redirect to the exported entry document.
+
+Builds reject any existing destination, including an empty directory or prior export. For a new path, the builder stages the complete artifact beside the destination and renames it into place only after generation succeeds.
+
+The generated marker makes later project-wide scans ignore the artifact instead of indexing rendered JSON or bundles as source. Any destination that could contain the project root is also rejected.
 
 ## Live project index
 

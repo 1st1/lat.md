@@ -5,11 +5,25 @@ lat:
 
 # View Tests
 
-Functional specifications for the local browser server, client navigation, and `lat ui` startup.
+Functional specifications for the browser server, static export, client navigation, and `lat ui` startup.
 
 ## Serves the document index and browser shell
 
 The loopback server exposes the visible Markdown index, redirects its root to the vault index, and serves the client shell for document routes.
+
+## Builds a static deployment
+
+`lat ui build [output]` emits a host-ready immutable snapshot with physical document, source, and graph routes plus lazy JSON data.
+
+The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
+
+Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
+
+An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
+
+Any existing output path is rejected before snapshot work begins, including an empty directory or prior generated export. Callers must remove it explicitly or choose a new destination.
+
+The generated marker excludes the entire artifact from both ripgrep and fallback code-reference scans, preventing exported JSON and bundles from polluting project checks or search.
 
 ## Renders Markdown with navigable local links
 

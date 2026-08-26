@@ -15,13 +15,13 @@ import {
 } from 'sigma/rendering';
 import type {
   ViewDocument,
-  ViewError,
   ViewGraph,
   ViewGraphNode,
   ViewGraphNodeKind,
   ViewSearchResponse,
   ViewSourceDocument,
 } from '../../src/view/protocol';
+import { fetchViewJson } from './data-source';
 import { renderSectionBackReferences } from './section-back-references';
 import { SourceView } from './SourceView';
 import {
@@ -370,18 +370,6 @@ function GraphCanvas({
   );
 }
 
-async function fetchJson<T extends object>(
-  url: string,
-  signal?: AbortSignal,
-): Promise<T> {
-  const response = await fetch(url, { signal });
-  const value = (await response.json()) as T | ViewError;
-  if (!response.ok) {
-    throw new Error('error' in value ? value.error : 'Request failed');
-  }
-  return value as T;
-}
-
 /** Warm the immutable graph projection so switching views does not wait on I/O. */
 export function preloadViewGraph(minimumGeneration = 0): Promise<ViewGraph> {
   if (cachedViewGraph && cachedViewGraph.generation >= minimumGeneration) {
@@ -394,7 +382,7 @@ export function preloadViewGraph(minimumGeneration = 0): Promise<ViewGraph> {
         : preloadViewGraph(minimumGeneration),
     );
   }
-  const request = fetchJson<ViewGraph>('/api/graph').then((graph) => {
+  const request = fetchViewJson<ViewGraph>('/api/graph').then((graph) => {
     cachedViewGraph = graph;
     return graph;
   });
@@ -467,11 +455,11 @@ function GraphInspector({
     if (!node) return () => controller.abort();
     const request =
       node.kind === 'document'
-        ? fetchJson<ViewDocument>(
+        ? fetchViewJson<ViewDocument>(
             `/api/document?path=${encodeURIComponent(node.documentPath ?? '')}`,
             controller.signal,
           ).then((document) => setContent({ kind: 'markdown', document }))
-        : fetchJson<ViewSourceDocument>(
+        : fetchViewJson<ViewSourceDocument>(
             `/api/source?path=${encodeURIComponent(node.sourcePath ?? '')}&symbol=${encodeURIComponent(node.symbol ?? '')}&at=${node.line ?? 0}`,
             controller.signal,
           ).then((source) => setContent({ kind: 'source', source }));
@@ -592,6 +580,7 @@ export default function GraphView({
   markdownGeneration,
   onNavigate,
   onSelect,
+  searchEnabled,
   selectedNodeId,
 }: {
   generation: number;
@@ -600,6 +589,7 @@ export default function GraphView({
   markdownGeneration: number;
   onNavigate: (url: URL) => void;
   onSelect: (nodeId: string) => void;
+  searchEnabled: boolean;
   selectedNodeId: string;
 }) {
   const [graph, setGraph] = useState<ViewGraph | null>(cachedViewGraph);
@@ -631,7 +621,7 @@ export default function GraphView({
     };
   }, [generation]);
 
-  const normalizedQuery = query.trim();
+  const normalizedQuery = searchEnabled ? query.trim() : '';
   useEffect(() => {
     const controller = new AbortController();
     setSearchError('');
@@ -642,7 +632,7 @@ export default function GraphView({
     }
 
     const timeout = window.setTimeout(() => {
-      void fetchJson<ViewSearchResponse>(
+      void fetchViewJson<ViewSearchResponse>(
         `/api/search?query=${encodeURIComponent(normalizedQuery)}`,
         controller.signal,
       )
@@ -711,24 +701,30 @@ export default function GraphView({
         <div className="graph-topbar-graph">
           {header(selectedNode)}
           <div className="graph-tools">
-            <label className="graph-filter">
-              <span className="visually-hidden">
-                Search graph with embeddings
+            {searchEnabled ? (
+              <label className="graph-filter">
+                <span className="visually-hidden">
+                  Search graph with embeddings
+                </span>
+                <input
+                  autoComplete="off"
+                  onChange={(event) => setQuery(event.currentTarget.value)}
+                  placeholder="Search graph…"
+                  spellCheck="false"
+                  type="search"
+                  value={query}
+                />
+                <span aria-live="polite" className="graph-node-count">
+                  {searching
+                    ? 'Searching…'
+                    : `${visibleNodes.size} ${visibleNodes.size === 1 ? 'node' : 'nodes'}`}
+                </span>
+              </label>
+            ) : (
+              <span className="graph-node-count">
+                {visibleNodes.size} {visibleNodes.size === 1 ? 'node' : 'nodes'}
               </span>
-              <input
-                autoComplete="off"
-                onChange={(event) => setQuery(event.currentTarget.value)}
-                placeholder="Search graph…"
-                spellCheck="false"
-                type="search"
-                value={query}
-              />
-              <span aria-live="polite" className="graph-node-count">
-                {searching
-                  ? 'Searching…'
-                  : `${visibleNodes.size} ${visibleNodes.size === 1 ? 'node' : 'nodes'}`}
-              </span>
-            </label>
+            )}
           </div>
         </div>
       </div>

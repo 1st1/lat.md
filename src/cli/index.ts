@@ -110,13 +110,23 @@ program
     handleResult(await sectionCommand(ctx, query));
   });
 
-program
+const ui = program
   .command('ui')
   .description('Open lat.md in a local browser')
   .action(async () => {
     const ctx = resolveContext(program.opts());
     const { uiCommand } = await import('./ui.js');
     handleResult(await uiCommand(ctx));
+  });
+
+ui.command('build')
+  .description('Export lat.md as a static website')
+  .argument('[output]', 'output directory relative to the project', 'lat-ui')
+  .option('--base <path>', 'deployment base path', '/')
+  .action(async (output: string, opts: { base: string }) => {
+    const ctx = resolveContext(program.opts());
+    const { uiBuildCommand } = await import('./ui-build.js');
+    handleResult(await uiBuildCommand(ctx, output, { basePath: opts.base }));
   });
 
 program

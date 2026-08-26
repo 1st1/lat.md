@@ -67,6 +67,7 @@ export type ViewProjectSnapshot = {
 };
 
 export type ViewStoreOptions = {
+  codeExcludePaths?: string[];
   debounceMs?: number;
   git?: boolean;
   gitPollMs?: number;
@@ -86,6 +87,15 @@ function isInside(root: string, candidate: string): boolean {
 function projectPath(projectRoot: string, path: string): string {
   const normalized = isAbsolute(path) ? relative(projectRoot, path) : path;
   return toPosix(normalized).replace(/^\.\//, '');
+}
+
+function excludedCodePath(
+  projectRoot: string,
+  path: string,
+  excludedPaths: readonly string[],
+): boolean {
+  const absolutePath = resolve(projectRoot, path);
+  return excludedPaths.some((root) => isInside(resolve(root), absolutePath));
 }
 
 function sourcePath(path: string): boolean {
@@ -142,16 +152,21 @@ async function loadCodeReferenceFiles(
   return files;
 }
 
-async function scanCodeState(projectRoot: string): Promise<{
+async function scanCodeState(
+  projectRoot: string,
+  excludedPaths: readonly string[] = [],
+): Promise<{
   files: Map<string, ViewCodeReferenceFile>;
   scope: Set<string>;
 }> {
   const scan = await scanCodeRefs(projectRoot);
-  const scope = new Set(
-    scan.files.map((path) => projectPath(projectRoot, path)),
-  );
+  const allowed = (path: string) =>
+    !excludedCodePath(projectRoot, path, excludedPaths);
+  const files = scan.files.filter(allowed);
+  const refs = scan.refs.filter((ref) => allowed(ref.file));
+  const scope = new Set(files.map((path) => projectPath(projectRoot, path)));
   return {
-    files: await loadCodeReferenceFiles(projectRoot, scan.refs),
+    files: await loadCodeReferenceFiles(projectRoot, refs),
     scope,
   };
 }
@@ -553,7 +568,14 @@ export class ViewStore {
 
     const codePaths = paths.filter(
       (path) =>
-        path && sourcePath(path) && !obviouslyIgnoredCodePath(path, latPath),
+        path &&
+        sourcePath(path) &&
+        !obviouslyIgnoredCodePath(path, latPath) &&
+        !excludedCodePath(
+          this.projectRoot,
+          path,
+          this.options.codeExcludePaths ?? [],
+        ),
     );
     const refreshCodeScope =
       fullRefresh ||
@@ -565,7 +587,10 @@ export class ViewStore {
       );
 
     if (refreshCodeScope) {
-      const nextCode = await scanCodeState(this.projectRoot);
+      const nextCode = await scanCodeState(
+        this.projectRoot,
+        this.options.codeExcludePaths,
+      );
       codeFiles = nextCode.files;
       this.codeScope = nextCode.scope;
       this.ignoredCodePaths.clear();
@@ -636,7 +661,7 @@ export async function createViewStore(
     await Promise.all([
       realpath(latDir),
       listLatticeFiles(latDir),
-      scanCodeState(projectRoot),
+      scanCodeState(projectRoot, options.codeExcludePaths),
       options.git === false
         ? Promise.resolve(null)
         : findViewGitRepository(projectRoot, latDir),

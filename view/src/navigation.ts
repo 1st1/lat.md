@@ -1,3 +1,5 @@
+import { staticViewRoute, viewPathname } from './static-mode';
+
 const DOCUMENT_PREFIX = '/docs/';
 const SOURCE_PREFIX = '/code/';
 
@@ -9,10 +11,12 @@ type DocumentScroller = {
 };
 
 export function documentUrl(path: string): string {
-  return `${DOCUMENT_PREFIX}${path.split('/').map(encodeURIComponent).join('/')}`;
+  const encoded = path.split('/').map(encodeURIComponent).join('/');
+  return staticViewRoute(`docs/${encoded}/`) ?? `${DOCUMENT_PREFIX}${encoded}`;
 }
 
 export function documentPath(pathname: string): string | null {
+  pathname = viewPathname(pathname);
   if (!pathname.startsWith(DOCUMENT_PREFIX)) return null;
   try {
     return pathname
@@ -44,6 +48,7 @@ export function isSameMarkdownDocument(current: URL, next: URL): boolean {
 }
 
 export function sourcePath(pathname: string): string | null {
+  pathname = viewPathname(pathname);
   if (!pathname.startsWith(SOURCE_PREFIX)) return null;
   try {
     return pathname
@@ -80,9 +85,10 @@ export function graphNode(search: string): string {
 }
 
 export function graphUrl(nodeId = ''): string {
-  if (!nodeId) return '/graph';
+  const path = staticViewRoute('graph/') ?? '/graph';
+  if (!nodeId) return path;
   const search = new URLSearchParams({ node: nodeId });
-  return `/graph?${search}`;
+  return `${path}?${search}`;
 }
 
 const SEARCH_RETURN_KEY = 'latSearchReturnTo';

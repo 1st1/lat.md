@@ -9,7 +9,6 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
-  ViewError,
   ViewGraphNode,
   ViewIndex,
   ViewProjectChange,
@@ -17,6 +16,7 @@ import type {
 } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
 import { DocumentToc } from './DocumentToc';
+import { fetchViewJson } from './data-source';
 import GraphView, { preloadViewGraph } from './GraphView';
 import {
   documentPath,
@@ -38,6 +38,7 @@ import {
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
+import { isStaticView, viewPathname } from './static-mode';
 
 type ViewRoute =
   | { kind: 'search' }
@@ -71,6 +72,7 @@ function AppHeader({
   onNavigate,
   onSearchNavigate,
   route,
+  searchEnabled,
 }: {
   className: string;
   graphHref: string;
@@ -82,6 +84,7 @@ function AppHeader({
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   onSearchNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   route: ViewRoute | null;
+  searchEnabled: boolean;
 }) {
   return (
     <div className={className}>
@@ -111,7 +114,7 @@ function AppHeader({
             </svg>
           </button>
         )}
-        {route?.kind !== 'graph' && (
+        {route?.kind !== 'graph' && searchEnabled && (
           <a
             aria-current={route?.kind === 'search' ? 'page' : undefined}
             aria-label="Search"
@@ -178,23 +181,12 @@ function DocumentErrorPanel({
   );
 }
 
-async function fetchJson<T extends object>(
-  url: string,
-  signal?: AbortSignal,
-): Promise<T> {
-  const response = await fetch(url, { signal });
-  const value = (await response.json()) as T | ViewError;
-  if (!response.ok) {
-    throw new Error('error' in value ? value.error : 'Request failed');
-  }
-  return value as T;
-}
-
 function currentLocation(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
 export function App() {
+  const staticView = isStaticView();
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
@@ -214,8 +206,9 @@ export function App() {
   const routeLocation = useMemo(() => viewRouteIdentity(location), [location]);
   const route = useMemo<ViewRoute | null>(() => {
     const url = new URL(routeLocation, window.location.origin);
-    if (url.pathname === '/search') return { kind: 'search' };
-    if (url.pathname === '/graph') {
+    const pathname = viewPathname(url.pathname);
+    if (pathname === '/search') return { kind: 'search' };
+    if (pathname === '/graph') {
       return {
         kind: 'graph',
         nodeId: graphNode(url.search),
@@ -283,7 +276,7 @@ export function App() {
           : `source:${route.path}${route.symbol ? `#${route.symbol}` : ''}`,
       );
     }
-    return '/graph';
+    return graphUrl();
   }, [location, page, route]);
   const graphExitHref = index ? documentUrl(index.entry) : '/';
 
@@ -301,7 +294,10 @@ export function App() {
       const preservesDocument =
         pageRef.current?.kind === 'markdown' &&
         pageRef.current.document.path === nextDocumentPath;
-      if (window.location.pathname !== '/graph' && !preservesDocument) {
+      if (
+        viewPathname(window.location.pathname) !== '/graph' &&
+        !preservesDocument
+      ) {
         setPage(null);
       }
       setLocation(currentLocation());
@@ -311,6 +307,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (staticView) return;
     const events = new EventSource('/api/events');
     const updateGeneration = (event: MessageEvent<string>) => {
       const change = JSON.parse(event.data) as ViewProjectChange;
@@ -329,11 +326,11 @@ export function App() {
     events.addEventListener('ready', updateGeneration);
     events.addEventListener('change', updateGeneration);
     return () => events.close();
-  }, []);
+  }, [staticView]);
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchJson<ViewIndex>('/api/index', controller.signal)
+    fetchViewJson<ViewIndex>('/api/index', controller.signal)
       .then(setIndex)
       .catch((reason: Error) => setError(reason.message));
     return () => controller.abort();
@@ -356,11 +353,11 @@ export function App() {
     setError('');
     const request =
       route.kind === 'markdown'
-        ? fetchJson<ViewDocument>(
+        ? fetchViewJson<ViewDocument>(
             `/api/document?path=${encodeURIComponent(route.path)}`,
             controller.signal,
           ).then((document) => setPage({ kind: 'markdown', document }))
-        : fetchJson<ViewSourceDocument>(
+        : fetchViewJson<ViewSourceDocument>(
             `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
             controller.signal,
           ).then((source) => setPage({ kind: 'source', source }));
@@ -526,7 +523,7 @@ export function App() {
     }
     event.preventDefault();
     const url = new URL(event.currentTarget.href);
-    if (window.location.pathname === '/graph') {
+    if (viewPathname(window.location.pathname) === '/graph') {
       switchView(url);
       return;
     }
@@ -592,6 +589,7 @@ export function App() {
         onNavigate={onNavigationClick}
         onSearchNavigate={onSearchToggleClick}
         route={route}
+        searchEnabled={!staticView}
       />
     );
     return (
@@ -603,6 +601,7 @@ export function App() {
           markdownGeneration={projectChange.markdownGeneration}
           onNavigate={navigate}
           onSelect={selectGraphNode}
+          searchEnabled={!staticView}
           selectedNodeId={route.nodeId}
         />
       </div>
@@ -623,6 +622,7 @@ export function App() {
           onNavigate={onNavigationClick}
           onSearchNavigate={onSearchToggleClick}
           route={route}
+          searchEnabled={!staticView}
         />
         <nav aria-label="Markdown files">
           {index && (

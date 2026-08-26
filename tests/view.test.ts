@@ -1,13 +1,32 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
+import { scanCodeRefs } from '../src/code-refs.js';
 import { uiCommand } from '../src/cli/ui.js';
+import { uiBuildCommand } from '../src/cli/ui-build.js';
 import { parseSections } from '../src/lattice.js';
 import { parse } from '../src/parser.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
+import {
+  normalizeStaticViewBasePath,
+  staticViewUrl,
+} from '../src/view/static-build.js';
+import type {
+  ViewStaticManifest,
+  ViewStaticSourceFile,
+  ViewStaticSourceView,
+} from '../src/view/static-protocol.js';
 import { highlightSource } from '../src/view/highlight.js';
 import { buildGitDiffTree } from '../src/view/git-diff.js';
 import { renderMarkdown } from '../src/view/markdown.js';
@@ -102,7 +121,12 @@ describe('lat ui', () => {
 
   beforeAll(async () => {
     clientDir = mkdtempSync(join(tmpdir(), 'lat-view-client-'));
-    writeFileSync(join(clientDir, 'index.html'), '<main>lat ui shell</main>');
+    mkdirSync(join(clientDir, 'assets'));
+    writeFileSync(
+      join(clientDir, 'index.html'),
+      '<!doctype html><html><head><script type="module" src="/assets/app.js"></script></head><body><main>lat ui shell</main></body></html>',
+    );
+    writeFileSync(join(clientDir, 'assets', 'app.js'), 'export {};');
     view = await startViewServer(testContext(), {
       clientDir,
       git: false,
@@ -141,6 +165,169 @@ describe('lat ui', () => {
     const searchShell = await fetch(new URL('/search', view.url));
     expect(searchShell.status).toBe(200);
     expect(await searchShell.text()).toContain('lat ui shell');
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
+  it('builds a static deployment without live Git or search services', async () => {
+    expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
+    expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
+      '/project/graph/?node=document%3Alat.md',
+    );
+    expect(() => normalizeStaticViewBasePath('project')).toThrow(
+      'absolute URL path',
+    );
+
+    const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-build-test-'));
+    const staticProjectRoot = join(buildRoot, 'project');
+    cpSync(projectRoot, staticProjectRoot, { recursive: true });
+    const staticContext: CmdContext = {
+      ...testContext(),
+      projectRoot: staticProjectRoot,
+      latDir: join(staticProjectRoot, 'lat.md'),
+    };
+    const outputDir = join(staticProjectRoot, 'site');
+    try {
+      const result = await uiBuildCommand(staticContext, outputDir, {
+        basePath: '/project',
+        clientDir,
+      });
+      expect(result.output).toMatch(
+        /Built 2 documents and [1-9]\d* source views/,
+      );
+      expect(result.output).toContain(outputDir);
+
+      const payloadDir = join(outputDir, 'project');
+      const manifest = JSON.parse(
+        readFileSync(join(payloadDir, 'data', 'manifest.json'), 'utf8'),
+      ) as ViewStaticManifest;
+      expect(manifest.version).toBe(1);
+      expect(manifest.index).toEqual({
+        files: ['guide.md', 'lat.md'],
+        entry: 'lat.md',
+        errorCounts: {},
+        git: null,
+      });
+      expect(Object.keys(manifest.documents).sort()).toEqual([
+        'guide.md',
+        'lat.md',
+      ]);
+      const sourceEntries = Object.values(manifest.sources);
+      expect(sourceEntries.length).toBeGreaterThan(1);
+      const sourceFilePaths = new Set(sourceEntries.map((entry) => entry.file));
+      expect(sourceFilePaths.size).toBe(1);
+      expect([...sourceFilePaths][0]).toMatch(
+        /^data\/source-files\/[a-f0-9]{20}\.json$/,
+      );
+      expect(new Set(sourceEntries.map((entry) => entry.view)).size).toBe(
+        sourceEntries.length,
+      );
+
+      const sourceFile = JSON.parse(
+        readFileSync(join(payloadDir, sourceEntries[0].file), 'utf8'),
+      ) as ViewStaticSourceFile;
+      const sourceView = JSON.parse(
+        readFileSync(join(payloadDir, sourceEntries[0].view), 'utf8'),
+      ) as ViewStaticSourceView;
+      expect(sourceFile.path).toBe('src/app.ts');
+      expect(sourceFile.content).toContain('export function run');
+      expect(sourceFile.highlightedHtmlLines.length).toBeGreaterThan(0);
+      expect(sourceView).toHaveProperty('focus');
+      expect(sourceView).not.toHaveProperty('content');
+      expect({ ...sourceFile, ...sourceView }).toHaveProperty(
+        'otherReferences',
+      );
+
+      const document = JSON.parse(
+        readFileSync(join(payloadDir, manifest.documents['lat.md']), 'utf8'),
+      ) as ViewDocument;
+      expect(document.gitHtml).toBeNull();
+      expect(document.html).toContain('href="/project/docs/guide.md/#details"');
+      expect(document.html).toContain('href="/project/code/src/app.ts/?from=');
+
+      const graph = JSON.parse(
+        readFileSync(join(payloadDir, manifest.graph), 'utf8'),
+      ) as ViewGraph;
+      expect(graph.nodes.every((node) => node.gitStatus === undefined)).toBe(
+        true,
+      );
+      expect(graph.nodes.map((node) => node.url)).toContain(
+        '/project/docs/lat.md/',
+      );
+      expect(graph.nodes.some((node) => node.kind === 'source')).toBe(true);
+
+      expect(existsSync(join(payloadDir, 'docs', 'lat.md', 'index.html'))).toBe(
+        true,
+      );
+      expect(
+        existsSync(join(payloadDir, 'code', 'src', 'app.ts', 'index.html')),
+      ).toBe(true);
+      expect(existsSync(join(payloadDir, 'data', 'source-files'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'data', 'source-views'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'graph', 'index.html'))).toBe(true);
+      expect(existsSync(join(payloadDir, 'search', 'index.html'))).toBe(false);
+      expect(existsSync(join(payloadDir, 'assets', 'app.js'))).toBe(true);
+      expect(existsSync(join(outputDir, 'assets'))).toBe(false);
+      expect(existsSync(join(outputDir, 'data'))).toBe(false);
+
+      const shell = readFileSync(
+        join(payloadDir, 'docs', 'lat.md', 'index.html'),
+        'utf8',
+      );
+      expect(shell).toContain('/project/assets/app.js');
+      expect(shell).toContain(
+        'globalThis.__LAT_STATIC_VIEW__={"basePath":"/project/"}',
+      );
+      expect(readFileSync(join(outputDir, 'index.html'), 'utf8')).toContain(
+        '/project/docs/lat.md/',
+      );
+      expect(readFileSync(join(payloadDir, 'index.html'), 'utf8')).toContain(
+        '/project/docs/lat.md/',
+      );
+
+      const scanned = await scanCodeRefs(staticProjectRoot);
+      expect(
+        scanned.refs.some((reference) => reference.file.startsWith('site/')),
+      ).toBe(false);
+      expect(
+        scanned.files.some((path) => path.startsWith(`${outputDir}/`)),
+      ).toBe(false);
+      const disableRipgrep = process.env._LAT_DISABLE_RG;
+      process.env._LAT_DISABLE_RG = '1';
+      try {
+        const fallbackScan = await scanCodeRefs(staticProjectRoot);
+        expect(fallbackScan.usedRg).toBe(false);
+        expect(
+          fallbackScan.files.some((path) => path.startsWith(`${outputDir}/`)),
+        ).toBe(false);
+      } finally {
+        if (disableRipgrep === undefined) delete process.env._LAT_DISABLE_RG;
+        else process.env._LAT_DISABLE_RG = disableRipgrep;
+      }
+
+      await expect(
+        uiBuildCommand(staticContext, outputDir, {
+          basePath: '/project',
+          clientDir,
+        }),
+      ).resolves.toEqual({
+        output: `Static UI output already exists: ${outputDir}`,
+        isError: true,
+      });
+
+      const emptyOutput = join(staticProjectRoot, 'empty-output');
+      mkdirSync(emptyOutput);
+      await expect(
+        uiBuildCommand(staticContext, emptyOutput, {
+          basePath: '/project',
+          clientDir: join(staticProjectRoot, 'missing-client'),
+        }),
+      ).resolves.toEqual({
+        output: `Static UI output already exists: ${emptyOutput}`,
+        isError: true,
+      });
+    } finally {
+      rmSync(buildRoot, { recursive: true, force: true });
+    }
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
