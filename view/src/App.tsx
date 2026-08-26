@@ -24,6 +24,7 @@ import {
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
+  searchButtonAction,
   searchHistoryState,
   searchReturnTo,
   scrollToDocumentLocation,
@@ -65,6 +66,7 @@ function AppHeader({
   onGitToggle,
   onGraphNavigate,
   onNavigate,
+  onSearchNavigate,
   route,
 }: {
   className: string;
@@ -75,6 +77,7 @@ function AppHeader({
   onGitToggle: () => void;
   onGraphNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onSearchNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   route: ViewRoute | null;
 }) {
   return (
@@ -87,7 +90,7 @@ function AppHeader({
         lat<span>.md</span>
       </a>
       <div className="sidebar-actions">
-        {index?.git && (
+        {route?.kind !== 'graph' && index?.git && (
           <button
             aria-label={`${gitEnabled ? 'Hide' : 'Show'} Git changes${gitHasChanges ? ', changes available' : ''}`}
             aria-pressed={gitEnabled}
@@ -105,19 +108,21 @@ function AppHeader({
             </svg>
           </button>
         )}
-        <a
-          aria-current={route?.kind === 'search' ? 'page' : undefined}
-          aria-label="Search"
-          className="sidebar-search"
-          href="/search"
-          onClick={onNavigate}
-          title="Search"
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24">
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m16 16 4 4" />
-          </svg>
-        </a>
+        {route?.kind !== 'graph' && (
+          <a
+            aria-current={route?.kind === 'search' ? 'page' : undefined}
+            aria-label="Search"
+            className="sidebar-search"
+            href="/search"
+            onClick={onSearchNavigate}
+            title="Search"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+          </a>
+        )}
         <a
           aria-current={route?.kind === 'graph' ? 'page' : undefined}
           aria-label="Graph"
@@ -474,6 +479,24 @@ export function App() {
     navigate(new URL(event.currentTarget.href));
   }
 
+  function onSearchToggleClick(event: MouseEvent<HTMLAnchorElement>): void {
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (searchButtonAction(window.location.pathname) === 'close') {
+      closeSearch();
+      return;
+    }
+    navigate(new URL(event.currentTarget.href));
+  }
+
   function onGraphToggleClick(event: MouseEvent<HTMLAnchorElement>): void {
     if (
       event.button !== 0 ||
@@ -550,6 +573,7 @@ export function App() {
         onGitToggle={() => setGitEnabled((enabled) => !enabled)}
         onGraphNavigate={onGraphToggleClick}
         onNavigate={onNavigationClick}
+        onSearchNavigate={onSearchToggleClick}
         route={route}
       />
     );
@@ -580,6 +604,7 @@ export function App() {
           onGitToggle={() => setGitEnabled((enabled) => !enabled)}
           onGraphNavigate={onGraphToggleClick}
           onNavigate={onNavigationClick}
+          onSearchNavigate={onSearchToggleClick}
           route={route}
         />
         <nav aria-label="Markdown files">

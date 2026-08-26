@@ -30,6 +30,7 @@ import {
   historyScrollPosition,
   historyStateWithScroll,
   scrollToDocumentLocation,
+  searchButtonAction,
   searchEscapeAction,
   searchHistoryState,
   searchQuery,
@@ -219,6 +220,8 @@ describe('lat ui', () => {
     expect(searchReturnTo(null)).toBeNull();
     expect(searchEscapeAction('runner details')).toBe('clear');
     expect(searchEscapeAction('')).toBe('close');
+    expect(searchButtonAction('/docs/guide.md')).toBe('open');
+    expect(searchButtonAction('/search')).toBe('close');
 
     const emptyResponse = await fetch(new URL('/api/search?query=', view.url));
     expect((await emptyResponse.json()) as ViewSearchResponse).toEqual({

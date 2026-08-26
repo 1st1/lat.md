@@ -72,7 +72,7 @@ The source view keeps five surrounding lines, collapses distant code, preserves 
 
 Search debounces embedding queries, links results to exact sections, and stores the latest query in the URL so Back restores it.
 
-Escape clears a non-empty query, then returns to the page that opened search. In-app history records viewport positions and restores them before revealing returned Markdown, source, or search content.
+Escape clears a non-empty query, then returns to the page that opened search. Clicking the active Search icon closes search directly. In-app history records viewport positions and restores them before revealing returned Markdown, source, or search content.
 
 ## Graph workspace
 

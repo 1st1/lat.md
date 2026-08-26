@@ -117,6 +117,10 @@ export function searchEscapeAction(query: string): 'clear' | 'close' {
   return query ? 'clear' : 'close';
 }
 
+export function searchButtonAction(pathname: string): 'close' | 'open' {
+  return pathname === '/search' ? 'close' : 'open';
+}
+
 /** Position a newly rendered document without leaving its content in motion. */
 export function scrollToDocumentLocation(
   hash: string,

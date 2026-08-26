@@ -16,7 +16,7 @@ Lat uses `sigma` and `graphology` directly as development dependencies. The rend
 
 `/graph` replaces the document layout with a full-viewport graph workspace while preserving the familiar top-left controls.
 
-- The graph uses the full left half; its logo, app buttons, semantic search, and node count float over the canvas instead of reserving a panel header. Logo and actions retain their sidebar spacing, while the right half begins directly with the node preview and has no inspector title bar.
+- The graph uses the full left half; its logo, active Graph toggle, semantic filter, and node count float over the canvas instead of reserving a panel header. Git and page Search controls stay hidden in this mode. The right half begins directly with the node preview and has no inspector title bar.
 - The sidebar background covers the viewport, split equally between the graph and an independently scrollable inspector.
 - Opening Graph from a document or represented source selects that node immediately. A section route selects its owning document; with no selection, the inspector explains how to choose a node.
 - Selection lives at `/graph?node=<canonical-id>` so reloads and copied URLs restore the same inspector. Node clicks replace that URL without adding browser-history entries.

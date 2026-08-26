@@ -19,7 +19,7 @@ Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative
 
 The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
 
-The client renders a 50/50 graph and inspector. Logo, app actions, and semantic search float over the full-height graph, while the right panel begins directly with the selected node preview and never renders an inspector toolbar.
+The client renders a 50/50 graph and inspector. The logo, active Graph toggle, and semantic filter float over the full-height graph while Git and page Search buttons are hidden. The right panel begins with the selected node preview and has no inspector toolbar.
 
 The graph button replaces the current route instead of navigating through browser history. Toggling it off opens the selected node's normal URL, activating the selected Markdown file in the tree for document nodes.
 
@@ -33,7 +33,7 @@ Graph search debounces through the embedding-backed `/api/search` service used b
 
 Search debounces embedding queries and renders ranked section summaries linked to their document anchors.
 
-The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search.
+The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search. Clicking the active Search icon closes the search immediately without clearing first.
 
 ## Exposes code-mention frontmatter as metadata
 
