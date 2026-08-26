@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
 import { uiCommand } from '../src/cli/ui.js';
+import { parseSections } from '../src/lattice.js';
+import { parse } from '../src/parser.js';
 import { startViewServer, type ViewServer } from '../src/view/server.js';
 import { highlightSource } from '../src/view/highlight.js';
 import { buildGitDiffTree } from '../src/view/git-diff.js';
@@ -17,6 +19,13 @@ import type {
   ViewSourceDocument,
 } from '../src/view/protocol.js';
 import { createViewSearch } from '../src/view/search.js';
+import { buildViewTableOfContents } from '../src/view/table-of-contents.js';
+import {
+  activeDocumentTocId,
+  centeredDocumentTocScrollTop,
+  documentTocActivationLine,
+  documentTocIndentationDepth,
+} from '../view/src/document-toc.js';
 import {
   buildFileTree,
   directoryIndex,
@@ -314,6 +323,99 @@ describe('lat ui', () => {
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
     expect(document.html).not.toContain('require-code-mention');
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
+  it('builds nested document navigation and tracks the active heading', async () => {
+    const content =
+      '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
+    const tree = parse(content);
+    expect(
+      buildViewTableOfContents(
+        parseSections('guide.md', content, undefined, tree),
+        tree,
+      ),
+    ).toEqual([
+      { id: 'guide', title: 'Guide', depth: 1 },
+      { id: 'features', title: 'Features', depth: 2 },
+      { id: 'strict', title: 'strict', depth: 3 },
+    ]);
+    expect(
+      [1, 2, 3].map((depth) => documentTocIndentationDepth(depth, 2)),
+    ).toEqual([0, 0, 1]);
+    expect(
+      activeDocumentTocId(
+        ['features', 'strict'],
+        new Map([
+          ['features', -120],
+          ['strict', 24],
+        ]),
+      ),
+    ).toBe('strict');
+
+    const shortFinalHeadings = [
+      ['first', 680],
+      ['second', 760],
+      ['third', 840],
+      ['fourth', 920],
+    ] as const;
+    const ids = shortFinalHeadings.map(([id]) => id);
+    const activeAt = (scrollTop: number) => {
+      const threshold = documentTocActivationLine({
+        scrollTop,
+        viewportHeight: 400,
+        scrollHeight: 1000,
+      });
+      return activeDocumentTocId(
+        ids,
+        new Map(
+          shortFinalHeadings.map(([id, documentTop]) => [
+            id,
+            documentTop - scrollTop,
+          ]),
+        ),
+        threshold,
+      );
+    };
+
+    expect([450, 500, 550, 600].map(activeAt)).toEqual([
+      'first',
+      'second',
+      'third',
+      'fourth',
+    ]);
+    expect(
+      documentTocActivationLine({
+        scrollTop: 0,
+        viewportHeight: 400,
+        scrollHeight: 500,
+      }),
+    ).toBe(96);
+    expect(
+      centeredDocumentTocScrollTop({
+        containerHeight: 200,
+        contentHeight: 600,
+        itemHeight: 20,
+        itemTop: 300,
+      }),
+    ).toBe(210);
+    expect(
+      centeredDocumentTocScrollTop({
+        containerHeight: 200,
+        contentHeight: 600,
+        itemHeight: 20,
+        itemTop: 580,
+      }),
+    ).toBe(400);
+
+    const response = await fetch(
+      new URL('/api/document?path=guide.md', view.url),
+    );
+    const document = (await response.json()) as ViewDocument;
+    expect(document.tableOfContents).toEqual([
+      { id: 'guide', title: 'Guide', depth: 1 },
+      { id: 'details', title: 'Details', depth: 2 },
+    ]);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]

@@ -48,6 +48,12 @@ Markdown and source metadata rows align with the sidebar header, while source me
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
 
+Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
+
+Wide layouts give the sticky TOC a fixed 286px column and the available viewport height. Its list uses normal block flow, stays content-height when short, and scrolls behind a hidden scrollbar when long. Fixed link metrics never shrink to fit overflow.
+
+A moving end-of-page activation line makes short final sections reachable.
+
 The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory.
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.

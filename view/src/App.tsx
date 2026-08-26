@@ -16,6 +16,7 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { FileTree } from './FileTree';
+import { DocumentToc } from './DocumentToc';
 import GraphView, { preloadViewGraph } from './GraphView';
 import {
   documentPath,
@@ -625,41 +626,6 @@ export function App() {
       <main
         className={historyScroll ? 'main restoring-history-scroll' : 'main'}
       >
-        {page?.kind === 'markdown' && (
-          <div className="document-header">
-            <div className="document-metadata">
-              <div className="document-path">{page.document.path}</div>
-              {page.document.frontmatter.requireCodeMention && (
-                <div
-                  className="document-flag"
-                  title="Every leaf section must have an @lat code reference"
-                >
-                  Code mentions required
-                </div>
-              )}
-              {page.document.errors.length > 0 && (
-                <button
-                  aria-controls="document-errors"
-                  aria-expanded={errorsOpen}
-                  className="document-error-toggle"
-                  onClick={() =>
-                    setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
-                  }
-                  type="button"
-                >
-                  {page.document.errors.length}{' '}
-                  {page.document.errors.length === 1 ? 'error' : 'errors'}
-                </button>
-              )}
-            </div>
-            {errorsOpen && (
-              <DocumentErrorPanel
-                errors={page.document.errors}
-                onNavigate={onNavigationClick}
-              />
-            )}
-          </div>
-        )}
         {error ? (
           <div className="state error" role="alert">
             <strong>Could not open this document</strong>
@@ -677,11 +643,52 @@ export function App() {
             restoreScroll={historyScroll}
           />
         ) : page?.kind === 'markdown' ? (
-          <article
-            className="markdown"
-            onClick={onDocumentClick}
-            dangerouslySetInnerHTML={{ __html: documentHtml }}
-          />
+          <div className="document-layout">
+            <div className="document-column">
+              <div className="document-header">
+                <div className="document-metadata">
+                  <div className="document-path">{page.document.path}</div>
+                  {page.document.frontmatter.requireCodeMention && (
+                    <div
+                      className="document-flag"
+                      title="Every leaf section must have an @lat code reference"
+                    >
+                      Code mentions required
+                    </div>
+                  )}
+                  {page.document.errors.length > 0 && (
+                    <button
+                      aria-controls="document-errors"
+                      aria-expanded={errorsOpen}
+                      className="document-error-toggle"
+                      onClick={() =>
+                        setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
+                      }
+                      type="button"
+                    >
+                      {page.document.errors.length}{' '}
+                      {page.document.errors.length === 1 ? 'error' : 'errors'}
+                    </button>
+                  )}
+                </div>
+                {errorsOpen && (
+                  <DocumentErrorPanel
+                    errors={page.document.errors}
+                    onNavigate={onNavigationClick}
+                  />
+                )}
+              </div>
+              <article
+                className="markdown"
+                onClick={onDocumentClick}
+                dangerouslySetInnerHTML={{ __html: documentHtml }}
+              />
+            </div>
+            <DocumentToc
+              items={page.document.tableOfContents}
+              onNavigate={onNavigationClick}
+            />
+          </div>
         ) : page?.kind === 'source' ? (
           <SourceView
             key={`${page.source.path}#${page.source.focus?.symbol ?? ''}@${page.source.focus?.startLine ?? 0}`}

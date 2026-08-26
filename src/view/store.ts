@@ -20,6 +20,7 @@ import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
 import { buildGitDiffTree } from './git-diff.js';
 import { buildViewGraph } from './graph.js';
+import { buildViewTableOfContents } from './table-of-contents.js';
 import {
   emptyViewGitSnapshot,
   findViewGitRepository,
@@ -338,6 +339,7 @@ export class ViewStore {
       path: requestedPath,
       ...rendered,
       gitHtml: gitRendered?.html ?? null,
+      tableOfContents: buildViewTableOfContents(file.sections, file.tree),
       graphNodeIds: Object.fromEntries(
         snapshot.graph.nodes
           .filter(

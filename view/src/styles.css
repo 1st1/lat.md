@@ -321,7 +321,7 @@ a {
 
 .main {
   width: 100%;
-  max-width: 980px;
+  max-width: 1280px;
   min-width: 0;
   padding: 28px clamp(28px, 6vw, 82px) 100px;
 }
@@ -333,6 +333,99 @@ a {
 .document-header {
   max-width: 760px;
   margin-bottom: 34px;
+}
+
+.document-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 760px) 286px;
+  gap: clamp(28px, 3vw, 48px);
+  align-items: start;
+}
+
+.document-column {
+  min-width: 0;
+}
+
+.document-toc {
+  position: sticky;
+  top: 28px;
+  height: calc(100vh - 56px);
+  box-sizing: border-box;
+  padding-right: 16px;
+  overflow: hidden;
+}
+
+.document-toc-title {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.document-toc-title svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.document-toc-list {
+  display: block;
+  max-height: calc(100% - 38px);
+  margin-top: 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-left: 1px solid var(--panel-border);
+  scrollbar-width: none;
+}
+
+.document-toc-list::-webkit-scrollbar {
+  display: none;
+}
+
+.document-toc-link {
+  position: relative;
+  display: block;
+  padding: 7px 0 7px calc(14px + var(--toc-depth) * 13px);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 520;
+  line-height: 17px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.document-toc-link::before {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: -1px;
+  width: 2px;
+  content: '';
+  background: transparent;
+  border-radius: 2px;
+}
+
+.document-toc-link:hover {
+  color: var(--text);
+}
+
+.document-toc-link[data-depth='1'] {
+  font-weight: 650;
+}
+
+.document-toc-link[aria-current='location'] {
+  color: var(--accent);
+}
+
+.document-toc-link[aria-current='location']::before {
+  background: var(--accent);
 }
 
 .document-metadata {
@@ -1586,6 +1679,16 @@ a.wiki-link-active {
   }
 
   .graph-node-count {
+    display: none;
+  }
+}
+
+@media (max-width: 1340px) {
+  .document-layout {
+    display: block;
+  }
+
+  .document-toc {
     display: none;
   }
 }

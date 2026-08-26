@@ -75,12 +75,19 @@ export type ViewGraph = {
   edges: ViewGraphEdge[];
 };
 
+export type ViewDocumentTocItem = {
+  id: string;
+  title: string;
+  depth: number;
+};
+
 export type ViewDocument = {
   path: string;
   title: string;
   html: string;
   gitHtml: string | null;
   graphNodeIds: Record<string, string>;
+  tableOfContents: ViewDocumentTocItem[];
   errors: ViewDocumentError[];
   backReferences: ViewSectionBackReferences[];
   frontmatter: {
