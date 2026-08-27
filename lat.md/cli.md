@@ -241,6 +241,12 @@ All setup steps are idempotent — existing configuration is detected and skippe
 
 `.gitignore` entries are only added if the target path is not already tracked in git (`git ls-files`); if tracked, the step prints a warning and skips to avoid a no-op ignore rule.
 
+### Generated instruction ownership
+
+Generated agent instructions and `lat-md` skills direct project-specific documentation into `lat.md/` so it survives setup refreshes.
+
+The `AGENTS.md` and `lat-md` `SKILL.md` templates state that these generated files are owned by lat tooling and may be replaced by a later `lat init`. Agents must record project guidance in `lat.md/` rather than changing generated copies.
+
 ### Marker-based append mode
 
 Shared files use `appendTemplateSection` to preserve user content outside lat's managed section.
