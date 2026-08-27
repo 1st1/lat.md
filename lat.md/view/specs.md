@@ -11,7 +11,7 @@ Functional specifications for the browser server, static export, client navigati
 
 The loopback server exposes the visible Markdown index, redirects its root to the vault index, and serves the client shell for document routes.
 
-`lat ui --logo-text <text>` replaces the top-left `lat.md` label with safely rendered plain text; omitting the option preserves the default.
+By default the header renders the same Lat wordmark as the website. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
 ## Builds a static deployment
 
@@ -21,7 +21,7 @@ The static client keeps Markdown and wiki navigation, backlinks, validation, sou
 
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
 
-`lat ui build --logo-text <text>` persists the same label override in the static manifest.
+`lat ui build --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the website wordmark.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
 
@@ -57,7 +57,7 @@ When the desktop TOC rail no longer fits, an `On this page` row expands its exis
 
 Graph mode consumes a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
 
-The client renders a 50/50 graph and inspector. The logo, active Graph toggle, and semantic filter float over the full-height graph while Git and page Search buttons are hidden. The right panel begins with the selected node preview and has no inspector toolbar.
+The client renders a 50/50 graph and inspector. The logo and Graph toggle retain their normal desktop positions while floating over the graph with the semantic filter; Git and page Search are hidden. The right panel begins with the node preview and has no toolbar.
 
 The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
 

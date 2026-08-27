@@ -88,6 +88,7 @@ import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
+import { staticViewAssetUrl } from '../view/src/static-mode.js';
 import {
   deterministicGraphPosition,
   graphDisplayLabel,
@@ -178,6 +179,20 @@ describe('lat ui', () => {
     const searchShell = await fetch(new URL('/search', view.url));
     expect(searchShell.status).toBe(200);
     expect(await searchShell.text()).toContain('lat ui shell');
+
+    const app = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'App.tsx'),
+      'utf8',
+    );
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(app).toContain('../../website/public/logo.svg?url');
+    expect(app).toContain('brandText === DEFAULT_VIEW_LOGO_TEXT');
+    expect(app).toContain('<BrandText text={brandText} />');
+    expect(app).toContain('src={staticViewAssetUrl(latLogoUrl)}');
+    expect(styles).toContain('.brand-logo');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
@@ -185,6 +200,12 @@ describe('lat ui', () => {
     expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
+    );
+    expect(staticViewAssetUrl('/assets/logo.svg', '/project/')).toBe(
+      '/project/assets/logo.svg',
+    );
+    expect(staticViewAssetUrl('/assets/logo.svg', '/')).toBe(
+      '/assets/logo.svg',
     );
     expect(() => normalizeStaticViewBasePath('project')).toThrow(
       'absolute URL path',
@@ -549,6 +570,13 @@ describe('lat ui', () => {
       ]),
     );
     expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(14);
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(styles).toContain('flex: 0 0 212px;');
+    expect(styles).toContain('padding: 0 18px 0 28px;');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]

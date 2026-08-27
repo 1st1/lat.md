@@ -15,6 +15,7 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
+import latLogoUrl from '../../website/public/logo.svg?url';
 import { FileTree } from './FileTree';
 import { DocumentToc } from './DocumentToc';
 import { fetchViewJson } from './data-source';
@@ -43,7 +44,12 @@ import {
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
-import { isStaticView, staticViewBasePath, viewPathname } from './static-mode';
+import {
+  isStaticView,
+  staticViewAssetUrl,
+  staticViewBasePath,
+  viewPathname,
+} from './static-mode';
 
 type ViewRoute =
   | { kind: 'search' }
@@ -104,15 +110,25 @@ function AppHeader({
   route: ViewRoute | null;
   searchEnabled: boolean;
 }) {
+  const brandText = index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
+
   return (
     <div className={className}>
       <a
         className="brand"
         href={index ? documentUrl(index.entry) : '/'}
         onClick={index ? onNavigate : undefined}
-        title={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT}
+        title={brandText}
       >
-        <BrandText text={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT} />
+        {brandText === DEFAULT_VIEW_LOGO_TEXT ? (
+          <img
+            alt={DEFAULT_VIEW_LOGO_TEXT}
+            className="brand-logo"
+            src={staticViewAssetUrl(latLogoUrl)}
+          />
+        ) : (
+          <BrandText text={brandText} />
+        )}
       </a>
       <div className="sidebar-actions">
         {!graphActive && index?.git && (
