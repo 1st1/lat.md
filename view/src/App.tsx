@@ -44,7 +44,12 @@ import {
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
-import { isStaticView, staticViewBasePath, viewPathname } from './static-mode';
+import {
+  isStaticView,
+  staticViewAssetUrl,
+  staticViewBasePath,
+  viewPathname,
+} from './static-mode';
 
 type ViewRoute =
   | { kind: 'search' }
@@ -119,7 +124,7 @@ function AppHeader({
           <img
             alt={DEFAULT_VIEW_LOGO_TEXT}
             className="brand-logo"
-            src={latLogoUrl}
+            src={staticViewAssetUrl(latLogoUrl)}
           />
         ) : (
           <BrandText text={brandText} />

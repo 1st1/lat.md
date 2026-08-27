@@ -17,6 +17,15 @@ export function isStaticView(): boolean {
   return staticViewBasePath() !== null;
 }
 
+/** Prefix a Vite-emitted root asset with the static deployment base path. */
+export function staticViewAssetUrl(
+  assetUrl: string,
+  basePath: string | null = staticViewBasePath(),
+): string {
+  if (!basePath || !assetUrl.startsWith('/assets/')) return assetUrl;
+  return `${basePath}${assetUrl.slice(1)}`;
+}
+
 /** Strip the configured deployment prefix and static route trailing slash. */
 export function viewPathname(pathname: string): string {
   const basePath = staticViewBasePath();

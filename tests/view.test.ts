@@ -88,6 +88,7 @@ import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
+import { staticViewAssetUrl } from '../view/src/static-mode.js';
 import {
   deterministicGraphPosition,
   graphDisplayLabel,
@@ -190,6 +191,7 @@ describe('lat ui', () => {
     expect(app).toContain('../../website/public/logo.svg?url');
     expect(app).toContain('brandText === DEFAULT_VIEW_LOGO_TEXT');
     expect(app).toContain('<BrandText text={brandText} />');
+    expect(app).toContain('src={staticViewAssetUrl(latLogoUrl)}');
     expect(styles).toContain('.brand-logo');
   });
 
@@ -198,6 +200,12 @@ describe('lat ui', () => {
     expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
+    );
+    expect(staticViewAssetUrl('/assets/logo.svg', '/project/')).toBe(
+      '/project/assets/logo.svg',
+    );
+    expect(staticViewAssetUrl('/assets/logo.svg', '/')).toBe(
+      '/assets/logo.svg',
     );
     expect(() => normalizeStaticViewBasePath('project')).toThrow(
       'absolute URL path',
