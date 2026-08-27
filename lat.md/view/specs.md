@@ -15,7 +15,7 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 ## Builds a static deployment
 
-`lat ui build [output]` emits a host-ready immutable snapshot with physical document, source, and graph routes plus lazy JSON data.
+`lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
 The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
 
@@ -55,11 +55,13 @@ When the desktop TOC rail no longer fits, an `On this page` row expands its exis
 
 ## Renders the graph workspace
 
-The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
+Graph mode consumes a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
 
 The client renders a 50/50 graph and inspector. The logo, active Graph toggle, and semantic filter float over the full-height graph while Git and page Search buttons are hidden. The right panel begins with the selected node preview and has no inspector toolbar.
 
-The graph button replaces the current route instead of navigating through browser history. Toggling it off opens the selected node's normal URL, activating the selected Markdown file in the tree for document nodes.
+The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
+
+Plain document, section, source, and code-reference links navigate through their normal URLs without leaving Graph, so Back and Forward work without mode-specific history. Relative fragments resolve against the previewed document without refetching its content.
 
 Document and code radii grow only with incoming references. Every rendered label stays white over an 80%-opaque black plate with a text shadow in normal, selected, and hover states.
 

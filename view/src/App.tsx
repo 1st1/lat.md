@@ -22,11 +22,14 @@ import GraphView, { preloadViewGraph } from './GraphView';
 import {
   documentPath,
   documentUrl,
+  graphModeStorageKey,
   graphNode,
-  graphUrl,
+  graphNodeIdForUrl,
+  graphTarget,
   historyScrollPosition,
   historyStateWithScroll,
   isSameMarkdownDocument,
+  readGraphMode,
   searchButtonAction,
   searchHistoryState,
   searchReturnTo,
@@ -35,15 +38,16 @@ import {
   sourceSymbol,
   type ViewScrollPosition,
   viewRouteIdentity,
+  writeGraphMode,
 } from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { sourceLineId, SourceView } from './SourceView';
-import { isStaticView, viewPathname } from './static-mode';
+import { isStaticView, staticViewBasePath, viewPathname } from './static-mode';
 
 type ViewRoute =
   | { kind: 'search' }
-  | { kind: 'graph'; nodeId: string }
+  | { kind: 'graph'; nodeId: string; target: string }
   | { kind: 'markdown'; path: string }
   | {
       kind: 'source';
@@ -75,6 +79,7 @@ function BrandText({ text }: { text: string }) {
 
 function AppHeader({
   className,
+  graphActive,
   graphHref,
   gitEnabled,
   gitHasChanges,
@@ -87,6 +92,7 @@ function AppHeader({
   searchEnabled,
 }: {
   className: string;
+  graphActive: boolean;
   graphHref: string;
   gitEnabled: boolean;
   gitHasChanges: boolean;
@@ -109,7 +115,7 @@ function AppHeader({
         <BrandText text={index?.logoText ?? DEFAULT_VIEW_LOGO_TEXT} />
       </a>
       <div className="sidebar-actions">
-        {route?.kind !== 'graph' && index?.git && (
+        {!graphActive && index?.git && (
           <button
             aria-label={`${gitEnabled ? 'Hide' : 'Show'} Git changes${gitHasChanges ? ', changes available' : ''}`}
             aria-pressed={gitEnabled}
@@ -127,7 +133,7 @@ function AppHeader({
             </svg>
           </button>
         )}
-        {route?.kind !== 'graph' && searchEnabled && (
+        {!graphActive && searchEnabled && (
           <a
             aria-current={route?.kind === 'search' ? 'page' : undefined}
             aria-label="Search"
@@ -143,7 +149,7 @@ function AppHeader({
           </a>
         )}
         <a
-          aria-current={route?.kind === 'graph' ? 'page' : undefined}
+          aria-current={graphActive ? 'page' : undefined}
           aria-label="Graph"
           className="sidebar-graph"
           href={graphHref}
@@ -240,6 +246,7 @@ function currentLocation(): string {
 
 export function App() {
   const staticView = isStaticView();
+  const graphModeKey = graphModeStorageKey(staticViewBasePath());
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
@@ -249,6 +256,16 @@ export function App() {
   });
   const [error, setError] = useState('');
   const [gitEnabled, setGitEnabled] = useState(true);
+  const [graphMode, setGraphMode] = useState(() => {
+    try {
+      return (
+        readGraphMode(window.localStorage, graphModeKey) ||
+        viewPathname(window.location.pathname) === '/graph'
+      );
+    } catch {
+      return viewPathname(window.location.pathname) === '/graph';
+    }
+  });
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
@@ -266,6 +283,7 @@ export function App() {
       return {
         kind: 'graph',
         nodeId: graphNode(url.search),
+        target: graphTarget(url.search),
       };
     }
     const markdown = documentPath(url.pathname);
@@ -289,6 +307,18 @@ export function App() {
     }
     return null;
   }, [routeLocation]);
+  const graphActive =
+    graphMode &&
+    route !== null &&
+    (route.kind === 'graph' ||
+      route.kind === 'markdown' ||
+      route.kind === 'source');
+  const graphSelectionTarget =
+    route?.kind === 'graph' ? route.target : location;
+  const graphSelectedNodeId =
+    route?.kind === 'graph'
+      ? route.nodeId
+      : graphNodeIdForUrl(new URL(location, window.location.origin));
   const activePath = route?.kind === 'markdown' ? route.path : null;
   const gitHasChanges =
     Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
@@ -309,30 +339,6 @@ export function App() {
         : '',
     [gitEnabled, page],
   );
-  const graphHref = useMemo(() => {
-    if (route?.kind === 'markdown' && page?.kind === 'markdown') {
-      let headingId = new URL(location, window.location.origin).hash.slice(1);
-      try {
-        headingId = decodeURIComponent(headingId);
-      } catch {
-        // A malformed fragment falls back to the document node.
-      }
-      return graphUrl(
-        page.document.graphNodeIds[headingId] ??
-          page.document.graphNodeIds[''] ??
-          `document:${route.path}`,
-      );
-    }
-    if (route?.kind === 'source') {
-      return graphUrl(
-        route.at > 0
-          ? `code-ref:${route.path}:${route.at}`
-          : `source:${route.path}${route.symbol ? `#${route.symbol}` : ''}`,
-      );
-    }
-    return graphUrl();
-  }, [location, page, route]);
-  const graphExitHref = index ? documentUrl(index.entry) : '/';
   const mobileNavigationLabel =
     route?.kind === 'markdown' || route?.kind === 'source'
       ? route.path
@@ -345,6 +351,30 @@ export function App() {
       // GraphView reports the error if the user opens it before a later retry.
     });
   }, []);
+
+  useEffect(() => {
+    if (route?.kind !== 'graph') return;
+    let target = route.target;
+    try {
+      const url = new URL(target, window.location.origin);
+      if (
+        url.origin !== window.location.origin ||
+        (!documentPath(url.pathname) && !sourcePath(url.pathname))
+      ) {
+        target = '';
+      } else {
+        target = `${url.pathname}${url.search}${url.hash}`;
+      }
+    } catch {
+      target = '';
+    }
+    if (!target && index) target = documentUrl(index.entry);
+    if (!target) return;
+    setPersistedGraphMode(true);
+    window.history.replaceState(window.history.state, '', target);
+    setPage(null);
+    setLocation(currentLocation());
+  }, [index, route]);
 
   useEffect(() => {
     setMobileNavigationOpen(false);
@@ -467,18 +497,25 @@ export function App() {
 
   useEffect(() => {
     if (!page) return;
-    window.document.title =
-      page.kind === 'search'
+    window.document.title = graphActive
+      ? 'Graph · lat.md'
+      : page.kind === 'search'
         ? 'Search · lat.md'
         : page.kind === 'graph'
           ? 'Graph · lat.md'
           : page.kind === 'markdown'
             ? `${page.document.title} · lat.md`
             : `${page.source.focus?.symbol ?? page.source.path} · lat.md`;
-  }, [page]);
+  }, [graphActive, page]);
 
   useLayoutEffect(() => {
     if (!page || positionedLocation.current === location) return;
+    if (graphActive) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      positionedLocation.current = location;
+      setHistoryScroll(null);
+      return;
+    }
     if (page.kind === 'search' || page.kind === 'graph') {
       if (historyScroll) return;
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -511,7 +548,7 @@ export function App() {
       }
     }
     positionedLocation.current = location;
-  }, [historyScroll, location, page]);
+  }, [graphActive, historyScroll, location, page]);
 
   function saveCurrentScroll(): void {
     window.history.replaceState(
@@ -522,6 +559,15 @@ export function App() {
       '',
       currentLocation(),
     );
+  }
+
+  function setPersistedGraphMode(enabled: boolean): void {
+    setGraphMode(enabled);
+    try {
+      writeGraphMode(window.localStorage, graphModeKey, enabled);
+    } catch {
+      // Storage can be unavailable; the in-memory mode still works.
+    }
   }
 
   function navigate(url: URL): void {
@@ -558,23 +604,6 @@ export function App() {
     setHistoryScroll(null);
     window.history.replaceState(null, '', documentUrl(index.entry));
     setPage(null);
-    setLocation(currentLocation());
-  }
-
-  function switchView(url: URL): void {
-    const nextLocation = `${url.pathname}${url.search}${url.hash}`;
-    if (nextLocation === currentLocation()) return;
-    positionedLocation.current = null;
-    setHistoryScroll(null);
-    window.history.replaceState(null, '', url);
-    setPage(null);
-    setLocation(currentLocation());
-  }
-
-  function selectGraphNode(nodeId: string): void {
-    const next = graphUrl(nodeId);
-    if (next === currentLocation()) return;
-    window.history.replaceState(window.history.state, '', next);
     setLocation(currentLocation());
   }
 
@@ -622,17 +651,7 @@ export function App() {
       return;
     }
     event.preventDefault();
-    const url = new URL(event.currentTarget.href);
-    if (viewPathname(window.location.pathname) === '/graph') {
-      switchView(url);
-      return;
-    }
-    const from = currentLocation();
-    void preloadViewGraph(projectChange.generation)
-      .catch(() => null)
-      .then(() => {
-        if (currentLocation() === from) switchView(url);
-      });
+    setPersistedGraphMode(!graphMode);
   }
 
   function onDocumentClick(event: MouseEvent<HTMLElement>): void {
@@ -676,11 +695,15 @@ export function App() {
     navigate(url);
   }
 
-  if (route?.kind === 'graph') {
-    const header = (selectedNode: ViewGraphNode | null) => (
+  if (graphActive) {
+    const header = (
+      _selectedNode: ViewGraphNode | null,
+      _selectedTarget: string,
+    ) => (
       <AppHeader
         className="graph-header"
-        graphHref={selectedNode?.url ?? graphExitHref}
+        graphActive={graphActive}
+        graphHref={currentLocation()}
         gitEnabled={gitEnabled}
         gitHasChanges={gitHasChanges}
         index={index}
@@ -700,9 +723,9 @@ export function App() {
           header={header}
           markdownGeneration={projectChange.markdownGeneration}
           onNavigate={navigate}
-          onSelect={selectGraphNode}
           searchEnabled={!staticView}
-          selectedNodeId={route.nodeId}
+          selectedNodeId={graphSelectedNodeId}
+          target={graphSelectionTarget}
         />
       </div>
     );
@@ -716,7 +739,8 @@ export function App() {
       >
         <AppHeader
           className="sidebar-header"
-          graphHref={graphHref}
+          graphActive={graphActive}
+          graphHref={currentLocation()}
           gitEnabled={gitEnabled}
           gitHasChanges={gitHasChanges}
           index={index}

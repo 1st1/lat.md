@@ -18,7 +18,7 @@ Read APIs accept only walked vault files or supported project source paths and r
 
 [[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
 
-The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document, source path, and graph route gets a physical `index.html` shell.
+The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document and source path gets a physical `index.html` shell; a compatibility shell migrates old graph URLs.
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
 
@@ -124,4 +124,4 @@ Escape clears a non-empty query, then returns to the page that opened search. Cl
 
 [[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
 
-The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so `/graph` switches without I/O or layout work. Its embedding filter reuses `/api/search`, propagates cosine scores into result sizing, and keeps selection in the URL.
+The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so the persisted presentation mode switches without I/O or layout work. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates cosine scores into result sizing.

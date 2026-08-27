@@ -57,11 +57,18 @@ import {
   fileTreeGitStatus,
 } from '../view/src/file-tree.js';
 import {
+  graphInspectorLinkUrl,
+  graphModeStorageKey,
   graphNode,
+  graphNodeIdForUrl,
+  graphSelectionForUrl,
+  graphTarget,
+  graphTargetForNode,
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
   isSameMarkdownDocument,
+  readGraphMode,
   scrollToDocumentLocation,
   searchButtonAction,
   searchEscapeAction,
@@ -70,6 +77,7 @@ import {
   searchReturnTo,
   searchUrl,
   viewRouteIdentity,
+  writeGraphMode,
 } from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
@@ -418,6 +426,79 @@ describe('lat ui', () => {
       '/graph?node=document%3Aguide.md',
     );
     expect(graphNode('?node=document%3Aguide.md')).toBe('document:guide.md');
+    const sectionTarget = '/docs/guide.md#details';
+    const targetedGraphUrl = graphUrl('document:guide.md', sectionTarget);
+    expect(targetedGraphUrl).toBe(
+      '/graph?node=document%3Aguide.md&target=%2Fdocs%2Fguide.md%23details',
+    );
+    expect(graphTarget(new URL(targetedGraphUrl, view.url).search)).toBe(
+      sectionTarget,
+    );
+    const stored = new Map<string, string>();
+    const graphModeStorage = {
+      getItem: (key: string) => stored.get(key) ?? null,
+      removeItem: (key: string) => void stored.delete(key),
+      setItem: (key: string, value: string) => void stored.set(key, value),
+    };
+    const liveGraphModeKey = graphModeStorageKey(null);
+    const staticGraphModeKey = graphModeStorageKey('/wiki/');
+    expect(liveGraphModeKey).not.toBe(staticGraphModeKey);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(false);
+    writeGraphMode(graphModeStorage, liveGraphModeKey, true);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(true);
+    writeGraphMode(graphModeStorage, liveGraphModeKey, false);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(false);
+    expect(graphNodeIdForUrl(new URL(sectionTarget, view.url))).toBe(
+      'document:guide.md',
+    );
+    expect(graphNodeIdForUrl(new URL('/code/src/app.ts?at=5', view.url))).toBe(
+      'code-ref:src/app.ts:5',
+    );
+    expect(graphNodeIdForUrl(new URL('/code/src/app.ts#run', view.url))).toBe(
+      'source:src/app.ts#run',
+    );
+    expect(
+      graphSelectionForUrl(graph, new URL(sectionTarget, view.url)),
+    ).toEqual({
+      nodeId: 'document:guide.md',
+      target: sectionTarget,
+    });
+    const documentNode = graph.nodes.find(
+      (node) => node.id === 'document:guide.md',
+    );
+    expect(documentNode).toBeDefined();
+    expect(
+      graphTargetForNode(graph, documentNode!, sectionTarget, view.url),
+    ).toBe(sectionTarget);
+    expect(
+      graphTargetForNode(graph, documentNode!, '/docs/lat.md', view.url),
+    ).toBe(documentNode!.url);
+    const sameDocumentLink = graphInspectorLinkUrl(
+      '#details',
+      '/docs/guide.md',
+      view.url,
+    );
+    expect(`${sameDocumentLink?.pathname}${sameDocumentLink?.hash}`).toBe(
+      sectionTarget,
+    );
+    expect(
+      graphSelectionForUrl(
+        graph,
+        new URL(
+          '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+          view.url,
+        ),
+      ),
+    ).toEqual({
+      nodeId: 'source:src/app.ts#run',
+      target: '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+    });
+    expect(
+      graphSelectionForUrl(graph, new URL('/code/src/app.ts?at=5', view.url)),
+    ).toEqual({
+      nodeId: 'code-ref:src/app.ts:5',
+      target: '/code/src/app.ts?at=5',
+    });
     expect(
       graphDisplayLabel({
         kind: 'document',
