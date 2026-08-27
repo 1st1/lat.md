@@ -51,7 +51,7 @@ Below 64rem, files remain reachable through a sticky two-row header and a scroll
 
 The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally, and the graph stacks above its inspector.
 
-When the desktop TOC rail no longer fits, an `On this page` row expands its existing links in a bounded scrolling panel. On mobile it stays below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
+When the desktop TOC rail no longer fits, a compact `On this page` control shares an aligned metadata row and expands its links in a bounded overlay without moving content. On mobile it becomes a full-width row below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
 
 ## Renders the graph workspace
 

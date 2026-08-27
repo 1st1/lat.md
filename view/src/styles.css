@@ -1784,6 +1784,7 @@ a.wiki-link-active {
     display: flex;
     flex-direction: column;
     gap: 0;
+    align-items: stretch;
   }
 
   .document-toc {
@@ -1845,6 +1846,59 @@ a.wiki-link-active {
 
   .document-toc[data-expanded='true'] .document-toc-list {
     display: block;
+  }
+}
+
+@media (min-width: 64rem) and (max-width: 1340px) {
+  .sidebar-header {
+    min-height: 42px;
+  }
+
+  .document-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 286px);
+    grid-template-areas:
+      'metadata toc'
+      'document document';
+    column-gap: var(--document-toc-gutter);
+    row-gap: 34px;
+    align-items: start;
+  }
+
+  .document-column {
+    display: contents;
+  }
+
+  .document-header {
+    grid-area: metadata;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .document-metadata,
+  .document-toc-toggle {
+    min-height: 42px;
+  }
+
+  .document-toc {
+    grid-area: toc;
+    position: relative;
+    z-index: 1;
+    top: 0;
+    max-width: 286px;
+    margin: 0;
+  }
+
+  .document-toc-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+  }
+
+  .markdown {
+    grid-area: document;
+    min-width: 0;
   }
 }
 
@@ -2001,6 +2055,7 @@ a.wiki-link-active {
     min-height: 56px;
     padding: 0 var(--mobile-gutter);
     background: color-mix(in srgb, var(--background) 94%, transparent);
+    border-top: 0;
     border-right: 0;
     border-left: 0;
     border-radius: 0;
