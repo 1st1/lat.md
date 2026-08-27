@@ -57,7 +57,7 @@ When the desktop TOC rail no longer fits, an `On this page` row expands its exis
 
 Graph mode consumes a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
 
-The client renders a 50/50 graph and inspector. The logo, active Graph toggle, and semantic filter float over the full-height graph while Git and page Search buttons are hidden. The right panel begins with the selected node preview and has no inspector toolbar.
+The client renders a 50/50 graph and inspector. The logo and Graph toggle retain their normal desktop positions while floating over the graph with the semantic filter; Git and page Search are hidden. The right panel begins with the node preview and has no toolbar.
 
 The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
 

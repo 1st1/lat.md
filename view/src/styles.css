@@ -1480,7 +1480,7 @@ a.wiki-link-active {
 .graph-topbar-graph .graph-header {
   display: flex;
   min-width: 0;
-  flex: 0 0 203px;
+  flex: 0 0 212px;
   align-items: center;
   justify-content: space-between;
 }
@@ -1751,7 +1751,7 @@ a.wiki-link-active {
 
 @media (width <= 1100px) and (width >= 64rem) {
   .graph-topbar-graph {
-    padding: 0 18px;
+    padding: 0 18px 0 28px;
     gap: 8px;
   }
 

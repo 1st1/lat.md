@@ -570,6 +570,13 @@ describe('lat ui', () => {
       ]),
     );
     expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(14);
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(styles).toContain('flex: 0 0 212px;');
+    expect(styles).toContain('padding: 0 18px 0 28px;');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
