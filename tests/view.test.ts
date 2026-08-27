@@ -845,6 +845,9 @@ describe('lat ui', () => {
     );
     expect(styles).not.toContain('order: -1');
     expect(styles).toContain('min-height: 44px');
+    expect(styles).toMatch(
+      /@media \(max-width: 1340px\)[\s\S]*?\.document-layout \{[\s\S]*?align-items: stretch;/,
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]

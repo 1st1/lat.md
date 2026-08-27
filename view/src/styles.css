@@ -1784,6 +1784,7 @@ a.wiki-link-active {
     display: flex;
     flex-direction: column;
     gap: 0;
+    align-items: stretch;
   }
 
   .document-toc {
