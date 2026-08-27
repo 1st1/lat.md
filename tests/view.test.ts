@@ -359,8 +359,10 @@ describe('lat ui', () => {
       compilerOptions: { paths: Record<string, string[]> };
     };
     expect(buildConfig.compilerOptions.paths).toEqual({
-      '@lat.md/embed': ['./node_modules/@lat.md/embed'],
-      '@lat.md/embed-minilm-fp16': ['./node_modules/@lat.md/embed-minilm-fp16'],
+      '@lat.md/embed': ['./node_modules/@lat.md/embed/dist/index.d.ts'],
+      '@lat.md/embed-minilm-fp16': [
+        './node_modules/@lat.md/embed-minilm-fp16/dist/index.d.ts',
+      ],
     });
 
     const buildScript = readFileSync(
