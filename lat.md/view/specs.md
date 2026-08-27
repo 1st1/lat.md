@@ -35,7 +35,7 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 
 ## Renders Markdown with navigable local links
 
-Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments.
+Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
 
 ## Shows a local table of contents
 

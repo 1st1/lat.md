@@ -1,5 +1,5 @@
 import { basename, extname } from 'node:path';
-import type { Link, Root, RootContent } from 'mdast';
+import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
@@ -48,6 +48,8 @@ const CODE_LINK_CLASSES = [
 ];
 
 const ERROR_CLASS = 'markdown-error';
+const EXTERNAL_LINK_CLASS = 'external-link';
+const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
 
 function classAttributes(
@@ -84,6 +86,7 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-segmented',
         'wiki-link-code',
         'wiki-link-active',
+        EXTERNAL_LINK_CLASS,
         ERROR_CLASS,
         ...GIT_CLASSES,
       ],
@@ -113,6 +116,7 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-context',
         'wiki-link-leaf',
         'wiki-link-ref-count',
+        EXTERNAL_LINK_ICON_CLASS,
         ...CODE_LINK_CLASSES.slice(2),
         ERROR_CLASS,
         ...GIT_CLASSES,
@@ -220,6 +224,24 @@ function languageIcon(language: {
   } as RootContent;
 }
 
+function externalLinkIcon(): PhrasingContent {
+  return {
+    type: 'emphasis',
+    data: {
+      hName: 'span',
+      hProperties: {
+        ariaHidden: 'true',
+        className: [EXTERNAL_LINK_ICON_CLASS],
+      },
+    },
+    children: [],
+  } as PhrasingContent;
+}
+
+function isExternalSiteUrl(url: string): boolean {
+  return /^(?:https?:)?\/\//i.test(url);
+}
+
 function referenceCountBadge(count: number): RootContent {
   return {
     type: 'emphasis',
@@ -323,26 +345,41 @@ export async function renderMarkdown(
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
   if (options.errors) markMarkdownErrors(tree, options.errors);
 
-  if (options.rewriteMarkdownLink || options.activeMarkdownLink) {
-    visit(tree, 'link', (node: Link) => {
-      const authoredUrl = node.url;
-      if (
-        options.activeMarkdownLink &&
-        authoredUrl === options.activeMarkdownLink
-      ) {
-        node.data = {
-          ...node.data,
-          hProperties: {
-            ...(node.data?.hProperties ?? {}),
-            className: ['wiki-link-active'],
-          },
-        };
-      }
-      if (options.rewriteMarkdownLink) {
-        node.url = options.rewriteMarkdownLink(authoredUrl);
-      }
-    });
-  }
+  visit(tree, 'link', (node: Link) => {
+    const authoredUrl = node.url;
+    if (
+      options.activeMarkdownLink &&
+      authoredUrl === options.activeMarkdownLink
+    ) {
+      node.data = {
+        ...node.data,
+        hProperties: {
+          ...(node.data?.hProperties ?? {}),
+          className: ['wiki-link-active'],
+        },
+      };
+    }
+    if (options.rewriteMarkdownLink) {
+      node.url = options.rewriteMarkdownLink(authoredUrl);
+    }
+    if (!isExternalSiteUrl(node.url)) return;
+
+    const properties = node.data?.hProperties ?? {};
+    const currentClasses = properties.className;
+    const classes = Array.isArray(currentClasses)
+      ? currentClasses.map(String)
+      : currentClasses
+        ? [String(currentClasses)]
+        : [];
+    node.data = {
+      ...node.data,
+      hProperties: {
+        ...properties,
+        className: [...classes, EXTERNAL_LINK_CLASS],
+      },
+    };
+    node.children.push(externalLinkIcon());
+  });
 
   const firstHeading = tree.children.find((node) => node.type === 'heading');
   const title = firstHeading

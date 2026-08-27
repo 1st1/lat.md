@@ -665,6 +665,25 @@ describe('lat ui', () => {
     expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
     expect(document.html).toContain('href="guide.md#details"');
     expect(document.html).not.toContain('require-code-mention');
+
+    const links = await renderMarkdown(
+      '[secure](https://example.com) [protocol](//example.org) [local](guide.md#details) [email](mailto:hi@example.com)',
+      'lat.md',
+    );
+    expect(links.html).toContain(
+      'href="https://example.com" class="external-link"',
+    );
+    expect(links.html).toContain('href="//example.org" class="external-link"');
+    expect(links.html.match(/class="external-link-icon"/g)).toHaveLength(2);
+    expect(links.html).toContain('<a href="guide.md#details">local</a>');
+    expect(links.html).toContain('<a href="mailto:hi@example.com">email</a>');
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(styles).toContain('.external-link-icon');
+    expect(styles).toContain('-webkit-mask:');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
