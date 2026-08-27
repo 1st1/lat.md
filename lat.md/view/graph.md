@@ -14,13 +14,13 @@ Lat uses `sigma` and `graphology` directly as development dependencies. The rend
 
 ## Product shape
 
-`/graph` replaces the document layout with a full-viewport graph workspace while preserving the familiar top-left controls.
+Graph mode replaces the document layout with a full-viewport graph workspace while preserving the selected document or source URL.
 
 - The graph uses the full left half; its logo, active Graph toggle, semantic filter, and node count float over the canvas instead of reserving a panel header. Git and page Search controls stay hidden in this mode. The right half begins directly with the node preview and has no inspector title bar.
 - The sidebar background covers the viewport, split equally between the graph and an independently scrollable inspector.
-- Opening Graph from a document or represented source selects that node immediately. A section route selects its owning document; with no selection, the inspector explains how to choose a node.
-- Selection lives at `/graph?node=<canonical-id>` so reloads and copied URLs restore the same inspector. Node clicks replace that URL without adding browser-history entries.
-- The graph icon is a mode toggle that replaces the current route in both directions. Leaving Graph opens the selected node's normal URL, so document nodes activate their file in the tree; no selection falls back to the vault index.
+- Enabling Graph on a document or represented source selects that node immediately. A section URL selects its owning document; with no represented node, the inspector explains how to choose one.
+- The browser URL always remains the exact document, section, source, or code-line target. Node and inspector navigation use ordinary history entries, so reload, copied URLs, Back, and Forward retain their normal meaning while Graph stays active.
+- The graph icon only toggles a namespaced `localStorage` presentation setting; it does not rewrite history. Disabling Graph reveals the same selected target in the file/source layout immediately, and the persisted setting restores Graph after reload.
 - Narrow screens stack a bounded graph above the inspector instead of forcing two narrow columns.
 
 ```text
@@ -76,7 +76,9 @@ Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neigh
 
 With no semantic filter, node radius reflects incoming references. Search preserves each hit's cosine score, rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set.
 
-A node click replaces the query-string id and renders the right pane with existing APIs and presentation: documents reuse the Markdown payload, while source and code-reference nodes reuse the source payload and focused line or symbol. Links inside the inspector select a represented graph node in place; modified clicks may open the normal document or source route.
+A node click navigates to its canonical document or source URL and renders the right pane with existing APIs and presentation: documents reuse the Markdown payload, while source and code-reference nodes reuse the source payload and focused line or symbol.
+
+Plain internal links inside the inspector keep Graph active and navigate to their normal exact routes. Same-document fragments resolve against the preview and scroll without refetching the document; modified clicks retain normal browser behavior.
 
 The graph pane remains fixed while the inspector scrolls from the top edge. The preview keeps current Git rendering, validation markers, backlinks, source context, and code expansion without wrapping them in another title toolbar.
 
@@ -92,6 +94,6 @@ Defer Obsidian-style color groups, user-tunable forces, animation history, saved
 
 ## Verification
 
-Tests protect canonical graph meaning, navigation encoding, deterministic finite positions, semantic-result projection, and the production bundle.
+Tests protect canonical graph meaning, persisted mode state, route-to-node selection, deterministic finite positions, semantic-result projection, and the production bundle.
 
 The mixed fixture asserts exact node kinds, section-to-document edge projection, weighted wiki and code-mention edges, backlink totals, static layout, semantic filtering, `/api/graph`, and the graph client shell.

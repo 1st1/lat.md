@@ -1,3 +1,4 @@
+import type { ViewGraph, ViewGraphNode } from '../../src/view/protocol';
 import { staticViewRoute, viewPathname } from './static-mode';
 
 const DOCUMENT_PREFIX = '/docs/';
@@ -84,11 +85,140 @@ export function graphNode(search: string): string {
   return new URLSearchParams(search).get('node') ?? '';
 }
 
-export function graphUrl(nodeId = ''): string {
+export function graphTarget(search: string): string {
+  return new URLSearchParams(search).get('target') ?? '';
+}
+
+export function graphUrl(nodeId = '', target = ''): string {
   const path = staticViewRoute('graph/') ?? '/graph';
-  if (!nodeId) return path;
-  const search = new URLSearchParams({ node: nodeId });
+  if (!nodeId && !target) return path;
+  const search = new URLSearchParams();
+  if (nodeId) search.set('node', nodeId);
+  if (target) search.set('target', target);
   return `${path}?${search}`;
+}
+
+type GraphModeStorage = {
+  getItem: (key: string) => string | null;
+  removeItem: (key: string) => void;
+  setItem: (key: string, value: string) => void;
+};
+
+export function graphModeStorageKey(basePath: string | null): string {
+  return `lat.ui.graph-mode:${basePath ?? '/'}`;
+}
+
+export function readGraphMode(storage: GraphModeStorage, key: string): boolean {
+  return storage.getItem(key) === 'true';
+}
+
+export function writeGraphMode(
+  storage: GraphModeStorage,
+  key: string,
+  enabled: boolean,
+): void {
+  if (enabled) storage.setItem(key, 'true');
+  else storage.removeItem(key);
+}
+
+export type GraphSelection = {
+  nodeId: string;
+  target: string;
+};
+
+function positiveInteger(value: string | null): number {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+}
+
+/** Map a normal document or source URL to its stable graph node id. */
+export function graphNodeIdForUrl(url: URL): string {
+  const markdown = documentPath(url.pathname);
+  if (markdown !== null) return `document:${markdown}`;
+  const source = sourcePath(url.pathname);
+  if (source === null) return '';
+  const focusLine = positiveInteger(url.searchParams.get('at'));
+  if (focusLine > 0) return `code-ref:${source}:${focusLine}`;
+  const symbol = sourceSymbol(url.hash);
+  return `source:${source}${symbol ? `#${symbol}` : ''}`;
+}
+
+function internalRoute(url: URL): string {
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/** Resolve an inspector destination to its stable graph node and exact route. */
+export function graphSelectionForUrl(
+  graph: ViewGraph,
+  url: URL,
+): GraphSelection | null {
+  const markdown = documentPath(url.pathname);
+  if (markdown !== null) {
+    const node = graph.nodes.find(
+      (candidate) =>
+        candidate.kind === 'document' && candidate.documentPath === markdown,
+    );
+    return node ? { nodeId: node.id, target: internalRoute(url) } : null;
+  }
+
+  const source = sourcePath(url.pathname);
+  if (source === null) return null;
+  const focusLine = positiveInteger(url.searchParams.get('at'));
+  const symbol = sourceSymbol(url.hash);
+  let node: ViewGraphNode | undefined;
+  if (focusLine > 0) {
+    node = graph.nodes.find(
+      (candidate) =>
+        candidate.kind === 'code-reference' &&
+        candidate.sourcePath === source &&
+        candidate.line === focusLine,
+    );
+  }
+  if (!node && symbol) {
+    node = graph.nodes.find(
+      (candidate) =>
+        candidate.kind === 'source' &&
+        candidate.sourcePath === source &&
+        candidate.symbol === symbol,
+    );
+  }
+  if (!node && !symbol && focusLine === 0) {
+    node = graph.nodes.find(
+      (candidate) =>
+        candidate.kind === 'source' &&
+        candidate.sourcePath === source &&
+        !candidate.symbol,
+    );
+  }
+  return node ? { nodeId: node.id, target: internalRoute(url) } : null;
+}
+
+/** Resolve a raw inspector href against the previewed document or source. */
+export function graphInspectorLinkUrl(
+  href: string,
+  previewRoute: string,
+  origin: string,
+): URL | null {
+  try {
+    const application = new URL(origin);
+    const url = new URL(href, new URL(previewRoute, application));
+    return url.origin === application.origin ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Accept a copied target only when it still belongs to the selected node. */
+export function graphTargetForNode(
+  graph: ViewGraph,
+  node: ViewGraphNode,
+  target: string,
+  origin: string,
+): string {
+  if (!target) return node.url;
+  const url = graphInspectorLinkUrl(target, node.url, origin);
+  const selection = url ? graphSelectionForUrl(graph, url) : null;
+  return selection?.nodeId === node.id ? selection.target : node.url;
 }
 
 const SEARCH_RETURN_KEY = 'latSearchReturnTo';

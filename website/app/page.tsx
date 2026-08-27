@@ -211,6 +211,8 @@ export default function Home() {
         <a className="foot" href="https://github.com/1st1/lat.md">GitHub</a>
         <span style={{ color: '#666' }}>|</span>
         <a className="foot" href="https://www.npmjs.com/package/lat.md">npm</a>
+        <span style={{ color: '#666' }}>|</span>
+        <a className="foot" href="/lat.md">lat's lat</a>
       </div>
     </div>
   )

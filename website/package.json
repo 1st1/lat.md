@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "build:wiki": "node scripts/build-wiki.mjs",
+    "predev": "pnpm build:wiki",
     "dev": "next dev",
+    "prebuild": "pnpm build:wiki",
     "build": "next build",
     "start": "next start"
   },
@@ -13,6 +16,8 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@lat.md/embed": "npm:@lat.md/embed@0.2.0",
+    "@lat.md/embed-minilm-fp16": "npm:@lat.md/embed-minilm-fp16@0.1.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "typescript": "^5.7.0"

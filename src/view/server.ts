@@ -16,6 +16,7 @@ import { createViewSearch, type ViewSearch } from './search.js';
 import { createViewStore, type ViewStore } from './store.js';
 
 const DEFAULT_HOST = '127.0.0.1';
+export const DEFAULT_VIEW_PORT = 4242;
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
 
 export type ViewServer = {
@@ -127,6 +128,22 @@ async function sendClientFile(
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     send(res, 404, 'text/plain; charset=utf-8', 'Not found', headOnly);
   }
+}
+
+function listen(server: Server, host: string, port: number): Promise<void> {
+  return new Promise((resolveListen, reject) => {
+    const onError = (error: Error) => {
+      server.off('listening', onListening);
+      reject(error);
+    };
+    const onListening = () => {
+      server.off('error', onError);
+      resolveListen();
+    };
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port, host);
+  });
 }
 
 /** Start the read-only loopback server used by `lat ui`. */
@@ -309,13 +326,23 @@ export async function startViewServer(
   });
 
   try {
-    await new Promise<void>((resolveListen, reject) => {
-      server.once('error', reject);
-      server.listen(options.port ?? 0, host, () => {
-        server.off('error', reject);
-        resolveListen();
-      });
-    });
+    const requestedPort = options.port;
+    let port = requestedPort ?? DEFAULT_VIEW_PORT;
+    while (true) {
+      try {
+        await listen(server, host, port);
+        break;
+      } catch (error) {
+        if (
+          requestedPort !== undefined ||
+          (error as NodeJS.ErrnoException).code !== 'EADDRINUSE' ||
+          port === 65_535
+        ) {
+          throw error;
+        }
+        port++;
+      }
+    }
   } catch (error) {
     unsubscribeStore();
     await store.close();

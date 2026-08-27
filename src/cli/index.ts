@@ -8,7 +8,7 @@ if (!process.argv.includes('--verbose')) {
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { resolveCheckContext, resolveContext } from './context.js';
 import type { CmdResult } from '../context.js';
 
@@ -16,6 +16,17 @@ type CheckTargetArgs = {
   args: string[];
   target?: string;
 };
+
+function parsePort(value: string): number {
+  if (!/^\d+$/.test(value)) {
+    throw new InvalidArgumentError('port must be an integer from 1 to 65535');
+  }
+  const port = Number(value);
+  if (port < 1 || port > 65_535) {
+    throw new InvalidArgumentError('port must be an integer from 1 to 65535');
+  }
+  return port;
+}
 
 /** Reserve `-- <directory>` for an explicit check target. */
 function splitCheckTarget(args: string[]): CheckTargetArgs {
@@ -114,10 +125,17 @@ const ui = program
   .command('ui')
   .description('Open lat.md in a local browser')
   .option('--logo-text <text>', 'top-left logo text')
-  .action(async (opts: { logoText?: string }) => {
+  .option(
+    '--port <number>',
+    'server port (default: 4242; explicit ports are strict)',
+    parsePort,
+  )
+  .action(async (opts: { logoText?: string; port?: number }) => {
     const ctx = resolveContext(program.opts());
     const { uiCommand } = await import('./ui.js');
-    handleResult(await uiCommand(ctx, { logoText: opts.logoText }));
+    handleResult(
+      await uiCommand(ctx, { logoText: opts.logoText, port: opts.port }),
+    );
   });
 
 ui.command('build')

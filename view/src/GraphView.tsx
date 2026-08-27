@@ -22,6 +22,14 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { fetchViewJson } from './data-source';
+import {
+  documentPath,
+  graphInspectorLinkUrl,
+  graphSelectionForUrl,
+  graphTargetForNode,
+  sourcePath,
+  sourceSymbol,
+} from './navigation';
 import { renderSectionBackReferences } from './section-back-references';
 import { SourceView } from './SourceView';
 import {
@@ -398,35 +406,18 @@ export function preloadViewGraph(minimumGeneration = 0): Promise<ViewGraph> {
   return request;
 }
 
-function routeKey(url: URL, includeSearch: boolean): string {
-  return `${url.pathname}${includeSearch ? url.search : ''}${url.hash}`;
-}
-
-function graphNodeForUrl(graph: ViewGraph, url: URL): ViewGraphNode | null {
-  const exact = routeKey(url, true);
-  const route = routeKey(url, false);
-  return (
-    graph.nodes.find((node) => node.url === exact) ??
-    graph.nodes.find((node) => {
-      const nodeUrl = new URL(node.url, window.location.origin);
-      return routeKey(nodeUrl, false) === route;
-    }) ??
-    null
-  );
-}
-
 function GraphInspector({
   gitEnabled,
   graph,
   node,
-  onNavigate,
   onSelect,
+  target,
 }: {
   gitEnabled: boolean;
   graph: ViewGraph;
   node: ViewGraphNode | null;
-  onNavigate: (url: URL) => void;
-  onSelect: (nodeId: string) => void;
+  onSelect: (nodeId: string, target?: string) => void;
+  target: string;
 }) {
   const [content, setContent] = useState<
     | { kind: 'markdown'; document: ViewDocument }
@@ -435,6 +426,14 @@ function GraphInspector({
   >(null);
   const [error, setError] = useState('');
   const inspector = useRef<HTMLDivElement>(null);
+  const previewTarget = useMemo(
+    () =>
+      node
+        ? graphTargetForNode(graph, node, target, window.location.origin)
+        : '',
+    [graph, node, target],
+  );
+  const contentTarget = node?.kind === 'document' ? node.url : previewTarget;
   const documentHtml = useMemo(
     () =>
       content?.kind === 'markdown'
@@ -453,6 +452,26 @@ function GraphInspector({
     setContent(null);
     setError('');
     if (!node) return () => controller.abort();
+    const previewUrl = new URL(
+      contentTarget || node.url,
+      window.location.origin,
+    );
+    const previewSource = sourcePath(previewUrl.pathname);
+    const query = previewUrl.searchParams;
+    const sourceQuery = new URLSearchParams({
+      path: node.sourcePath ?? '',
+      symbol:
+        previewSource === node.sourcePath
+          ? sourceSymbol(previewUrl.hash)
+          : (node.symbol ?? ''),
+      from: previewSource === node.sourcePath ? (query.get('from') ?? '') : '',
+      line:
+        previewSource === node.sourcePath ? (query.get('line') ?? '0') : '0',
+      at:
+        previewSource === node.sourcePath
+          ? (query.get('at') ?? '0')
+          : String(node.line ?? 0),
+    });
     const request =
       node.kind === 'document'
         ? fetchViewJson<ViewDocument>(
@@ -460,21 +479,24 @@ function GraphInspector({
             controller.signal,
           ).then((document) => setContent({ kind: 'markdown', document }))
         : fetchViewJson<ViewSourceDocument>(
-            `/api/source?path=${encodeURIComponent(node.sourcePath ?? '')}&symbol=${encodeURIComponent(node.symbol ?? '')}&at=${node.line ?? 0}`,
+            `/api/source?${sourceQuery}`,
             controller.signal,
           ).then((source) => setContent({ kind: 'source', source }));
     request.catch((reason: Error) => {
       if (reason.name !== 'AbortError') setError(reason.message);
     });
     return () => controller.abort();
-  }, [graph.generation, node]);
+  }, [contentTarget, graph.generation, node]);
 
   useLayoutEffect(() => {
     const container = inspector.current;
     if (!container || !node || !content) return;
     container.scrollTop = 0;
     if (content.kind !== 'markdown') return;
-    const hash = new URL(node.url, window.location.origin).hash.slice(1);
+    const hash = new URL(
+      previewTarget || node.url,
+      window.location.origin,
+    ).hash.slice(1);
     if (!hash) return;
     let id = hash;
     try {
@@ -486,7 +508,7 @@ function GraphInspector({
       block: 'start',
       behavior: 'instant',
     });
-  }, [content, node]);
+  }, [content, node, previewTarget]);
 
   function onContentClick(event: MouseEvent<HTMLElement>): void {
     if (
@@ -516,12 +538,19 @@ function GraphInspector({
     const anchor =
       target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
-    const url = new URL(anchor.href, window.location.href);
-    if (url.origin !== window.location.origin) return;
+    const href = anchor.getAttribute('href');
+    if (!href) return;
+    const url = graphInspectorLinkUrl(
+      href,
+      previewTarget || node?.url || '/',
+      window.location.origin,
+    );
+    if (!url || (!documentPath(url.pathname) && !sourcePath(url.pathname))) {
+      return;
+    }
     event.preventDefault();
-    const represented = graphNodeForUrl(graph, url);
-    if (represented) onSelect(represented.id);
-    else onNavigate(url);
+    const selection = graphSelectionForUrl(graph, url);
+    if (selection) onSelect(selection.nodeId, selection.target);
   }
 
   if (!node) {
@@ -579,18 +608,21 @@ export default function GraphView({
   header,
   markdownGeneration,
   onNavigate,
-  onSelect,
   searchEnabled,
   selectedNodeId,
+  target,
 }: {
   generation: number;
   gitEnabled: boolean;
-  header: (selectedNode: ViewGraphNode | null) => ReactNode;
+  header: (
+    selectedNode: ViewGraphNode | null,
+    selectedTarget: string,
+  ) => ReactNode;
   markdownGeneration: number;
   onNavigate: (url: URL) => void;
-  onSelect: (nodeId: string) => void;
   searchEnabled: boolean;
   selectedNodeId: string;
+  target: string;
 }) {
   const [graph, setGraph] = useState<ViewGraph | null>(cachedViewGraph);
   const [error, setError] = useState('');
@@ -690,16 +722,28 @@ export default function GraphView({
   );
   const selectedNode =
     graph?.nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedTarget =
+    graph && selectedNode
+      ? graphTargetForNode(graph, selectedNode, target, window.location.origin)
+      : '';
 
-  useEffect(() => {
-    if (graph && selectedNodeId && !selectedNode) onSelect('');
-  }, [graph, onSelect, selectedNode, selectedNodeId]);
+  function selectNode(nodeId: string, exactTarget = ''): void {
+    const node = graph?.nodes.find((candidate) => candidate.id === nodeId);
+    if (!graph || !node) return;
+    const next = graphTargetForNode(
+      graph,
+      node,
+      exactTarget,
+      window.location.origin,
+    );
+    onNavigate(new URL(next, window.location.origin));
+  }
 
   return (
     <>
       <div className="graph-topbar">
         <div className="graph-topbar-graph">
-          {header(selectedNode)}
+          {header(selectedNode, selectedTarget)}
           <div className="graph-tools">
             {searchEnabled ? (
               <label className="graph-filter">
@@ -740,7 +784,7 @@ export default function GraphView({
           <section className="graph-pane">
             <GraphCanvas
               graph={graph}
-              onSelect={onSelect}
+              onSelect={selectNode}
               searchNodeSizes={searchNodeSizes}
               selectedNodeId={selectedNodeId}
               visibleNodes={visibleNodes}
@@ -787,8 +831,8 @@ export default function GraphView({
               gitEnabled={gitEnabled}
               graph={graph}
               node={selectedNode}
-              onNavigate={onNavigate}
-              onSelect={onSelect}
+              onSelect={selectNode}
+              target={selectedTarget}
             />
           </aside>
         </div>

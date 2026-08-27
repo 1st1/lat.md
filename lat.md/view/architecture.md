@@ -4,7 +4,7 @@
 
 ## Runtime boundary
 
-[[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on an ephemeral port and launches the browser without a shell.
+[[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on loopback port 4242 and launches the browser without a shell. An occupied default advances to the next available port; an explicit `--port` is strict and reports the conflict.
 
 `--logo-text` overrides the top-left `lat.md` label as plain text for both the live server and static export; omitting it preserves the default.
 
@@ -18,7 +18,7 @@ Read APIs accept only walked vault files or supported project source paths and r
 
 [[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
 
-The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document, source path, and graph route gets a physical `index.html` shell.
+The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document and source path gets a physical `index.html` shell; a compatibility shell migrates old graph URLs.
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
 
@@ -58,7 +58,7 @@ The initial snapshot runs Git once, using argument-array subprocesses without a 
 
 An unreferenced two-second timer also refreshes Git through the store's serialized queue, catching commits and other repository-state changes that do not alter vault files. Unchanged snapshots neither increment the generation nor notify clients.
 
-The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|rendered diffs]] and sidebar state. Changed blocks use inline word diffs only with at least 20% ordered word-token overlap; otherwise the old and new blocks render separately.
+The client toggle controls both [[src/view/git-diff.ts#buildGitDiffTree|rendered diffs]] and sidebar state. Changed blocks use inline word diffs only with at least 60% ordered word-token overlap; otherwise the old and new blocks render separately.
 
 Modified files are yellow, new files are green, and validation errors split the same marker red without hiding its Git state.
 
@@ -86,6 +86,18 @@ The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` 
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
 
+## Responsive layout
+
+Below 64rem, the browser replaces desktop navigation rails with a persistent, touch-oriented header while preserving every route and control.
+
+The first row keeps the logo and Git, Search, and Graph actions. A second row shows the current route and opens the file tree as an independently scrolling viewport overlay; navigation, Escape, or returning to desktop closes it and restores document scrolling.
+
+Mobile content uses narrower gutters, fixed heading metrics, wrapped links, and horizontally scrollable code instead of shrinking text. The desktop TOC collapses into a sticky `On this page` row with its own scrollable list and preserved section state.
+
+Selecting a collapsed TOC entry closes the list before positioning the heading. Its sticky-header offset keeps direct fragments visible below both mobile navigation rows and the TOC trigger.
+
+The graph changes from a 50/50 workspace to a bounded canvas above its full-width inspector. Search inputs retain a zoom-safe font size and canvas, filter, navigation, and source controls keep touch-sized targets.
+
 ## Wiki-link reference counts
 
 Every resolved wiki link with indexed references carries a compact count of distinct locations that reference its canonical target, sourced from the cached [[src/view/references.ts#buildViewReferenceIndex|reverse-reference snapshot]].
@@ -112,4 +124,4 @@ Escape clears a non-empty query, then returns to the page that opened search. Cl
 
 [[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
 
-The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so `/graph` switches without I/O or layout work. Its embedding filter reuses `/api/search`, propagates cosine scores into result sizing, and keeps selection in the URL.
+The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so the persisted presentation mode switches without I/O or layout work. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates cosine scores into result sizing.

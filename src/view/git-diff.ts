@@ -22,7 +22,7 @@ type DataNode = RootContent & {
 };
 
 const MAX_DIFF_CELLS = 1_000_000;
-const MIN_INLINE_WORD_OVERLAP = 0.2;
+const MIN_INLINE_WORD_OVERLAP = 0.6;
 const WORDS = /\s+|[\p{L}\p{N}_]+|[^\s\p{L}\p{N}_]+/gu;
 const WORD_TOKENS = /[\p{L}\p{N}_]+/gu;
 

@@ -38,7 +38,21 @@ export async function uiCommand(
   ctx: CmdContext,
   options: UiCommandOptions = {},
 ): Promise<CmdResult> {
-  const server = await startViewServer(ctx, options);
+  let server: ViewServer;
+  try {
+    server = await startViewServer(ctx, options);
+  } catch (error) {
+    if (
+      options.port !== undefined &&
+      (error as NodeJS.ErrnoException).code === 'EADDRINUSE'
+    ) {
+      return {
+        isError: true,
+        output: `Port ${options.port} is already in use. Choose another with --port <number>.`,
+      };
+    }
+    throw error;
+  }
   options.onStarted?.(server);
 
   const lines = [

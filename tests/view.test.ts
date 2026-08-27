@@ -17,7 +17,11 @@ import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
 import { parseSections } from '../src/lattice.js';
 import { parse } from '../src/parser.js';
-import { startViewServer, type ViewServer } from '../src/view/server.js';
+import {
+  DEFAULT_VIEW_PORT,
+  startViewServer,
+  type ViewServer,
+} from '../src/view/server.js';
 import {
   normalizeStaticViewBasePath,
   staticViewUrl,
@@ -53,11 +57,18 @@ import {
   fileTreeGitStatus,
 } from '../view/src/file-tree.js';
 import {
+  graphInspectorLinkUrl,
+  graphModeStorageKey,
   graphNode,
+  graphNodeIdForUrl,
+  graphSelectionForUrl,
+  graphTarget,
+  graphTargetForNode,
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
   isSameMarkdownDocument,
+  readGraphMode,
   scrollToDocumentLocation,
   searchButtonAction,
   searchEscapeAction,
@@ -66,6 +77,7 @@ import {
   searchReturnTo,
   searchUrl,
   viewRouteIdentity,
+  writeGraphMode,
 } from '../view/src/navigation.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
@@ -333,6 +345,43 @@ describe('lat ui', () => {
     }
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Builds the website wiki from published embedding packages]]
+  it('builds the website wiki without compiling workspace embedding packages', () => {
+    const repositoryRoot = join(import.meta.dirname, '..');
+    const websitePackage = JSON.parse(
+      readFileSync(join(repositoryRoot, 'website', 'package.json'), 'utf8'),
+    ) as {
+      devDependencies: Record<string, string>;
+    };
+    expect(websitePackage.devDependencies).toMatchObject({
+      '@lat.md/embed': 'npm:@lat.md/embed@0.2.0',
+      '@lat.md/embed-minilm-fp16': 'npm:@lat.md/embed-minilm-fp16@0.1.0',
+    });
+
+    const buildConfig = JSON.parse(
+      readFileSync(
+        join(repositoryRoot, 'website', 'tsconfig.lat-build.json'),
+        'utf8',
+      ),
+    ) as {
+      compilerOptions: { paths: Record<string, string[]> };
+    };
+    expect(buildConfig.compilerOptions.paths).toEqual({
+      '@lat.md/embed': ['./node_modules/@lat.md/embed/dist/index.d.ts'],
+      '@lat.md/embed-minilm-fp16': [
+        './node_modules/@lat.md/embed-minilm-fp16/dist/index.d.ts',
+      ],
+    });
+
+    const buildScript = readFileSync(
+      join(repositoryRoot, 'website', 'scripts', 'build-wiki.mjs'),
+      'utf8',
+    );
+    expect(buildScript).toContain('tsconfig.lat-build.json');
+    expect(buildScript).toContain("'build:view'");
+    expect(buildScript).not.toContain("'buildall'");
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
     const shell = await fetch(new URL('/graph', view.url));
@@ -377,6 +426,79 @@ describe('lat ui', () => {
       '/graph?node=document%3Aguide.md',
     );
     expect(graphNode('?node=document%3Aguide.md')).toBe('document:guide.md');
+    const sectionTarget = '/docs/guide.md#details';
+    const targetedGraphUrl = graphUrl('document:guide.md', sectionTarget);
+    expect(targetedGraphUrl).toBe(
+      '/graph?node=document%3Aguide.md&target=%2Fdocs%2Fguide.md%23details',
+    );
+    expect(graphTarget(new URL(targetedGraphUrl, view.url).search)).toBe(
+      sectionTarget,
+    );
+    const stored = new Map<string, string>();
+    const graphModeStorage = {
+      getItem: (key: string) => stored.get(key) ?? null,
+      removeItem: (key: string) => void stored.delete(key),
+      setItem: (key: string, value: string) => void stored.set(key, value),
+    };
+    const liveGraphModeKey = graphModeStorageKey(null);
+    const staticGraphModeKey = graphModeStorageKey('/wiki/');
+    expect(liveGraphModeKey).not.toBe(staticGraphModeKey);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(false);
+    writeGraphMode(graphModeStorage, liveGraphModeKey, true);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(true);
+    writeGraphMode(graphModeStorage, liveGraphModeKey, false);
+    expect(readGraphMode(graphModeStorage, liveGraphModeKey)).toBe(false);
+    expect(graphNodeIdForUrl(new URL(sectionTarget, view.url))).toBe(
+      'document:guide.md',
+    );
+    expect(graphNodeIdForUrl(new URL('/code/src/app.ts?at=5', view.url))).toBe(
+      'code-ref:src/app.ts:5',
+    );
+    expect(graphNodeIdForUrl(new URL('/code/src/app.ts#run', view.url))).toBe(
+      'source:src/app.ts#run',
+    );
+    expect(
+      graphSelectionForUrl(graph, new URL(sectionTarget, view.url)),
+    ).toEqual({
+      nodeId: 'document:guide.md',
+      target: sectionTarget,
+    });
+    const documentNode = graph.nodes.find(
+      (node) => node.id === 'document:guide.md',
+    );
+    expect(documentNode).toBeDefined();
+    expect(
+      graphTargetForNode(graph, documentNode!, sectionTarget, view.url),
+    ).toBe(sectionTarget);
+    expect(
+      graphTargetForNode(graph, documentNode!, '/docs/lat.md', view.url),
+    ).toBe(documentNode!.url);
+    const sameDocumentLink = graphInspectorLinkUrl(
+      '#details',
+      '/docs/guide.md',
+      view.url,
+    );
+    expect(`${sameDocumentLink?.pathname}${sameDocumentLink?.hash}`).toBe(
+      sectionTarget,
+    );
+    expect(
+      graphSelectionForUrl(
+        graph,
+        new URL(
+          '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+          view.url,
+        ),
+      ),
+    ).toEqual({
+      nodeId: 'source:src/app.ts#run',
+      target: '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+    });
+    expect(
+      graphSelectionForUrl(graph, new URL('/code/src/app.ts?at=5', view.url)),
+    ).toEqual({
+      nodeId: 'code-ref:src/app.ts:5',
+      target: '/code/src/app.ts?at=5',
+    });
     expect(
       graphDisplayLabel({
         kind: 'document',
@@ -651,6 +773,31 @@ describe('lat ui', () => {
         hasGitChanges: false,
       },
     ]);
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Adapts navigation to mobile screens]]
+  it('keeps mobile navigation accessible without compressing desktop rails', () => {
+    const app = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'App.tsx'),
+      'utf8',
+    );
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+
+    expect(app).toContain('aria-controls="mobile-file-navigation"');
+    expect(app).toContain("body.classList.add('mobile-navigation-open')");
+    expect(styles).toContain('@media (width < 64rem)');
+    expect(styles).toContain(
+      ".sidebar[data-mobile-navigation-open='true'] nav",
+    );
+    expect(styles).toContain(".document-toc[data-expanded='true']");
+    expect(app.indexOf('<DocumentToc')).toBeLessThan(
+      app.indexOf('<div className="document-column">'),
+    );
+    expect(styles).not.toContain('order: -1');
+    expect(styles).toContain('min-height: 44px');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
@@ -1084,6 +1231,10 @@ describe('lat ui', () => {
     });
 
     expect(started).toBeDefined();
+    expect(Number(new URL(started!.url).port)).toBeGreaterThanOrEqual(
+      DEFAULT_VIEW_PORT,
+    );
+    expect(new URL(started!.url).port).not.toBe(new URL(view.url).port);
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(
       `Viewing lat.md at ${started!.url}\n` +
@@ -1093,6 +1244,18 @@ describe('lat ui', () => {
       await fetch(new URL('/api/index', started!.url))
     ).json()) as ViewIndex;
     expect(index.logoText).toBe('Project Atlas');
+
+    const occupiedPort = Number(new URL(view.url).port);
+    const conflict = await uiCommand(testContext(), {
+      clientDir,
+      openBrowser,
+      port: occupiedPort,
+    });
+    expect(conflict).toEqual({
+      isError: true,
+      output: `Port ${occupiedPort} is already in use. Choose another with --port <number>.`,
+    });
+    expect(openBrowser).toHaveBeenCalledTimes(1);
     await started!.close();
   });
 });
@@ -1268,19 +1431,42 @@ describe('lat ui git state', () => {
     );
     expect(replaced.html).not.toContain('<del class="git-removed">');
 
-    const borderlineReplacement = 'Shared new four five six.';
-    const borderline = await renderMarkdown(
-      borderlineReplacement,
+    const moderateReplacement =
+      'The server prefers port 4242 and launches the default browser.';
+    const moderate = await renderMarkdown(
+      moderateReplacement,
       'lat.md',
       undefined,
       {},
-      buildGitDiffTree('Shared old one two three.', borderlineReplacement),
+      buildGitDiffTree(
+        'The server starts on port 4242 and opens the browser.',
+        moderateReplacement,
+      ),
     );
-    expect(borderline.html).toContain(
-      '<p class="git-removed">Shared old one two three.</p>',
+    expect(moderate.html).toContain(
+      '<p class="git-removed">The server starts on port 4242',
     );
-    expect(borderline.html).toContain(
-      '<p class="git-added">Shared new four five six.</p>',
+    expect(moderate.html).toContain(
+      '<p class="git-added">The server prefers port 4242',
+    );
+
+    const portDescription =
+      '`lat ui` prefers loopback port 4242, advances when an implicit default is occupied, and starts listening before passing the final URL to the platform browser launcher.';
+    const portRewrite = await renderMarkdown(
+      portDescription,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(
+        '`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.',
+        portDescription,
+      ),
+    );
+    expect(portRewrite.html).toContain(
+      '<p class="git-removed"><code>lat ui</code> starts listening',
+    );
+    expect(portRewrite.html).toContain(
+      '<p class="git-added"><code>lat ui</code> prefers loopback port 4242',
     );
   });
 

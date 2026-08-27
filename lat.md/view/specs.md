@@ -15,7 +15,7 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 ## Builds a static deployment
 
-`lat ui build [output]` emits a host-ready immutable snapshot with physical document, source, and graph routes plus lazy JSON data.
+`lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
 The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
 
@@ -29,6 +29,10 @@ Any existing output path is rejected before snapshot work begins, including an e
 
 The generated marker excludes the entire artifact from both ripgrep and fallback code-reference scans, preventing exported JSON and bundles from polluting project checks or search.
 
+## Builds the website wiki from published embedding packages
+
+Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
+
 ## Renders Markdown with navigable local links
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments.
@@ -41,13 +45,23 @@ The fixed-width desktop rail fills the available viewport height without program
 
 Sections containing rendered Git changes carry an orange disc when Git is enabled, while sections owning validation errors carry a red disc. Both remain visible together when both states apply.
 
+## Adapts navigation to mobile screens
+
+Below 64rem, files remain reachable through a sticky two-row header and a scrollable full-viewport navigation overlay instead of a compressed or hidden desktop sidebar.
+
+The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally, and the graph stacks above its inspector.
+
+When the desktop TOC rail no longer fits, an `On this page` row expands its existing links in a bounded scrolling panel. On mobile it stays below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
+
 ## Renders the graph workspace
 
-The graph route serves a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
+Graph mode consumes a cached projection of documents, source targets, and code mentions with stable nodes and weighted directed edges. Section links collapse into their owning document rather than producing section nodes.
 
 The client renders a 50/50 graph and inspector. The logo, active Graph toggle, and semantic filter float over the full-height graph while Git and page Search buttons are hidden. The right panel begins with the selected node preview and has no inspector toolbar.
 
-The graph button replaces the current route instead of navigating through browser history. Toggling it off opens the selected node's normal URL, activating the selected Markdown file in the tree for document nodes.
+The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
+
+Plain document, section, source, and code-reference links navigate through their normal URLs without leaving Graph, so Back and Forward work without mode-specific history. Relative fragments resolve against the previewed document without refetching its content.
 
 Document and code radii grow only with incoming references. Every rendered label stays white over an 80%-opaque black plate with a text shadow in normal, selected, and hover states.
 
@@ -109,7 +123,7 @@ Git worktrees show cached HEAD changes as yellow modified or green new-file mark
 
 Every rendered block in a new Markdown file inherits the added state, including headings, unordered and ordered lists with their markers, and fenced code blocks.
 
-Blocks with less than 20% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
+Blocks with less than 60% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
 
 Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.
 
@@ -151,4 +165,6 @@ The document API rejects traversal and non-Markdown targets so browser requests 
 
 ## Launches the browser after the server starts
 
-`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.
+`lat ui` prefers loopback port 4242, advances when an implicit default is occupied, and starts listening before passing the final URL to the platform browser launcher.
+
+An explicit `--port <number>` accepts 1–65535 and fails clearly rather than selecting another port when occupied. Startup reports the URL and points users to `lat ui build` for static export.
