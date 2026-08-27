@@ -108,13 +108,12 @@ Cross-platform correctness relies on two conventions: stored paths are always PO
 
 ## Website Development
 
-The [[website]] is outside the root pnpm workspace, so install, run, and build it from its own directory.
+The [[website]] is a root pnpm workspace package because its build compiles Lat and exports the repository vault before Next.js runs.
 
 ```bash
-cd website
 pnpm install --frozen-lockfile
-pnpm dev
-pnpm build
+pnpm --filter lat-md-website dev
+pnpm --filter lat-md-website build
 ```
 
 ## File Walking
