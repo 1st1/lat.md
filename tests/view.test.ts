@@ -684,6 +684,9 @@ describe('lat ui', () => {
     );
     expect(styles).toContain('.external-link-icon');
     expect(styles).toContain('-webkit-mask:');
+    expect(styles.match(/\.markdown a\s*\{([^}]*)\}/)?.[1]).toContain(
+      'text-decoration-line: underline;',
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
@@ -922,10 +925,18 @@ describe('lat ui', () => {
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
     );
-    const leadingRule = styles.match(/\.code-link-leading\s*\{([^}]*)\}/)?.[1];
+    const leadingRule = styles.match(
+      /^\.code-link-leading\s*\{([^}]*)\}/m,
+    )?.[1];
     expect(leadingRule).toContain('display: inline-flex;');
     expect(leadingRule).toContain('align-items: baseline;');
     expect(leadingRule).toContain('white-space: nowrap;');
+    expect(styles).toContain(
+      'a.wiki-link-segmented .wiki-link-context,\na.wiki-link-segmented .wiki-link-leaf,',
+    );
+    expect(styles).toContain(
+      'a.wiki-link-code:not(.wiki-link-segmented) .code-link-leading',
+    );
 
     for (const referenceCount of [0, 1]) {
       const sparseReferences = await renderMarkdown(
