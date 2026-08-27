@@ -2002,6 +2002,7 @@ a.wiki-link-active {
     min-height: 56px;
     padding: 0 var(--mobile-gutter);
     background: color-mix(in srgb, var(--background) 94%, transparent);
+    border-top: 0;
     border-right: 0;
     border-left: 0;
     border-radius: 0;

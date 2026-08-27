@@ -848,6 +848,9 @@ describe('lat ui', () => {
     expect(styles).toMatch(
       /@media \(max-width: 1340px\)[\s\S]*?\.document-layout \{[\s\S]*?align-items: stretch;/,
     );
+    expect(styles).toMatch(
+      /@media \(width < 64rem\)[\s\S]*?\.document-toc-toggle \{[\s\S]*?border-top: 0;/,
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
