@@ -29,6 +29,10 @@ Any existing output path is rejected before snapshot work begins, including an e
 
 The generated marker excludes the entire artifact from both ripgrep and fallback code-reference scans, preventing exported JSON and bundles from polluting project checks or search.
 
+## Builds the website wiki from published embedding packages
+
+Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
+
 ## Renders Markdown with navigable local links
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments.

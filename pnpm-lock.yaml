@@ -144,6 +144,12 @@ importers:
         specifier: ^19.0.0
         version: 19.2.4(react@19.2.4)
     devDependencies:
+      '@lat.md/embed':
+        specifier: npm:@lat.md/embed@0.2.0
+        version: 0.2.0
+      '@lat.md/embed-minilm-fp16':
+        specifier: npm:@lat.md/embed-minilm-fp16@0.1.0
+        version: 0.1.0
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
@@ -575,6 +581,12 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@lat.md/embed-minilm-fp16@0.1.0':
+    resolution: {integrity: sha512-lEKi+i+FmrwkehRCAGrEoJWPvj3bEWrRaXzQGI7EbdW6V/OadCyNRtQyta9Fu/sb/JgQXGXddhEDd9y63nTOig==}
+
+  '@lat.md/embed@0.2.0':
+    resolution: {integrity: sha512-Q5M8w0jBQTXY/iQ6+iV1fb8UCByr5xoqtP+G6R844OTyze0Joe19AhHtz8i/Ei8hfHwS2EhBd1Mdjw7L1vnyVw==}
 
   '@libsql/client@0.17.0':
     resolution: {integrity: sha512-TLjSU9Otdpq0SpKHl1tD1Nc9MKhrsZbCFGot3EbCxRa8m1E5R1mMwoOjKMMM31IyF7fr+hPNHLpYfwbMKNusmg==}
@@ -2355,6 +2367,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@lat.md/embed-minilm-fp16@0.1.0': {}
+
+  '@lat.md/embed@0.2.0': {}
 
   '@libsql/client@0.17.0':
     dependencies:

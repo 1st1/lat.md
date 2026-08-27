@@ -2,7 +2,9 @@
 
 Standalone Next.js app in `website/`. Deployed to Vercel at `lat.md`.
 
-The app keeps its own package and TypeScript configuration but belongs to the root pnpm workspace so its build can compile Lat and export the vault. It is never included in the npm package's `dist`.
+The app belongs to the root pnpm workspace but is never included in the npm package's `dist`.
+
+Its wiki prebuild compiles the current Lat CLI and UI source while resolving the embedding engine and model from pinned npm releases. Vercel therefore avoids the workspace Rust, WASM, and model builds.
 
 ## Current State
 

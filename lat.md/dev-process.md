@@ -30,7 +30,7 @@ Ripgrep is optional but recommended for faster source-reference scans; [[dev-pro
 
 TypeScript ESM project with a Rust-to-WASM embedding engine. Local development mirrors CI so package builds and tests exercise the complete published toolchain.
 
-The root workspace contains the TypeScript CLI, the `@lat.md/embed` Rust/WASM engine, and the `@lat.md/embed-minilm-fp16` model package. The `website/` Next.js app is a separate project with its own lockfile.
+The root workspace contains the TypeScript CLI, the `@lat.md/embed` Rust/WASM engine, the `@lat.md/embed-minilm-fp16` model package, and the `website/` Next.js app.
 
 ## Package Manager
 
@@ -109,6 +109,8 @@ Cross-platform correctness relies on two conventions: stored paths are always PO
 ## Website Development
 
 The [[website]] is a root pnpm workspace package because its build compiles Lat and exports the repository vault before Next.js runs.
+
+Website builds resolve the embedding engine and model from pinned npm releases through a dedicated TypeScript config. They compile the current CLI and UI without running the workspace Rust, WASM, or model builders.
 
 ```bash
 pnpm install --frozen-lockfile

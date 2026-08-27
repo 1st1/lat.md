@@ -337,6 +337,41 @@ describe('lat ui', () => {
     }
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Builds the website wiki from published embedding packages]]
+  it('builds the website wiki without compiling workspace embedding packages', () => {
+    const repositoryRoot = join(import.meta.dirname, '..');
+    const websitePackage = JSON.parse(
+      readFileSync(join(repositoryRoot, 'website', 'package.json'), 'utf8'),
+    ) as {
+      devDependencies: Record<string, string>;
+    };
+    expect(websitePackage.devDependencies).toMatchObject({
+      '@lat.md/embed': 'npm:@lat.md/embed@0.2.0',
+      '@lat.md/embed-minilm-fp16': 'npm:@lat.md/embed-minilm-fp16@0.1.0',
+    });
+
+    const buildConfig = JSON.parse(
+      readFileSync(
+        join(repositoryRoot, 'website', 'tsconfig.lat-build.json'),
+        'utf8',
+      ),
+    ) as {
+      compilerOptions: { paths: Record<string, string[]> };
+    };
+    expect(buildConfig.compilerOptions.paths).toEqual({
+      '@lat.md/embed': ['./node_modules/@lat.md/embed'],
+      '@lat.md/embed-minilm-fp16': ['./node_modules/@lat.md/embed-minilm-fp16'],
+    });
+
+    const buildScript = readFileSync(
+      join(repositoryRoot, 'website', 'scripts', 'build-wiki.mjs'),
+      'utf8',
+    );
+    expect(buildScript).toContain('tsconfig.lat-build.json');
+    expect(buildScript).toContain("'build:view'");
+    expect(buildScript).not.toContain("'buildall'");
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
     const shell = await fetch(new URL('/graph', view.url));

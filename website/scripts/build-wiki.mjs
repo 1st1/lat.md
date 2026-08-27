@@ -69,7 +69,20 @@ const pnpmCommand = packageManager
 
 await run(
   pnpmCommand.command,
-  [...pnpmCommand.args, '--dir', projectRoot, 'build'],
+  [
+    ...pnpmCommand.args,
+    '--dir',
+    projectRoot,
+    'exec',
+    'tsc',
+    '--project',
+    join(websiteRoot, 'tsconfig.lat-build.json'),
+  ],
+  projectRoot,
+);
+await run(
+  pnpmCommand.command,
+  [...pnpmCommand.args, '--dir', projectRoot, 'build:view'],
   projectRoot,
 );
 
