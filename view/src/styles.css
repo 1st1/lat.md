@@ -132,8 +132,9 @@ a {
 }
 
 .brand {
-  display: inline-block;
+  display: inline-flex;
   min-width: 0;
+  align-items: center;
   overflow: hidden;
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -143,6 +144,13 @@ a {
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 21px;
+  flex: none;
 }
 
 .brand span {
@@ -1852,6 +1860,10 @@ a.wiki-link-active {
     font-size: 18px;
   }
 
+  .sidebar-header .brand-logo {
+    height: 18px;
+  }
+
   .sidebar-actions {
     gap: 5px;
   }
@@ -2035,6 +2047,10 @@ a.wiki-link-active {
 
   .graph-header .brand {
     font-size: 18px;
+  }
+
+  .graph-header .brand-logo {
+    height: 18px;
   }
 
   .graph-header .sidebar-search,

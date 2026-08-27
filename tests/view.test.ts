@@ -178,6 +178,19 @@ describe('lat ui', () => {
     const searchShell = await fetch(new URL('/search', view.url));
     expect(searchShell.status).toBe(200);
     expect(await searchShell.text()).toContain('lat ui shell');
+
+    const app = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'App.tsx'),
+      'utf8',
+    );
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(app).toContain('../../website/public/logo.svg?url');
+    expect(app).toContain('brandText === DEFAULT_VIEW_LOGO_TEXT');
+    expect(app).toContain('<BrandText text={brandText} />');
+    expect(styles).toContain('.brand-logo');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]

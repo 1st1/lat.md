@@ -6,7 +6,7 @@
 
 [[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on loopback port 4242 and launches the browser without a shell. An occupied default advances to the next available port; an explicit `--port` is strict and reports the conflict.
 
-`--logo-text` overrides the top-left `lat.md` label as plain text for both the live server and static export; omitting it preserves the default.
+The website's Lat wordmark is the default top-left brand in both clients. `--logo-text` replaces it with safely rendered plain text for the live server or static export.
 
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
@@ -22,7 +22,7 @@ The export preserves the file tree, rendered Markdown, wiki and ordinary Markdow
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
 
-The manifest stores the selected logo text with the document index so the static client renders the same branding as the live server.
+The manifest stores the selected logo text with the document index so the static client renders the default wordmark or the same plain-text override as the live server.
 
 The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git and search controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
 

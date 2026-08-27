@@ -11,7 +11,7 @@ Functional specifications for the browser server, static export, client navigati
 
 The loopback server exposes the visible Markdown index, redirects its root to the vault index, and serves the client shell for document routes.
 
-`lat ui --logo-text <text>` replaces the top-left `lat.md` label with safely rendered plain text; omitting the option preserves the default.
+By default the header renders the same Lat wordmark as the website. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
 ## Builds a static deployment
 
@@ -21,7 +21,7 @@ The static client keeps Markdown and wiki navigation, backlinks, validation, sou
 
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
 
-`lat ui build --logo-text <text>` persists the same label override in the static manifest.
+`lat ui build --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the website wordmark.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
 
