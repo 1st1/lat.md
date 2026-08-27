@@ -1898,6 +1898,10 @@ a.wiki-link-active {
     left: 0;
   }
 
+  .document-toc-states {
+    padding-right: 14px;
+  }
+
   .markdown {
     grid-area: document;
     min-width: 0;
