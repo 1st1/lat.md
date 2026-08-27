@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { mkdtempSync, rmSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 import { rmDirBestEffort } from './util.js';
@@ -17,6 +17,15 @@ import { runSearch } from '../src/cli/search.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
 import type { Client } from '@libsql/client';
 import type { Server } from 'node:http';
+
+// Passthrough spy on `readFile` so the indexing test below can count how many
+// times each lat.md file is read. Every other test sees the real implementation.
+const { readFileSpy } = vi.hoisted(() => ({ readFileSpy: vi.fn() }));
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
+  readFileSpy.mockImplementation(actual.readFile);
+  return { ...actual, readFile: readFileSpy };
+});
 
 // --- Unit tests: provider detection (now lives in @lat.md/embed) ---
 
@@ -242,5 +251,50 @@ describe.skipIf(!canRunHosted)('search (rag, hosted replay)', () => {
       embedder,
     );
     expect(results[0].id).toContain('Authentication');
+  });
+});
+
+// --- Indexing reads each file once ---
+//
+// Section text is sliced out of its file by line range. Reading the file per
+// section is O(sections x file size): a 3.5 MB tests.md holding 12k sections
+// was re-read 12k times on every search (~95 s before the query even ran).
+
+describe('search (rag, file reads)', () => {
+  let latDir: string;
+  let db: Client;
+  let embedder: Embedder;
+
+  beforeAll(async () => {
+    embedder = await createEmbedder({ model: minilm });
+    latDir = copyFixture();
+    db = openDb(latDir);
+    await ensureMeta(db);
+    await ensureSectionsSchema(db, embedder.dimensions);
+  });
+
+  afterAll(async () => {
+    if (db) await closeDb(db);
+    if (latDir) rmDirBestEffort(join(latDir, '..'));
+  });
+
+  // @lat: [[search#RAG Tests#Reads each file once when indexing]]
+  it('reads each file once when indexing', async () => {
+    readFileSpy.mockClear();
+    const stats = await indexSections(latDir, db, embedder);
+    expect(stats.added).toBe(9);
+
+    const readsPerFile = new Map<string, number>();
+    for (const [path] of readFileSpy.mock.calls) {
+      const file = String(path);
+      if (!file.endsWith('.md')) continue;
+      readsPerFile.set(file, (readsPerFile.get(file) ?? 0) + 1);
+    }
+    expect(readsPerFile.size).toBe(2);
+    // The parser reads each file once; slicing section text must reuse a
+    // single read per file, never one per section (5 and 4 in this fixture).
+    for (const [file, reads] of readsPerFile) {
+      expect(reads, `${file} read ${reads} times`).toBeLessThanOrEqual(2);
+    }
   });
 });

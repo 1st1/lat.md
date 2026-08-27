@@ -392,7 +392,9 @@ Implementation: [[src/search/db.ts]]
 
 ### Indexing
 
-Sections are extracted via `loadAllSections()` + `flattenSections()`. For each section, the raw markdown between `startLine` and `endLine` is read (not just `firstParagraph`) for richer semantic signal.
+Sections come from `loadAllSections()` + `flattenSections()`. Each file is read once ([[src/search/index.ts#loadFileLines]]) and each section's raw markdown (`startLine`–`endLine`, not just `firstParagraph`) is sliced from it for richer semantic signal.
+
+Never read per section: that is O(sections × file size), and a 3.5 MB file holding 12k sections cost ~95 s per search before the query even ran.
 
 Content freshness is tracked via SHA-256 hashes. On each run:
 
