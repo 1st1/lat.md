@@ -51,7 +51,7 @@
     background: #000;
     --background: #000;
     --panel: #0a0a0a;
-    --sidebar: #141414;
+    --sidebar: #000;
     --sidebar-selection: #333;
     --panel-border: #262626;
     --text: #ededed;
@@ -117,7 +117,7 @@ a {
   padding: 28px 18px;
   overflow-y: auto;
   background: var(--sidebar);
-  border-right: 1px solid var(--panel-border);
+  border-right: 0;
 }
 
 .sidebar-header {
