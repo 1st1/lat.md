@@ -1091,6 +1091,7 @@ a {
 
 .markdown a {
   overflow-wrap: anywhere;
+  text-decoration-line: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
@@ -1200,8 +1201,9 @@ a.wiki-link-segmented {
   text-decoration: none;
 }
 
-a.wiki-link-segmented > .wiki-link-context,
-a.wiki-link-segmented > .wiki-link-leaf {
+a.wiki-link-segmented .wiki-link-context,
+a.wiki-link-segmented .wiki-link-leaf,
+a.wiki-link-code:not(.wiki-link-segmented) .code-link-leading {
   text-decoration-line: underline;
   text-decoration-color: currentColor;
   text-decoration-thickness: 1px;
@@ -1894,6 +1896,10 @@ a.wiki-link-active {
     top: 100%;
     right: 0;
     left: 0;
+  }
+
+  .document-toc-states {
+    padding-right: 14px;
   }
 
   .markdown {

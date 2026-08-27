@@ -72,6 +72,8 @@ Markdown and source metadata rows align with the sidebar header, while source me
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
 
+Rendered link text is always underlined. Segmented wiki and source links underline muted context and active targets separately so each line matches its text color; language badges, reference counts, and external-link icons remain undecorated.
+
 Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
 
 TOC entries show an orange disc when their section contains a rendered Git change and a red disc when it owns validation errors. Git discs follow the Git visibility toggle; error discs remain visible.
