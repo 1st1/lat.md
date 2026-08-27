@@ -83,7 +83,7 @@ Documents expose [[markdown#Frontmatter#require-code-mention]] separately from r
 
 Resolved Markdown sections and validated source definitions become client-side links, while unresolved wiki targets remain authored text.
 
-Unaliased code links show a language badge and visually separate muted path context from the final target.
+Code links show a language badge bound to the label's first word so it cannot wrap alone, while unaliased links visually separate muted path context from the final target.
 
 Every resolved wiki link shows the total number of distinct reference locations for its canonical target. The current paragraph counts once, duplicate links in one paragraph do not inflate the total, and section totals include `@lat:` code references.
 

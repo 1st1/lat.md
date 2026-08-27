@@ -1263,6 +1263,12 @@ a.wiki-link-segmented > .wiki-link-leaf {
   border-radius: 3px;
 }
 
+.code-link-leading {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
 a.wiki-link-active {
   padding: 0.12em 0.28em;
   margin: -0.12em -0.28em;

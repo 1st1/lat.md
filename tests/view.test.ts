@@ -888,16 +888,26 @@ describe('lat ui', () => {
     expect(document.html).toContain(
       'class="code-link-language code-language-ts"',
     );
+    expect(document.html).toContain('class="code-link-leading"');
     expect(document.html).toContain('aria-hidden="true"');
     expect(document.html).toContain(
       '<span class="wiki-link-leaf">run</span><span class="wiki-link-ref-count" aria-label="2 references">2</span>',
     );
     expect(document.html).toContain(
-      'runner file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+      'runner</span> file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
     );
     expect(document.html).toContain(
-      'same file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
+      'same</span> file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
     );
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    const leadingRule = styles.match(/\.code-link-leading\s*\{([^}]*)\}/)?.[1];
+    expect(leadingRule).toContain('display: inline-flex;');
+    expect(leadingRule).toContain('align-items: baseline;');
+    expect(leadingRule).toContain('white-space: nowrap;');
 
     for (const referenceCount of [0, 1]) {
       const sparseReferences = await renderMarkdown(
