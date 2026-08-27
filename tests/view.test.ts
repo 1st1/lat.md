@@ -849,6 +849,18 @@ describe('lat ui', () => {
       /@media \(max-width: 1340px\)[\s\S]*?\.document-layout \{[\s\S]*?align-items: stretch;/,
     );
     expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?grid-template-areas:[\s\S]*?'metadata toc'[\s\S]*?'document document'/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.sidebar-header \{[\s\S]*?min-height: 42px;[\s\S]*?\.document-toc-toggle \{[\s\S]*?min-height: 42px;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc-list \{[\s\S]*?position: absolute;[\s\S]*?top: 100%;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc \{[^}]*position: relative;[^}]*top: 0;/,
+    );
+    expect(styles).toMatch(
       /@media \(width < 64rem\)[\s\S]*?\.document-toc-toggle \{[\s\S]*?border-top: 0;/,
     );
   });

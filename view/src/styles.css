@@ -1849,6 +1849,59 @@ a.wiki-link-active {
   }
 }
 
+@media (min-width: 64rem) and (max-width: 1340px) {
+  .sidebar-header {
+    min-height: 42px;
+  }
+
+  .document-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 286px);
+    grid-template-areas:
+      'metadata toc'
+      'document document';
+    column-gap: var(--document-toc-gutter);
+    row-gap: 34px;
+    align-items: start;
+  }
+
+  .document-column {
+    display: contents;
+  }
+
+  .document-header {
+    grid-area: metadata;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .document-metadata,
+  .document-toc-toggle {
+    min-height: 42px;
+  }
+
+  .document-toc {
+    grid-area: toc;
+    position: relative;
+    z-index: 1;
+    top: 0;
+    max-width: 286px;
+    margin: 0;
+  }
+
+  .document-toc-list {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+  }
+
+  .markdown {
+    grid-area: document;
+    min-width: 0;
+  }
+}
+
 @media (width < 64rem) {
   body.mobile-navigation-open {
     overflow: hidden;
