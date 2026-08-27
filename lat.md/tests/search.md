@@ -52,6 +52,14 @@ Re-index unchanged content, verify all sections reported as unchanged with zero 
 
 Remove `testing.md`, re-index, verify 4 sections removed and 5 architecture sections remain.
 
+### Reads each file once when indexing
+
+A passthrough `readFile` spy verifies indexing reads each `lat.md` file a bounded number of times
+however many sections it holds: the parser reads it once and section slicing reuses that read.
+
+Before this was pinned, a 3.5 MB file holding 12k sections was re-read once per section — 12k
+times on every search.
+
 ### Rebuilds a legacy cache with no recorded model
 
 Seed a 1536-dim `sections` table with rows but no `meta.embedding_model`, then run a local-backed

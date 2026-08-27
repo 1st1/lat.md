@@ -9,14 +9,33 @@ function hashContent(text: string): string {
   return createHash('sha256').update(text).digest('hex');
 }
 
-async function sectionContent(
-  section: Section,
+/**
+ * Read each lat.md file once, keyed by project-relative path. Section text is
+ * sliced from these lines by range: reading the file per section instead is
+ * O(sections × file size) — a 3.5 MB file holding 12k sections was re-read 12k
+ * times (~42 GB of string work) on every search.
+ */
+async function loadFileLines(
+  sections: Section[],
   projectRoot: string,
-): Promise<string> {
-  const filePath = join(projectRoot, section.filePath);
-  const content = await readFile(filePath, 'utf-8');
-  const lines = content.split('\n');
-  return lines.slice(section.startLine - 1, section.endLine).join('\n');
+): Promise<Map<string, string[]>> {
+  const lines = new Map<string, string[]>();
+  for (const { filePath } of sections) {
+    if (lines.has(filePath)) continue;
+    const content = await readFile(join(projectRoot, filePath), 'utf-8');
+    lines.set(filePath, content.split('\n'));
+  }
+  return lines;
+}
+
+function sectionContent(
+  section: Section,
+  lines: Map<string, string[]>,
+): string {
+  return lines
+    .get(section.filePath)!
+    .slice(section.startLine - 1, section.endLine)
+    .join('\n');
 }
 
 export type IndexStats = {
@@ -41,8 +60,9 @@ export async function indexSections(
     string,
     { section: Section; content: string; hash: string }
   >();
+  const lines = await loadFileLines(flat, projectRoot);
   for (const s of flat) {
-    const text = await sectionContent(s, projectRoot);
+    const text = sectionContent(s, lines);
     current.set(s.id, { section: s, content: text, hash: hashContent(text) });
   }
 
