@@ -39,6 +39,7 @@ const CODE_LINK_CLASSES = [
   'wiki-link-code',
   'wiki-link-active',
   'code-link-language',
+  'code-link-leading',
   'code-language-ts',
   'code-language-js',
   'code-language-py',
@@ -222,6 +223,37 @@ function languageIcon(language: {
     },
     children: [{ type: 'text', value: language.label }],
   } as RootContent;
+}
+
+function codeLinkContent(
+  language: { className: string; label: string },
+  children: RootContent[],
+): RootContent[] {
+  const [first, ...rest] = children;
+  if (!first) return [languageIcon(language)];
+
+  let leading = first;
+  let remainder: RootContent | null = null;
+  if (first.type === 'text') {
+    const breakAt = first.value.search(/\s/);
+    if (breakAt > 0) {
+      leading = { ...first, value: first.value.slice(0, breakAt) };
+      remainder = { ...first, value: first.value.slice(breakAt) };
+    }
+  }
+
+  return [
+    {
+      type: 'emphasis',
+      data: {
+        hName: 'span',
+        hProperties: { className: ['code-link-leading'] },
+      },
+      children: [languageIcon(language), leading],
+    } as RootContent,
+    ...(remainder ? [remainder] : []),
+    ...rest,
+  ];
 }
 
 function externalLinkIcon(): PhrasingContent {
@@ -440,8 +472,9 @@ export async function renderMarkdown(
               }
             : undefined,
         children: [
-          ...(language ? [languageIcon(language)] : []),
-          ...content.children,
+          ...(language
+            ? codeLinkContent(language, content.children)
+            : content.children),
           ...(referenceCount > 1 ? [referenceCountBadge(referenceCount)] : []),
         ],
       } as RootContent;
