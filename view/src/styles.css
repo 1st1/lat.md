@@ -52,7 +52,7 @@
     --background: #000;
     --panel: #0a0a0a;
     --sidebar: #000;
-    --sidebar-selection: #333;
+    --sidebar-selection: #242424;
     --panel-border: #262626;
     --text: #ededed;
     --muted: #888;
@@ -353,10 +353,13 @@ a {
 }
 
 .main {
+  --document-gutter: clamp(28px, 3vw, 48px);
+  --document-toc-gutter: calc(var(--document-gutter) + 16px);
+
   width: 100%;
   max-width: 1280px;
   min-width: 0;
-  padding: 28px clamp(28px, 6vw, 82px) 100px;
+  padding: 28px var(--document-gutter) 100px;
 }
 
 .main.restoring-history-scroll {
@@ -372,7 +375,7 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 760px) 286px;
   grid-template-areas: 'document toc';
-  gap: clamp(28px, 3vw, 48px);
+  gap: var(--document-toc-gutter);
   align-items: start;
 }
 
