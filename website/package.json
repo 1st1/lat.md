@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "build:wiki": "node scripts/build-wiki.mjs",
+    "predev": "pnpm build:wiki",
     "dev": "next dev",
+    "prebuild": "pnpm build:wiki",
     "build": "next build",
     "start": "next start"
   },
