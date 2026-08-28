@@ -769,6 +769,19 @@ describe('lat ui', () => {
     expect(footnotes.html).toContain('data-footnote-backref');
     expect(footnotes.html).not.toContain('href="Supporting');
 
+    const emoji = await renderMarkdown(
+      'Ship it :shipit: :+1:, leave :not-a-real-emoji: alone.',
+      'guide.md',
+    );
+    expect(emoji.html).toContain('aria-label="+1 emoji"');
+    expect(emoji.html).toContain('role="img"');
+    expect(emoji.html).toContain(
+      'src="https://github.githubassets.com/images/icons/emoji/shipit.png?v8"',
+    );
+    expect(emoji.html).toContain('alt=":shipit:" class="markdown-emoji"');
+    expect(emoji.html).toContain(':not-a-real-emoji:');
+    expect(emoji.html).toContain('<p>Ship it <img');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -785,6 +798,7 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown details');
     expect(styles).toContain('.markdown .markdown-alert-caution');
     expect(styles).toContain('[data-footnotes]');
+    expect(styles).toContain('img.markdown-emoji');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

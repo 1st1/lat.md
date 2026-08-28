@@ -1458,6 +1458,12 @@ a.wiki-link-active {
   max-width: 100%;
 }
 
+.markdown img.markdown-emoji {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
+}
+
 .markdown hr {
   margin: 2.5em 0;
   border: 0;

@@ -34,6 +34,10 @@ GitHub alert blockquotes for `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION
 
 GitHub footnote references and definitions render as linked superscripts, a notes section, and return links while retaining their labels and definitions during serialization.
 
+## Emoji Shortcodes
+
+GitHub-style `:name:` emoji shortcodes render as accessible Unicode emoji or GitHub's custom emoji images, while unknown names and source serialization remain unchanged.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

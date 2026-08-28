@@ -30,6 +30,8 @@ A sourced statement uses a footnote.[^source]
 
 [^source]: Supporting detail for the statement.
 
+Emoji shortcodes stay authored as :tada: and :shipit:.
+
 ![alt text](image.png)
 
 > A blockquote paragraph.

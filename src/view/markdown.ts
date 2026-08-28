@@ -11,6 +11,7 @@ import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
+import remarkEmoji from 'remark-emoji';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
@@ -66,6 +67,29 @@ const ALERT_CLASSES = [
   'markdown-alert-title',
   ...ALERT_KINDS.map((kind) => `markdown-alert-${kind}`),
 ];
+const GITHUB_CUSTOM_EMOJI = new Set([
+  'atom',
+  'basecamp',
+  'basecampy',
+  'bowtie',
+  'electron',
+  'feelsgood',
+  'finnadie',
+  'fishsticks',
+  'fu',
+  'goberserk',
+  'godmode',
+  'hurtrealbad',
+  'neckbeard',
+  'octocat',
+  'rage1',
+  'rage2',
+  'rage3',
+  'rage4',
+  'shipit',
+  'suspect',
+  'trollface',
+]);
 
 function classAttributes(
   tag: string,
@@ -124,7 +148,7 @@ const sanitizeSchema: SanitizeSchema = {
     h4: classAttributes('h4'),
     h5: classAttributes('h5'),
     h6: classAttributes('h6'),
-    img: classAttributes('img'),
+    img: classAttributes('img', ['markdown-emoji']),
     input: [...(defaultSchema.attributes?.input ?? []), ['checked', true]],
     ins: classAttributes('ins'),
     li: classAttributes('li'),
@@ -135,6 +159,7 @@ const sanitizeSchema: SanitizeSchema = {
       ...(defaultSchema.attributes?.span ?? []),
       'ariaHidden',
       'ariaLabel',
+      'role',
       [
         'className',
         'wiki-link-context',
@@ -156,6 +181,41 @@ const htmlProcessor = unified()
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeSlug)
   .use(rehypeStringify);
+
+const emojiProcessor = unified().use(remarkEmoji, { accessible: true });
+
+function transformCustomEmoji(tree: Root): void {
+  visit(tree, 'text', (node, index, parent) => {
+    if (index === undefined || !parent || !node.value.includes(':')) return;
+    const pattern = /:([a-z0-9_+-]+):/g;
+    const children: PhrasingContent[] = [];
+    let cursor = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(node.value))) {
+      if (!GITHUB_CUSTOM_EMOJI.has(match[1])) continue;
+      if (match.index > cursor) {
+        children.push({
+          type: 'text',
+          value: node.value.slice(cursor, match.index),
+        });
+      }
+      children.push({
+        type: 'image',
+        url: `https://github.githubassets.com/images/icons/emoji/${match[1]}.png?v8`,
+        alt: match[0],
+        title: null,
+        data: { hProperties: { className: ['markdown-emoji'] } },
+      });
+      cursor = match.index + match[0].length;
+    }
+    if (children.length === 0) return;
+    if (cursor < node.value.length) {
+      children.push({ type: 'text', value: node.value.slice(cursor) });
+    }
+    parent.children.splice(index, 1, ...children);
+    return index + children.length;
+  });
+}
 
 function nodeText(node: { value?: unknown; children?: unknown }): string {
   if (typeof node.value === 'string') return node.value;
@@ -431,6 +491,8 @@ export async function renderMarkdown(
 ): Promise<{ html: string; title: string }> {
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
+  await emojiProcessor.run(tree);
+  transformCustomEmoji(tree);
   transformAlerts(tree);
   if (options.errors) markMarkdownErrors(tree, options.errors);
 
