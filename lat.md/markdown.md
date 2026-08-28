@@ -16,6 +16,10 @@ GitHub-flavored single- or double-tilde delimiters render obsolete text with sem
 
 GitHub-flavored checked and unchecked list markers render as accessible, read-only checkboxes while remaining ordinary Markdown list structure for parsing and serialization.
 
+## Bare Autolinks
+
+GitHub-flavored bare HTTP(S), `www.`, and email addresses become links without requiring angle brackets or explicit Markdown link syntax.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

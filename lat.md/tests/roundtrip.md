@@ -8,4 +8,4 @@ Must be updated whenever the wiki link syntax or markdown rendering changes. If 
 
 The roundtrip fixture exercises all supported markdown and wiki link syntax features.
 
-Headings (all 6 levels), paragraphs, emphasis, strong, strong emphasis, strikethrough, inline code, fenced code blocks (with and without language), links (inline and reference-style), images (standalone and inline), blockquotes (including nested), ordered, unordered, and task lists, thematic breaks, hard line breaks, escaped characters, GitHub-flavored tables, and every wiki link variation: `[[file]]`, `[[file#Heading]]`, `[[file#H1#H2]]`, `[[path/file#H1#H2]]`, each with and without aliases.
+Headings (all 6 levels), paragraphs, emphasis, strong, strong emphasis, strikethrough, inline code, fenced code blocks (with and without language), explicit and bare links, images (standalone and inline), blockquotes (including nested), ordered, unordered, and task lists, thematic breaks, hard line breaks, escaped characters, GitHub-flavored tables, and every wiki link variation: `[[file]]`, `[[file#Heading]]`, `[[file#H1#H2]]`, `[[path/file#H1#H2]]`, each with and without aliases.

@@ -712,6 +712,21 @@ describe('lat ui', () => {
       '<input type="checkbox" disabled> Follow up',
     );
 
+    const autolinks = await renderMarkdown(
+      'Visit https://example.com, www.example.org, or email docs@example.com.',
+      'guide.md',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="https://example.com" class="external-link">',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="http://www.example.org" class="external-link">',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="mailto:docs@example.com">docs@example.com</a>',
+    );
+    expect(autolinks.html.match(/class="external-link-icon"/g)).toHaveLength(2);
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',

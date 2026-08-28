@@ -24,6 +24,8 @@ A paragraph with ~~obsolete guidance~~ struck out.
 
 A paragraph with `inline code` and a [link](https://example.com) and an [aliased link](https://example.com "Link Title").
 
+Bare autolinks include https://example.com, www.example.org, and docs@example.com.
+
 ![alt text](image.png)
 
 > A blockquote paragraph.
