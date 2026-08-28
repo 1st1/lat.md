@@ -58,6 +58,7 @@ export type ViewGraphNode = {
   symbol?: string;
   line?: number;
   snippet?: string;
+  externalTarget?: string;
   gitStatus?: ViewGitFileStatus;
   errorCount?: number;
 };
@@ -149,6 +150,18 @@ export type ViewSourceDocument = {
   context: ViewSourceReference | null;
   otherReferences: ViewSourceReference[];
 };
+
+export type ViewExternalDocument =
+  | {
+      kind: 'markdown';
+      target: string;
+      document: ViewDocument;
+    }
+  | {
+      kind: 'source';
+      target: string;
+      source: ViewSourceDocument;
+    };
 
 export type ViewError = {
   error: string;

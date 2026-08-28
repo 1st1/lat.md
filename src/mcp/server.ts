@@ -10,6 +10,7 @@ import { searchCommand } from '../cli/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
+import { externalListCommand, externalShowCommand } from '../cli/external.js';
 
 function toMcp(result: CmdResult) {
   const content = [{ type: 'text' as const, text: result.output }];
@@ -44,9 +45,11 @@ export async function startMcpServer(): Promise<void> {
 
   server.tool(
     'lat_section',
-    'Show a section with its content, outgoing wiki link targets, and incoming references',
+    'Show a local section or exact external target with content and references',
     {
-      query: z.string().describe('Section id to look up (short or full form)'),
+      query: z
+        .string()
+        .describe('Local section id or exact handle:path#fragment target'),
     },
     async ({ query }) => toMcp(await sectionCommand(ctx, query)),
   );
@@ -93,6 +96,22 @@ export async function startMcpServer(): Promise<void> {
     },
     async ({ query, scope }) =>
       toMcp(await refsCommand(ctx, query, scope as Scope)),
+  );
+
+  server.tool(
+    'lat_external_list',
+    'List configured external sources without fetching or changing caches',
+    {},
+    async () => toMcp(await externalListCommand(ctx, true)),
+  );
+
+  server.tool(
+    'lat_external_show',
+    'Show one configured external source or exact external target without fetching it',
+    {
+      source: z.string().describe('External source handle or exact target'),
+    },
+    async ({ source }) => toMcp(await externalShowCommand(ctx, source, true)),
   );
 
   const transport = new StdioServerTransport();

@@ -79,6 +79,7 @@ export type ViewReferenceIndex = {
   incomingBySection: ReadonlyMap<string, readonly IndexedBackReference[]>;
   sourceByTarget: ReadonlyMap<string, readonly IndexedMarkdownReference[]>;
   sourceReferenceCounts: ReadonlyMap<string, number>;
+  externalByTarget: ReadonlyMap<string, readonly IndexedBackReference[]>;
 };
 
 function inlineText(node: RootContent | WikiLink): string {
@@ -285,6 +286,7 @@ export function buildViewReferenceIndex(
   markdownFiles: Iterable<ViewParsedMarkdownFile>,
   codeFiles: Iterable<ViewCodeReferenceFile>,
   allSections: Section[],
+  isExternalTarget?: (target: string) => boolean,
 ): ViewReferenceIndex {
   const files = [...markdownFiles].sort((a, b) => a.path.localeCompare(b.path));
   const sections = flattenSections(allSections);
@@ -306,6 +308,7 @@ export function buildViewReferenceIndex(
     string,
     Map<string, IndexedMarkdownReference>
   >();
+  const externalByTarget = new Map<string, Map<string, IndexedBackReference>>();
   const addIncoming = (
     targetId: string,
     key: string,
@@ -331,6 +334,18 @@ export function buildViewReferenceIndex(
     }
     if (!references.has(key)) references.set(key, reference);
   };
+  const addExternalReference = (
+    target: string,
+    key: string,
+    reference: IndexedBackReference,
+  ) => {
+    let references = externalByTarget.get(target);
+    if (!references) {
+      references = new Map();
+      externalByTarget.set(target, references);
+    }
+    if (!references.has(key)) references.set(key, reference);
+  };
 
   for (const file of files) {
     const fileSections = flattenSections(file.sections).sort(
@@ -348,6 +363,9 @@ export function buildViewReferenceIndex(
         activeWikiLink: ref.target,
       };
       const locationKey = `markdown:${section.filePath}:${reference.paragraph.startLine}`;
+      if (isExternalTarget?.(ref.target)) {
+        addExternalReference(ref.target, locationKey, reference);
+      }
       const source = viewSourceTarget(ref.target);
       if (source) {
         addSourceReference(source.key, locationKey, reference);
@@ -394,6 +412,15 @@ export function buildViewReferenceIndex(
     a.path.localeCompare(b.path),
   )) {
     for (const ref of [...file.refs].sort((a, b) => a.line - b.line)) {
+      if (isExternalTarget?.(ref.target)) {
+        addExternalReference(ref.target, `code:${ref.file}:${ref.line}`, {
+          kind: 'code',
+          path: ref.file,
+          line: ref.line,
+          snippet: file.lines[ref.line - 1]?.trim() ?? '',
+          url: sourceLineUrl(ref.file, ref.line),
+        });
+      }
       const resolved = resolveRef(ref.target, sectionIds, fileIndex, slugIndex);
       if (
         resolved.ambiguous ||
@@ -430,7 +457,104 @@ export function buildViewReferenceIndex(
         references.size,
       ]),
     ),
+    externalByTarget: new Map(
+      [...externalByTarget].map(([target, references]) => [
+        target,
+        [...references.values()],
+      ]),
+    ),
   };
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+async function renderExternalReference(
+  reference: IndexedBackReference,
+  latDir: string,
+  projectRoot: string,
+  createWikiLinkResolver?: (requestedPath: string) => Promise<WikiLinkResolver>,
+): Promise<ViewSectionBackReference> {
+  if (reference.kind === 'code') return reference;
+  const resolver = createWikiLinkResolver
+    ? await createWikiLinkResolver(reference.sourcePath)
+    : undefined;
+  return renderIndexedMarkdownReference(
+    reference,
+    latDir,
+    projectRoot,
+    resolver,
+  );
+}
+
+/** Render exact local Markdown and code backlinks for external targets. */
+export async function renderExternalSectionBackReferences(
+  index: ViewReferenceIndex,
+  targets: ReadonlyMap<string, string>,
+  latDir: string,
+  projectRoot: string,
+  createWikiLinkResolver?: (requestedPath: string) => Promise<WikiLinkResolver>,
+): Promise<ViewSectionBackReferences[]> {
+  const result: ViewSectionBackReferences[] = [];
+  for (const [target, headingId] of targets) {
+    const indexed = index.externalByTarget.get(target) ?? [];
+    if (indexed.length === 0) continue;
+    const references = await Promise.all(
+      indexed.map((reference) =>
+        renderExternalReference(
+          reference,
+          latDir,
+          projectRoot,
+          createWikiLinkResolver,
+        ),
+      ),
+    );
+    result.push({ sectionId: target, headingId, references });
+  }
+  return result;
+}
+
+/** Adapt exact external backlinks to the source context presentation. */
+export async function renderExternalSourceReferences(
+  index: ViewReferenceIndex,
+  target: string,
+  latDir: string,
+  projectRoot: string,
+  createWikiLinkResolver?: (requestedPath: string) => Promise<WikiLinkResolver>,
+): Promise<ViewSourceReference[]> {
+  const indexed = index.externalByTarget.get(target) ?? [];
+  const result: ViewSourceReference[] = [];
+  for (const reference of indexed) {
+    const rendered = await renderExternalReference(
+      reference,
+      latDir,
+      projectRoot,
+      createWikiLinkResolver,
+    );
+    if (rendered.kind === 'markdown') {
+      result.push({
+        sectionId: rendered.sectionId,
+        breadcrumbs: rendered.breadcrumbs,
+        paragraph: rendered.paragraph,
+        paragraphHtml: rendered.paragraphHtml,
+        url: rendered.url,
+      });
+    } else {
+      result.push({
+        sectionId: `code:${rendered.path}:${rendered.line}`,
+        breadcrumbs: [...rendered.path.split('/'), `line ${rendered.line}`],
+        paragraph: rendered.snippet,
+        paragraphHtml: `<code>${escapeHtml(rendered.snippet)}</code>`,
+        url: rendered.url,
+      });
+    }
+  }
+  return result;
 }
 
 async function renderIndexedMarkdownReference(

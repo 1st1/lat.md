@@ -171,6 +171,54 @@ program
     handleResult(await refsCommand(ctx, query, scope));
   });
 
+const external = program
+  .command('external')
+  .description('Manage pinned external source repositories');
+
+external
+  .command('add')
+  .argument('[handle]', 'stable external source handle')
+  .argument('[repo]', 'canonical HTTPS Git repository')
+  .option('--commit <commit-or-ref>', 'commit, branch, or tag to pin')
+  .option('--prefix <path>', 'repository path prefix')
+  .option('--strategy <strategy>', 'retrieval strategy: fetch or checkout')
+  .option('--fetch-url <template>', 'raw-file URL template')
+  .action(
+    async (
+      handle: string | undefined,
+      repo: string | undefined,
+      opts: {
+        commit?: string;
+        prefix?: string;
+        strategy?: string;
+        fetchUrl?: string;
+      },
+    ) => {
+      const ctx = resolveContext(program.opts());
+      const { externalAddCommand } = await import('./external.js');
+      handleResult(await externalAddCommand(ctx, handle, repo, opts));
+    },
+  );
+
+external
+  .command('show')
+  .argument('<source>', 'handle or exact external target')
+  .option('--json', 'emit structured JSON')
+  .action(async (source: string, opts: { json?: boolean }) => {
+    const ctx = resolveContext(program.opts());
+    const { externalShowCommand } = await import('./external.js');
+    handleResult(await externalShowCommand(ctx, source, !!opts.json));
+  });
+
+external
+  .command('list')
+  .option('--json', 'emit structured JSON')
+  .action(async (opts: { json?: boolean }) => {
+    const ctx = resolveContext(program.opts());
+    const { externalListCommand } = await import('./external.js');
+    handleResult(await externalListCommand(ctx, !!opts.json));
+  });
+
 const check = program
   .command('check')
   .usage('[subcommand] [-- <directory>]')

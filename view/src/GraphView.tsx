@@ -15,6 +15,7 @@ import {
 } from 'sigma/rendering';
 import type {
   ViewDocument,
+  ViewExternalDocument,
   ViewGraph,
   ViewGraphNode,
   ViewGraphNodeKind,
@@ -24,6 +25,7 @@ import type {
 import { fetchViewJson } from './data-source';
 import {
   documentPath,
+  externalTarget,
   graphInspectorLinkUrl,
   graphSelectionForUrl,
   graphTargetForNode,
@@ -472,8 +474,18 @@ function GraphInspector({
           ? (query.get('at') ?? '0')
           : String(node.line ?? 0),
     });
-    const request =
-      node.kind === 'document'
+    const request = node.externalTarget
+      ? fetchViewJson<ViewExternalDocument>(
+          `/api/external?target=${encodeURIComponent(node.externalTarget)}`,
+          controller.signal,
+        ).then((external) =>
+          setContent(
+            external.kind === 'markdown'
+              ? { kind: 'markdown', document: external.document }
+              : { kind: 'source', source: external.source },
+          ),
+        )
+      : node.kind === 'document'
         ? fetchViewJson<ViewDocument>(
             `/api/document?path=${encodeURIComponent(node.documentPath ?? '')}`,
             controller.signal,
@@ -545,7 +557,12 @@ function GraphInspector({
       previewTarget || node?.url || '/',
       window.location.origin,
     );
-    if (!url || (!documentPath(url.pathname) && !sourcePath(url.pathname))) {
+    if (
+      !url ||
+      (!documentPath(url.pathname) &&
+        !sourcePath(url.pathname) &&
+        !externalTarget(url.pathname, url.hash))
+    ) {
       return;
     }
     event.preventDefault();

@@ -443,9 +443,10 @@ export async function renderMarkdown(
     if (resolution) {
       const { href, referenceCount } = resolution;
       const content = wikiLinkContent(node);
-      const language = href.startsWith('/code/')
-        ? codeLanguage(node.value)
-        : null;
+      const language =
+        href.startsWith('/code/') || href.startsWith('/external/')
+          ? codeLanguage(node.value)
+          : null;
       const classes = content.segmented ? ['wiki-link-segmented'] : [];
       if (language) classes.push('wiki-link-code');
       if (

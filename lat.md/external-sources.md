@@ -48,7 +48,7 @@ This follows Lat's cross-platform convention that stored paths are POSIX ([[dev-
 
 Existing acceptance of backslashes in legacy internal wiki links and code references is compatibility behavior and is not extended to the new external syntax.
 
-`local-path` is different: it is machine-local filesystem configuration, so Lat resolves it with native platform path rules before appending the portable repository path.
+`local-path` is different: it is machine-local filesystem configuration, so Lat expands `~`, resolves relative values from the project root with native platform path rules, and then appends the portable repository path.
 
 Given `prefix: docs`, this link:
 
@@ -104,7 +104,7 @@ Repository identity uses a normalized, credential-free HTTPS URL so configuratio
 
 Normalization lowercases the scheme and hostname, removes the default port and trailing slash, and preserves path case. For recognized GitHub and GitLab URLs, one optional terminal `.git` suffix is also removed.
 
-Git network subprocesses disable URL rewriting and remote helpers and permit only the HTTPS protocol. Every subprocess receives the normalized URL as an argument rather than reading a configured remote name.
+Git network subprocesses disable ambient URL rewriting, credential prompts, unsafe remote helpers, and every protocol except HTTPS. A Lat-managed checkout may use its own verified `origin`; system and global Git configuration are ignored.
 
 ### Source Names
 
@@ -173,6 +173,8 @@ Every setup run ensures that `lat.md/.gitignore` contains:
 ```gitignore
 config.local.yaml
 ```
+
+Index validation permits this one machine-local YAML file in the otherwise Markdown-only directory.
 
 ## Command Surface
 
@@ -258,13 +260,13 @@ It expands `~`, requires a Git checkout whose `HEAD` matches the effective commi
 
 The HTTP provider retrieves and caches one complete source file at a time through the effective inferred or explicit `fetch-url`, then resolves the requested fragment locally.
 
-It accepts only HTTPS, substitutes the effective commit and normalized repository path, applies time and response-size limits, and reports the source handle, path, URL, and status for failures.
+It accepts only HTTPS, substitutes the effective commit and normalized repository path, follows at most five validated redirects, and limits each read to 5 MiB and 15 seconds. Failures report the source handle, path, URL, and status.
 
 ### Managed Checkout
 
 The checkout provider maintains partial Git storage for Lat rather than a full user-facing working tree.
 
-It fetches the pinned commit with blob filtering and reads referenced files from `<commit>:<path>`, downloading blobs lazily. Every Git subprocess uses an argument array and never invokes a shell.
+It fetches the pinned commit with blob filtering and reads referenced files from `<commit>:<path>`, downloading blobs lazily through the checkout's verified Lat-owned `origin`. Every Git subprocess uses an argument array and never invokes a shell.
 
 Agents that need an editable checkout use the suggested sparse-clone commands rendered by `lat external show`; Lat never executes those suggestions.
 
@@ -289,20 +291,25 @@ The `.json` suffix cannot collide with a source directory because dots are forbi
 
 ```json
 {
+  "repo": "https://github.com/vercel/next.js",
   "commit": "7a21f0d...",
   "strategy": "fetch"
 }
 ```
 
-The metadata `strategy` is `fetch`, `checkout`, or the internal value `local`. Its `commit` is always the effective commit, including a local commit override.
+The metadata `strategy` is `fetch`, `checkout`, or the internal value `local`. `repo` is the normalized canonical repository URL, and `commit` is always the effective commit, including a local commit override.
 
 ### Cache Invalidation
 
-The effective commit and strategy define a source's cache generation, while removing the canonical source removes ownership of its cache entirely.
+The normalized repository, effective commit, and strategy define a source's cache generation, while removing the canonical source removes ownership of its cache entirely.
 
-Before resolving an external link, Lat reads `<source>.json` and compares its full commit SHA and `fetch`, `checkout`, or `local` strategy with effective configuration. Missing, malformed, or mismatched metadata makes the previous generation stale.
+Before resolving an external link, Lat reads `<source>.json` and compares its repository, full commit SHA, and `fetch`, `checkout`, or `local` strategy with effective configuration. Missing, malformed, or mismatched metadata makes the previous generation stale.
+
+For managed checkouts, Lat also verifies that the repository's recorded `origin` normalizes to the metadata repository. A mismatch invalidates the entire generation instead of trusting edited Git configuration.
 
 Lat then deletes only `lat.md/.cache/external/<source>/`. For `fetch` or `checkout` it initializes a fresh directory for the selected provider; for `local` it leaves the directory absent. It atomically replaces the metadata file after transition. Invalidation and initialization are serialized per source.
+
+Serialization combines an in-process queue with a transient per-source filesystem lock, so concurrent commands and server requests cannot publish competing generations or duplicate a cache miss.
 
 Every resolution also enforces the `local` invariant: if metadata says `local` but the sibling directory exists, Lat deletes that directory before reading the configured checkout. Fetched files are written atomically.
 
@@ -348,7 +355,9 @@ External targets in both Markdown and `@lat:` comments participate. The check sy
 
 ### Section and Expand
 
-`lat section` renders external outgoing references with resolved metadata and snippets, while `lat expand` adds the requested external fragment to agent context.
+`lat section` renders an exact external target, while `lat expand` adds requested external content to agent context.
+
+Named Markdown sections, source symbols, and complete supported files are accepted. Local section output includes external-reference metadata and snippets.
 
 ### References
 
@@ -366,7 +375,7 @@ External content does not participate in semantic search or reindexing.
 
 Agents receive the same read-only source inspection and resolution behavior as CLI users through shared command functions.
 
-An MCP external-source tool lists all sources, shows one source, or resolves an exact external target. Existing section, expand, refs, and check tools use the shared provider layer; the mutating add flow is not exposed through MCP.
+The read-only `lat_external_list` and `lat_external_show` tools expose configured source metadata. Existing section, expand, refs, and check tools resolve external content through the shared provider layer; the mutating add flow is not exposed through MCP.
 
 Generated agent guidance teaches agents to inspect a source before cloning:
 
@@ -377,6 +386,8 @@ lat external show <handle>
 ## Browser Integration
 
 External links open internal Lat previews with the same context, highlighting, references, and navigation behavior as local source links.
+
+Browser routes use `/external/<handle>/<path>#<fragment>` and the loopback API accepts only targets recognized by current validated configuration.
 
 ### Live UI
 
@@ -389,6 +400,8 @@ Markdown and supported code receive their existing renderers. Configuration and 
 Static builds resolve every externally referenced canonical file during generation and bundle each unique file once.
 
 The exported site makes no live requests, includes no Git object store, and preserves external previews, fragments, backlinks, and graph nodes. Local `commit` and `local-path` overrides are ignored so builds remain portable and reproducible.
+
+Source payloads are split from per-symbol view metadata, allowing multiple referenced symbols in one external file to share one serialized source body and highlighted-line array.
 
 ## Validation and Security
 
@@ -440,6 +453,6 @@ Named targets survive unrelated insertions and deletions. Lat rejects line-numbe
 Some useful external-source capabilities remain unsupported without weakening the core pinned, read-only model.
 
 - External content does not participate in semantic indexing or search.
-- reStructuredText and AsciiDoc documents are not parsed into named sections.
+- Only Markdown and languages supported by Lat's source parser can be resolved; reStructuredText, AsciiDoc, binary files, and other formats are rejected.
 - Private-source authentication is not supported.
 - Cache invalidation handles commit changes and removed sources, but files made unreachable within an active source are not automatically evicted.

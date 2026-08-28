@@ -10,6 +10,7 @@ import {
   type Section,
 } from '../lattice.js';
 import { clearSymbolCache } from '../source-parser.js';
+import type { ExternalResolver } from '../external-sources.js';
 import { toPosix } from '../walk.js';
 import type { ViewDocumentError } from './protocol.js';
 import type {
@@ -165,6 +166,7 @@ export async function buildViewDiagnostics(
   codeFiles: Iterable<ViewCodeReferenceFile>,
   allSections: Section[],
   projectRoot: string,
+  external?: ExternalResolver,
 ): Promise<ReadonlyMap<string, readonly ViewDocumentError[]>> {
   clearSymbolCache();
   const files = [...markdownFiles];
@@ -179,8 +181,47 @@ export async function buildViewDiagnostics(
     files.map((file) => [resolve(file.absolutePath), file]),
   );
 
+  if (external) {
+    const root = files.find((file) => file.path === 'lat.md') ?? files[0];
+    if (root) {
+      for (const configError of external.snapshot.errors) {
+        addError(
+          errors,
+          root.path,
+          error(1, 'external-sources', configError.message, {
+            marker: 'line',
+          }),
+        );
+      }
+    }
+  }
+
   for (const file of files) {
     for (const ref of file.wikiRefs) {
+      if (external) {
+        try {
+          if (external.parse(ref.target)) {
+            await external.resolve(ref.target);
+            continue;
+          }
+        } catch (externalError) {
+          addError(
+            errors,
+            file.path,
+            error(ref.line, ref.target, (externalError as Error).message),
+          );
+          continue;
+        }
+        const unknownExternal = external.unknownTargetMessage(ref.target);
+        if (unknownExternal) {
+          addError(
+            errors,
+            file.path,
+            error(ref.line, ref.target, unknownExternal),
+          );
+          continue;
+        }
+      }
       const resolved = resolveRef(ref.target, sectionIds, fileIndex, slugIndex);
       let message: string | null = null;
       if (resolved.ambiguous) {

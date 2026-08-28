@@ -42,6 +42,8 @@ describe('mcp', () => {
     expect(names).toEqual([
       'lat_check',
       'lat_expand',
+      'lat_external_list',
+      'lat_external_show',
       'lat_locate',
       'lat_refs',
       'lat_search',

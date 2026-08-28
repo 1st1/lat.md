@@ -68,6 +68,9 @@ importers:
       web-tree-sitter:
         specifier: ^0.26.6
         version: 0.26.6
+      yaml:
+        specifier: ^2.8.2
+        version: 2.8.2
       zod:
         specifier: ^4.3.6
         version: 4.3.6

@@ -19,6 +19,7 @@ import { SOURCE_EXTENSIONS, clearSymbolCache } from '../source-parser.js';
 import { toPosix, walkEntries } from '../walk.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';
+import { createExternalResolver } from '../external-sources.js';
 
 export type CheckError = {
   file: string;
@@ -151,6 +152,16 @@ export async function checkMd(
   const slugIndex = buildSectionSlugIndex(allSections);
 
   const errors: CheckError[] = [];
+  const external = await createExternalResolver(latticeDir, projectRoot);
+  await external.reconcile();
+  for (const error of external.snapshot.errors) {
+    errors.push({
+      file: relative(process.cwd(), error.file),
+      line: 1,
+      target: '',
+      message: error.message,
+    });
+  }
 
   for (const file of files) {
     const content = await readFile(file, 'utf-8');
@@ -158,6 +169,30 @@ export async function checkMd(
     const relPath = relative(process.cwd(), file);
 
     for (const ref of refs) {
+      try {
+        if (external.parse(ref.target)) {
+          await external.resolve(ref.target);
+          continue;
+        }
+      } catch (error) {
+        errors.push({
+          file: relPath,
+          line: ref.line,
+          target: ref.target,
+          message: `broken external link [[${ref.target}]] — ${(error as Error).message}`,
+        });
+        continue;
+      }
+      const unknownExternal = external.unknownTargetMessage(ref.target);
+      if (unknownExternal) {
+        errors.push({
+          file: relPath,
+          line: ref.line,
+          target: ref.target,
+          message: unknownExternal,
+        });
+        continue;
+      }
       const { resolved, ambiguous, suggested } = resolveRef(
         ref.target,
         sectionIds,
@@ -338,9 +373,43 @@ export async function checkCodeRefs(
 
   const scan = await scanCodeRefs(projectRoot);
   const errors: CheckError[] = [];
+  const external = await createExternalResolver(latticeDir, projectRoot);
+  await external.reconcile();
+  for (const error of external.snapshot.errors) {
+    errors.push({
+      file: relative(process.cwd(), error.file),
+      line: 1,
+      target: '',
+      message: error.message,
+    });
+  }
 
   const mentionedSections = new Set<string>();
   for (const ref of scan.refs) {
+    try {
+      if (external.parse(ref.target)) {
+        await external.resolve(ref.target);
+        continue;
+      }
+    } catch (error) {
+      errors.push({
+        file: relative(process.cwd(), join(projectRoot, ref.file)),
+        line: ref.line,
+        target: ref.target,
+        message: `@lat: [[${ref.target}]] — ${(error as Error).message}`,
+      });
+      continue;
+    }
+    const unknownExternal = external.unknownTargetMessage(ref.target);
+    if (unknownExternal) {
+      errors.push({
+        file: relative(process.cwd(), join(projectRoot, ref.file)),
+        line: ref.line,
+        target: ref.target,
+        message: `@lat: [[${ref.target}]] — ${unknownExternal}`,
+      });
+      continue;
+    }
     const { resolved, ambiguous, suggested } = resolveRef(
       ref.target,
       sectionIds,
@@ -439,10 +508,11 @@ export async function checkIndex(latticeDir: string): Promise<IndexError[]> {
   const errors: IndexError[] = [];
   const allPaths = await walkEntries(latticeDir);
 
-  // Flag non-.md files — only markdown belongs in the checked directory.
+  // Flag non-.md files. The machine-local external override is the one
+  // intentional non-Markdown configuration file in the vault.
   for (const p of allPaths) {
     const name = p.includes('/') ? p.slice(p.lastIndexOf('/') + 1) : p;
-    if (!name.endsWith('.md')) {
+    if (!name.endsWith('.md') && p !== 'config.local.yaml') {
       const relDir = basename(latticeDir) + '/';
       errors.push({
         dir: relDir,
@@ -641,7 +711,14 @@ export async function checkAllCommand(ctx: CmdContext): Promise<CmdResult> {
   const sectionErrors = await checkSections(ctx.latDir, ctx.projectRoot);
   const elapsed = Date.now() - startTime;
 
-  const allErrors = [...md.errors, ...linkErrors, ...code.errors];
+  const allErrors = [
+    ...new Map(
+      [...md.errors, ...linkErrors, ...code.errors].map((error) => [
+        `${error.file}\0${error.line}\0${error.target}\0${error.message}`,
+        error,
+      ]),
+    ).values(),
+  ];
   const allFiles: FileStats = { ...md.files };
   for (const [ext, n] of Object.entries(code.files)) {
     allFiles[ext] = (allFiles[ext] || 0) + n;

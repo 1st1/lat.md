@@ -6,6 +6,7 @@ import {
   type SectionMatch,
 } from '../lattice.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import { createExternalResolver } from '../external-sources.js';
 
 const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
 
@@ -20,6 +21,10 @@ type ResolvedRef = {
   alternatives: SectionMatch[];
 };
 
+type ResolvedExternalRef = Awaited<
+  ReturnType<Awaited<ReturnType<typeof createExternalResolver>>['resolve']>
+>;
+
 /**
  * Resolve [[refs]] in text and return the expanded output.
  * Returns null if there are no wiki links, or if resolution fails.
@@ -33,11 +38,29 @@ export async function expandPrompt(
 
   const allSections = await loadAllSections(ctx.latDir);
   const resolved = new Map<string, ResolvedRef>();
+  const externalResolved = new Map<string, ResolvedExternalRef>();
+  const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
+  await external.reconcile();
   const errors: string[] = [];
 
   for (const match of refs) {
     const target = match[1];
-    if (resolved.has(target)) continue;
+    if (resolved.has(target) || externalResolved.has(target)) continue;
+
+    try {
+      if (external.parse(target)) {
+        externalResolved.set(target, await external.resolve(target));
+        continue;
+      }
+    } catch (error) {
+      errors.push((error as Error).message);
+      continue;
+    }
+    const unknownExternal = external.unknownTargetMessage(target);
+    if (unknownExternal) {
+      errors.push(unknownExternal);
+      continue;
+    }
 
     const matches = findSections(allSections, target);
     if (matches.length >= 1) {
@@ -55,12 +78,19 @@ export async function expandPrompt(
 
   // Replace [[refs]] inline
   let output = text.replace(WIKI_LINK_RE, (_match, target: string) => {
+    if (externalResolved.has(target)) return `[[${target}]]`;
     const ref = resolved.get(target)!;
     return `[[${ref.best.section.id}]]`;
   });
 
   // Append context block as nested outliner
   output += '\n\n<lat-context>\n';
+  for (const [target, value] of externalResolved) {
+    output += `* \`[[${target}]]\` is referring to:\n`;
+    output += `  * ${value.source.repo} @ ${value.source.commit} via ${value.provider}\n`;
+    output += `    * ${value.target.repositoryPath}:${value.startLine}-${value.endLine}\n`;
+    for (const line of value.content.split('\n')) output += `    | ${line}\n`;
+  }
   for (const ref of resolved.values()) {
     const isExact =
       ref.best.reason === 'exact match' ||
@@ -101,8 +131,27 @@ export async function expandCommand(
 
     // Resolution failed — find which ref is broken
     const allSections = await loadAllSections(ctx.latDir);
+    const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
     for (const match of refs) {
       const target = match[1];
+      try {
+        if (external.parse(target)) {
+          await external.resolve(target);
+          continue;
+        }
+      } catch (error) {
+        return {
+          output: ctx.styler.red((error as Error).message),
+          isError: true,
+        };
+      }
+      const unknownExternal = external.unknownTargetMessage(target);
+      if (unknownExternal) {
+        return {
+          output: ctx.styler.red(unknownExternal),
+          isError: true,
+        };
+      }
       const matches = findSections(allSections, target);
       if (matches.length === 0) {
         const s = ctx.styler;

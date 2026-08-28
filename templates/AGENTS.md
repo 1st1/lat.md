@@ -26,6 +26,7 @@ lat locate "Section Name"      # find a section by name (exact, fuzzy)
 lat refs "file#Section"        # find what references a section
 lat search "natural language"  # semantic search across all sections
 lat expand "user prompt text"  # expand [[refs]] to resolved locations
+lat external show <handle>      # inspect a pinned external source before cloning it
 lat check                      # run full graph and documentation validation
 ```
 

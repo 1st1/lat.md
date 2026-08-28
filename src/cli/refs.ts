@@ -16,6 +16,7 @@ import {
 import { formatResultList } from '../format.js';
 import { scanCodeRefs } from '../code-refs.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import { createExternalResolver } from '../external-sources.js';
 
 export type Scope = 'md' | 'code' | 'md+code';
 
@@ -29,6 +30,7 @@ export type RefsFound = {
 export type RefsError = {
   kind: 'no-match';
   suggestions: SectionMatch[];
+  message?: string;
 };
 
 export type RefsResult = RefsFound | RefsError;
@@ -173,6 +175,57 @@ async function findSourceRefs(
   return { kind: 'found', target, mdRefs, codeRefs };
 }
 
+async function findExternalRefs(
+  ctx: CmdContext,
+  query: string,
+  scope: Scope,
+): Promise<RefsResult> {
+  const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
+  const parsed = external.parse(query)!;
+  await external.reconcile();
+  const target: Section = {
+    id: parsed.identity,
+    heading: parsed.fragment || parsed.authoredPath,
+    depth: 0,
+    file: parsed.identity,
+    filePath: parsed.identity,
+    children: [],
+    startLine: 0,
+    endLine: 0,
+    firstParagraph: '',
+  };
+  const allSections = await loadAllSections(ctx.latDir);
+  const flat = flattenSections(allSections);
+  const matchingSections = new Set<string>();
+  const codeRefs: string[] = [];
+  if (scope !== 'code') {
+    for (const file of await listLatticeFiles(ctx.latDir)) {
+      const content = await readFile(file, 'utf8');
+      for (const ref of extractRefs(file, content, ctx.projectRoot)) {
+        if (ref.target === parsed.identity)
+          matchingSections.add(ref.fromSection.toLowerCase());
+      }
+    }
+  }
+  if (scope !== 'md') {
+    for (const ref of (await scanCodeRefs(ctx.projectRoot)).refs) {
+      if (ref.target === parsed.identity) {
+        codeRefs.push(
+          `${relative(process.cwd(), join(ctx.projectRoot, ref.file))}:${ref.line}`,
+        );
+      }
+    }
+  }
+  return {
+    kind: 'found',
+    target,
+    mdRefs: flat
+      .filter((section) => matchingSections.has(section.id.toLowerCase()))
+      .map((section) => ({ section, reason: 'wiki link' })),
+    codeRefs,
+  };
+}
+
 /**
  * Find all sections and code locations that reference a given section or
  * source file. Accepts section ids (full-path, short-form) and source file
@@ -185,6 +238,22 @@ export async function findRefs(
   scope: Scope,
 ): Promise<RefsResult> {
   query = query.replace(/^\[\[|\]\]$/g, '');
+
+  const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
+  await external.reconcile();
+  try {
+    if (external.parse(query)) return findExternalRefs(ctx, query, scope);
+  } catch (error) {
+    return {
+      kind: 'no-match',
+      suggestions: [],
+      message: (error as Error).message,
+    };
+  }
+  const unknownExternal = external.unknownTargetMessage(query);
+  if (unknownExternal) {
+    return { kind: 'no-match', suggestions: [], message: unknownExternal };
+  }
 
   // Source file queries bypass section resolution
   if (isSourceQuery(query, ctx.projectRoot)) {
@@ -283,6 +352,9 @@ export async function refsCommand(
 
   if (result.kind === 'no-match') {
     const s = ctx.styler;
+    if (result.message) {
+      return { output: s.red(result.message), isError: true };
+    }
     if (result.suggestions.length > 0) {
       const suggestions = result.suggestions
         .map(

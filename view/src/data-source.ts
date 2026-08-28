@@ -1,10 +1,16 @@
-import type { ViewError, ViewSourceDocument } from '../../src/view/protocol';
+import type {
+  ViewError,
+  ViewExternalDocument,
+  ViewSourceDocument,
+} from '../../src/view/protocol';
 import {
   viewStaticSourceKey,
   type ViewStaticManifest,
   type ViewStaticSourceFile,
   type ViewStaticSourceRequest,
   type ViewStaticSourceView,
+  type ViewStaticExternalMarkdown,
+  type ViewStaticExternalSourceView,
 } from '../../src/view/static-protocol';
 import { staticViewBasePath } from './static-mode';
 
@@ -79,6 +85,27 @@ export async function fetchViewJson<T extends object>(
       fetchJsonFile<ViewStaticSourceView>(staticDataUrl(entry.view), signal),
     ]);
     return { ...file, ...view } as ViewSourceDocument as T;
+  } else if (url.pathname === '/api/external') {
+    const entry = manifest.externals[url.searchParams.get('target') ?? ''];
+    if (!entry) throw new Error('Static external data not found');
+    if (entry.kind === 'markdown') {
+      const document = await fetchJsonFile<ViewStaticExternalMarkdown>(
+        staticDataUrl(entry.document),
+        signal,
+      );
+      return document as T;
+    }
+    const [file, view] = await Promise.all([
+      fetchJsonFile<ViewStaticSourceFile>(staticDataUrl(entry.file), signal),
+      fetchJsonFile<ViewStaticExternalSourceView>(
+        staticDataUrl(entry.view),
+        signal,
+      ),
+    ]);
+    return {
+      ...view,
+      source: { ...file, ...view.source },
+    } as ViewExternalDocument as T;
   }
   if (!dataPath) throw new Error('Static view data not found');
   return fetchJsonFile<T>(staticDataUrl(dataPath), signal);

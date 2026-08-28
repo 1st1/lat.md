@@ -3,6 +3,7 @@ import { staticViewRoute, viewPathname } from './static-mode';
 
 const DOCUMENT_PREFIX = '/docs/';
 const SOURCE_PREFIX = '/code/';
+const EXTERNAL_PREFIX = '/external/';
 
 type DocumentScroller = {
   getElementById: (id: string) => {
@@ -33,19 +34,58 @@ export function documentPath(pathname: string): string | null {
 /** Keep Markdown route identity stable when only its fragment changes. */
 export function viewRouteIdentity(location: string): string {
   const url = new URL(location, 'http://lat.local');
-  return documentPath(url.pathname)
+  const external = externalTarget(url.pathname, url.hash);
+  return documentPath(url.pathname) ||
+    external?.path.toLowerCase().endsWith('.md')
     ? `${url.pathname}${url.search}`
     : `${url.pathname}${url.search}${url.hash}`;
 }
 
 /** Whether navigation stays within one rendered Markdown document. */
 export function isSameMarkdownDocument(current: URL, next: URL): boolean {
+  const currentExternal = externalTarget(current.pathname, current.hash);
+  const nextExternal = externalTarget(next.pathname, next.hash);
   return (
-    documentPath(current.pathname) !== null &&
+    (documentPath(current.pathname) !== null ||
+      (currentExternal?.path.toLowerCase().endsWith('.md') === true &&
+        nextExternal?.path.toLowerCase().endsWith('.md') === true)) &&
     current.origin === next.origin &&
     current.pathname === next.pathname &&
     current.search === next.search
   );
+}
+
+export type ViewExternalTarget = {
+  handle: string;
+  path: string;
+  fragment: string;
+  identity: string;
+};
+
+export function externalTarget(
+  pathname: string,
+  hash = '',
+): ViewExternalTarget | null {
+  pathname = viewPathname(pathname);
+  if (!pathname.startsWith(EXTERNAL_PREFIX)) return null;
+  try {
+    const parts = pathname
+      .slice(EXTERNAL_PREFIX.length)
+      .split('/')
+      .map(decodeURIComponent);
+    const handle = parts.shift() ?? '';
+    const path = parts.join('/');
+    if (!handle || !path) return null;
+    const fragment = sourceSymbol(hash);
+    return {
+      handle,
+      path,
+      fragment,
+      identity: `${handle}:${path}${fragment ? `#${fragment}` : ''}`,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function sourcePath(pathname: string): string | null {
@@ -135,6 +175,12 @@ function positiveInteger(value: string | null): number {
 export function graphNodeIdForUrl(url: URL): string {
   const markdown = documentPath(url.pathname);
   if (markdown !== null) return `document:${markdown}`;
+  const external = externalTarget(url.pathname, url.hash);
+  if (external) {
+    return external.path.toLowerCase().endsWith('.md')
+      ? `external-document:${external.handle}:${external.path}`
+      : `external-source:${external.identity}`;
+  }
   const source = sourcePath(url.pathname);
   if (source === null) return '';
   const focusLine = positiveInteger(url.searchParams.get('at'));
@@ -158,6 +204,15 @@ export function graphSelectionForUrl(
       (candidate) =>
         candidate.kind === 'document' && candidate.documentPath === markdown,
     );
+    return node ? { nodeId: node.id, target: internalRoute(url) } : null;
+  }
+
+  const external = externalTarget(url.pathname, url.hash);
+  if (external) {
+    const id = external.path.toLowerCase().endsWith('.md')
+      ? `external-document:${external.handle}:${external.path}`
+      : `external-source:${external.identity}`;
+    const node = graph.nodes.find((candidate) => candidate.id === id);
     return node ? { nodeId: node.id, target: internalRoute(url) } : null;
   }
 

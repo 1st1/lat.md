@@ -1329,6 +1329,15 @@ export function readLogo(): string {
   return readFileSync(join(findTemplatesDir(), 'logo.txt'), 'utf-8');
 }
 
+export function ensureLatLocalConfigIgnored(latDir: string): void {
+  const path = join(latDir, '.gitignore');
+  const entry = 'config.local.yaml';
+  const current = existsSync(path) ? readFileSync(path, 'utf8') : '';
+  if (current.split(/\r?\n/).includes(entry)) return;
+  const prefix = current && !current.endsWith('\n') ? `${current}\n` : current;
+  writeFileSync(path, `${prefix}${entry}\n`);
+}
+
 export async function initCmd(targetDir?: string): Promise<void> {
   console.log(styleText('cyan', readLogo()));
 
@@ -1395,6 +1404,8 @@ export async function initCmd(targetDir?: string): Promise<void> {
       cpSync(templateDir, latDir, { recursive: true });
       console.log(styleText('green', 'Created lat.md/'));
     }
+
+    ensureLatLocalConfigIgnored(latDir);
 
     // Step 2: Configure fresh/outdated setups, ask interactive users about an
     // available key, and offer to rebuild an index whose backend differs. This

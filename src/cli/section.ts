@@ -15,7 +15,16 @@ import {
 import { scanCodeRefs } from '../code-refs.js';
 import { SOURCE_EXTENSIONS, resolveSourceSymbol } from '../source-parser.js';
 import type { CmdContext, CmdResult } from '../context.js';
-import { formatSectionId, formatNavHints } from '../format.js';
+import {
+  formatNavHints,
+  formatResultList,
+  formatSectionId,
+} from '../format.js';
+import {
+  createExternalResolver,
+  type ResolvedExternalContent,
+} from '../external-sources.js';
+import { findRefs } from './refs.js';
 
 export type CodeBackRef = {
   file: string;
@@ -37,6 +46,7 @@ export type SectionFound = {
   content: string;
   outgoingRefs: { target: string; resolved: Section }[];
   outgoingSourceRefs: SourceRef[];
+  outgoingExternalRefs: ResolvedExternalContent[];
   incomingRefs: SectionMatch[];
   codeRefs: CodeBackRef[];
 };
@@ -92,9 +102,19 @@ export async function getSection(
 
   const outgoingRefs: { target: string; resolved: Section }[] = [];
   const outgoingSourceRefs: SourceRef[] = [];
+  const outgoingExternalRefs: ResolvedExternalContent[] = [];
+  const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
+  await external.reconcile();
   const seen = new Set<string>();
   for (const ref of sectionRefs) {
     if (ref.fromSection.toLowerCase() !== sectionId) continue;
+    if (external.parse(ref.target)) {
+      if (!seen.has(ref.target)) {
+        seen.add(ref.target);
+        outgoingExternalRefs.push(await external.resolve(ref.target));
+      }
+      continue;
+    }
     // Detect source code references by file extension
     const hashIdx = ref.target.indexOf('#');
     const filePart = hashIdx === -1 ? ref.target : ref.target.slice(0, hashIdx);
@@ -229,6 +249,7 @@ export async function getSection(
     content,
     outgoingRefs,
     outgoingSourceRefs,
+    outgoingExternalRefs,
     incomingRefs,
     codeRefs,
   };
@@ -256,6 +277,7 @@ export function formatSectionOutput(
     content,
     outgoingRefs,
     outgoingSourceRefs,
+    outgoingExternalRefs,
     incomingRefs,
     codeRefs,
   } = result;
@@ -276,7 +298,11 @@ export function formatSectionOutput(
     quoted,
   ];
 
-  if (outgoingRefs.length > 0 || outgoingSourceRefs.length > 0) {
+  if (
+    outgoingRefs.length > 0 ||
+    outgoingSourceRefs.length > 0 ||
+    outgoingExternalRefs.length > 0
+  ) {
     parts.push('', '## This section references:', '');
     for (const ref of outgoingRefs) {
       const body = ref.resolved.firstParagraph
@@ -298,6 +324,14 @@ export function formatSectionOutput(
         for (const line of snippetLines) {
           parts.push(`  ${s.dim('|')} ${line}`);
         }
+      }
+    }
+    for (const ref of outgoingExternalRefs) {
+      parts.push(
+        `${s.dim('*')} [[${s.cyan(ref.target.identity)}]]${s.dim(` (${ref.target.repositoryPath}:${ref.startLine}-${ref.endLine}, ${ref.provider})`)}`,
+      );
+      for (const line of ref.content.split('\n').slice(0, 5)) {
+        parts.push(`  ${s.dim('|')} ${line}`);
       }
     }
   }
@@ -342,6 +376,67 @@ export async function sectionCommand(
   ctx: CmdContext,
   query: string,
 ): Promise<CmdResult> {
+  const external = await createExternalResolver(ctx.latDir, ctx.projectRoot);
+  await external.reconcile();
+  let externalTarget = null;
+  try {
+    externalTarget = external.parse(query);
+  } catch (error) {
+    return { output: ctx.styler.red((error as Error).message), isError: true };
+  }
+  if (externalTarget) {
+    try {
+      const resolved = await external.resolve(query);
+      const backlinks = await findRefs(
+        ctx,
+        resolved.target.identity,
+        'md+code',
+      );
+      const location = `${resolved.target.handle}:${resolved.target.authoredPath}:${resolved.startLine}-${resolved.endLine}`;
+      const quoted = resolved.content
+        .split('\n')
+        .map((line) => (line ? `> ${line}` : '>'))
+        .join('\n');
+      const warnings = resolved.source.localError
+        ? `\n\n${ctx.styler.yellow(`Warning: ${resolved.source.localError}; using ${resolved.provider}`)}`
+        : '';
+      const parts = [
+        `${ctx.styler.bold(`[[${resolved.target.identity}]]`)} (${ctx.styler.cyan(location)})`,
+        ctx.styler.dim(
+          `${resolved.source.repo} @ ${resolved.source.commit} via ${resolved.provider}`,
+        ),
+        '',
+        quoted,
+      ];
+      if (backlinks.kind === 'found' && backlinks.mdRefs.length > 0) {
+        parts.push(
+          formatResultList(ctx, `Referenced by Markdown:`, backlinks.mdRefs),
+        );
+      }
+      if (backlinks.kind === 'found' && backlinks.codeRefs.length > 0) {
+        parts.push(
+          '',
+          '## Referenced by code:',
+          '',
+          ...backlinks.codeRefs.map(
+            (value) => `${ctx.styler.dim('*')} ${value}`,
+          ),
+        );
+      }
+      return {
+        output: parts.join('\n') + warnings + formatNavHints(ctx),
+      };
+    } catch (error) {
+      return {
+        output: ctx.styler.red((error as Error).message),
+        isError: true,
+      };
+    }
+  }
+  const unknownExternal = external.unknownTargetMessage(query);
+  if (unknownExternal) {
+    return { output: ctx.styler.red(unknownExternal), isError: true };
+  }
   const result = await getSection(ctx, query);
 
   if (result.kind === 'no-match') {

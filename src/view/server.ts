@@ -9,6 +9,7 @@ import {
   type ViewProjectChange,
 } from './protocol.js';
 import {
+  ViewExternalNotFoundError,
   ViewDocumentNotFoundError,
   ViewSourceNotFoundError,
 } from './repository.js';
@@ -35,6 +36,7 @@ export type ViewServerOptions = {
   port?: number;
   search?: ViewSearch;
   watch?: boolean;
+  externalCa?: string | Buffer;
 };
 
 function documentUrl(path: string): string {
@@ -158,6 +160,7 @@ export async function startViewServer(
     git: options.git,
     gitPollMs: options.gitPollMs,
     watch: options.watch,
+    externalCa: options.externalCa,
   });
   const search =
     options.search ??
@@ -290,6 +293,22 @@ export async function startViewServer(
         return;
       }
 
+      if (url.pathname === '/api/external') {
+        const target = url.searchParams.get('target') ?? '';
+        try {
+          sendJson(res, 200, await store.getExternal(target), headOnly);
+        } catch (error) {
+          if (!(error instanceof ViewExternalNotFoundError)) throw error;
+          sendJson(
+            res,
+            404,
+            { error: error.message } satisfies ViewError,
+            headOnly,
+          );
+        }
+        return;
+      }
+
       if (url.pathname.startsWith('/assets/')) {
         const path = clientPath(clientDir, url.pathname);
         if (!path) {
@@ -304,7 +323,8 @@ export async function startViewServer(
         url.pathname === '/search' ||
         url.pathname === '/graph' ||
         url.pathname.startsWith('/docs/') ||
-        url.pathname.startsWith('/code/')
+        url.pathname.startsWith('/code/') ||
+        url.pathname.startsWith('/external/')
       ) {
         await sendClientFile(res, join(clientDir, 'index.html'), headOnly);
         return;
