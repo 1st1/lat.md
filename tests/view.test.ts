@@ -79,6 +79,10 @@ import {
   viewRouteIdentity,
   writeGraphMode,
 } from '../view/src/navigation.js';
+import {
+  parseGeoJson,
+  parseTopoJson,
+} from '../view/src/markdown-rich-fences.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
   captureScrollAnchor,
@@ -832,6 +836,39 @@ describe('lat ui', () => {
     expect(mermaid.html).toContain('graph TD;');
     expect(mermaid.html).not.toContain('hljs');
 
+    const geoJson = await renderMarkdown(
+      '```geojson\n{"type":"Point","coordinates":[-122.4,37.8]}\n```',
+      'guide.md',
+    );
+    expect(geoJson.html).toContain(
+      '<pre class="markdown-diagram-source markdown-geojson-source">',
+    );
+    expect(geoJson.html).toContain('<code class="language-geojson">');
+    expect(geoJson.html).not.toContain('hljs');
+    expect(
+      parseGeoJson('{"type":"Point","coordinates":[-122.4,37.8]}'),
+    ).toEqual({ type: 'Point', coordinates: [-122.4, 37.8] });
+
+    const topoJson = await renderMarkdown(
+      '```topojson\n{"type":"Topology","objects":{},"arcs":[]}\n```',
+      'guide.md',
+    );
+    expect(topoJson.html).toContain(
+      '<pre class="markdown-diagram-source markdown-topojson-source">',
+    );
+    expect(topoJson.html).toContain('<code class="language-topojson">');
+    expect(topoJson.html).not.toContain('hljs');
+    const topojsonClient = await import('topojson-client');
+    expect(
+      parseTopoJson(
+        '{"type":"Topology","objects":{"place":{"type":"Point","coordinates":[1,2]}},"arcs":[]}',
+        topojsonClient,
+      ),
+    ).toMatchObject({
+      type: 'FeatureCollection',
+      features: [{ geometry: { type: 'Point', coordinates: [1, 2] } }],
+    });
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -851,6 +888,7 @@ describe('lat ui', () => {
     expect(styles).toContain('img.markdown-emoji');
     expect(styles).toContain('.markdown .hljs-keyword');
     expect(styles).toContain('.markdown .markdown-mermaid svg');
+    expect(styles).toContain('.markdown .markdown-map-canvas');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

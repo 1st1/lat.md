@@ -1494,6 +1494,39 @@ a.wiki-link-active {
   margin: 0 auto;
 }
 
+.markdown .markdown-map {
+  padding: 0;
+  overflow: hidden;
+}
+
+.markdown .markdown-map-canvas {
+  width: 100%;
+  height: min(420px, 58vh);
+  min-height: 280px;
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--panel-border) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--panel-border) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+}
+
+.markdown .markdown-map .leaflet-bar a {
+  color: var(--text);
+  background: var(--panel);
+  border-color: var(--panel-border);
+}
+
+.markdown .markdown-map .leaflet-bar a:hover {
+  background: var(--accent-soft);
+}
+
 .markdown .markdown-diagram-error {
   padding: 10px 12px;
   margin-bottom: 0;

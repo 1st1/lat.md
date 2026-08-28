@@ -11,7 +11,22 @@ export function MarkdownContent({
   const content = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    if (content.current) void renderMarkdownRichFences(content.current);
+    let active = true;
+    const cleanups: Array<() => void> = [];
+    if (content.current) {
+      void renderMarkdownRichFences(
+        content.current,
+        () => active,
+        (cleanup) => {
+          if (active) cleanups.push(cleanup);
+          else cleanup();
+        },
+      );
+    }
+    return () => {
+      active = false;
+      for (const cleanup of cleanups) cleanup();
+    };
   }, [html]);
 
   return (

@@ -65,9 +65,11 @@ const ERROR_CLASS = 'markdown-error';
 const EXTERNAL_LINK_CLASS = 'external-link';
 const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
+const GEOJSON_SOURCE_CLASS = 'markdown-geojson-source';
 const HIGHLIGHT_CLASS = 'hljs';
 const MERMAID_SOURCE_CLASS = 'markdown-mermaid-source';
 const RICH_FENCE_SOURCE_CLASS = 'markdown-diagram-source';
+const TOPOJSON_SOURCE_CLASS = 'markdown-topojson-source';
 const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 const ALERT_CLASSES = [
   'markdown-alert',
@@ -166,8 +168,10 @@ const sanitizeSchema: SanitizeSchema = {
     ol: classAttributes('ol'),
     p: classAttributes('p', ALERT_CLASSES),
     pre: classAttributes('pre', [
+      GEOJSON_SOURCE_CLASS,
       MERMAID_SOURCE_CLASS,
       RICH_FENCE_SOURCE_CLASS,
+      TOPOJSON_SOURCE_CLASS,
     ]),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
@@ -197,9 +201,16 @@ type RemarkCodeHandler = NonNullable<
 const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
   const node = rawNode as Code;
   const language = node.lang?.split(/\s+/, 1)[0];
-  const mermaid = language?.toLowerCase() === 'mermaid';
+  const richSourceClass =
+    language?.toLowerCase() === 'mermaid'
+      ? MERMAID_SOURCE_CLASS
+      : language?.toLowerCase() === 'geojson'
+        ? GEOJSON_SOURCE_CLASS
+        : language?.toLowerCase() === 'topojson'
+          ? TOPOJSON_SOURCE_CLASS
+          : null;
   const highlighted =
-    language && !mermaid ? highlightCode(language, node.value) : null;
+    language && !richSourceClass ? highlightCode(language, node.value) : null;
   const code = {
     type: 'element' as const,
     tagName: 'code',
@@ -222,7 +233,9 @@ const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
     type: 'element' as const,
     tagName: 'pre',
     properties: {
-      className: mermaid ? [RICH_FENCE_SOURCE_CLASS, MERMAID_SOURCE_CLASS] : [],
+      className: richSourceClass
+        ? [RICH_FENCE_SOURCE_CLASS, richSourceClass]
+        : [],
     },
     children: [result],
   };

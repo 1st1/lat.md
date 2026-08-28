@@ -50,6 +50,10 @@ GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences 
 
 GitHub-style `mermaid` fences render as SVG diagrams in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
 
+## GeoJSON and TopoJSON Maps
+
+GitHub-style `geojson` and `topojson` fences render as self-contained interactive vector maps with pan, zoom, and automatic data bounds, without contacting an external tile service.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
