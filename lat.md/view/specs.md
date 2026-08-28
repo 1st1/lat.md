@@ -45,6 +45,8 @@ GitHub task-list markers render checked or unchecked disabled checkboxes with co
 
 Bare HTTP(S), `www.`, and email addresses render as links. Web addresses receive the same external-site treatment as explicit Markdown links, while trailing prose punctuation stays outside the destination.
 
+GitHub-compatible raw HTML renders only through the sanitizer allowlist. Safe formatting and disclosure elements survive, while scripts, event handlers, and unsafe URL protocols never reach the client.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.

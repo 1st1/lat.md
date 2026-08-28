@@ -1137,6 +1137,27 @@ a {
   text-align: left;
 }
 
+.markdown details {
+  padding: 10px 14px;
+  margin: 0 0 1.25em;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.markdown summary {
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.markdown details[open] > summary {
+  margin-bottom: 0.75em;
+}
+
+.markdown details > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown .markdown-error {
   color: var(--danger);
   scroll-margin-top: 24px;

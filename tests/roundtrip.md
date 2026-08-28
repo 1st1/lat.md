@@ -119,6 +119,13 @@ A paragraph with an ![inline image](img.png "Image Title") in the middle.
 
 > Blockquote with [[wiki link]] and *emphasis*.
 
+<details>
+<summary>More detail</summary>
+
+Safe <sub>subscript</sub> content.
+
+</details>
+
 | Feature     | Rendering                        |
 | ----------- | -------------------------------- |
 | Tables      | Semantic HTML with `inline code` |

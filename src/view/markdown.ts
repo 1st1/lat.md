@@ -2,6 +2,7 @@ import { basename, extname } from 'node:path';
 import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
+import rehypeRaw from 'rehype-raw';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import remarkRehype from 'remark-rehype';
@@ -95,6 +96,7 @@ const sanitizeSchema: SanitizeSchema = {
     blockquote: classAttributes('blockquote'),
     code: classAttributes('code'),
     del: classAttributes('del'),
+    details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
     div: classAttributes('div'),
     h1: classAttributes('h1'),
     h2: classAttributes('h2'),
@@ -129,7 +131,8 @@ const sanitizeSchema: SanitizeSchema = {
 };
 
 const htmlProcessor = unified()
-  .use(remarkRehype)
+  .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeSlug)
   .use(rehypeStringify);

@@ -18,6 +18,10 @@ The shared AST records [[markdown#Task Lists|GitHub task markers]] on list items
 
 The shared AST recognizes [[markdown#Bare Autolinks|GitHub bare autolinks]] through focused micromark and mdast extensions, retaining their authored literal form during serialization.
 
+## Safe HTML
+
+CommonMark preserves authored HTML nodes for exact serialization; `lat ui` reparses them into HAST and applies the [[markdown#Safe HTML|GitHub-compatible sanitization boundary]] before stringifying.
+
 ## Wiki Links
 
 Custom micromark + mdast extension implementing [[markdown#Wiki Links]]. Located in `src/extensions/wiki-link/` (see [[src/extensions/wiki-link/syntax.ts]] for the tokenizer).

@@ -684,10 +684,10 @@ describe('lat ui', () => {
     );
     expect(table.html).toContain('<table>');
     expect(table.html).toContain(
-      '<thead>\n<tr>\n<th>Mitigation</th>\n<th>What Nub does</th>',
+      '<thead><tr><th>Mitigation</th><th>What Nub does</th>',
     );
     expect(table.html).toContain(
-      '<tbody>\n<tr>\n<td>Native</td>\n<td>Nothing. The version already ships it.</td>',
+      '<tbody><tr><td>Native</td><td>Nothing. The version already ships it.</td>',
     );
     expect(table.html).toContain('<code>typeof</code> feature detect.');
     expect(table.html).not.toContain('| --- |');
@@ -727,6 +727,17 @@ describe('lat ui', () => {
     );
     expect(autolinks.html.match(/class="external-link-icon"/g)).toHaveLength(2);
 
+    const safeHtml = await renderMarkdown(
+      '<details open onclick="alert(1)">\n<summary>More</summary>\n\nSafe H<sub>2</sub>O.\n\n<script>alert(1)</script>\n</details>',
+      'guide.md',
+    );
+    expect(safeHtml.html).toContain('<details open>');
+    expect(safeHtml.html).toContain('<summary>More</summary>');
+    expect(safeHtml.html).toContain('H<sub>2</sub>O.');
+    expect(safeHtml.html).not.toContain('onclick');
+    expect(safeHtml.html).not.toContain('<script>');
+    expect(safeHtml.html).not.toContain('alert(1)');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -740,6 +751,7 @@ describe('lat ui', () => {
       'overflow-x: auto;',
     );
     expect(styles).toContain("input[type='checkbox']");
+    expect(styles).toContain('.markdown details');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

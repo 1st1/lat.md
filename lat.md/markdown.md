@@ -20,6 +20,12 @@ GitHub-flavored checked and unchecked list markers render as accessible, read-on
 
 GitHub-flavored bare HTTP(S), `www.`, and email addresses become links without requiring angle brackets or explicit Markdown link syntax.
 
+## Safe HTML
+
+GitHub-compatible HTML elements render through a strict allowlist, enabling constructs such as `details`, `summary`, `sub`, `sup`, and `picture` without allowing scripts or event handlers.
+
+Raw HTML is parsed before sanitization. Unsafe elements, URL protocols, and attributes are removed, while `details` may preserve its boolean `open` state for authored expanded sections.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
