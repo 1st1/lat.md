@@ -178,6 +178,16 @@ describe('lat ui', () => {
     const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
     expect(shellResponse.status).toBe(200);
     expect(await shellResponse.text()).toContain('lat ui shell');
+    const contentSecurityPolicy = shellResponse.headers.get(
+      'content-security-policy',
+    );
+    expect(contentSecurityPolicy).toContain(
+      "connect-src 'self' https://tiles.openfreemap.org",
+    );
+    expect(contentSecurityPolicy).toContain("font-src 'self' data:");
+    expect(contentSecurityPolicy).toContain(
+      "img-src 'self' data: https://github.githubassets.com",
+    );
 
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);

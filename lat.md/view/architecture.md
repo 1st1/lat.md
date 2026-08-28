@@ -16,6 +16,8 @@ Rich Markdown fences keep escaped source in document payloads. The shared Markdo
 
 Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style through MapLibre. The authored GeoJSON or converted TopoJSON remains interactive over a local fallback when the basemap cannot load.
 
+The live server's default-self Content Security Policy explicitly permits only OpenFreeMap tile connections, GitHub custom emoji images, and bundled data fonts needed by those supported renderers.
+
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
 ## Static export
