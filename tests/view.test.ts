@@ -692,6 +692,14 @@ describe('lat ui', () => {
     expect(table.html).toContain('<code>typeof</code> feature detect.');
     expect(table.html).not.toContain('| --- |');
 
+    const strikethrough = await renderMarkdown(
+      'Keep ~~obsolete~~ current guidance.',
+      'guide.md',
+    );
+    expect(strikethrough.html).toBe(
+      '<p>Keep <del>obsolete</del> current guidance.</p>',
+    );
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',

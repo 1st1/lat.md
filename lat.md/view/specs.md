@@ -39,6 +39,8 @@ Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative
 
 GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
 
+Single- and double-tilde GitHub strikethrough syntax renders semantic deleted text rather than literal delimiters.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.

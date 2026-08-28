@@ -8,6 +8,10 @@ GitHub-flavored pipe tables are parsed as structured rows and cells, so `lat ui`
 
 Table syntax is supported by the shared [[parser#Tables|parser extension]], including inline Markdown inside cells.
 
+## Strikethrough
+
+GitHub-flavored single- or double-tilde delimiters render obsolete text with semantic `del` markup while preserving the authored delimiters during serialization.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
