@@ -26,6 +26,10 @@ A paragraph with `inline code` and a [link](https://example.com) and an [aliased
 
 Bare autolinks include https://example.com, www.example.org, and docs@example.com.
 
+A sourced statement uses a footnote.[^source]
+
+[^source]: Supporting detail for the statement.
+
 ![alt text](image.png)
 
 > A blockquote paragraph.

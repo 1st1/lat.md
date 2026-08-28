@@ -30,6 +30,10 @@ Raw HTML is parsed before sanitization. Unsafe elements, URL protocols, and attr
 
 GitHub alert blockquotes for `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` render as labeled callouts with distinct semantic colors while retaining ordinary blockquote source syntax.
 
+## Footnotes
+
+GitHub footnote references and definitions render as linked superscripts, a notes section, and return links while retaining their labels and definitions during serialization.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

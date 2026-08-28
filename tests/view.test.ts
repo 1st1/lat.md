@@ -759,6 +759,16 @@ describe('lat ui', () => {
       expect(alert.html).not.toContain(`[!${kind.toUpperCase()}]`);
     }
 
+    const footnotes = await renderMarkdown(
+      'Claim with a source.[^source]\n\n[^source]: Supporting detail.',
+      'guide.md',
+    );
+    expect(footnotes.html).toContain('data-footnote-ref');
+    expect(footnotes.html).toContain('<section data-footnotes');
+    expect(footnotes.html).toContain('Supporting detail.');
+    expect(footnotes.html).toContain('data-footnote-backref');
+    expect(footnotes.html).not.toContain('href="Supporting');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -774,6 +784,7 @@ describe('lat ui', () => {
     expect(styles).toContain("input[type='checkbox']");
     expect(styles).toContain('.markdown details');
     expect(styles).toContain('.markdown .markdown-alert-caution');
+    expect(styles).toContain('[data-footnotes]');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

@@ -22,6 +22,10 @@ The shared AST recognizes [[markdown#Bare Autolinks|GitHub bare autolinks]] thro
 
 CommonMark preserves authored HTML nodes for exact serialization; `lat ui` reparses them into HAST and applies the [[markdown#Safe HTML|GitHub-compatible sanitization boundary]] before stringifying.
 
+## Footnotes
+
+The shared AST recognizes [[markdown#Footnotes|GitHub footnote references and definitions]] through focused micromark and mdast extensions, preventing bracket syntax from degrading into ordinary reference links.
+
 ## Wiki Links
 
 Custom micromark + mdast extension implementing [[markdown#Wiki Links]]. Located in `src/extensions/wiki-link/` (see [[src/extensions/wiki-link/syntax.ts]] for the tokenizer).

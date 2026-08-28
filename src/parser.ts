@@ -4,6 +4,10 @@ import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
 import { gfmAutolinkLiteralFromMarkdown } from 'mdast-util-gfm-autolink-literal';
 import {
+  gfmFootnoteFromMarkdown,
+  gfmFootnoteToMarkdown,
+} from 'mdast-util-gfm-footnote';
+import {
   gfmStrikethroughFromMarkdown,
   gfmStrikethroughToMarkdown,
 } from 'mdast-util-gfm-strikethrough';
@@ -13,6 +17,7 @@ import {
   gfmTaskListItemToMarkdown,
 } from 'mdast-util-gfm-task-list-item';
 import { gfmAutolinkLiteral } from 'micromark-extension-gfm-autolink-literal';
+import { gfmFootnote } from 'micromark-extension-gfm-footnote';
 import { gfmStrikethrough } from 'micromark-extension-gfm-strikethrough';
 import { gfmTable } from 'micromark-extension-gfm-table';
 import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
@@ -34,6 +39,7 @@ const processor = unified()
   .use(remarkStringify)
   .data('micromarkExtensions', [
     gfmAutolinkLiteral(),
+    gfmFootnote(),
     gfmStrikethrough(),
     gfmTable(),
     gfmTaskListItem(),
@@ -41,6 +47,7 @@ const processor = unified()
   ])
   .data('fromMarkdownExtensions', [
     gfmAutolinkLiteralFromMarkdown(),
+    gfmFootnoteFromMarkdown(),
     gfmStrikethroughFromMarkdown(),
     gfmTableFromMarkdown(),
     gfmTaskListItemFromMarkdown(),
@@ -48,6 +55,7 @@ const processor = unified()
   ])
   .data('toMarkdownExtensions', [
     alertMarkerToMarkdown(),
+    gfmFootnoteToMarkdown(),
     gfmStrikethroughToMarkdown(),
     gfmTableToMarkdown(),
     gfmTaskListItemToMarkdown(),

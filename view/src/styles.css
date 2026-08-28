@@ -1400,6 +1400,39 @@ a.wiki-link-active {
   margin-bottom: 0;
 }
 
+.markdown [data-footnote-ref] {
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: super;
+  text-decoration: none;
+}
+
+.markdown [data-footnotes] {
+  padding-top: 1em;
+  margin-top: 2.5em;
+  color: var(--muted);
+  font-size: 0.9em;
+  border-top: 1px solid var(--panel-border);
+}
+
+.markdown [data-footnotes] h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+}
+
+.markdown [data-footnote-backref] {
+  margin-left: 0.35em;
+  text-decoration: none;
+}
+
 .markdown code {
   padding: 0.16em 0.36em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
