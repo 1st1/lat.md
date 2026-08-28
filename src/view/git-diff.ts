@@ -444,7 +444,31 @@ function diffTable(
   };
 }
 
+function isDisplayMath(node: RootContent): boolean {
+  return (
+    node.type === 'math' ||
+    (node.type === 'code' &&
+      node.lang?.split(/\s+/, 1)[0].toLowerCase() === 'math')
+  );
+}
+
+function wrapDisplayMath(node: RootContent, kind: DiffKind): RootContent {
+  const child = structuredClone(node);
+  if (kind === 'removed') stripPositions(child);
+  return {
+    type: 'blockquote',
+    data: {
+      hName: 'div',
+      hProperties: {
+        className: ['git-math-block', `git-${kind}`],
+      },
+    },
+    children: [child],
+  } as RootContent;
+}
+
 function addClass(node: RootContent, kind: DiffKind): RootContent {
+  if (isDisplayMath(node)) return wrapDisplayMath(node, kind);
   const result = structuredClone(node) as DataNode;
   const properties = result.data?.hProperties ?? {};
   const current = properties.className;

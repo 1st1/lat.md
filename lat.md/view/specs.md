@@ -155,6 +155,8 @@ Every rendered block in a new Markdown file inherits the added state, including 
 
 Compatible table edits retain one rendered table, place inline additions and removals inside changed cells, and color inserted or deleted rows. Incompatible column or alignment changes fall back to colored whole-table replacements.
 
+Changed inline math keeps its surrounding prose and marks the rendered old and new formulas inline. Display-dollar and fenced math changes remain rendered inside removed and added block treatments.
+
 Blocks with less than 60% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
 
 Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.

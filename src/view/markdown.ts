@@ -68,6 +68,7 @@ const GIT_CLASSES = ['git-added', 'git-removed'];
 const GEOJSON_SOURCE_CLASS = 'markdown-geojson-source';
 const HIGHLIGHT_CLASS = 'hljs';
 const MERMAID_SOURCE_CLASS = 'markdown-mermaid-source';
+const MATH_DIFF_BLOCK_CLASS = 'git-math-block';
 const RICH_FENCE_SOURCE_CLASS = 'markdown-diagram-source';
 const STL_SOURCE_CLASS = 'markdown-stl-source';
 const TOPOJSON_SOURCE_CLASS = 'markdown-topojson-source';
@@ -155,7 +156,7 @@ const sanitizeSchema: SanitizeSchema = {
     ]),
     del: classAttributes('del'),
     details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
-    div: classAttributes('div', ALERT_CLASSES),
+    div: classAttributes('div', [...ALERT_CLASSES, MATH_DIFF_BLOCK_CLASS]),
     h1: classAttributes('h1'),
     h2: classAttributes('h2'),
     h3: classAttributes('h3'),

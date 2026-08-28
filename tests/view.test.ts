@@ -972,6 +972,7 @@ describe('lat ui', () => {
     expect(mapAttributionStyles).toContain(
       'background: rgb(255 255 255 / 82%);',
     );
+    expect(styles).toContain('.markdown .git-math-block.git-added');
     expect(styles).toContain('.markdown table.git-added');
     expect(styles).toContain('.markdown tr.git-removed');
     expect(styles).toContain('.markdown .markdown-stl-viewport');
@@ -1913,6 +1914,51 @@ describe('lat ui git state', () => {
     expect(realigned.html).toContain('<table class="git-added">');
   });
 
+  it('keeps changed math rendered while marking old and new formulas', async () => {
+    const inlineBase = 'The inline formula $x^2$ stays rendered.';
+    const inlineCurrent = 'The inline formula $x^3$ stays rendered.';
+    const inline = await renderMarkdown(
+      inlineCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(inlineBase, inlineCurrent),
+    );
+    expect(inline.html.match(/class="katex"/g)).toHaveLength(2);
+    expect(inline.html).toContain('<del class="git-removed"><span class="katex">');
+    expect(inline.html).toContain('<ins class="git-added"><span class="katex">');
+
+    const displayBase = '$$\n\\int_0^1 x^2 \\, dx\n$$';
+    const displayCurrent = '$$\n\\int_0^1 x^3 \\, dx\n$$';
+    const display = await renderMarkdown(
+      displayCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(displayBase, displayCurrent),
+    );
+    expect(display.html.match(/class="katex-display"/g)).toHaveLength(2);
+    expect(display.html).toMatch(
+      /<div class="git-math-block git-removed">\s*<span class="katex-display">/,
+    );
+    expect(display.html).toMatch(
+      /<div class="git-math-block git-added">\s*<span class="katex-display">/,
+    );
+
+    const fencedBase = '```math\nx^2\n```';
+    const fencedCurrent = '```math\nx^3\n```';
+    const fenced = await renderMarkdown(
+      fencedCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(fencedBase, fencedCurrent),
+    );
+    expect(fenced.html.match(/class="katex-display"/g)).toHaveLength(2);
+    expect(fenced.html).toContain('class="git-math-block git-removed"');
+    expect(fenced.html).toContain('class="git-math-block git-added"');
+  });
+
   it('marks every rendered block in a new Markdown file as added', async () => {
     const current = [
       '# New file',
@@ -1931,6 +1977,10 @@ describe('lat ui git state', () => {
       '| --- | --- |',
       '| Added | Row |',
       '',
+      '$$',
+      'x^2',
+      '$$',
+      '',
     ].join('\n');
     const rendered = await renderMarkdown(
       current,
@@ -1947,6 +1997,9 @@ describe('lat ui git state', () => {
       '<code class="language-text git-added">code block',
     );
     expect(rendered.html).toContain('<table class="git-added">');
+    expect(rendered.html).toMatch(
+      /<div class="git-math-block git-added">\s*<span class="katex-display">/,
+    );
   });
 });
 
