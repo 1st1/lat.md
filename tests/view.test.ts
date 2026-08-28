@@ -85,6 +85,7 @@ import {
   parseGeoJson,
   parseStl,
   parseTopoJson,
+  recoverableLazyImport,
 } from '../view/src/markdown-rich-fences.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
@@ -890,6 +891,21 @@ describe('lat ui', () => {
     expect(OPENFREEMAP_STYLE_URL).toBe(
       'https://tiles.openfreemap.org/styles/liberty',
     );
+    let rendererImportAttempts = 0;
+    const importRenderer = recoverableLazyImport(async () => {
+      rendererImportAttempts++;
+      if (rendererImportAttempts === 1) {
+        throw new Error('renderer chunk unavailable');
+      }
+      return { ready: true };
+    });
+    const failedRendererImport = importRenderer();
+    expect(importRenderer()).toBe(failedRendererImport);
+    await expect(failedRendererImport).rejects.toThrow(
+      'renderer chunk unavailable',
+    );
+    await expect(importRenderer()).resolves.toEqual({ ready: true });
+    expect(rendererImportAttempts).toBe(2);
     expect(
       geoJsonBounds(
         parseGeoJson(
@@ -964,6 +980,9 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown .hljs-keyword');
     expect(styles).toContain('.markdown .markdown-mermaid svg');
     expect(styles).toContain('.markdown .markdown-map-canvas');
+    expect(styles).toContain('.markdown .markdown-map-status');
+    expect(styles).toContain('.markdown .markdown-map-error');
+    expect(styles).toContain('.markdown .markdown-diagram-retry');
     expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-group');
     const mapAttributionStyles = styles.match(
       /\.markdown \.markdown-map \.maplibregl-ctrl-attrib\s*\{([^}]*)\}/,

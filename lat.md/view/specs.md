@@ -55,7 +55,7 @@ Inline and display math render as accessible KaTeX after authored HTML has been 
 
 `mermaid` fences retain escaped source in server and static payloads, then lazily become SVG diagrams in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
 
-`geojson` and `topojson` fences lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap, retain visible attribution, and fall back to an interactive local geometry view when tiles cannot load. Malformed or unsupported data leaves escaped source visible with a safe inline error.
+`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data or renderer failures restore escaped source with a safe inline error and retry action; module-load failures offer a reload action that resets the browser's failed ES module record.
 
 ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, and automatic framing. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent } from 'react';
+import { useLayoutEffect, useRef, type MouseEvent } from 'react';
 import { renderMarkdownRichFences } from './markdown-rich-fences';
 
 export function MarkdownContent({
@@ -10,7 +10,7 @@ export function MarkdownContent({
 }) {
   const content = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
     const cleanups: Array<() => void> = [];
     if (content.current) {

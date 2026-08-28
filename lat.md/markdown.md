@@ -56,6 +56,8 @@ GitHub-style `geojson` and `topojson` fences render supplied geometry over an Op
 
 The browser loads the hosted vector style and tiles only when a map fence is present. If that service is unavailable, MapLibre keeps the geometry interactive over a local grid fallback; attribution remains visible whenever OpenFreeMap data is used.
 
+Before first client paint, the source fallback becomes a fixed-height loading shell. Renderer failures restore the escaped source with a visible retry action; module-load failures offer a reload action because browsers cache failed ES module records.
+
 ## ASCII STL Models
 
 GitHub-style `stl` fences parse ASCII STL into responsive, automatically framed 3D models that can be rotated and zoomed in the browser without external services.

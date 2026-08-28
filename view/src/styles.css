@@ -1545,6 +1545,7 @@ a.wiki-link-active {
 }
 
 .markdown .markdown-map {
+  position: relative;
   padding: 0;
   overflow: hidden;
 }
@@ -1565,6 +1566,17 @@ a.wiki-link-active {
       transparent 1px
     );
   background-size: 24px 24px;
+}
+
+.markdown .markdown-map-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.85em;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
 }
 
 .markdown .markdown-map .maplibregl-ctrl-group {
@@ -1653,6 +1665,28 @@ a.wiki-link-active {
 
 .markdown .markdown-diagram-error + .markdown-diagram-source {
   border-radius: 0 0 10px 10px;
+}
+
+.markdown .markdown-map-error {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.markdown .markdown-diagram-retry {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.markdown .markdown-diagram-retry:hover {
+  border-color: var(--danger);
 }
 
 .markdown img {
