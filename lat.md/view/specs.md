@@ -47,6 +47,8 @@ Bare HTTP(S), `www.`, and email addresses render as links. Web addresses receive
 
 GitHub-compatible raw HTML renders only through the sanitizer allowlist. Safe formatting and disclosure elements survive, while scripts, event handlers, and unsafe URL protocols never reach the client.
 
+Fenced code blocks with supported language labels render escaped, server-side syntax-highlighted markup. Unknown labels remain safely escaped plain code.
+
 GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
 
 GitHub footnotes render linked superscript references and a compact end section with return links, rather than being misread as ordinary Markdown reference links.

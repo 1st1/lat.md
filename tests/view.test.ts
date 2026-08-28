@@ -782,6 +782,29 @@ describe('lat ui', () => {
     expect(emoji.html).toContain(':not-a-real-emoji:');
     expect(emoji.html).toContain('<p>Ship it <img');
 
+    const highlightedCode = await renderMarkdown(
+      "```ts\nconst value = '<script>alert(1)</script>';\n```",
+      'guide.md',
+    );
+    expect(highlightedCode.html).toContain(
+      '<code class="language-ts hljs">',
+    );
+    expect(highlightedCode.html).toContain('hljs-keyword');
+    expect(highlightedCode.html).toContain(
+      '&#x3C;script>alert(1)&#x3C;/script>',
+    );
+    expect(highlightedCode.html).not.toContain('<script>');
+
+    const unknownCode = await renderMarkdown(
+      "```unknown\n<script>alert(1)</script>\n```",
+      'guide.md',
+    );
+    expect(unknownCode.html).toContain('<code class="language-unknown">');
+    expect(unknownCode.html).toContain(
+      '&#x3C;script>alert(1)&#x3C;/script>',
+    );
+    expect(unknownCode.html).not.toContain('<script>');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -799,6 +822,7 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown .markdown-alert-caution');
     expect(styles).toContain('[data-footnotes]');
     expect(styles).toContain('img.markdown-emoji');
+    expect(styles).toContain('.markdown .hljs-keyword');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

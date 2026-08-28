@@ -877,7 +877,9 @@ a {
 }
 
 .source-code .hljs-comment,
-.source-code .hljs-quote {
+.source-code .hljs-quote,
+.markdown .hljs-comment,
+.markdown .hljs-quote {
   color: var(--syntax-comment);
   font-style: italic;
 }
@@ -885,45 +887,66 @@ a {
 .source-code .hljs-keyword,
 .source-code .hljs-literal,
 .source-code .hljs-selector-tag,
-.source-code .hljs-section {
+.source-code .hljs-section,
+.markdown .hljs-keyword,
+.markdown .hljs-literal,
+.markdown .hljs-selector-tag,
+.markdown .hljs-section {
   color: var(--syntax-keyword);
 }
 
 .source-code .hljs-string,
 .source-code .hljs-regexp,
 .source-code .hljs-addition,
-.source-code .hljs-attribute {
+.source-code .hljs-attribute,
+.markdown .hljs-string,
+.markdown .hljs-regexp,
+.markdown .hljs-addition,
+.markdown .hljs-attribute {
   color: var(--syntax-string);
 }
 
 .source-code .hljs-number,
 .source-code .hljs-symbol,
-.source-code .hljs-bullet {
+.source-code .hljs-bullet,
+.markdown .hljs-number,
+.markdown .hljs-symbol,
+.markdown .hljs-bullet {
   color: var(--syntax-number);
 }
 
 .source-code .hljs-title,
 .source-code .hljs-function,
 .source-code .hljs-class,
-.source-code .hljs-type {
+.source-code .hljs-type,
+.markdown .hljs-title,
+.markdown .hljs-function,
+.markdown .hljs-class,
+.markdown .hljs-type {
   color: var(--syntax-title);
 }
 
 .source-code .hljs-built_in,
 .source-code .hljs-variable.language_,
-.source-code .hljs-meta {
+.source-code .hljs-meta,
+.markdown .hljs-built_in,
+.markdown .hljs-variable.language_,
+.markdown .hljs-meta {
   color: var(--syntax-built-in);
 }
 
-.source-code .hljs-deletion {
+.source-code .hljs-deletion,
+.markdown .hljs-deletion {
   color: #bd3d3d;
 }
 
-.source-code .hljs-emphasis {
+.source-code .hljs-emphasis,
+.markdown .hljs-emphasis {
   font-style: italic;
 }
 
-.source-code .hljs-strong {
+.source-code .hljs-strong,
+.markdown .hljs-strong {
   font-weight: 700;
 }
 

@@ -38,6 +38,10 @@ GitHub footnote references and definitions render as linked superscripts, a note
 
 GitHub-style `:name:` emoji shortcodes render as accessible Unicode emoji or GitHub's custom emoji images, while unknown names and source serialization remain unchanged.
 
+## Fenced Code Highlighting
+
+Fenced code blocks use their language label for safe server-side syntax highlighting, with common source, shell, web, data, diff, and Markdown languages supported and unknown labels rendered as escaped plain code.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

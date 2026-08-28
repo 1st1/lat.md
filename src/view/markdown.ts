@@ -1,6 +1,7 @@
 import { basename, extname } from 'node:path';
 import type {
   Blockquote,
+  Code,
   Link,
   PhrasingContent,
   Root,
@@ -13,11 +14,13 @@ import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import remarkEmoji from 'remark-emoji';
 import remarkRehype from 'remark-rehype';
+import type { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import type { AlertMarker } from '../extensions/alert-marker.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
+import { highlightCode } from './highlight.js';
 
 export type WikiLinkContext = { line: number };
 
@@ -61,6 +64,7 @@ const ERROR_CLASS = 'markdown-error';
 const EXTERNAL_LINK_CLASS = 'external-link';
 const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
+const HIGHLIGHT_CLASS = 'hljs';
 const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 const ALERT_CLASSES = [
   'markdown-alert',
@@ -138,7 +142,7 @@ const sanitizeSchema: SanitizeSchema = {
       ],
     ],
     blockquote: classAttributes('blockquote'),
-    code: classAttributes('code'),
+    code: classAttributes('code', [HIGHLIGHT_CLASS]),
     del: classAttributes('del'),
     details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
     div: classAttributes('div', ALERT_CLASSES),
@@ -167,6 +171,7 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-ref-count',
         EXTERNAL_LINK_ICON_CLASS,
         ...CODE_LINK_CLASSES.slice(2),
+        /^hljs-./,
         ERROR_CLASS,
         ...GIT_CLASSES,
       ],
@@ -175,8 +180,47 @@ const sanitizeSchema: SanitizeSchema = {
   },
 };
 
+type RemarkCodeHandler = NonNullable<
+  NonNullable<RemarkRehypeOptions['handlers']>['code']
+>;
+
+const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
+  const node = rawNode as Code;
+  const language = node.lang?.split(/\s+/, 1)[0];
+  const highlighted = language ? highlightCode(language, node.value) : null;
+  const code = {
+    type: 'element' as const,
+    tagName: 'code',
+    properties: {
+      className: [
+        ...(language ? [`language-${language}`] : []),
+        ...(highlighted === null ? [] : [HIGHLIGHT_CLASS]),
+      ],
+    },
+    children: [
+      highlighted === null
+        ? { type: 'text' as const, value: node.value ? `${node.value}\n` : '' }
+        : { type: 'raw' as const, value: `${highlighted}\n` },
+    ],
+    ...(node.meta ? { data: { meta: node.meta } } : {}),
+  };
+  state.patch(node, code);
+  const result = state.applyData(node, code);
+  const pre = {
+    type: 'element' as const,
+    tagName: 'pre',
+    properties: {},
+    children: [result],
+  };
+  state.patch(node, pre);
+  return pre;
+};
+
 const htmlProcessor = unified()
-  .use(remarkRehype, { allowDangerousHtml: true })
+  .use(remarkRehype, {
+    allowDangerousHtml: true,
+    handlers: { code: highlightedCodeHandler },
+  })
   .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeSlug)
