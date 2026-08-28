@@ -738,6 +738,27 @@ describe('lat ui', () => {
     expect(safeHtml.html).not.toContain('<script>');
     expect(safeHtml.html).not.toContain('alert(1)');
 
+    for (const [kind, label] of [
+      ['note', 'Note'],
+      ['tip', 'Tip'],
+      ['important', 'Important'],
+      ['warning', 'Warning'],
+      ['caution', 'Caution'],
+    ]) {
+      const alert = await renderMarkdown(
+        `> [!${kind.toUpperCase()}]\n> ${label} body.`,
+        'guide.md',
+      );
+      expect(alert.html).toContain(
+        `class="markdown-alert markdown-alert-${kind}"`,
+      );
+      expect(alert.html).toContain(
+        `<p class="markdown-alert-title">${label}</p>`,
+      );
+      expect(alert.html).toContain(`<p>${label} body.</p>`);
+      expect(alert.html).not.toContain(`[!${kind.toUpperCase()}]`);
+    }
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -752,6 +773,7 @@ describe('lat ui', () => {
     );
     expect(styles).toContain("input[type='checkbox']");
     expect(styles).toContain('.markdown details');
+    expect(styles).toContain('.markdown .markdown-alert-caution');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

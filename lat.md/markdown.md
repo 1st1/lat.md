@@ -26,6 +26,10 @@ GitHub-compatible HTML elements render through a strict allowlist, enabling cons
 
 Raw HTML is parsed before sanitization. Unsafe elements, URL protocols, and attributes are removed, while `details` may preserve its boolean `open` state for authored expanded sections.
 
+## Alerts
+
+GitHub alert blockquotes for `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` render as labeled callouts with distinct semantic colors while retaining ordinary blockquote source syntax.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

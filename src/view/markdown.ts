@@ -1,5 +1,11 @@
 import { basename, extname } from 'node:path';
-import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
+import type {
+  Blockquote,
+  Link,
+  PhrasingContent,
+  Root,
+  RootContent,
+} from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeRaw from 'rehype-raw';
@@ -8,6 +14,7 @@ import rehypeStringify from 'rehype-stringify';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
+import type { AlertMarker } from '../extensions/alert-marker.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
 
@@ -53,9 +60,16 @@ const ERROR_CLASS = 'markdown-error';
 const EXTERNAL_LINK_CLASS = 'external-link';
 const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
+const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
+const ALERT_CLASSES = [
+  'markdown-alert',
+  'markdown-alert-title',
+  ...ALERT_KINDS.map((kind) => `markdown-alert-${kind}`),
+];
 
 function classAttributes(
   tag: string,
+  extraClasses: string[] = [],
 ): NonNullable<SanitizeSchema['attributes']>[string] {
   const attributes = defaultSchema.attributes?.[tag] ?? [];
   const allowedClasses = attributes.flatMap((attribute) =>
@@ -68,7 +82,13 @@ function classAttributes(
       (attribute) =>
         !(Array.isArray(attribute) && attribute[0] === 'className'),
     ),
-    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES],
+    [
+      'className',
+      ...allowedClasses,
+      ERROR_CLASS,
+      ...GIT_CLASSES,
+      ...extraClasses,
+    ],
   ];
 }
 
@@ -97,7 +117,7 @@ const sanitizeSchema: SanitizeSchema = {
     code: classAttributes('code'),
     del: classAttributes('del'),
     details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
-    div: classAttributes('div'),
+    div: classAttributes('div', ALERT_CLASSES),
     h1: classAttributes('h1'),
     h2: classAttributes('h2'),
     h3: classAttributes('h3'),
@@ -109,7 +129,7 @@ const sanitizeSchema: SanitizeSchema = {
     ins: classAttributes('ins'),
     li: classAttributes('li'),
     ol: classAttributes('ol'),
-    p: classAttributes('p'),
+    p: classAttributes('p', ALERT_CLASSES),
     pre: classAttributes('pre'),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
@@ -143,6 +163,38 @@ function nodeText(node: { value?: unknown; children?: unknown }): string {
   return node.children
     .map((child) => nodeText(child as { value?: unknown; children?: unknown }))
     .join('');
+}
+
+function transformAlerts(tree: Root): void {
+  visit(tree, 'blockquote', (node: Blockquote) => {
+    const firstBlock = node.children[0];
+    if (firstBlock?.type !== 'paragraph') return;
+    const firstInline = firstBlock.children[0];
+    if (firstInline?.type !== 'alertMarker') return;
+
+    const label = (firstInline as AlertMarker).value;
+    const kind = label.toLowerCase() as (typeof ALERT_KINDS)[number];
+    firstBlock.children.shift();
+    if (firstBlock.children.length === 0) node.children.shift();
+
+    node.data = {
+      ...node.data,
+      hName: 'div',
+      hProperties: {
+        ...(node.data?.hProperties ?? {}),
+        className: ['markdown-alert', `markdown-alert-${kind}`],
+      },
+    };
+    node.children.unshift({
+      type: 'paragraph',
+      data: {
+        hProperties: { className: ['markdown-alert-title'] },
+      },
+      children: [
+        { type: 'text', value: label[0] + label.slice(1).toLowerCase() },
+      ],
+    });
+  });
 }
 
 function wikiLinkContent(node: WikiLink): {
@@ -379,6 +431,7 @@ export async function renderMarkdown(
 ): Promise<{ html: string; title: string }> {
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
+  transformAlerts(tree);
   if (options.errors) markMarkdownErrors(tree, options.errors);
 
   visit(tree, 'link', (node: Link) => {

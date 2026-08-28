@@ -119,6 +119,9 @@ A paragraph with an ![inline image](img.png "Image Title") in the middle.
 
 > Blockquote with [[wiki link]] and *emphasis*.
 
+> [!NOTE]
+> Useful information for readers.
+
 <details>
 <summary>More detail</summary>
 

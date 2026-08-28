@@ -1349,6 +1349,57 @@ a.wiki-link-active {
   border-left: 3px solid var(--panel-border);
 }
 
+.markdown .markdown-alert {
+  --alert-color: var(--accent);
+
+  padding: 12px 16px;
+  margin: 0 0 1.25em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--alert-color) 6%, transparent);
+  border-left: 4px solid var(--alert-color);
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown .markdown-alert-tip {
+  --alert-color: var(--success);
+}
+
+.markdown .markdown-alert-important {
+  --alert-color: #8957e5;
+}
+
+.markdown .markdown-alert-warning {
+  --alert-color: #bf8700;
+}
+
+.markdown .markdown-alert-caution {
+  --alert-color: var(--danger);
+}
+
+.markdown .markdown-alert-title {
+  margin: 0 0 0.35em;
+  color: var(--alert-color);
+  font-size: 0.88em;
+  font-weight: 700;
+}
+
+.markdown .markdown-alert-title::before {
+  display: inline-grid;
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 0.45em;
+  place-items: center;
+  font-size: 0.8em;
+  line-height: 1;
+  content: '!';
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.markdown .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown code {
   padding: 0.16em 0.36em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;

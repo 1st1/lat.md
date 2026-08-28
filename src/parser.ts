@@ -19,6 +19,10 @@ import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
 import type { Link, Root } from 'mdast';
 import { visit } from 'unist-util-visit';
 import {
+  alertMarkerToMarkdown,
+  markAlertMarkers,
+} from './extensions/alert-marker.js';
+import {
   wikiLinkSyntax,
   wikiLinkFromMarkdown,
   wikiLinkToMarkdown,
@@ -43,6 +47,7 @@ const processor = unified()
     wikiLinkFromMarkdown(),
   ])
   .data('toMarkdownExtensions', [
+    alertMarkerToMarkdown(),
     gfmStrikethroughToMarkdown(),
     gfmTableToMarkdown(),
     gfmTaskListItemToMarkdown(),
@@ -68,6 +73,7 @@ function bareAutolinkText(node: Link): string | null {
 
 export function parse(markdown: string): Root {
   const tree = processor.parse(markdown);
+  markAlertMarkers(tree);
   visit(tree, 'link', (node: Link) => {
     const text = bareAutolinkText(node);
     const sourceLength =
