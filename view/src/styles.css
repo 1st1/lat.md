@@ -1477,6 +1477,38 @@ a.wiki-link-active {
   background: transparent;
 }
 
+.markdown .markdown-diagram {
+  padding: 18px;
+  margin: 0 0 1.25em;
+  overflow: auto;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+
+.markdown .markdown-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.markdown .markdown-diagram-error {
+  padding: 10px 12px;
+  margin-bottom: 0;
+  color: var(--danger);
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+.markdown .markdown-diagram-error + .markdown-diagram-source {
+  border-radius: 0 0 10px 10px;
+}
+
 .markdown img {
   max-width: 100%;
 }

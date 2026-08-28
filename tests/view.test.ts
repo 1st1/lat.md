@@ -821,6 +821,17 @@ describe('lat ui', () => {
     expect(fencedMath.html).toContain('<span class="katex-display">');
     expect(fencedMath.html).not.toContain('language-math');
 
+    const mermaid = await renderMarkdown(
+      '```mermaid\ngraph TD;\n  A-->B;\n```',
+      'guide.md',
+    );
+    expect(mermaid.html).toContain(
+      '<pre class="markdown-diagram-source markdown-mermaid-source">',
+    );
+    expect(mermaid.html).toContain('<code class="language-mermaid">');
+    expect(mermaid.html).toContain('graph TD;');
+    expect(mermaid.html).not.toContain('hljs');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -839,6 +850,7 @@ describe('lat ui', () => {
     expect(styles).toContain('[data-footnotes]');
     expect(styles).toContain('img.markdown-emoji');
     expect(styles).toContain('.markdown .hljs-keyword');
+    expect(styles).toContain('.markdown .markdown-mermaid svg');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

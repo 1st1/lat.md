@@ -51,6 +51,8 @@ Fenced code blocks with supported language labels render escaped, server-side sy
 
 Inline and display math render as accessible KaTeX after authored HTML has been sanitized, including display math written with dollar blocks or `math` code fences.
 
+`mermaid` fences retain escaped source in server and static payloads, then lazily become SVG diagrams in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
+
 GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
 
 GitHub footnotes render linked superscript references and a compact end section with return links, rather than being misread as ordinary Markdown reference links.

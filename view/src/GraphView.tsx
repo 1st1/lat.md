@@ -22,6 +22,7 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { fetchViewJson } from './data-source';
+import { MarkdownContent } from './MarkdownContent';
 import {
   documentPath,
   graphInspectorLinkUrl,
@@ -582,10 +583,7 @@ function GraphInspector({
               </div>
             )}
           </div>
-          <article
-            className="markdown"
-            dangerouslySetInnerHTML={{ __html: documentHtml }}
-          />
+          <MarkdownContent html={documentHtml} />
         </div>
       ) : content?.kind === 'source' ? (
         <div className="graph-inspector-source">

@@ -46,6 +46,10 @@ Fenced code blocks use their language label for safe server-side syntax highligh
 
 GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences render as accessible KaTeX while retaining their authored math syntax during parsing and serialization.
 
+## Mermaid Diagrams
+
+GitHub-style `mermaid` fences render as SVG diagrams in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
