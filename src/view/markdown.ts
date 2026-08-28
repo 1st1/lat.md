@@ -10,6 +10,7 @@ import type {
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import remarkEmoji from 'remark-emoji';
@@ -142,7 +143,11 @@ const sanitizeSchema: SanitizeSchema = {
       ],
     ],
     blockquote: classAttributes('blockquote'),
-    code: classAttributes('code', [HIGHLIGHT_CLASS]),
+    code: classAttributes('code', [
+      HIGHLIGHT_CLASS,
+      'math-display',
+      'math-inline',
+    ]),
     del: classAttributes('del'),
     details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
     div: classAttributes('div', ALERT_CLASSES),
@@ -223,6 +228,7 @@ const htmlProcessor = unified()
   })
   .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
+  .use(rehypeKatex)
   .use(rehypeSlug)
   .use(rehypeStringify);
 

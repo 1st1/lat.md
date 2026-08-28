@@ -805,6 +805,22 @@ describe('lat ui', () => {
     );
     expect(unknownCode.html).not.toContain('<script>');
 
+    const math = await renderMarkdown(
+      'Inline $E = mc^2$.\n\n$$\n\\int_0^1 x^2 \\, dx\n$$',
+      'guide.md',
+    );
+    expect(math.html).toContain('<span class="katex">');
+    expect(math.html).toContain('<span class="katex-display">');
+    expect(math.html).toContain('<math');
+    expect(math.html).not.toContain('language-math');
+
+    const fencedMath = await renderMarkdown(
+      '```math\n\\sum_{n=1}^{\\infty} 2^{-n} = 1\n```',
+      'guide.md',
+    );
+    expect(fencedMath.html).toContain('<span class="katex-display">');
+    expect(fencedMath.html).not.toContain('language-math');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',

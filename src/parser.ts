@@ -2,6 +2,7 @@ import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import remarkFrontmatter from 'remark-frontmatter';
+import remarkMath from 'remark-math';
 import { gfmAutolinkLiteralFromMarkdown } from 'mdast-util-gfm-autolink-literal';
 import {
   gfmFootnoteFromMarkdown,
@@ -36,6 +37,7 @@ import {
 const processor = unified()
   .use(remarkParse)
   .use(remarkFrontmatter)
+  .use(remarkMath)
   .use(remarkStringify)
   .data('micromarkExtensions', [
     gfmAutolinkLiteral(),

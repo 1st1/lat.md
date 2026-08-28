@@ -42,6 +42,10 @@ GitHub-style `:name:` emoji shortcodes render as accessible Unicode emoji or Git
 
 Fenced code blocks use their language label for safe server-side syntax highlighting, with common source, shell, web, data, diff, and Markdown languages supported and unknown labels rendered as escaped plain code.
 
+## Math
+
+GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences render as accessible KaTeX while retaining their authored math syntax during parsing and serialization.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

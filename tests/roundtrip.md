@@ -85,6 +85,12 @@ function hello() {
 plain code block without language
 ```
 
+Inline math $E = mc^2$ stays exact.
+
+$$
+\int_0^1 x^2 \, dx
+$$
+
 ```
 indented code block line one
 indented code block line two
