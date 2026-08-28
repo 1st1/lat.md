@@ -1162,7 +1162,7 @@ a {
   text-align: left;
 }
 
-.markdown details {
+.markdown details:not(.maplibregl-ctrl-attrib) {
   padding: 10px 14px;
   margin: 0 0 1.25em;
   background: var(--panel);
@@ -1170,16 +1170,16 @@ a {
   border-radius: 8px;
 }
 
-.markdown summary {
+.markdown details:not(.maplibregl-ctrl-attrib) > summary {
   font-weight: 650;
   cursor: pointer;
 }
 
-.markdown details[open] > summary {
+.markdown details:not(.maplibregl-ctrl-attrib)[open] > summary {
   margin-bottom: 0.75em;
 }
 
-.markdown details > :last-child {
+.markdown details:not(.maplibregl-ctrl-attrib) > :last-child {
   margin-bottom: 0;
 }
 
@@ -1542,8 +1542,8 @@ a.wiki-link-active {
 }
 
 .markdown .markdown-map .maplibregl-ctrl-attrib {
-  color: var(--muted);
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  color: #333;
+  background: rgb(255 255 255 / 82%);
 }
 
 .markdown .markdown-map .maplibregl-ctrl-attrib a {

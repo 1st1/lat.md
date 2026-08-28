@@ -947,7 +947,9 @@ describe('lat ui', () => {
       'overflow-x: auto;',
     );
     expect(styles).toContain("input[type='checkbox']");
-    expect(styles).toContain('.markdown details');
+    expect(styles).toContain(
+      '.markdown details:not(.maplibregl-ctrl-attrib)',
+    );
     expect(styles).toContain('.markdown .markdown-alert-caution');
     expect(styles).toContain('[data-footnotes]');
     expect(styles).toContain('img.markdown-emoji');
@@ -955,7 +957,13 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown .markdown-mermaid svg');
     expect(styles).toContain('.markdown .markdown-map-canvas');
     expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-group');
-    expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-attrib');
+    const mapAttributionStyles = styles.match(
+      /\.markdown \.markdown-map \.maplibregl-ctrl-attrib\s*\{([^}]*)\}/,
+    )?.[1];
+    expect(mapAttributionStyles).toContain('color: #333;');
+    expect(mapAttributionStyles).toContain(
+      'background: rgb(255 255 255 / 82%);',
+    );
     expect(styles).toContain('.markdown .markdown-stl-viewport');
   });
 
