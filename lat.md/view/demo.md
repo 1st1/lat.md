@@ -155,7 +155,7 @@ flowchart LR
 
 ### GeoJSON
 
-GeoJSON becomes an offline vector map with pan, zoom, and automatic bounds around the supplied geometry.
+GeoJSON becomes an interactive OpenStreetMap view with pan, zoom, and automatic bounds around the supplied geometry.
 
 ```geojson
 {
@@ -189,7 +189,7 @@ GeoJSON becomes an offline vector map with pan, zoom, and automatic bounds aroun
 
 ### TopoJSON
 
-TopoJSON objects are converted to GeoJSON in the browser and shown by the same self-contained map renderer.
+TopoJSON objects are converted to GeoJSON in the browser and overlaid on the same OpenFreeMap basemap.
 
 ```topojson
 {

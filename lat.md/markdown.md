@@ -52,7 +52,9 @@ GitHub-style `mermaid` fences render as SVG diagrams in the browser through Merm
 
 ## GeoJSON and TopoJSON Maps
 
-GitHub-style `geojson` and `topojson` fences render as self-contained interactive vector maps with pan, zoom, and automatic data bounds, without contacting an external tile service.
+GitHub-style `geojson` and `topojson` fences render supplied geometry over an OpenStreetMap basemap from OpenFreeMap, with pan, zoom, and automatic data bounds.
+
+The browser loads the hosted vector style and tiles only when a map fence is present. If that service is unavailable, MapLibre keeps the geometry interactive over a local grid fallback; attribution remains visible whenever OpenFreeMap data is used.
 
 ## ASCII STL Models
 

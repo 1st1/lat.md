@@ -37,6 +37,7 @@
   --reference-control: #e5e5e5;
   --graph-document: #0070f3;
   --graph-code: #d97706;
+  --map-control-filter: none;
   --syntax-built-in: #9a3f75;
   --syntax-comment: #737373;
   --syntax-keyword: #6c4bc2;
@@ -73,6 +74,7 @@
     --reference-control: #262626;
     --graph-document: rgb(82, 168, 255);
     --graph-code: #f5a623;
+    --map-control-filter: invert(1);
     --syntax-built-in: #e6a2cc;
     --syntax-comment: #888;
     --syntax-keyword: #c2adff;
@@ -1517,14 +1519,35 @@ a.wiki-link-active {
   background-size: 24px 24px;
 }
 
-.markdown .markdown-map .leaflet-bar a {
+.markdown .markdown-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.markdown .markdown-map .maplibregl-ctrl-group button {
   color: var(--text);
   background: var(--panel);
   border-color: var(--panel-border);
 }
 
-.markdown .markdown-map .leaflet-bar a:hover {
+.markdown .markdown-map .maplibregl-ctrl-group button:hover {
   background: var(--accent-soft);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-icon {
+  filter: var(--map-control-filter, none);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-attrib {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-attrib a {
+  color: inherit;
 }
 
 .markdown .markdown-stl {

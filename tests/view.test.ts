@@ -80,6 +80,8 @@ import {
   writeGraphMode,
 } from '../view/src/navigation.js';
 import {
+  geoJsonBounds,
+  OPENFREEMAP_STYLE_URL,
   parseGeoJson,
   parseStl,
   parseTopoJson,
@@ -867,6 +869,19 @@ describe('lat ui', () => {
     expect(
       parseGeoJson('{"type":"Point","coordinates":[-122.4,37.8]}'),
     ).toEqual({ type: 'Point', coordinates: [-122.4, 37.8] });
+    expect(OPENFREEMAP_STYLE_URL).toBe(
+      'https://tiles.openfreemap.org/styles/liberty',
+    );
+    expect(
+      geoJsonBounds(
+        parseGeoJson(
+          '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.4,37.8]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-123,38],[-121,37]]}}]}',
+        ),
+      ),
+    ).toEqual([
+      [-123, 37],
+      [-121, 38],
+    ]);
 
     const topoJson = await renderMarkdown(
       '```topojson\n{"type":"Topology","objects":{},"arcs":[]}\n```',
@@ -929,6 +944,8 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown .hljs-keyword');
     expect(styles).toContain('.markdown .markdown-mermaid svg');
     expect(styles).toContain('.markdown .markdown-map-canvas');
+    expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-group');
+    expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-attrib');
     expect(styles).toContain('.markdown .markdown-stl-viewport');
   });
 

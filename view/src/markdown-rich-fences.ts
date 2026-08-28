@@ -1,4 +1,4 @@
-import type { Feature, FeatureCollection, GeoJsonObject } from 'geojson';
+import type { Feature, FeatureCollection, GeoJSON } from 'geojson';
 
 type ActiveCheck = () => boolean;
 type Cleanup = () => void;
@@ -8,6 +8,21 @@ type ThreeModules = {
   STLLoader: typeof import('three/addons/loaders/STLLoader.js').STLLoader;
   three: typeof import('three');
 };
+type MapLibreModule = typeof import('maplibre-gl');
+type MapLibreMap = import('maplibre-gl').Map;
+
+export type GeoJsonBounds = [
+  southwest: [longitude: number, latitude: number],
+  northeast: [longitude: number, latitude: number],
+];
+
+export const OPENFREEMAP_STYLE_URL =
+  'https://tiles.openfreemap.org/styles/liberty';
+
+const MAP_SOURCE_ID = 'lat-document-geometry';
+const MAP_FILL_LAYER_ID = 'lat-document-geometry-fill';
+const MAP_LINE_LAYER_ID = 'lat-document-geometry-line';
+const MAP_POINT_LAYER_ID = 'lat-document-geometry-point';
 
 const MAP_SOURCE_SELECTOR = [
   '.markdown-geojson-source:not([data-render-status])',
@@ -16,6 +31,7 @@ const MAP_SOURCE_SELECTOR = [
 
 let mermaidModule: Promise<typeof import('mermaid').default> | null = null;
 let mermaidDiagramId = 0;
+let mapLibreModule: Promise<MapLibreModule> | null = null;
 let threeModules: Promise<ThreeModules> | null = null;
 
 async function getMermaid(): Promise<typeof import('mermaid').default> {
@@ -47,6 +63,11 @@ async function getThreeModules(): Promise<ThreeModules> {
     }));
   }
   return threeModules;
+}
+
+async function getMapLibre(): Promise<MapLibreModule> {
+  if (!mapLibreModule) mapLibreModule = import('maplibre-gl');
+  return mapLibreModule;
 }
 
 function errorMessage(reason: unknown): string {
@@ -111,7 +132,7 @@ export async function renderMermaidDiagrams(
   }
 }
 
-export function parseGeoJson(source: string): GeoJsonObject {
+export function parseGeoJson(source: string): GeoJSON {
   const value = JSON.parse(source) as unknown;
   if (
     !value ||
@@ -121,13 +142,13 @@ export function parseGeoJson(source: string): GeoJsonObject {
   ) {
     throw new Error('expected a GeoJSON object with a type');
   }
-  return value as GeoJsonObject;
+  return value as GeoJSON;
 }
 
 export function parseTopoJson(
   source: string,
   topojson: typeof import('topojson-client'),
-): GeoJsonObject {
+): GeoJSON {
   const value = JSON.parse(source) as {
     objects?: Record<string, unknown>;
     type?: unknown;
@@ -152,7 +173,121 @@ export function parseTopoJson(
   return { type: 'FeatureCollection', features } as FeatureCollection;
 }
 
-/** Replace GitHub-style GeoJSON and TopoJSON fallbacks with offline maps. */
+/** Return the geographic bounds of all finite coordinates in GeoJSON. */
+export function geoJsonBounds(data: GeoJSON): GeoJsonBounds | null {
+  let minimumLongitude = Number.POSITIVE_INFINITY;
+  let minimumLatitude = Number.POSITIVE_INFINITY;
+  let maximumLongitude = Number.NEGATIVE_INFINITY;
+  let maximumLatitude = Number.NEGATIVE_INFINITY;
+
+  const visitCoordinates = (coordinates: unknown): void => {
+    if (!Array.isArray(coordinates)) return;
+    if (
+      coordinates.length >= 2 &&
+      typeof coordinates[0] === 'number' &&
+      typeof coordinates[1] === 'number'
+    ) {
+      const [longitude, latitude] = coordinates;
+      if (Number.isFinite(longitude) && Number.isFinite(latitude)) {
+        minimumLongitude = Math.min(minimumLongitude, longitude);
+        minimumLatitude = Math.min(minimumLatitude, latitude);
+        maximumLongitude = Math.max(maximumLongitude, longitude);
+        maximumLatitude = Math.max(maximumLatitude, latitude);
+      }
+      return;
+    }
+    for (const coordinate of coordinates) visitCoordinates(coordinate);
+  };
+
+  const visitObject = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return;
+    const object = value as {
+      coordinates?: unknown;
+      features?: unknown[];
+      geometries?: unknown[];
+      geometry?: unknown;
+      type?: unknown;
+    };
+    if (object.type === 'FeatureCollection') {
+      for (const feature of object.features ?? []) visitObject(feature);
+    } else if (object.type === 'Feature') {
+      visitObject(object.geometry);
+    } else if (object.type === 'GeometryCollection') {
+      for (const geometry of object.geometries ?? []) visitObject(geometry);
+    } else {
+      visitCoordinates(object.coordinates);
+    }
+  };
+
+  visitObject(data);
+  if (!Number.isFinite(minimumLongitude)) return null;
+  return [
+    [minimumLongitude, minimumLatitude],
+    [maximumLongitude, maximumLatitude],
+  ];
+}
+
+function fallbackMapStyle(): import('maplibre-gl').StyleSpecification {
+  return { version: 8, sources: {}, layers: [] };
+}
+
+function addMapGeometry(map: MapLibreMap, data: GeoJSON, color: string): void {
+  if (map.getSource(MAP_SOURCE_ID)) return;
+  map.addSource(MAP_SOURCE_ID, { type: 'geojson', data });
+  map.addLayer({
+    id: MAP_FILL_LAYER_ID,
+    type: 'fill',
+    source: MAP_SOURCE_ID,
+    filter: ['==', ['geometry-type'], 'Polygon'],
+    paint: {
+      'fill-color': color,
+      'fill-opacity': 0.24,
+    },
+  });
+  map.addLayer({
+    id: MAP_LINE_LAYER_ID,
+    type: 'line',
+    source: MAP_SOURCE_ID,
+    filter: [
+      'any',
+      ['==', ['geometry-type'], 'LineString'],
+      ['==', ['geometry-type'], 'Polygon'],
+    ],
+    paint: {
+      'line-color': color,
+      'line-opacity': 0.94,
+      'line-width': 3,
+    },
+  });
+  map.addLayer({
+    id: MAP_POINT_LAYER_ID,
+    type: 'circle',
+    source: MAP_SOURCE_ID,
+    filter: ['==', ['geometry-type'], 'Point'],
+    paint: {
+      'circle-color': color,
+      'circle-opacity': 0.9,
+      'circle-radius': 6,
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 2,
+    },
+  });
+}
+
+function frameMap(map: MapLibreMap, bounds: GeoJsonBounds | null): void {
+  if (!bounds) {
+    map.jumpTo({ center: [0, 0], zoom: 1 });
+    return;
+  }
+  const [[west, south], [east, north]] = bounds;
+  if (west === east && south === north) {
+    map.jumpTo({ center: [west, south], zoom: 12 });
+    return;
+  }
+  map.fitBounds(bounds, { duration: 0, maxZoom: 12, padding: 36 });
+}
+
+/** Replace GitHub-style GeoJSON and TopoJSON fallbacks with real-world maps. */
 export async function renderMapDiagrams(
   root: ParentNode,
   isActive: ActiveCheck = () => true,
@@ -163,11 +298,11 @@ export async function renderMapDiagrams(
   );
   if (sources.length === 0) return;
 
-  let leaflet: typeof import('leaflet');
+  let maplibre: MapLibreModule;
   let topojson: typeof import('topojson-client');
   try {
-    [leaflet, topojson] = await Promise.all([
-      import('leaflet'),
+    [maplibre, topojson] = await Promise.all([
+      getMapLibre(),
       import('topojson-client'),
     ]);
   } catch (reason) {
@@ -185,7 +320,8 @@ export async function renderMapDiagrams(
     const topo = source.classList.contains('markdown-topojson-source');
     const label = topo ? 'TopoJSON map' : 'GeoJSON map';
     let figure: HTMLElement | null = null;
-    let map: ReturnType<typeof leaflet.map> | null = null;
+    let map: MapLibreMap | null = null;
+    let removed = false;
     try {
       const data = topo
         ? parseTopoJson(source.textContent ?? '', topojson)
@@ -193,47 +329,73 @@ export async function renderMapDiagrams(
       figure = document.createElement('figure');
       figure.className = 'markdown-diagram markdown-map';
       figure.setAttribute('aria-label', label);
+      figure.dataset.basemapStatus = 'loading';
       const canvas = document.createElement('div');
       canvas.className = 'markdown-map-canvas';
       figure.append(canvas);
       source.replaceWith(figure);
 
       const color =
-        getComputedStyle(figure).getPropertyValue('--accent').trim() ||
-        '#0969da';
-      map = leaflet.map(canvas, {
-        attributionControl: false,
-        scrollWheelZoom: false,
+        getComputedStyle(figure).getPropertyValue('--link').trim() || '#0969da';
+      map = new maplibre.Map({
+        attributionControl: { compact: false },
+        container: canvas,
+        scrollZoom: false,
+        style: OPENFREEMAP_STYLE_URL,
       });
-      const layer = leaflet
-        .geoJSON(data, {
-          pointToLayer: (_feature, latLng) =>
-            leaflet.circleMarker(latLng, {
-              color,
-              fillColor: color,
-              fillOpacity: 0.72,
-              radius: 6,
-              weight: 2,
-            }),
-          style: {
-            color,
-            fillColor: color,
-            fillOpacity: 0.22,
-            weight: 2,
-          },
-        })
-        .addTo(map);
-      const bounds = layer.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds.pad(0.12), { maxZoom: 12 });
-      } else {
-        map.setView([0, 0], 1);
-      }
       const renderedMap = map;
-      registerCleanup(() => renderedMap.remove());
+      let fallbackTimer: number | null = null;
+      const cleanup = () => {
+        if (removed) return;
+        removed = true;
+        if (fallbackTimer !== null) window.clearTimeout(fallbackTimer);
+        renderedMap.remove();
+      };
+      registerCleanup(cleanup);
+
+      renderedMap.addControl(
+        new maplibre.NavigationControl({ showCompass: false }),
+        'top-left',
+      );
+      frameMap(renderedMap, geoJsonBounds(data));
+
+      let usingFallback = false;
+      let styleLoaded = false;
+      const activateFallback = (reason: unknown) => {
+        if (!isActive() || removed || styleLoaded || usingFallback) return;
+        usingFallback = true;
+        figure!.dataset.basemapStatus = 'fallback';
+        figure!.title = `Basemap unavailable; showing supplied geometry only: ${errorMessage(reason)}`;
+        renderedMap.setStyle(fallbackMapStyle(), { diff: false });
+      };
+      fallbackTimer = window.setTimeout(
+        () => activateFallback(new Error('OpenFreeMap request timed out')),
+        10_000,
+      );
+      renderedMap.on('style.load', () => {
+        if (!isActive() || removed) return;
+        try {
+          addMapGeometry(renderedMap, data, color);
+          styleLoaded = true;
+          if (fallbackTimer !== null) {
+            window.clearTimeout(fallbackTimer);
+            fallbackTimer = null;
+          }
+          figure!.dataset.basemapStatus = usingFallback ? 'fallback' : 'ready';
+          if (!usingFallback) figure!.removeAttribute('title');
+        } catch (reason) {
+          cleanup();
+          if (!isActive()) return;
+          figure!.replaceWith(source);
+          showFenceError(source, label, reason);
+        }
+      });
+      renderedMap.on('error', (event) => {
+        activateFallback(event.error);
+      });
     } catch (reason) {
       if (!isActive()) return;
-      map?.remove();
+      if (map && !removed) map.remove();
       figure?.replaceWith(source);
       showFenceError(source, label, reason);
     }
