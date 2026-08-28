@@ -14,6 +14,7 @@ export function MarkdownContent({
     let active = true;
     const cleanups: Array<() => void> = [];
     if (content.current) {
+      content.current.innerHTML = html;
       void renderMarkdownRichFences(
         content.current,
         () => active,
@@ -29,12 +30,5 @@ export function MarkdownContent({
     };
   }, [html]);
 
-  return (
-    <article
-      className="markdown"
-      onClick={onClick}
-      ref={content}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
+  return <article className="markdown" onClick={onClick} ref={content} />;
 }

@@ -187,6 +187,10 @@ Changing only a Markdown fragment preserves the mounted document and cached resp
 
 Selecting the H1 entry in the page TOC keeps its canonical fragment while positioning the document at scroll-top zero instead of aligning the rendered heading.
 
+### Preserves rich renderers
+
+Fragment-only rerenders leave the enhanced Markdown DOM intact, so Mermaid, map, and STL renderers remain mounted instead of reverting to their authored source fallbacks.
+
 ## Restores history scroll positions
 
 In-app navigation records each viewport and restores it before revealing content reached through Back.
