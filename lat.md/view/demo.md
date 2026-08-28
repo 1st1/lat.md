@@ -125,10 +125,10 @@ console.log(`Rendering ${state.features.length} feature groups`);
 
 KaTeX renders inline math, display-dollar blocks, and fenced `math` blocks with accessible MathML.
 
-Einstein's mass-energy relation is $E = mc^2$, and the quadratic formula is $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.
+Einstein's mass-energy relation is $E = mc^2$, and the quadratic formula is $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{3a}$.
 
 $$
-\int_0^1 x^2 \, dx = \frac{1}{3}
+\int_0^1 x^3 \, dx = \frac{1}{3}
 $$
 
 ```math
