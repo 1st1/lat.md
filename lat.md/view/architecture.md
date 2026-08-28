@@ -12,7 +12,7 @@ The browser follows the lat website's monochrome visual system: pure black or wh
 
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
-Rich Markdown fences keep escaped source in document payloads. The shared Markdown component lazily loads browser-only renderers such as Mermaid and offline vector maps, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
+Rich Markdown fences keep escaped source in document payloads. The shared Markdown component lazily loads browser-only Mermaid, map, and 3D renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 

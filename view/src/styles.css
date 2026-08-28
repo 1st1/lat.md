@@ -1527,6 +1527,48 @@ a.wiki-link-active {
   background: var(--accent-soft);
 }
 
+.markdown .markdown-stl {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--link) 8%, transparent),
+      transparent 58%
+    ),
+    var(--panel);
+}
+
+.markdown .markdown-stl-viewport {
+  width: 100%;
+  height: min(440px, 62vh);
+  min-height: 300px;
+}
+
+.markdown .markdown-stl-viewport canvas {
+  display: block;
+  cursor: grab;
+}
+
+.markdown .markdown-stl-viewport canvas:active {
+  cursor: grabbing;
+}
+
+.markdown .markdown-stl-caption {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 4px 7px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+}
+
 .markdown .markdown-diagram-error {
   padding: 10px 12px;
   margin-bottom: 0;

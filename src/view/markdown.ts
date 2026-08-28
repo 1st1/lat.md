@@ -69,6 +69,7 @@ const GEOJSON_SOURCE_CLASS = 'markdown-geojson-source';
 const HIGHLIGHT_CLASS = 'hljs';
 const MERMAID_SOURCE_CLASS = 'markdown-mermaid-source';
 const RICH_FENCE_SOURCE_CLASS = 'markdown-diagram-source';
+const STL_SOURCE_CLASS = 'markdown-stl-source';
 const TOPOJSON_SOURCE_CLASS = 'markdown-topojson-source';
 const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
 const ALERT_CLASSES = [
@@ -171,6 +172,7 @@ const sanitizeSchema: SanitizeSchema = {
       GEOJSON_SOURCE_CLASS,
       MERMAID_SOURCE_CLASS,
       RICH_FENCE_SOURCE_CLASS,
+      STL_SOURCE_CLASS,
       TOPOJSON_SOURCE_CLASS,
     ]),
     span: [
@@ -208,7 +210,9 @@ const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
         ? GEOJSON_SOURCE_CLASS
         : language?.toLowerCase() === 'topojson'
           ? TOPOJSON_SOURCE_CLASS
-          : null;
+          : language?.toLowerCase() === 'stl'
+            ? STL_SOURCE_CLASS
+            : null;
   const highlighted =
     language && !richSourceClass ? highlightCode(language, node.value) : null;
   const code = {

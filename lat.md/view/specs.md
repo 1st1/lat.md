@@ -55,6 +55,8 @@ Inline and display math render as accessible KaTeX after authored HTML has been 
 
 `geojson` and `topojson` fences lazily render as offline interactive vector maps fitted to their data. Malformed or unsupported data leaves escaped source visible with a safe inline error.
 
+ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, and automatic framing. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
+
 GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
 
 GitHub footnotes render linked superscript references and a compact end section with return links, rather than being misread as ordinary Markdown reference links.

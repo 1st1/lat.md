@@ -81,6 +81,7 @@ import {
 } from '../view/src/navigation.js';
 import {
   parseGeoJson,
+  parseStl,
   parseTopoJson,
 } from '../view/src/markdown-rich-fences.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
@@ -869,6 +870,27 @@ describe('lat ui', () => {
       features: [{ geometry: { type: 'Point', coordinates: [1, 2] } }],
     });
 
+    const stlSource =
+      'solid triangle\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid triangle';
+    const stl = await renderMarkdown(
+      `\`\`\`stl\n${stlSource}\n\`\`\``,
+      'guide.md',
+    );
+    expect(stl.html).toContain(
+      '<pre class="markdown-diagram-source markdown-stl-source">',
+    );
+    expect(stl.html).toContain('<code class="language-stl">');
+    expect(stl.html).not.toContain('hljs');
+    const { STLLoader } = await import(
+      'three/addons/loaders/STLLoader.js'
+    );
+    const geometry = parseStl(stlSource, STLLoader);
+    expect(geometry.getAttribute('position').count).toBe(3);
+    geometry.dispose();
+    expect(() => parseStl('not an ASCII STL model', STLLoader)).toThrow(
+      'expected an ASCII STL solid with facets',
+    );
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -889,6 +911,7 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown .hljs-keyword');
     expect(styles).toContain('.markdown .markdown-mermaid svg');
     expect(styles).toContain('.markdown .markdown-map-canvas');
+    expect(styles).toContain('.markdown .markdown-stl-viewport');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

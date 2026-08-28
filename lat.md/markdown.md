@@ -54,6 +54,10 @@ GitHub-style `mermaid` fences render as SVG diagrams in the browser through Merm
 
 GitHub-style `geojson` and `topojson` fences render as self-contained interactive vector maps with pan, zoom, and automatic data bounds, without contacting an external tile service.
 
+## ASCII STL Models
+
+GitHub-style `stl` fences parse ASCII STL into responsive, automatically framed 3D models that can be rotated and zoomed in the browser without external services.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
