@@ -1,5 +1,13 @@
 import { basename, extname } from 'node:path';
-import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
+import type {
+  Blockquote,
+  Definition,
+  Link,
+  Parent,
+  PhrasingContent,
+  Root,
+  RootContent,
+} from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeSlug from 'rehype-slug';
@@ -52,9 +60,12 @@ const ERROR_CLASS = 'markdown-error';
 const EXTERNAL_LINK_CLASS = 'external-link';
 const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
+const REFERENCE_DEFINITION_LABEL_CLASS = 'markdown-reference-label';
+const REFERENCE_DEFINITION_TABLE_CLASS = 'markdown-reference-definitions';
 
 function classAttributes(
   tag: string,
+  classes: string[] = [],
 ): NonNullable<SanitizeSchema['attributes']>[string] {
   const attributes = defaultSchema.attributes?.[tag] ?? [];
   const allowedClasses = attributes.flatMap((attribute) =>
@@ -67,7 +78,7 @@ function classAttributes(
       (attribute) =>
         !(Array.isArray(attribute) && attribute[0] === 'className'),
     ),
-    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES],
+    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES, ...classes],
   ];
 }
 
@@ -123,6 +134,9 @@ const sanitizeSchema: SanitizeSchema = {
         ...GIT_CLASSES,
       ],
     ],
+    table: classAttributes('table', [REFERENCE_DEFINITION_TABLE_CLASS]),
+    th: classAttributes('th', [REFERENCE_DEFINITION_LABEL_CLASS]),
+    tr: classAttributes('tr'),
     ul: classAttributes('ul'),
   },
 };
@@ -132,6 +146,101 @@ const htmlProcessor = unified()
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeSlug)
   .use(rehypeStringify);
+
+function referenceDefinitionTable(definitions: Definition[]): Blockquote {
+  const firstPosition = definitions[0]?.position?.start;
+  const lastPosition = definitions.at(-1)?.position?.end;
+
+  return {
+    type: 'blockquote',
+    data: {
+      hName: 'table',
+      hProperties: { className: [REFERENCE_DEFINITION_TABLE_CLASS] },
+    },
+    ...(firstPosition && lastPosition
+      ? { position: { start: firstPosition, end: lastPosition } }
+      : {}),
+    children: [
+      {
+        type: 'blockquote',
+        data: { hName: 'tbody' },
+        children: definitions.map((definition) => ({
+          type: 'blockquote',
+          data: {
+            ...(definition.data ? structuredClone(definition.data) : undefined),
+            hName: 'tr',
+          },
+          position: definition.position,
+          children: [
+            {
+              type: 'paragraph',
+              data: {
+                hName: 'th',
+                hProperties: {
+                  scope: 'row',
+                  className: [REFERENCE_DEFINITION_LABEL_CLASS],
+                },
+              },
+              position: definition.position,
+              children: [
+                {
+                  type: 'text',
+                  value: `[${definition.label ?? definition.identifier}]`,
+                },
+              ],
+            },
+            {
+              type: 'paragraph',
+              data: { hName: 'td' },
+              position: definition.position,
+              children: [
+                {
+                  type: 'link',
+                  url: definition.url,
+                  title: definition.title,
+                  children: [{ type: 'text', value: definition.url }],
+                },
+                ...(definition.title
+                  ? [
+                      {
+                        type: 'text' as const,
+                        value: ` "${definition.title}"`,
+                      },
+                    ]
+                  : []),
+              ],
+            },
+          ],
+        })),
+      },
+    ],
+  };
+}
+
+function exposeReferenceDefinitions(parent: Parent): void {
+  const children: RootContent[] = [];
+  let definitions: Definition[] = [];
+
+  const flushDefinitions = () => {
+    if (definitions.length === 0) return;
+    children.push(referenceDefinitionTable(definitions));
+    definitions = [];
+  };
+
+  for (const child of parent.children) {
+    if (child.type === 'definition') {
+      children.push(child);
+      definitions.push(child);
+      continue;
+    }
+
+    flushDefinitions();
+    if ('children' in child) exposeReferenceDefinitions(child as Parent);
+    children.push(child);
+  }
+  flushDefinitions();
+  parent.children = children;
+}
 
 function nodeText(node: { value?: unknown; children?: unknown }): string {
   if (typeof node.value === 'string') return node.value;
@@ -376,6 +485,7 @@ export async function renderMarkdown(
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
   if (options.errors) markMarkdownErrors(tree, options.errors);
+  exposeReferenceDefinitions(tree);
 
   visit(tree, 'link', (node: Link) => {
     const authoredUrl = node.url;

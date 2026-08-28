@@ -37,6 +37,10 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
 
+## Renders Markdown reference definitions
+
+Reference-link definitions remain visible as muted tables while continuing to resolve reference-style links. Labels are monospace row headers; URLs, titles, validation markers, and Git changes remain visible.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.

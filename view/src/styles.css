@@ -1089,6 +1089,64 @@ a {
   margin-top: 0.35em;
 }
 
+.markdown table.markdown-reference-definitions {
+  width: 100%;
+  margin: 0 0 1.25em;
+  overflow: hidden;
+  border-spacing: 0;
+  background: var(--code);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.markdown-reference-definitions th,
+.markdown-reference-definitions td {
+  padding: 9px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.markdown-reference-definitions tr:last-child > * {
+  border-bottom: 0;
+}
+
+.markdown-reference-definitions .markdown-reference-label {
+  width: 1%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  font-weight: 650;
+  white-space: nowrap;
+  background: var(--inline-code);
+  border-right: 1px solid var(--panel-border);
+}
+
+.markdown-reference-definitions td {
+  overflow-wrap: anywhere;
+}
+
+.markdown-reference-definitions tr.markdown-error > * {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger-soft) 42%, transparent);
+}
+
+.markdown-reference-definitions tr.git-added > * {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+}
+
+.markdown-reference-definitions tr.git-removed > * {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
+}
+
+.markdown-reference-definitions tr.markdown-error > :first-child,
+.markdown-reference-definitions tr.git-added > :first-child,
+.markdown-reference-definitions tr.git-removed > :first-child {
+  box-shadow: inset 3px 0 0 currentColor;
+}
+
 .markdown a {
   overflow-wrap: anywhere;
   text-decoration-line: underline;

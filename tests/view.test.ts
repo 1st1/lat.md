@@ -689,6 +689,62 @@ describe('lat ui', () => {
     );
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Renders Markdown reference definitions]]
+  it('renders Markdown reference-link definitions', async () => {
+    const markdown = [
+      'See [the pull request][pr56275].',
+      '',
+      '[pr56275]: https://github.com/nodejs/node/pull/56275',
+      '[perf180]: https://github.com/nodejs/performance/issues/180 "Performance issue"',
+      '',
+    ].join('\n');
+    const rendered = await renderMarkdown(markdown, 'lat.md');
+
+    expect(rendered.html).toContain(
+      '<a href="https://github.com/nodejs/node/pull/56275">the pull request</a>',
+    );
+    expect(rendered.html).toContain(
+      '<table class="markdown-reference-definitions">\n<tbody>',
+    );
+    expect(rendered.html).toContain(
+      '<th scope="row" class="markdown-reference-label">[pr56275]</th>\n<td><a href="https://github.com/nodejs/node/pull/56275" class="external-link">https://github.com/nodejs/node/pull/56275',
+    );
+    expect(rendered.html).toContain(
+      '<th scope="row" class="markdown-reference-label">[perf180]</th>\n<td><a href="https://github.com/nodejs/performance/issues/180" title="Performance issue" class="external-link">https://github.com/nodejs/performance/issues/180',
+    );
+    expect(rendered.html).toContain(' "Performance issue"</td>');
+    expect(rendered.html.match(/class="external-link-icon"/g)).toHaveLength(2);
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(
+      styles.match(
+        /\.markdown table\.markdown-reference-definitions\s*\{([^}]*)\}/,
+      )?.[1],
+    ).toContain('background: var(--code);');
+    expect(
+      styles.match(
+        /\.markdown-reference-definitions \.markdown-reference-label\s*\{([^}]*)\}/,
+      )?.[1],
+    ).toContain('background: var(--inline-code);');
+
+    const diff = await renderMarkdown(
+      markdown,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree('', markdown),
+    );
+    expect(diff.html).toContain(
+      '<tr class="git-added">\n<th scope="row" class="markdown-reference-label">[pr56275]</th>',
+    );
+    expect(diff.html).toContain(
+      '<tr class="git-added">\n<th scope="row" class="markdown-reference-label">[perf180]</th>',
+    );
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
   it('builds nested document navigation and tracks the active heading', async () => {
     const content =

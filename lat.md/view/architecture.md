@@ -68,6 +68,8 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 
 [[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.
 
+Reference-link definitions remain in the syntax tree for resolving reference-style links and are also projected into muted two-column tables. Labels become monospace row headers, while rows retain authored validation and Git annotations.
+
 Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
