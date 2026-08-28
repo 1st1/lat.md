@@ -700,6 +700,18 @@ describe('lat ui', () => {
       '<p>Keep <del>obsolete</del> current guidance.</p>',
     );
 
+    const tasks = await renderMarkdown(
+      '- [x] Shipped\n- [ ] Follow up',
+      'guide.md',
+    );
+    expect(tasks.html).toContain('<ul class="contains-task-list">');
+    expect(tasks.html).toContain(
+      '<input type="checkbox" checked disabled> Shipped',
+    );
+    expect(tasks.html).toContain(
+      '<input type="checkbox" disabled> Follow up',
+    );
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -712,6 +724,7 @@ describe('lat ui', () => {
     expect(styles.match(/\.markdown table\s*\{([^}]*)\}/)?.[1]).toContain(
       'overflow-x: auto;',
     );
+    expect(styles).toContain("input[type='checkbox']");
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]

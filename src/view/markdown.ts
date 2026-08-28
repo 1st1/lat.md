@@ -103,6 +103,7 @@ const sanitizeSchema: SanitizeSchema = {
     h5: classAttributes('h5'),
     h6: classAttributes('h6'),
     img: classAttributes('img'),
+    input: [...(defaultSchema.attributes?.input ?? []), ['checked', true]],
     ins: classAttributes('ins'),
     li: classAttributes('li'),
     ol: classAttributes('ol'),

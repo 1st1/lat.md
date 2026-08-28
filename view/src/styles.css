@@ -1089,6 +1089,21 @@ a {
   margin-top: 0.35em;
 }
 
+.markdown .contains-task-list,
+.markdown .task-list-item {
+  list-style: none;
+}
+
+.markdown .contains-task-list {
+  padding-left: 1.45em;
+}
+
+.markdown .task-list-item > input[type='checkbox'] {
+  margin: 0 0.5em 0 -1.45em;
+  accent-color: var(--accent);
+  pointer-events: none;
+}
+
 .markdown a {
   overflow-wrap: anywhere;
   text-decoration-line: underline;

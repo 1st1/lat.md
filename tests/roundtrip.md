@@ -46,6 +46,10 @@ A paragraph with `inline code` and a [link](https://example.com) and an [aliased
 
 * Back to top level
 
+* [x] Completed task
+
+* [ ] Open task
+
 1. First ordered
 
 2. Second ordered

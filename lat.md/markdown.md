@@ -12,6 +12,10 @@ Table syntax is supported by the shared [[parser#Tables|parser extension]], incl
 
 GitHub-flavored single- or double-tilde delimiters render obsolete text with semantic `del` markup while preserving the authored delimiters during serialization.
 
+## Task Lists
+
+GitHub-flavored checked and unchecked list markers render as accessible, read-only checkboxes while remaining ordinary Markdown list structure for parsing and serialization.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

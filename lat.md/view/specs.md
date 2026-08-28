@@ -41,6 +41,8 @@ GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay wit
 
 Single- and double-tilde GitHub strikethrough syntax renders semantic deleted text rather than literal delimiters.
 
+GitHub task-list markers render checked or unchecked disabled checkboxes with compact list alignment, preserving document readability without implying that the source file can be edited from the viewer.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.
