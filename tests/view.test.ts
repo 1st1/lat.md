@@ -709,6 +709,14 @@ describe('lat ui', () => {
     expect(table.html).toContain('<code>typeof</code> feature detect.');
     expect(table.html).not.toContain('| --- |');
 
+    const tableWithPipesInCode = await renderMarkdown(
+      '| Feature | Syntax sample |\n| --- | --- |\n| Table | `\\| cell \\|` |',
+      'guide.md',
+    );
+    expect(tableWithPipesInCode.html).toContain(
+      '<td>Table</td><td><code>| cell |</code></td>',
+    );
+
     const strikethrough = await renderMarkdown(
       'Keep ~~obsolete~~ current guidance.',
       'guide.md',

@@ -18,7 +18,7 @@ Pipe tables render as semantic tables, including inline Markdown and column alig
 
 | Feature | Syntax sample | Status |
 | :--- | :---: | ---: |
-| Table | `| cell |` | **Rendered** |
+| Table | `\| cell \|` | **Rendered** |
 | Strikethrough | `~~old~~` | ~~Old~~ New |
 | Inline code | `` `const` `` | `const` |
 | Emoji | `:rocket:` | :rocket: |
