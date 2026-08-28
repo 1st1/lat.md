@@ -678,6 +678,20 @@ describe('lat ui', () => {
     expect(links.html).toContain('<a href="guide.md#details">local</a>');
     expect(links.html).toContain('<a href="mailto:hi@example.com">email</a>');
 
+    const table = await renderMarkdown(
+      '| Mitigation | What Nub does |\n| --- | --- |\n| Native | Nothing. The version already ships it. |\n| Polyfill | Installs a JavaScript polyfill, guarded by a `typeof` feature detect. |',
+      'guide.md',
+    );
+    expect(table.html).toContain('<table>');
+    expect(table.html).toContain(
+      '<thead>\n<tr>\n<th>Mitigation</th>\n<th>What Nub does</th>',
+    );
+    expect(table.html).toContain(
+      '<tbody>\n<tr>\n<td>Native</td>\n<td>Nothing. The version already ships it.</td>',
+    );
+    expect(table.html).toContain('<code>typeof</code> feature detect.');
+    expect(table.html).not.toContain('| --- |');
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -686,6 +700,9 @@ describe('lat ui', () => {
     expect(styles).toContain('-webkit-mask:');
     expect(styles.match(/\.markdown a\s*\{([^}]*)\}/)?.[1]).toContain(
       'text-decoration-line: underline;',
+    );
+    expect(styles.match(/\.markdown table\s*\{([^}]*)\}/)?.[1]).toContain(
+      'overflow-x: auto;',
     );
   });
 

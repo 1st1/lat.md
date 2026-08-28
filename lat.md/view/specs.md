@@ -37,6 +37,8 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
 
+GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.

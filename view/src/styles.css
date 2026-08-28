@@ -1096,6 +1096,32 @@ a {
   text-underline-offset: 3px;
 }
 
+.markdown table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 1.25em;
+  overflow-x: auto;
+  line-height: 1.5;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+}
+
+.markdown th {
+  font-weight: 650;
+  background: var(--panel);
+}
+
+.markdown th:not([align]) {
+  text-align: left;
+}
+
 .markdown .markdown-error {
   color: var(--danger);
   scroll-margin-top: 24px;

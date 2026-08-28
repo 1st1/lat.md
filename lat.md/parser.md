@@ -2,6 +2,10 @@
 
 Markdown parsing built on unified/remark v11. Entry point: [[src/parser.ts]]. Parse → render fidelity is verified by [[tests/roundtrip]].
 
+## Tables
+
+The shared AST recognizes [[markdown#Tables|GitHub-flavored pipe tables]] through the table-only micromark and mdast extensions, preserving table structure for rendering and serialization without enabling unrelated GFM syntax.
+
 ## Wiki Links
 
 Custom micromark + mdast extension implementing [[markdown#Wiki Links]]. Located in `src/extensions/wiki-link/` (see [[src/extensions/wiki-link/syntax.ts]] for the tokenizer).

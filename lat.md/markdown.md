@@ -2,6 +2,12 @@
 
 Extensions to standard markdown used in `lat.md` files.
 
+## Tables
+
+GitHub-flavored pipe tables are parsed as structured rows and cells, so `lat ui` renders semantic, horizontally scrollable HTML tables instead of pipe-delimited text.
+
+Table syntax is supported by the shared [[parser#Tables|parser extension]], including inline Markdown inside cells.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
