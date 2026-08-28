@@ -732,6 +732,24 @@ describe('lat ui', () => {
     );
     expect(autolinks.html.match(/class="external-link-icon"/g)).toHaveLength(2);
 
+    const repositoryReferences = await renderMarkdown(
+      'Repository files keep #26, GH-26, owner/repo#26, @octocat, and a5c3785ed8d6a35868bc169f07e40e889087fd2e literal.',
+      'guide.md',
+    );
+    expect(repositoryReferences.html).toBe(
+      '<p>Repository files keep #26, GH-26, owner/repo#26, @octocat, and a5c3785ed8d6a35868bc169f07e40e889087fd2e literal.</p>',
+    );
+
+    const issueUrl = await renderMarkdown(
+      'See https://github.com/jlord/sheetsee.js/issues/26.',
+      'guide.md',
+    );
+    expect(issueUrl.html).toContain(
+      'href="https://github.com/jlord/sheetsee.js/issues/26"',
+    );
+    expect(issueUrl.html).toContain('>https://github.com/jlord/sheetsee.js/issues/26');
+    expect(issueUrl.html).not.toContain('>#26</a>');
+
     const safeHtml = await renderMarkdown(
       '<details open onclick="alert(1)">\n<summary>More</summary>\n\nSafe H<sub>2</sub>O.\n\n<script>alert(1)</script>\n</details>',
       'guide.md',

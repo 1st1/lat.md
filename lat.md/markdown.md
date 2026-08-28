@@ -58,6 +58,12 @@ GitHub-style `geojson` and `topojson` fences render as self-contained interactiv
 
 GitHub-style `stl` fences parse ASCII STL into responsive, automatically framed 3D models that can be rotated and zoomed in the browser without external services.
 
+## GitHub Surface Boundaries
+
+Lat documents follow GitHub's repository-file Markdown surface. Conversation-only issue, pull-request, commit, mention, color-chip, task-unfurl, custom-autolink, and code-permalink enrichments remain literal text or ordinary URLs.
+
+Those enrichments depend on live GitHub repository, account, permission, or issue metadata and are not part of portable document syntax. GitHub itself does not create issue or pull-request autolinks or code-snippet embeds in repository Markdown files.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

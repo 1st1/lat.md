@@ -63,6 +63,8 @@ GitHub footnotes render linked superscript references and a compact end section 
 
 Recognized GitHub emoji shortcodes render as accessible Unicode emoji or GitHub custom emoji assets; unknown shortcodes stay literal, and rendering never rewrites the authored Markdown.
 
+GitHub conversation references such as `#26`, `GH-26`, account mentions, and commit SHAs remain literal in Lat documents, matching repository-file rendering. Full GitHub URLs remain ordinary external links rather than conversation-only shortlinks or embeds.
+
 ## Shows a local table of contents
 
 Markdown documents expose their H1 plus nested subsection headings in a sticky right rail on wide screens. The root entry stays bold without shifting subsection indentation; every entry links to its canonical fragment.
