@@ -972,6 +972,8 @@ describe('lat ui', () => {
     expect(mapAttributionStyles).toContain(
       'background: rgb(255 255 255 / 82%);',
     );
+    expect(styles).toContain('.markdown table.git-added');
+    expect(styles).toContain('.markdown tr.git-removed');
     expect(styles).toContain('.markdown .markdown-stl-viewport');
   });
 
@@ -1845,6 +1847,72 @@ describe('lat ui git state', () => {
     );
   });
 
+  it('renders compatible table edits within one table', async () => {
+    const base = [
+      '| Feature | Syntax sample | Status |',
+      '| --- | --- | --- |',
+      '| Inline code | `const` | Stable |',
+      '| Description | old renderer stays | Stable |',
+      '| Removed row | old value | Gone |',
+      '| Stable row | same value | Here |',
+    ].join('\n');
+    const current = [
+      '| Feature | Syntax sample | Status |',
+      '| --- | --- | --- |',
+      '| Inline code | `co1nst` | Stable |',
+      '| Description | new renderer stays | Stable |',
+      '| Stable row | same value | Here |',
+      '| Added row | new value | Here |',
+    ].join('\n');
+    const rendered = await renderMarkdown(
+      current,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(base, current),
+    );
+
+    expect(rendered.html.match(/<table/g)).toHaveLength(1);
+    expect(rendered.html).toContain(
+      '<td><del class="git-removed"><code>const</code></del><ins class="git-added"><code>co1nst</code></ins></td>',
+    );
+    expect(rendered.html).toContain(
+      '<del class="git-removed">old</del><ins class="git-added">new</ins> renderer stays',
+    );
+    expect(rendered.html).toContain('<tr class="git-removed">');
+    expect(rendered.html).toContain('<tr class="git-added">');
+  });
+
+  it('colors whole-table fallbacks for incompatible table edits', async () => {
+    const base = '| Feature | Status |\n| --- | --- |\n| Table | Old |';
+    const current =
+      '| Feature | Syntax | Status |\n| --- | --- | --- |\n| Table | New | Ready |';
+    const rendered = await renderMarkdown(
+      current,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(base, current),
+    );
+
+    expect(rendered.html.match(/<table/g)).toHaveLength(2);
+    expect(rendered.html).toContain('<table class="git-removed">');
+    expect(rendered.html).toContain('<table class="git-added">');
+
+    const realignedBase = '| Feature |\n| :--- |\n| Table |';
+    const realignedCurrent = '| Feature |\n| ---: |\n| Table |';
+    const realigned = await renderMarkdown(
+      realignedCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(realignedBase, realignedCurrent),
+    );
+    expect(realigned.html.match(/<table/g)).toHaveLength(2);
+    expect(realigned.html).toContain('<table class="git-removed">');
+    expect(realigned.html).toContain('<table class="git-added">');
+  });
+
   it('marks every rendered block in a new Markdown file as added', async () => {
     const current = [
       '# New file',
@@ -1858,6 +1926,10 @@ describe('lat ui git state', () => {
       '```text',
       'code block',
       '```',
+      '',
+      '| New | Table |',
+      '| --- | --- |',
+      '| Added | Row |',
       '',
     ].join('\n');
     const rendered = await renderMarkdown(
@@ -1874,6 +1946,7 @@ describe('lat ui git state', () => {
     expect(rendered.html).toContain(
       '<code class="language-text git-added">code block',
     );
+    expect(rendered.html).toContain('<table class="git-added">');
   });
 });
 

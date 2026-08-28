@@ -192,6 +192,8 @@ const sanitizeSchema: SanitizeSchema = {
         ...GIT_CLASSES,
       ],
     ],
+    table: classAttributes('table'),
+    tr: classAttributes('tr'),
     ul: classAttributes('ul'),
   },
 };

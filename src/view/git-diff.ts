@@ -1,4 +1,10 @@
-import type { Root, RootContent } from 'mdast';
+import type {
+  PhrasingContent,
+  Root,
+  RootContent,
+  Table,
+  TableRow,
+} from 'mdast';
 import { parse } from '../parser.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 
@@ -224,6 +230,220 @@ function sourceForNode(markdown: string, node: RootContent): string {
     : `${node.type}:${markdown.slice(start, end)}`;
 }
 
+function tableShape(table: Table): { columns: number; align: string[] } | null {
+  const columns = table.children[0]?.children.length ?? 0;
+  if (
+    columns === 0 ||
+    table.children.some((row) => row.children.length !== columns)
+  ) {
+    return null;
+  }
+  return {
+    columns,
+    align: Array.from(
+      { length: columns },
+      (_, index) => table.align?.[index] ?? '',
+    ),
+  };
+}
+
+function tablesAreCompatible(oldTable: Table, newTable: Table): boolean {
+  const oldShape = tableShape(oldTable);
+  const newShape = tableShape(newTable);
+  return (
+    oldShape !== null &&
+    newShape !== null &&
+    oldShape.columns === newShape.columns &&
+    oldShape.align.every((align, index) => align === newShape.align[index])
+  );
+}
+
+function tableRowSimilarity(oldRow: TableRow, newRow: TableRow): number {
+  if (oldRow.children.length !== newRow.children.length) return 0;
+  const matchingCells = oldRow.children.filter(
+    (cell, index) => nodeText(cell) === nodeText(newRow.children[index]),
+  ).length;
+  return Math.max(
+    matchingCells / oldRow.children.length,
+    inlineWordOverlap(oldRow, newRow),
+  );
+}
+
+function alignChangedTableRows(
+  oldRows: TableRow[],
+  newRows: TableRow[],
+): SequenceChange<TableRow>[] {
+  if (oldRows.length * newRows.length > MAX_DIFF_CELLS) {
+    const paired = Math.min(oldRows.length, newRows.length);
+    return [
+      ...oldRows.slice(0, paired).map((oldValue, index) => ({
+        kind: 'same' as const,
+        oldValue,
+        newValue: newRows[index],
+      })),
+      ...oldRows
+        .slice(paired)
+        .map((value) => ({ kind: 'removed' as const, value })),
+      ...newRows
+        .slice(paired)
+        .map((value) => ({ kind: 'added' as const, value })),
+    ];
+  }
+
+  const costs = Array.from(
+    { length: oldRows.length + 1 },
+    () => new Float64Array(newRows.length + 1),
+  );
+  for (let oldIndex = oldRows.length; oldIndex >= 0; oldIndex--) {
+    for (let newIndex = newRows.length; newIndex >= 0; newIndex--) {
+      if (oldIndex === oldRows.length) {
+        costs[oldIndex][newIndex] = newRows.length - newIndex;
+      } else if (newIndex === newRows.length) {
+        costs[oldIndex][newIndex] = oldRows.length - oldIndex;
+      } else {
+        const pairCost =
+          costs[oldIndex + 1][newIndex + 1] +
+          1.5 -
+          tableRowSimilarity(oldRows[oldIndex], newRows[newIndex]);
+        costs[oldIndex][newIndex] = Math.min(
+          pairCost,
+          costs[oldIndex + 1][newIndex] + 1,
+          costs[oldIndex][newIndex + 1] + 1,
+        );
+      }
+    }
+  }
+
+  const changes: SequenceChange<TableRow>[] = [];
+  let oldIndex = 0;
+  let newIndex = 0;
+  const epsilon = 1e-9;
+  while (oldIndex < oldRows.length || newIndex < newRows.length) {
+    if (oldIndex === oldRows.length) {
+      changes.push({ kind: 'added', value: newRows[newIndex++] });
+      continue;
+    }
+    if (newIndex === newRows.length) {
+      changes.push({ kind: 'removed', value: oldRows[oldIndex++] });
+      continue;
+    }
+
+    const currentCost = costs[oldIndex][newIndex];
+    const pairCost =
+      costs[oldIndex + 1][newIndex + 1] +
+      1.5 -
+      tableRowSimilarity(oldRows[oldIndex], newRows[newIndex]);
+    const removeCost = costs[oldIndex + 1][newIndex] + 1;
+    const addCost = costs[oldIndex][newIndex + 1] + 1;
+    const oldRemaining = oldRows.length - oldIndex;
+    const newRemaining = newRows.length - newIndex;
+    const pairIsBest = Math.abs(pairCost - currentCost) < epsilon;
+    const pairIsStrictlyBest =
+      pairCost < removeCost - epsilon && pairCost < addCost - epsilon;
+
+    if (pairIsBest && (pairIsStrictlyBest || oldRemaining === newRemaining)) {
+      changes.push({
+        kind: 'same',
+        oldValue: oldRows[oldIndex++],
+        newValue: newRows[newIndex++],
+      });
+    } else if (
+      oldRemaining > newRemaining &&
+      Math.abs(removeCost - currentCost) < epsilon
+    ) {
+      changes.push({ kind: 'removed', value: oldRows[oldIndex++] });
+    } else if (Math.abs(addCost - currentCost) < epsilon) {
+      changes.push({ kind: 'added', value: newRows[newIndex++] });
+    } else if (Math.abs(removeCost - currentCost) < epsilon) {
+      changes.push({ kind: 'removed', value: oldRows[oldIndex++] });
+    } else {
+      changes.push({
+        kind: 'same',
+        oldValue: oldRows[oldIndex++],
+        newValue: newRows[newIndex++],
+      });
+    }
+  }
+  return changes;
+}
+
+function diffTableRow(oldRow: TableRow, newRow: TableRow): TableRow {
+  return {
+    ...structuredClone(newRow),
+    children: newRow.children.map((newCell, index) => ({
+      ...structuredClone(newCell),
+      children: diffInline(
+        oldRow.children[index].children,
+        newCell.children,
+      ) as PhrasingContent[],
+    })),
+  };
+}
+
+function diffTableRows(
+  oldRows: TableRow[],
+  newRows: TableRow[],
+  oldMarkdown: string,
+  newMarkdown: string,
+): TableRow[] {
+  const output = [diffTableRow(oldRows[0], newRows[0])];
+  const oldBody = oldRows.slice(1);
+  const newBody = newRows.slice(1);
+  const changes = sequenceDiff(oldBody, newBody, (row) =>
+    oldBody.includes(row)
+      ? sourceForNode(oldMarkdown, row)
+      : sourceForNode(newMarkdown, row),
+  );
+
+  for (let index = 0; index < changes.length; ) {
+    const change = changes[index];
+    if (change.kind === 'same') {
+      output.push(structuredClone(change.newValue));
+      index++;
+      continue;
+    }
+
+    const removed: TableRow[] = [];
+    const added: TableRow[] = [];
+    while (index < changes.length && changes[index].kind !== 'same') {
+      const pending = changes[index++];
+      if (pending.kind === 'removed') removed.push(pending.value);
+      if (pending.kind === 'added') added.push(pending.value);
+    }
+    output.push(
+      ...alignChangedTableRows(removed, added).map((rowChange) => {
+        switch (rowChange.kind) {
+          case 'same':
+            return diffTableRow(rowChange.oldValue, rowChange.newValue);
+          case 'added':
+            return addClass(rowChange.value, 'added') as TableRow;
+          case 'removed':
+            return addClass(rowChange.value, 'removed') as TableRow;
+        }
+      }),
+    );
+  }
+  return output;
+}
+
+function diffTable(
+  oldTable: Table,
+  newTable: Table,
+  oldMarkdown: string,
+  newMarkdown: string,
+): Table | null {
+  if (!tablesAreCompatible(oldTable, newTable)) return null;
+  return {
+    ...structuredClone(newTable),
+    children: diffTableRows(
+      oldTable.children,
+      newTable.children,
+      oldMarkdown,
+      newMarkdown,
+    ),
+  };
+}
+
 function addClass(node: RootContent, kind: DiffKind): RootContent {
   const result = structuredClone(node) as DataNode;
   const properties = result.data?.hProperties ?? {};
@@ -261,6 +481,9 @@ function pairedNode(
   newMarkdown: string,
 ): RootContent | null {
   if (oldNode.type !== newNode.type) return null;
+  if (oldNode.type === 'table' && newNode.type === 'table') {
+    return diffTable(oldNode, newNode, oldMarkdown, newMarkdown);
+  }
   if (
     (newNode.type === 'heading' || newNode.type === 'paragraph') &&
     withChildren(oldNode) &&

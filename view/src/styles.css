@@ -1235,6 +1235,31 @@ a {
   text-decoration-thickness: 1px;
 }
 
+.markdown table.git-added {
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.markdown table.git-removed {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.markdown table.git-added th,
+.markdown table.git-added td,
+.markdown tr.git-added > th,
+.markdown tr.git-added > td {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+}
+
+.markdown table.git-removed th,
+.markdown table.git-removed td,
+.markdown tr.git-removed > th,
+.markdown tr.git-removed > td {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
+}
+
 .markdown p.git-added,
 .markdown blockquote.git-added,
 .markdown pre.git-added,

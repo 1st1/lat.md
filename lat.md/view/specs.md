@@ -153,6 +153,8 @@ Git worktrees show cached HEAD changes as yellow modified or green new-file mark
 
 Every rendered block in a new Markdown file inherits the added state, including headings, unordered and ordered lists with their markers, and fenced code blocks.
 
+Compatible table edits retain one rendered table, place inline additions and removals inside changed cells, and color inserted or deleted rows. Incompatible column or alignment changes fall back to colored whole-table replacements.
+
 Blocks with less than 60% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
 
 Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.
