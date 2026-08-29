@@ -1,4 +1,4 @@
-// @vitest-environment happy-dom
+// @vitest-environment jsdom
 
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
