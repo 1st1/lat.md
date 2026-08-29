@@ -38,6 +38,7 @@ import type {
   ViewGraph,
   ViewIndex,
   ViewSearchResponse,
+  ViewSectionCommandOutput,
   ViewSourceDocument,
 } from '../src/view/protocol.js';
 import { createViewSearch } from '../src/view/search.js';
@@ -89,7 +90,12 @@ import {
   parseTopoJson,
   recoverableLazyImport,
 } from '../view/src/markdown-rich-fences.js';
-import { renderSectionBackReferences } from '../view/src/section-back-references.js';
+import {
+  copySectionId,
+  navigateAndCopySectionLink,
+  renderSectionBackReferences,
+  sectionOutputRequestUrl,
+} from '../view/src/section-back-references.js';
 import {
   captureScrollAnchor,
   restoreScrollAnchor,
@@ -1339,7 +1345,7 @@ describe('lat ui', () => {
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows section back-references]]
-  it('shows Markdown and code references on every referenced section', async () => {
+  it('shows section menus with references, empty state, and section actions', async () => {
     const response = await fetch(
       new URL('/api/document?path=guide.md', view.url),
     );
@@ -1381,13 +1387,112 @@ describe('lat ui', () => {
       document.backReferences,
     );
     expect(rendered).toContain('data-section-back-references');
-    expect(rendered).toContain('<span>Refs</span>');
+    expect(rendered).toContain('<svg aria-hidden="true"');
+    expect(rendered).not.toContain('<span>Refs</span>');
     expect(rendered).toContain('section-back-reference-count">5</span>');
     expect(rendered).toContain('id="section-back-references-1"');
+    expect(rendered).toContain('Copy link to the section');
+    expect(rendered).toContain('Copy section ID');
+    expect(rendered).toContain('Show <code>lat section</code> output');
     expect(rendered).toContain('section-back-reference-breadcrumb');
     expect(rendered).toContain('section-back-reference-breadcrumb-label');
     expect(rendered).toContain('href="/code/src/app.ts?at=5"');
     expect(rendered).toContain('wiki-link-active');
+
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle:hover \{\s*background: var\(--reference-control-hover\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-actions \{\s*display: grid;/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-action \{[\s\S]*?color: var\(--muted\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-action:hover \{\s*color: color-mix\(in srgb, var\(--muted\) 82%, white\);\s*\}/,
+    );
+
+    const emptyResponse = await fetch(
+      new URL('/api/document?path=lat.md', view.url),
+    );
+    const emptyDocument = (await emptyResponse.json()) as ViewDocument;
+    const unreferenced = emptyDocument.backReferences.find(
+      (section) => section.sectionId === 'lat.md/lat#View Project#Unreferenced',
+    );
+    expect(unreferenced).toEqual({
+      sectionId: 'lat.md/lat#View Project#Unreferenced',
+      headingId: 'unreferenced',
+      references: [],
+    });
+    const emptyRendered = renderSectionBackReferences(
+      '<h2 id="unreferenced">Unreferenced</h2>',
+      [unreferenced!],
+    );
+    expect(emptyRendered).toContain('data-section-back-references');
+    expect(emptyRendered).toContain('No references to this section');
+    expect(emptyRendered).not.toContain('section-back-reference-count');
+    expect(emptyRendered).toContain('data-copy-section-link="unreferenced"');
+    expect(emptyRendered).toContain(
+      'data-copy-section-id="lat.md/lat#View Project#Unreferenced"',
+    );
+    expect(emptyRendered).toContain(
+      'data-show-section-output="lat.md/lat#View Project#Unreferenced"',
+    );
+
+    const staticRendered = renderSectionBackReferences(
+      '<h2 id="unreferenced">Unreferenced</h2>',
+      [unreferenced!],
+      { sectionOutputEnabled: false },
+    );
+    expect(staticRendered).toContain('Copy section ID');
+    expect(staticRendered).not.toContain('data-show-section-output');
+
+    const navigate = vi.fn();
+    const clipboard = { writeText: vi.fn(async () => {}) };
+    const sectionUrl = navigateAndCopySectionLink(
+      new URL('/docs/lat.md#view-project', view.url).href,
+      'unreferenced',
+      navigate,
+      clipboard,
+    );
+    expect(sectionUrl.href).toBe(
+      new URL('/docs/lat.md#unreferenced', view.url).href,
+    );
+    expect(navigate).toHaveBeenCalledWith(sectionUrl);
+    expect(clipboard.writeText).toHaveBeenCalledWith(sectionUrl.href);
+
+    copySectionId(unreferenced!.sectionId, clipboard);
+    expect(clipboard.writeText).toHaveBeenLastCalledWith(
+      'lat.md/lat#View Project#Unreferenced',
+    );
+
+    const sectionOutputUrl = sectionOutputRequestUrl(unreferenced!.sectionId);
+    expect(sectionOutputUrl).toBe(
+      '/api/section?query=lat.md%2Flat%23View%20Project%23Unreferenced',
+    );
+    const sectionOutputResponse = await fetch(
+      new URL(sectionOutputUrl, view.url),
+    );
+    expect(sectionOutputResponse.status).toBe(200);
+    const sectionOutput =
+      (await sectionOutputResponse.json()) as ViewSectionCommandOutput;
+    expect(sectionOutput.isError).toBe(false);
+    expect(sectionOutput.output).toContain(
+      '[[lat.md/lat#View Project#Unreferenced]]',
+    );
+    expect(sectionOutput.output).toContain('> ## Unreferenced');
+    expect(sectionOutput.output).toContain('`lat section "section#id"`');
+    expect(sectionOutput.html).toContain(
+      'href="/docs/lat.md#unreferenced"',
+    );
+    expect(sectionOutput.html).toContain('<blockquote>');
+    expect(sectionOutput.html).toContain(
+      '<h2 id="unreferenced">Unreferenced</h2>',
+    );
 
     const sourceResponse = await fetch(
       new URL('/api/source?path=src/app.ts&at=5', view.url),

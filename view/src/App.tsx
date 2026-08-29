@@ -44,8 +44,13 @@ import {
   viewRouteIdentity,
   writeGraphMode,
 } from './navigation';
-import { renderSectionBackReferences } from './section-back-references';
+import {
+  copySectionId,
+  navigateAndCopySectionLink,
+  renderSectionBackReferences,
+} from './section-back-references';
 import { SearchPage } from './SearchPage';
+import { SectionOutputDialog } from './SectionOutputDialog';
 import { sourceLineId, SourceView } from './SourceView';
 import {
   isStaticView,
@@ -288,6 +293,7 @@ export function App() {
   });
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
+  const [sectionOutputId, setSectionOutputId] = useState<string | null>(null);
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
   );
@@ -366,9 +372,10 @@ export function App() {
               ? page.document.gitHtml
               : page.document.html,
             page.document.backReferences,
+            { sectionOutputEnabled: !staticView },
           )
         : '',
-    [gitEnabled, page],
+    [gitEnabled, page, staticView],
   );
   const mobileNavigationLabel =
     route?.kind === 'markdown' || route?.kind === 'source'
@@ -738,6 +745,38 @@ export function App() {
       }
       return;
     }
+    const copyLink =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-copy-section-link]')
+        : null;
+    if (copyLink) {
+      navigateAndCopySectionLink(
+        window.location.href,
+        copyLink.dataset.copySectionLink ?? '',
+        navigate,
+        window.navigator.clipboard,
+      );
+      return;
+    }
+    const copyId =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-copy-section-id]')
+        : null;
+    if (copyId) {
+      copySectionId(
+        copyId.dataset.copySectionId ?? '',
+        window.navigator.clipboard,
+      );
+      return;
+    }
+    const showOutput =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-show-section-output]')
+        : null;
+    if (showOutput) {
+      setSectionOutputId(showOutput.dataset.showSectionOutput ?? null);
+      return;
+    }
     const anchor =
       target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
@@ -784,9 +823,14 @@ export function App() {
           header={header}
           markdownGeneration={projectChange.markdownGeneration}
           onNavigate={navigate}
+          onShowSectionOutput={staticView ? undefined : setSectionOutputId}
           searchEnabled={!staticView}
           selectedNodeId={graphSelectedNodeId}
           target={graphSelectionTarget}
+        />
+        <SectionOutputDialog
+          onClose={() => setSectionOutputId(null)}
+          sectionId={sectionOutputId}
         />
       </div>
     );
@@ -911,6 +955,10 @@ export function App() {
           <div className="state">Loading…</div>
         )}
       </main>
+      <SectionOutputDialog
+        onClose={() => setSectionOutputId(null)}
+        sectionId={sectionOutputId}
+      />
     </div>
   );
 }

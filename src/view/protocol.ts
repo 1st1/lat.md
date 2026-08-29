@@ -44,6 +44,12 @@ export type ViewSearchResponse = {
   results: ViewSearchResult[];
 };
 
+export type ViewSectionCommandOutput = {
+  output: string;
+  html: string;
+  isError: boolean;
+};
+
 export type ViewProjectChange = {
   generation: number;
   markdownGeneration: number;

@@ -33,7 +33,11 @@ import {
   sourcePath,
   sourceSymbol,
 } from './navigation';
-import { renderSectionBackReferences } from './section-back-references';
+import {
+  copySectionId,
+  navigateAndCopySectionLink,
+  renderSectionBackReferences,
+} from './section-back-references';
 import { SourceView } from './SourceView';
 import {
   deterministicGraphPosition,
@@ -414,12 +418,14 @@ function GraphInspector({
   graph,
   node,
   onSelect,
+  onShowSectionOutput,
   target,
 }: {
   gitEnabled: boolean;
   graph: ViewGraph;
   node: ViewGraphNode | null;
   onSelect: (nodeId: string, target?: string) => void;
+  onShowSectionOutput?: (sectionId: string) => void;
   target: string;
 }) {
   const [content, setContent] = useState<
@@ -445,9 +451,10 @@ function GraphInspector({
               ? content.document.gitHtml
               : content.document.html,
             content.document.backReferences,
+            { sectionOutputEnabled: Boolean(onShowSectionOutput) },
           )
         : '',
-    [content, gitEnabled],
+    [content, gitEnabled, onShowSectionOutput],
   );
 
   useEffect(() => {
@@ -548,6 +555,44 @@ function GraphInspector({
       }
       return;
     }
+    const copyLink =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-copy-section-link]')
+        : null;
+    if (copyLink) {
+      navigateAndCopySectionLink(
+        new URL(
+          contentTarget || previewTarget || node?.url || '/',
+          window.location.origin,
+        ).href,
+        copyLink.dataset.copySectionLink ?? '',
+        (url) => {
+          const selection = graphSelectionForUrl(graph, url);
+          if (selection) onSelect(selection.nodeId, selection.target);
+        },
+        window.navigator.clipboard,
+      );
+      return;
+    }
+    const copyId =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-copy-section-id]')
+        : null;
+    if (copyId) {
+      copySectionId(
+        copyId.dataset.copySectionId ?? '',
+        window.navigator.clipboard,
+      );
+      return;
+    }
+    const showOutput =
+      target instanceof Element
+        ? target.closest<HTMLButtonElement>('[data-show-section-output]')
+        : null;
+    if (showOutput) {
+      onShowSectionOutput?.(showOutput.dataset.showSectionOutput ?? '');
+      return;
+    }
     const anchor =
       target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
@@ -623,6 +668,7 @@ export default function GraphView({
   header,
   markdownGeneration,
   onNavigate,
+  onShowSectionOutput,
   searchEnabled,
   selectedNodeId,
   target,
@@ -635,6 +681,7 @@ export default function GraphView({
   ) => ReactNode;
   markdownGeneration: number;
   onNavigate: (url: URL) => void;
+  onShowSectionOutput?: (sectionId: string) => void;
   searchEnabled: boolean;
   selectedNodeId: string;
   target: string;
@@ -847,6 +894,7 @@ export default function GraphView({
               graph={graph}
               node={selectedNode}
               onSelect={selectNode}
+              onShowSectionOutput={onShowSectionOutput}
               target={selectedTarget}
             />
           </aside>

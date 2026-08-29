@@ -2,11 +2,13 @@ import { readFile } from 'node:fs/promises';
 import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CmdContext } from '../context.js';
+import { plainStyler, type CmdContext } from '../context.js';
+import { sectionCommand } from '../cli/section.js';
 import {
   DEFAULT_VIEW_LOGO_TEXT,
   type ViewError,
   type ViewProjectChange,
+  type ViewSectionCommandOutput,
 } from './protocol.js';
 import {
   ViewExternalNotFoundError,
@@ -257,6 +259,49 @@ export async function startViewServer(
           return;
         }
         sendJson(res, 200, await search(query), headOnly);
+        return;
+      }
+
+      if (url.pathname === '/api/section') {
+        const query = (url.searchParams.get('query') ?? '').trim();
+        if (!query) {
+          sendJson(
+            res,
+            400,
+            { error: 'Section ID is required' } satisfies ViewError,
+            headOnly,
+          );
+          return;
+        }
+        if (query.length > 1_000) {
+          sendJson(
+            res,
+            400,
+            { error: 'Section ID is too long' } satisfies ViewError,
+            headOnly,
+          );
+          return;
+        }
+        const result = await sectionCommand(
+          {
+            latDir: ctx.latDir,
+            projectRoot: ctx.projectRoot,
+            styler: plainStyler,
+            mode: 'cli',
+          },
+          query,
+        );
+        const html = await store.renderSectionOutput(result.output, query);
+        sendJson(
+          res,
+          200,
+          {
+            output: result.output,
+            html,
+            isError: result.isError === true,
+          } satisfies ViewSectionCommandOutput,
+          headOnly,
+        );
         return;
       }
 

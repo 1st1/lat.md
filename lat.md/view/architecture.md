@@ -30,7 +30,7 @@ Each unique source file has one shared raw-text and highlighted-line payload. Ma
 
 The manifest stores the selected logo text with the document index so the static client renders the default wordmark or the same plain-text override as the live server.
 
-The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git and search controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
+The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git, search, and runtime command controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
 
 `--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path, so deploying the output directory at a host's root serves the UI from that subpath. `/` is the default.
 
@@ -92,7 +92,9 @@ A moving end-of-page activation line makes short final sections reachable.
 
 The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
 
-Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
+Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
+
+In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to HTML from [[src/view/markdown.ts#renderMarkdown|the shared Markdown renderer]] and can switch to raw output; static exports omit only this execution action.
 
 ## Responsive layout
 

@@ -18,3 +18,7 @@ Source targets such as [[src/app.ts#run]] open their definitions; [the guide](gu
 The whole [[src/app.ts|runner file]] and [[src/app.ts|same file]] are linked from one paragraph.
 
 - [[guide]] — A second document linked through ordinary Markdown too
+
+## Unreferenced
+
+This section exercises browser actions when no other location links to it.

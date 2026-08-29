@@ -396,6 +396,29 @@ export class ViewStore {
     return this.snapshotValue.graph;
   }
 
+  async renderSectionOutput(
+    markdown: string,
+    sectionId: string,
+  ): Promise<string> {
+    const snapshot = this.snapshotValue;
+    const section = snapshot.allSections.find(
+      (candidate) => candidate.id.toLowerCase() === sectionId.toLowerCase(),
+    );
+    const requestedPath = section
+      ? toPosix(
+          relative(this.latDir, resolve(this.projectRoot, section.filePath)),
+        )
+      : 'section-output.md';
+    const resolver = await createMarkdownWikiLinkResolver(
+      this.latDir,
+      requestedPath,
+      snapshot.allSections,
+      snapshot.references,
+      snapshot.external,
+    );
+    return (await renderMarkdown(markdown, requestedPath, resolver)).html;
+  }
+
   async getDocument(requestedPath: string): Promise<ViewDocument> {
     if (
       !requestedPath ||

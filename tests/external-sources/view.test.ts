@@ -135,7 +135,12 @@ describe.sequential('external source view', () => {
         expect(externalDocument.document.html).toContain(
           'Second version navigation.',
         );
-        expect(externalDocument.document.backReferences).toHaveLength(1);
+        expect(externalDocument.document.backReferences).toHaveLength(2);
+        expect(
+          externalDocument.document.backReferences.find(
+            (section) => section.headingId === 'guide',
+          )?.references,
+        ).toEqual([]);
       }
 
       for (const [target, text] of [
@@ -157,7 +162,7 @@ describe.sequential('external source view', () => {
           expect(externalDocument.document.tableOfContents).toContainEqual(
             expect.objectContaining({ id: 'navigation', title: 'Navigation' }),
           );
-          expect(externalDocument.document.backReferences).toHaveLength(1);
+          expect(externalDocument.document.backReferences).toHaveLength(2);
         }
       }
 

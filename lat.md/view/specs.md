@@ -19,7 +19,7 @@ The browser shell keeps a default-self Content Security Policy while allowing th
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
-The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
+The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git, search, or the runtime-only section command, perform live API requests, or subscribe to project changes.
 
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
 
@@ -129,7 +129,9 @@ Source links preserve their originating section and line so the code view can re
 
 ## Shows section back-references
 
-Referenced sections expose distinct linking Markdown paragraphs, wiki references, and `@lat:` code locations with navigable context.
+Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
+
+Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to shared Markdown rendering and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally
 
