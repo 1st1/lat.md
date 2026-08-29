@@ -21,7 +21,7 @@ Local override coverage accepts root and nested checkout paths regardless of Win
 
 ## Document formats
 
-Format tests verify Markdown, reStructuredText, and AsciiDoc expose complete titles, consistent heading aliases, explicit anchors, nested source ranges, safe HTML, retrieval, backlinks, graph nodes, and previews.
+Format tests verify Markdown, reStructuredText, and AsciiDoc expose complete titles, consistent heading aliases, explicit anchors, nested source ranges, safe document trees, retrieval, backlinks, graph nodes, and previews.
 
 AsciiDoc coverage includes explicit document-title IDs and sections after legacy source blocks whose opening and closing delimiter lengths differ.
 
@@ -45,7 +45,7 @@ Interactive add hands terminal input safely between line prompts and raw selecti
 
 ## Browser and static export
 
-View tests verify external previews, backlinks, graph nodes, diagnostics, live local refreshes, and canonical offline static bundles without Git object storage.
+View tests verify external previews share the versioned document tree with local files while preserving backlinks, graph nodes, diagnostics, live local refreshes, and canonical offline static bundles without Git object storage.
 
 ### Live external previews
 

@@ -109,7 +109,7 @@ export function SectionOutputDialog({
               className="section-output-formatted"
               data-error={result.isError || undefined}
             >
-              <MarkdownContent html={result.html} />
+              <MarkdownContent tree={result.tree} />
             </div>
           ) : (
             <pre

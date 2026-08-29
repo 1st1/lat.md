@@ -3,6 +3,7 @@ import type {
   ViewSourceDocument,
   ViewSourceReference,
 } from '../../src/view/protocol';
+import { DocumentNodes } from './MarkdownContent';
 import {
   captureScrollAnchor,
   restoreScrollAnchor,
@@ -57,10 +58,9 @@ function SourceContext({
           <a href={source.context.url}>
             <Breadcrumbs reference={source.context} />
           </a>
-          <div
-            className="source-context-paragraph"
-            dangerouslySetInnerHTML={{ __html: source.context.paragraphHtml }}
-          />
+          <div className="source-context-paragraph">
+            <DocumentNodes nodes={source.context.paragraphTree.children} />
+          </div>
         </div>
       )}
       {hasReferences && (
@@ -83,10 +83,9 @@ function SourceContext({
               <a href={reference.url}>
                 <Breadcrumbs reference={reference} />
               </a>
-              <div
-                className="source-reference-paragraph"
-                dangerouslySetInnerHTML={{ __html: reference.paragraphHtml }}
-              />
+              <div className="source-reference-paragraph">
+                <DocumentNodes nodes={reference.paragraphTree.children} />
+              </div>
             </div>
           ))}
         </div>

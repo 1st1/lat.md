@@ -37,6 +37,7 @@ import type {
   ViewGraph,
   ViewIndex,
   ViewProjectChange,
+  ViewDocumentTree,
   ViewSourceDocument,
 } from './protocol.js';
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
@@ -399,7 +400,7 @@ export class ViewStore {
   async renderSectionOutput(
     markdown: string,
     sectionId: string,
-  ): Promise<string> {
+  ): Promise<ViewDocumentTree> {
     const snapshot = this.snapshotValue;
     const section = snapshot.allSections.find(
       (candidate) => candidate.id.toLowerCase() === sectionId.toLowerCase(),
@@ -416,7 +417,7 @@ export class ViewStore {
       snapshot.references,
       snapshot.external,
     );
-    return (await renderMarkdown(markdown, requestedPath, resolver)).html;
+    return (await renderMarkdown(markdown, requestedPath, resolver)).tree;
   }
 
   async getDocument(requestedPath: string): Promise<ViewDocument> {
@@ -463,7 +464,7 @@ export class ViewStore {
     return {
       path: requestedPath,
       ...rendered,
-      gitHtml: gitRendered?.html ?? null,
+      gitTree: gitRendered?.tree ?? null,
       tableOfContents: buildViewTableOfContents(
         file.sections,
         file.headingTitles,

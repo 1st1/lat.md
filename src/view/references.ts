@@ -363,14 +363,6 @@ export function buildViewReferenceIndex(
   };
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-}
-
 async function renderExternalReference(
   reference: IndexedBackReference,
   latDir: string,
@@ -462,7 +454,7 @@ export async function renderExternalSourceReferences(
         sectionId: rendered.sectionId,
         breadcrumbs: rendered.breadcrumbs,
         paragraph: rendered.paragraph,
-        paragraphHtml: rendered.paragraphHtml,
+        paragraphTree: rendered.paragraphTree,
         url: rendered.url,
       });
     } else {
@@ -470,7 +462,18 @@ export async function renderExternalSourceReferences(
         sectionId: `code:${rendered.path}:${rendered.line}`,
         breadcrumbs: [...rendered.path.split('/'), `line ${rendered.line}`],
         paragraph: rendered.snippet,
-        paragraphHtml: `<code>${escapeHtml(rendered.snippet)}</code>`,
+        paragraphTree: {
+          version: 1,
+          type: 'root',
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: {},
+              children: [{ type: 'text', value: rendered.snippet }],
+            },
+          ],
+        },
         url: rendered.url,
       });
     }
@@ -484,7 +487,7 @@ async function renderIndexedMarkdownReference(
   projectRoot: string,
   resolveWikiLink?: WikiLinkResolver,
 ): Promise<ViewMarkdownBackReference> {
-  const paragraphHtml = (
+  const paragraphTree = (
     await renderMarkdown(
       reference.paragraph.markdown,
       reference.sourcePath,
@@ -497,13 +500,13 @@ async function renderIndexedMarkdownReference(
           contextMarkdownLink(reference.sourcePath, url),
       },
     )
-  ).html;
+  ).tree;
   return {
     kind: 'markdown',
     sectionId: reference.section.id,
     breadcrumbs: breadcrumbs(latDir, projectRoot, reference.section),
     paragraph: reference.paragraph.text,
-    paragraphHtml,
+    paragraphTree,
     url: documentUrl(latDir, projectRoot, reference.section),
   };
 }
@@ -590,7 +593,7 @@ export async function renderSourceReferenceContext(
         sectionId: rendered.sectionId,
         breadcrumbs: rendered.breadcrumbs,
         paragraph: rendered.paragraph,
-        paragraphHtml: rendered.paragraphHtml,
+        paragraphTree: rendered.paragraphTree,
         url: rendered.url,
       },
     });

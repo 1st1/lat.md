@@ -20,6 +20,20 @@ The live server's default-self Content Security Policy explicitly permits only O
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
+## Document tree protocol
+
+Document APIs carry one versioned, parser-neutral presentation tree so the browser can compose content as React elements instead of installing server-rendered HTML.
+
+[[src/view/markdown.ts#renderMarkdown]] resolves Markdown semantics and converts mdast through the sanitizer, KaTeX, slug, and highlighting pipeline, then [[src/view/document-tree.ts#toViewDocumentTree]] retains only JSON-safe `root`, `element`, and `text` nodes. Parser positions, plugin objects, and executable properties never cross the boundary.
+
+reStructuredText and AsciiDoc use their native processors, then [[src/view/markdown.ts#externalHtmlToDocumentTree]] reflects the sanitized format output into the same tree. The browser therefore receives one rendering contract for local Markdown, external documents, Git projections, section output, and reference excerpts.
+
+[[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
+
+Rich fences remain escaped `pre` and `code` nodes in the contract. Browser-only renderers enhance those explicit fallbacks after React commits them and keep the source visible when an optional renderer fails.
+
+Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
+
 ## Static export
 
 [[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
@@ -72,7 +86,7 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 
 ## Markdown navigation
 
-[[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.
+[[src/view/markdown.ts#renderMarkdown]] produces the safe document tree with ordinary Markdown links, resolved wiki links, heading fragments, and Git or diagnostic presentation metadata.
 
 Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
 
@@ -94,7 +108,7 @@ The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` 
 
 Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
 
-In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to HTML from [[src/view/markdown.ts#renderMarkdown|the shared Markdown renderer]] and can switch to raw output; static exports omit only this execution action.
+In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 
 ## Responsive layout
 

@@ -36,7 +36,18 @@ describe('SectionOutputDialog', () => {
   it('defaults to formatted Markdown and can switch to raw output', async () => {
     fetchViewJson.mockResolvedValue({
       output: '## Raw output',
-      html: '<h2 id="raw-output">Formatted output</h2>',
+      tree: {
+        version: 1,
+        type: 'root',
+        children: [
+          {
+            type: 'element',
+            tagName: 'h2',
+            properties: { id: 'raw-output' },
+            children: [{ type: 'text', value: 'Formatted output' }],
+          },
+        ],
+      },
       isError: false,
     });
 

@@ -9,6 +9,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
@@ -32,15 +34,18 @@ import type {
 } from '../src/view/static-protocol.js';
 import { highlightSource } from '../src/view/highlight.js';
 import { buildGitDiffTree } from '../src/view/git-diff.js';
-import { renderMarkdown } from '../src/view/markdown.js';
+import { renderMarkdown as renderMarkdownTree } from '../src/view/markdown.js';
 import type {
   ViewDocument,
+  ViewDocumentTree,
   ViewGraph,
   ViewIndex,
   ViewSearchResponse,
   ViewSectionCommandOutput,
   ViewSourceDocument,
 } from '../src/view/protocol.js';
+import { MarkdownContent } from '../view/src/MarkdownContent.js';
+import { documentTreeToHtml } from './document-tree.js';
 import { createViewSearch } from '../src/view/search.js';
 import { buildViewTableOfContents } from '../src/view/table-of-contents.js';
 import {
@@ -93,7 +98,6 @@ import {
 import {
   copySectionId,
   navigateAndCopySectionLink,
-  renderSectionBackReferences,
   sectionOutputRequestUrl,
 } from '../view/src/section-back-references.js';
 import {
@@ -117,6 +121,27 @@ import {
 
 const projectRoot = join(import.meta.dirname, 'cases', 'view-project');
 const latDir = join(projectRoot, 'lat.md');
+
+async function renderMarkdown(
+  ...args: Parameters<typeof renderMarkdownTree>
+): Promise<Awaited<ReturnType<typeof renderMarkdownTree>> & { html: string }> {
+  const rendered = await renderMarkdownTree(...args);
+  return { ...rendered, html: documentTreeToHtml(rendered.tree) };
+}
+
+function viewDocumentHtml(document: ViewDocument): string {
+  return documentTreeToHtml(document.tree);
+}
+
+function viewDocumentGitHtml(document: ViewDocument): string | null {
+  return document.gitTree ? documentTreeToHtml(document.gitTree) : null;
+}
+
+function paragraphTreeHtml(
+  reference: { paragraphTree: ViewDocumentTree } | null | undefined,
+): string {
+  return reference ? documentTreeToHtml(reference.paragraphTree) : '';
+}
 
 function testContext(): CmdContext {
   return { latDir, projectRoot, styler: plainStyler, mode: 'cli' };
@@ -304,9 +329,13 @@ describe('lat ui', () => {
       const document = JSON.parse(
         readFileSync(join(payloadDir, manifest.documents['lat.md']), 'utf8'),
       ) as ViewDocument;
-      expect(document.gitHtml).toBeNull();
-      expect(document.html).toContain('href="/project/docs/guide.md/#details"');
-      expect(document.html).toContain('href="/project/code/src/app.ts/?from=');
+      expect(viewDocumentGitHtml(document)).toBeNull();
+      expect(viewDocumentHtml(document)).toContain(
+        'href="/project/docs/guide.md/#details"',
+      );
+      expect(viewDocumentHtml(document)).toContain(
+        'href="/project/code/src/app.ts/?from=',
+      );
 
       const graph = JSON.parse(
         readFileSync(join(payloadDir, manifest.graph), 'utf8'),
@@ -694,11 +723,15 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(document.title).toBe('View Project');
+    expect(document.tree).toMatchObject({ version: 1, type: 'root' });
+    expect(document).not.toHaveProperty('html');
     expect(document.frontmatter.requireCodeMention).toBe(false);
     expect(document.graphNodeIds).toEqual({ '': 'document:lat.md' });
-    expect(document.html).toContain('<h1 id="view-project">View Project</h1>');
-    expect(document.html).toContain('href="guide.md#details"');
-    expect(document.html).not.toContain('require-code-mention');
+    expect(viewDocumentHtml(document)).toContain(
+      '<h1 id="view-project">View Project</h1>',
+    );
+    expect(viewDocumentHtml(document)).toContain('href="guide.md#details"');
+    expect(viewDocumentHtml(document)).not.toContain('require-code-mention');
 
     const links = await renderMarkdown(
       '[secure](https://example.com) [protocol](//example.org) [local](guide.md#details) [email](mailto:hi@example.com)',
@@ -750,9 +783,7 @@ describe('lat ui', () => {
     expect(tasks.html).toContain(
       '<input type="checkbox" checked disabled> Shipped',
     );
-    expect(tasks.html).toContain(
-      '<input type="checkbox" disabled> Follow up',
-    );
+    expect(tasks.html).toContain('<input type="checkbox" disabled> Follow up');
 
     const autolinks = await renderMarkdown(
       'Visit https://example.com, www.example.org, or email docs@example.com.',
@@ -784,7 +815,9 @@ describe('lat ui', () => {
     expect(issueUrl.html).toContain(
       'href="https://github.com/jlord/sheetsee.js/issues/26"',
     );
-    expect(issueUrl.html).toContain('>https://github.com/jlord/sheetsee.js/issues/26');
+    expect(issueUrl.html).toContain(
+      '>https://github.com/jlord/sheetsee.js/issues/26',
+    );
     expect(issueUrl.html).not.toContain('>#26</a>');
 
     const safeHtml = await renderMarkdown(
@@ -846,9 +879,7 @@ describe('lat ui', () => {
       "```ts\nconst value = '<script>alert(1)</script>';\n```",
       'guide.md',
     );
-    expect(highlightedCode.html).toContain(
-      '<code class="language-ts hljs">',
-    );
+    expect(highlightedCode.html).toContain('<code class="language-ts hljs">');
     expect(highlightedCode.html).toContain('hljs-keyword');
     expect(highlightedCode.html).toContain(
       '&#x3C;script>alert(1)&#x3C;/script>',
@@ -856,13 +887,11 @@ describe('lat ui', () => {
     expect(highlightedCode.html).not.toContain('<script>');
 
     const unknownCode = await renderMarkdown(
-      "```unknown\n<script>alert(1)</script>\n```",
+      '```unknown\n<script>alert(1)</script>\n```',
       'guide.md',
     );
     expect(unknownCode.html).toContain('<code class="language-unknown">');
-    expect(unknownCode.html).toContain(
-      '&#x3C;script>alert(1)&#x3C;/script>',
-    );
+    expect(unknownCode.html).toContain('&#x3C;script>alert(1)&#x3C;/script>');
     expect(unknownCode.html).not.toContain('<script>');
 
     const math = await renderMarkdown(
@@ -964,9 +993,7 @@ describe('lat ui', () => {
     );
     expect(stl.html).toContain('<code class="language-stl">');
     expect(stl.html).not.toContain('hljs');
-    const { STLLoader } = await import(
-      'three/addons/loaders/STLLoader.js'
-    );
+    const { STLLoader } = await import('three/addons/loaders/STLLoader.js');
     const geometry = parseStl(stlSource, STLLoader);
     expect(geometry.getAttribute('position').count).toBe(3);
     geometry.dispose();
@@ -987,9 +1014,7 @@ describe('lat ui', () => {
       'overflow-x: auto;',
     );
     expect(styles).toContain("input[type='checkbox']");
-    expect(styles).toContain(
-      '.markdown details:not(.maplibregl-ctrl-attrib)',
-    );
+    expect(styles).toContain('.markdown details:not(.maplibregl-ctrl-attrib)');
     expect(styles).toContain('.markdown .markdown-alert-caution');
     expect(styles).toContain('[data-footnotes]');
     expect(styles).toContain('img.markdown-emoji');
@@ -1203,7 +1228,7 @@ describe('lat ui', () => {
 
     expect(document.frontmatter.requireCodeMention).toBe(true);
     expect(document.graphNodeIds).toEqual({ '': 'document:guide.md' });
-    expect(document.html).not.toContain('require-code-mention');
+    expect(viewDocumentHtml(document)).not.toContain('require-code-mention');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Resolves Markdown and source wiki links]]
@@ -1213,37 +1238,37 @@ describe('lat ui', () => {
     );
     const document = (await response.json()) as ViewDocument;
 
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       '<a href="/docs/guide.md">wiki navigation<span class="wiki-link-ref-count" aria-label="2 references">2</span></a>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       '<a href="/docs/guide.md#details">wiki heading links<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       '<a href="/docs/guide.md#details">the same heading again<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span><span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
     );
-    expect(document.html).toContain('line=16#run');
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain('line=16#run');
+    expect(viewDocumentHtml(document)).toContain(
       'class="wiki-link-segmented wiki-link-code"',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       'class="code-link-language code-language-ts"',
     );
-    expect(document.html).toContain('class="code-link-leading"');
-    expect(document.html).toContain('aria-hidden="true"');
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain('class="code-link-leading"');
+    expect(viewDocumentHtml(document)).toContain('aria-hidden="true"');
+    expect(viewDocumentHtml(document)).toContain(
       '<span class="wiki-link-leaf">run</span><span class="wiki-link-ref-count" aria-label="2 references">2</span>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       'runner</span> file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
     );
-    expect(document.html).toContain(
+    expect(viewDocumentHtml(document)).toContain(
       'same</span> file<span class="wiki-link-ref-count" aria-label="3 references">3</span>',
     );
 
@@ -1318,7 +1343,7 @@ describe('lat ui', () => {
       breadcrumbs: ['lat', 'View Project'],
       paragraph:
         'Source targets such as src/app.ts#run open their definitions; the guide explains them.',
-      paragraphHtml: expect.any(String),
+      paragraphTree: expect.objectContaining({ version: 1, type: 'root' }),
       url: '/docs/lat.md#view-project',
     });
     expect(source.otherReferences).toEqual([
@@ -1326,20 +1351,20 @@ describe('lat ui', () => {
         sectionId: 'lat.md/guide#Guide#Details',
         breadcrumbs: ['guide', 'Guide', 'Details'],
         paragraph: 'The guide also references the same runner.',
-        paragraphHtml: expect.any(String),
+        paragraphTree: expect.objectContaining({ version: 1, type: 'root' }),
         url: '/docs/guide.md#details',
       },
     ]);
-    expect(source.context?.paragraphHtml).toContain(
+    expect(paragraphTreeHtml(source.context)).toContain(
       'wiki-link-segmented wiki-link-code wiki-link-active',
     );
-    expect(source.context?.paragraphHtml).toContain(
+    expect(paragraphTreeHtml(source.context)).toContain(
       'code-link-language code-language-ts',
     );
-    expect(source.context?.paragraphHtml).toContain(
+    expect(paragraphTreeHtml(source.context)).toContain(
       'href="/docs/guide.md#details"',
     );
-    expect(source.otherReferences[0].paragraphHtml).toContain(
+    expect(paragraphTreeHtml(source.otherReferences[0])).toContain(
       'wiki-link-code wiki-link-active',
     );
   });
@@ -1382,11 +1407,13 @@ describe('lat ui', () => {
       url: '/code/src/app.ts?at=5',
     });
 
-    const rendered = renderSectionBackReferences(
-      document.html,
-      document.backReferences,
+    const rendered = renderToStaticMarkup(
+      createElement(MarkdownContent, {
+        backReferences: document.backReferences,
+        tree: document.tree,
+      }),
     );
-    expect(rendered).toContain('data-section-back-references');
+    expect(rendered).toContain('aria-label="Section menu, 5 references"');
     expect(rendered).toContain('<svg aria-hidden="true"');
     expect(rendered).not.toContain('<span>Refs</span>');
     expect(rendered).toContain('section-back-reference-count">5</span>');
@@ -1428,28 +1455,28 @@ describe('lat ui', () => {
       headingId: 'unreferenced',
       references: [],
     });
-    const emptyRendered = renderSectionBackReferences(
-      '<h2 id="unreferenced">Unreferenced</h2>',
-      [unreferenced!],
+    const emptyRendered = renderToStaticMarkup(
+      createElement(MarkdownContent, {
+        backReferences: [unreferenced!],
+        tree: emptyDocument.tree,
+      }),
     );
-    expect(emptyRendered).toContain('data-section-back-references');
+    expect(emptyRendered).toContain('aria-label="Section menu"');
     expect(emptyRendered).toContain('No references to this section');
     expect(emptyRendered).not.toContain('section-back-reference-count');
-    expect(emptyRendered).toContain('data-copy-section-link="unreferenced"');
-    expect(emptyRendered).toContain(
-      'data-copy-section-id="lat.md/lat#View Project#Unreferenced"',
-    );
-    expect(emptyRendered).toContain(
-      'data-show-section-output="lat.md/lat#View Project#Unreferenced"',
-    );
+    expect(emptyRendered).toContain('Copy link to the section');
+    expect(emptyRendered).toContain('Copy section ID');
+    expect(emptyRendered).toContain('Show <code>lat section</code> output');
 
-    const staticRendered = renderSectionBackReferences(
-      '<h2 id="unreferenced">Unreferenced</h2>',
-      [unreferenced!],
-      { sectionOutputEnabled: false },
+    const staticRendered = renderToStaticMarkup(
+      createElement(MarkdownContent, {
+        backReferences: [unreferenced!],
+        sectionOutputEnabled: false,
+        tree: emptyDocument.tree,
+      }),
     );
     expect(staticRendered).toContain('Copy section ID');
-    expect(staticRendered).not.toContain('data-show-section-output');
+    expect(staticRendered).not.toContain('lat section</code> output');
 
     const navigate = vi.fn();
     const clipboard = { writeText: vi.fn(async () => {}) };
@@ -1481,16 +1508,18 @@ describe('lat ui', () => {
     const sectionOutput =
       (await sectionOutputResponse.json()) as ViewSectionCommandOutput;
     expect(sectionOutput.isError).toBe(false);
+    expect(sectionOutput.tree).toMatchObject({ version: 1, type: 'root' });
+    expect(sectionOutput).not.toHaveProperty('html');
     expect(sectionOutput.output).toContain(
       '[[lat.md/lat#View Project#Unreferenced]]',
     );
     expect(sectionOutput.output).toContain('> ## Unreferenced');
     expect(sectionOutput.output).toContain('`lat section "section#id"`');
-    expect(sectionOutput.html).toContain(
+    expect(documentTreeToHtml(sectionOutput.tree)).toContain(
       'href="/docs/lat.md#unreferenced"',
     );
-    expect(sectionOutput.html).toContain('<blockquote>');
-    expect(sectionOutput.html).toContain(
+    expect(documentTreeToHtml(sectionOutput.tree)).toContain('<blockquote>');
+    expect(documentTreeToHtml(sectionOutput.tree)).toContain(
       '<h2 id="unreferenced">Unreferenced</h2>',
     );
 
@@ -1835,9 +1864,13 @@ describe('lat ui validation diagnostics', () => {
 
       const initial = await errorsView.store.getDocument('lat.md');
       expect(initial.errors).toHaveLength(2);
-      expect(initial.html).toContain('class="markdown-error"');
-      expect(initial.html).toContain('id="user-content-markdown-error-5"');
-      expect(initial.html).toContain('id="user-content-markdown-error-7"');
+      expect(viewDocumentHtml(initial)).toContain('class="markdown-error"');
+      expect(viewDocumentHtml(initial)).toContain(
+        'id="user-content-markdown-error-5"',
+      );
+      expect(viewDocumentHtml(initial)).toContain(
+        'id="user-content-markdown-error-7"',
+      );
       writeFileSync(
         rootFile,
         '# Fixed\n\nA valid overview with no broken links.\n',
@@ -1846,7 +1879,7 @@ describe('lat ui validation diagnostics', () => {
       expect(errorsView.store.getIndex().errorCounts).toEqual({});
       const fixed = await errorsView.store.getDocument('lat.md');
       expect(fixed.errors).toEqual([]);
-      expect(fixed.html).not.toContain('markdown-error');
+      expect(viewDocumentHtml(fixed)).not.toContain('markdown-error');
 
       writeFileSync(
         rootFile,
@@ -1909,14 +1942,14 @@ describe('lat ui git state', () => {
         },
       });
       const modified = await gitView.store.getDocument('lat.md');
-      expect(modified.html).not.toContain('git-added');
-      expect(modified.gitHtml).toContain('class="git-removed"');
-      expect(modified.gitHtml).toContain('class="git-added"');
-      expect(modified.gitHtml).toContain('old');
-      expect(modified.gitHtml).toContain('new');
+      expect(viewDocumentHtml(modified)).not.toContain('git-added');
+      expect(viewDocumentGitHtml(modified)).toContain('class="git-removed"');
+      expect(viewDocumentGitHtml(modified)).toContain('class="git-added"');
+      expect(viewDocumentGitHtml(modified)).toContain('old');
+      expect(viewDocumentGitHtml(modified)).toContain('new');
 
       const added = await gitView.store.getDocument('fresh.md');
-      expect(added.gitHtml).toContain('class="git-added"');
+      expect(viewDocumentGitHtml(added)).toContain('class="git-added"');
 
       const dirtyGeneration = gitView.store.snapshot.generation;
       execFileSync('git', ['add', 'lat.md'], { cwd: root });
@@ -2094,8 +2127,12 @@ describe('lat ui git state', () => {
       buildGitDiffTree(inlineBase, inlineCurrent),
     );
     expect(inline.html.match(/class="katex"/g)).toHaveLength(2);
-    expect(inline.html).toContain('<del class="git-removed"><span class="katex">');
-    expect(inline.html).toContain('<ins class="git-added"><span class="katex">');
+    expect(inline.html).toContain(
+      '<del class="git-removed"><span class="katex">',
+    );
+    expect(inline.html).toContain(
+      '<ins class="git-added"><span class="katex">',
+    );
 
     const displayBase = '$$\n\\int_0^1 x^2 \\, dx\n$$';
     const displayCurrent = '$$\n\\int_0^1 x^3 \\, dx\n$$';

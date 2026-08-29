@@ -35,9 +35,17 @@ The generated marker excludes the entire artifact from both ripgrep and fallback
 
 Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
 
+## Renders canonical document trees
+
+Document, Git, section-output, and reference APIs expose a versioned JSON tree of safe root, element, and text nodes without legacy HTML fields.
+
+Markdown, reStructuredText, and AsciiDoc normalize into the same protocol. The client recursively reflects it into React elements, rejects executable properties and unsafe URL protocols, and owns interactive section menus without `innerHTML`.
+
+Static export discovers and rewrites links by traversing node properties while retaining the same document-tree payload as the live server.
+
 ## Renders Markdown with navigable local links
 
-Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
+Markdown normalizes into a safe tree with GitHub-style heading ids and intact relative destinations. HTTP(S) and protocol-relative links gain decorative external-site icons in documents and reference contexts.
 
 GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
 
@@ -107,7 +115,7 @@ The URL preserves the latest query; Back restores it, and Escape clears the quer
 
 ## Exposes code-mention frontmatter as metadata
 
-Documents expose [[markdown#Frontmatter#require-code-mention]] separately from rendered HTML so the browser can badge files that require code references.
+Documents expose [[markdown#Frontmatter#require-code-mention]] separately from the rendered document tree so the browser can badge files that require code references.
 
 ## Resolves Markdown and source wiki links
 
@@ -131,7 +139,7 @@ Source links preserve their originating section and line so the code view can re
 
 Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
 
-Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to shared Markdown rendering and offers a raw-text toggle; static exports omit this runtime-only action.
+Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally
 

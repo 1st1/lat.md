@@ -291,13 +291,13 @@ export async function startViewServer(
           },
           query,
         );
-        const html = await store.renderSectionOutput(result.output, query);
+        const tree = await store.renderSectionOutput(result.output, query);
         sendJson(
           res,
           200,
           {
             output: result.output,
-            html,
+            tree,
             isError: result.isError === true,
           } satisfies ViewSectionCommandOutput,
           headOnly,

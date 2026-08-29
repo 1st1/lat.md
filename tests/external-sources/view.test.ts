@@ -25,6 +25,7 @@ import {
   type ExternalGitFixture,
 } from './support.js';
 import { rmDirBestEffort } from '../util.js';
+import { documentTreeToHtml } from '../document-tree.js';
 
 async function json<T>(url: string): Promise<T> {
   const response = await fetch(url);
@@ -52,6 +53,10 @@ function selectLocalCommit(
     join(project.latDir, 'config.local.yaml'),
     `external-sources:\n  upstream:\n    local-path: ${fixture.checkout}\n    commit: ${fixture.commit2}\n`,
   );
+}
+
+function html(document: ViewDocument): string {
+  return documentTreeToHtml(document.tree);
 }
 
 describe.sequential('external source view', () => {
@@ -117,14 +122,16 @@ describe.sequential('external source view', () => {
       const document = await json<ViewDocument>(
         `${server.url}api/document?path=lat.md`,
       );
-      expect(document.html).toContain('/external/upstream/guide#Navigation');
-      expect(document.html).toContain(
+      expect(document.tree).toMatchObject({ version: 1, type: 'root' });
+      expect(document).not.toHaveProperty('html');
+      expect(html(document)).toContain('/external/upstream/guide#Navigation');
+      expect(html(document)).toContain(
         '/external/upstream/guide.rst#navigation',
       );
-      expect(document.html).toContain(
+      expect(html(document)).toContain(
         '/external/upstream/guide.adoc#navigation',
       );
-      expect(document.html).toContain('/external/upstream/widget.ts#widget');
+      expect(html(document)).toContain('/external/upstream/widget.ts#widget');
 
       const externalDocument = await json<ViewExternalDocument>(
         `${server.url}api/external?target=${encodeURIComponent('upstream:guide.md')}`,
@@ -132,7 +139,12 @@ describe.sequential('external source view', () => {
       expect(externalDocument.kind).toBe('markdown');
       if (externalDocument.kind === 'markdown') {
         expect(externalDocument.target).toBe('upstream:guide');
-        expect(externalDocument.document.html).toContain(
+        expect(externalDocument.document.tree).toMatchObject({
+          version: 1,
+          type: 'root',
+        });
+        expect(externalDocument.document).not.toHaveProperty('html');
+        expect(html(externalDocument.document)).toContain(
           'Second version navigation.',
         );
         expect(externalDocument.document.backReferences).toHaveLength(2);
@@ -158,7 +170,7 @@ describe.sequential('external source view', () => {
         );
         expect(externalDocument.kind).toBe('markdown');
         if (externalDocument.kind === 'markdown') {
-          expect(externalDocument.document.html).toContain(text);
+          expect(html(externalDocument.document)).toContain(text);
           expect(externalDocument.document.tableOfContents).toContainEqual(
             expect.objectContaining({ id: 'navigation', title: 'Navigation' }),
           );
@@ -249,7 +261,7 @@ describe.sequential('external source view', () => {
       );
       expect(refreshed.kind).toBe('markdown');
       if (refreshed.kind === 'markdown') {
-        expect(refreshed.document.html).toContain('Live dirty navigation.');
+        expect(html(refreshed.document)).toContain('Live dirty navigation.');
       }
     } finally {
       await server.close();
@@ -364,8 +376,8 @@ describe.sequential('external source view', () => {
       ) as ViewExternalDocument;
       expect(payload.kind).toBe('markdown');
       if (payload.kind === 'markdown') {
-        expect(payload.document.html).toContain('First version navigation.');
-        expect(payload.document.html).not.toContain('Live dirty navigation.');
+        expect(html(payload.document)).toContain('First version navigation.');
+        expect(html(payload.document)).not.toContain('Live dirty navigation.');
       }
     }
     for (const [target, text] of [
@@ -380,8 +392,8 @@ describe.sequential('external source view', () => {
         ) as ViewExternalDocument;
         expect(payload.kind).toBe('markdown');
         if (payload.kind === 'markdown') {
-          expect(payload.document.html).toContain(text);
-          expect(payload.document.html).not.toContain('Second version');
+          expect(html(payload.document)).toContain(text);
+          expect(html(payload.document)).not.toContain('Second version');
         }
       }
     }
@@ -442,7 +454,7 @@ describe.sequential('external source view', () => {
         `${brokenServer.url}api/document?path=lat.md`,
       );
       expect(document.errors[0].target).toBe('upstream:guide#Missing heading');
-      expect(document.html).toContain('markdown-error');
+      expect(html(document)).toContain('markdown-error');
     } finally {
       await brokenServer.close();
     }

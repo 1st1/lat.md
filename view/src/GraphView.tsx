@@ -33,11 +33,7 @@ import {
   sourcePath,
   sourceSymbol,
 } from './navigation';
-import {
-  copySectionId,
-  navigateAndCopySectionLink,
-  renderSectionBackReferences,
-} from './section-back-references';
+import { navigateAndCopySectionLink } from './section-back-references';
 import { SourceView } from './SourceView';
 import {
   deterministicGraphPosition,
@@ -443,18 +439,14 @@ function GraphInspector({
     [graph, node, target],
   );
   const contentTarget = node?.kind === 'document' ? node.url : previewTarget;
-  const documentHtml = useMemo(
+  const documentTree = useMemo(
     () =>
       content?.kind === 'markdown'
-        ? renderSectionBackReferences(
-            gitEnabled && content.document.gitHtml
-              ? content.document.gitHtml
-              : content.document.html,
-            content.document.backReferences,
-            { sectionOutputEnabled: Boolean(onShowSectionOutput) },
-          )
-        : '',
-    [content, gitEnabled, onShowSectionOutput],
+        ? gitEnabled && content.document.gitTree
+          ? content.document.gitTree
+          : content.document.tree
+        : null,
+    [content, gitEnabled],
   );
 
   useEffect(() => {
@@ -541,58 +533,6 @@ function GraphInspector({
       return;
     }
     const target = event.target;
-    const toggle =
-      target instanceof Element
-        ? target.closest<HTMLButtonElement>('[data-section-back-references]')
-        : null;
-    if (toggle) {
-      const panelId = toggle.getAttribute('aria-controls');
-      const panel = panelId ? window.document.getElementById(panelId) : null;
-      if (panel) {
-        const open = toggle.getAttribute('aria-expanded') === 'true';
-        toggle.setAttribute('aria-expanded', String(!open));
-        panel.hidden = open;
-      }
-      return;
-    }
-    const copyLink =
-      target instanceof Element
-        ? target.closest<HTMLButtonElement>('[data-copy-section-link]')
-        : null;
-    if (copyLink) {
-      navigateAndCopySectionLink(
-        new URL(
-          contentTarget || previewTarget || node?.url || '/',
-          window.location.origin,
-        ).href,
-        copyLink.dataset.copySectionLink ?? '',
-        (url) => {
-          const selection = graphSelectionForUrl(graph, url);
-          if (selection) onSelect(selection.nodeId, selection.target);
-        },
-        window.navigator.clipboard,
-      );
-      return;
-    }
-    const copyId =
-      target instanceof Element
-        ? target.closest<HTMLButtonElement>('[data-copy-section-id]')
-        : null;
-    if (copyId) {
-      copySectionId(
-        copyId.dataset.copySectionId ?? '',
-        window.navigator.clipboard,
-      );
-      return;
-    }
-    const showOutput =
-      target instanceof Element
-        ? target.closest<HTMLButtonElement>('[data-show-section-output]')
-        : null;
-    if (showOutput) {
-      onShowSectionOutput?.(showOutput.dataset.showSectionOutput ?? '');
-      return;
-    }
     const anchor =
       target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
     if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
@@ -645,7 +585,28 @@ function GraphInspector({
               </div>
             )}
           </div>
-          <MarkdownContent html={documentHtml} />
+          {documentTree && (
+            <MarkdownContent
+              backReferences={content.document.backReferences}
+              onCopySectionLink={(headingId) =>
+                navigateAndCopySectionLink(
+                  new URL(
+                    contentTarget || previewTarget || node.url || '/',
+                    window.location.origin,
+                  ).href,
+                  headingId,
+                  (url) => {
+                    const selection = graphSelectionForUrl(graph, url);
+                    if (selection) onSelect(selection.nodeId, selection.target);
+                  },
+                  window.navigator.clipboard,
+                )
+              }
+              onShowSectionOutput={onShowSectionOutput}
+              sectionOutputEnabled={Boolean(onShowSectionOutput)}
+              tree={documentTree}
+            />
+          )}
         </div>
       ) : content?.kind === 'source' ? (
         <div className="graph-inspector-source">

@@ -32,7 +32,7 @@ import {
 import { toPosix } from '../walk.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
-import { renderMarkdown, sanitizeExternalDocumentHtml } from './markdown.js';
+import { externalHtmlToDocumentTree, renderMarkdown } from './markdown.js';
 import {
   renderExternalSectionBackReferences,
   renderExternalSourceReferences,
@@ -232,7 +232,7 @@ export async function getViewExternal(
           )
         : {
             title: analysis.title,
-            html: sanitizeExternalDocumentHtml(
+            tree: externalHtmlToDocumentTree(
               await renderExternalDocument(
                 analysis.format,
                 resolved.fullContent,
@@ -260,8 +260,8 @@ export async function getViewExternal(
       document: {
         path: baseTarget,
         ...rendered,
-        html: addExternalDocumentAliasAnchors(rendered.html, analysis),
-        gitHtml: null,
+        tree: addExternalDocumentAliasAnchors(rendered.tree, analysis),
+        gitTree: null,
         graphNodeIds: {},
         tableOfContents: buildViewTableOfContents(
           sections,

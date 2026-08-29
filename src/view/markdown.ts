@@ -12,7 +12,6 @@ import type { Options as SanitizeSchema } from 'rehype-sanitize';
 import rehypeRaw from 'rehype-raw';
 import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
-import rehypeStringify from 'rehype-stringify';
 import remarkEmoji from 'remark-emoji';
 import remarkRehype from 'remark-rehype';
 import type { Options as RemarkRehypeOptions } from 'remark-rehype';
@@ -21,7 +20,9 @@ import { visit } from 'unist-util-visit';
 import type { AlertMarker } from '../extensions/alert-marker.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
+import { toViewDocumentTree } from './document-tree.js';
 import { highlightCode } from './highlight.js';
+import type { ViewDocumentTree } from './protocol.js';
 
 export type WikiLinkContext = { line: number };
 
@@ -250,7 +251,7 @@ const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
   return pre;
 };
 
-const htmlProcessor = unified()
+const documentTreeProcessor = unified()
   .use(remarkRehype, {
     allowDangerousHtml: true,
     handlers: { code: highlightedCodeHandler },
@@ -258,8 +259,7 @@ const htmlProcessor = unified()
   .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeKatex)
-  .use(rehypeSlug)
-  .use(rehypeStringify);
+  .use(rehypeSlug);
 
 const emojiProcessor = unified().use(remarkEmoji, { accessible: true });
 
@@ -298,18 +298,15 @@ function transformCustomEmoji(tree: Root): void {
 
 const externalHtmlProcessor = unified()
   .use(rehypeRaw)
-  .use(rehypeSanitize, { ...sanitizeSchema, clobberPrefix: '' })
-  .use(rehypeStringify);
+  .use(rehypeSanitize, { ...sanitizeSchema, clobberPrefix: '' });
 
-/** Sanitize HTML emitted by a format-native external document renderer. */
-export function sanitizeExternalDocumentHtml(html: string): string {
+/** Normalize HTML emitted by a format-native parser into the document tree. */
+export function externalHtmlToDocumentTree(html: string): ViewDocumentTree {
   const tree = {
     type: 'root' as const,
     children: [{ type: 'raw' as const, value: html }],
   };
-  return String(
-    externalHtmlProcessor.stringify(externalHtmlProcessor.runSync(tree)),
-  );
+  return toViewDocumentTree(externalHtmlProcessor.runSync(tree));
 }
 
 function nodeText(node: { value?: unknown; children?: unknown }): string {
@@ -576,14 +573,14 @@ function markMarkdownErrors(
   }
 }
 
-/** Render a lat.md file as safe HTML with resolved wiki links. */
+/** Normalize a lat.md file into the safe, parser-neutral view tree. */
 export async function renderMarkdown(
   markdown: string,
   filePath: string,
   resolveWikiLink?: WikiLinkResolver,
   options: MarkdownRenderOptions = {},
   parsedTree?: Root,
-): Promise<{ html: string; title: string }> {
+): Promise<{ tree: ViewDocumentTree; title: string }> {
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
   await emojiProcessor.run(tree);
@@ -712,6 +709,6 @@ export async function renderMarkdown(
         } as RootContent);
   });
 
-  const hast = await htmlProcessor.run(tree);
-  return { html: htmlProcessor.stringify(hast), title };
+  const hast = await documentTreeProcessor.run(tree);
+  return { tree: toViewDocumentTree(hast), title };
 }

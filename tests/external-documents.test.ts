@@ -5,7 +5,8 @@ import {
   findExternalDocumentSection,
   renderExternalDocument,
 } from '../src/external-documents.js';
-import { sanitizeExternalDocumentHtml } from '../src/view/markdown.js';
+import { externalHtmlToDocumentTree } from '../src/view/markdown.js';
+import { documentTreeToHtml } from './document-tree.js';
 
 describe('external document formats', () => {
   // @lat: [[tests/external-tests#External Sources#Document formats]]
@@ -152,14 +153,18 @@ describe('external document formats', () => {
       findExternalDocumentSection(asciidocAnalysis, 'Late_Section'),
     ).toMatchObject({ title: 'Late Section', startLine: 21 });
 
-    const rstHtml = addExternalDocumentAliasAnchors(
-      sanitizeExternalDocumentHtml(
-        await renderExternalDocument('restructuredtext', rst),
+    const rstHtml = documentTreeToHtml(
+      addExternalDocumentAliasAnchors(
+        externalHtmlToDocumentTree(
+          await renderExternalDocument('restructuredtext', rst),
+        ),
+        rstAnalysis,
       ),
-      rstAnalysis,
     );
-    const asciidocHtml = sanitizeExternalDocumentHtml(
-      await renderExternalDocument('asciidoc', asciidoc),
+    const asciidocHtml = documentTreeToHtml(
+      externalHtmlToDocumentTree(
+        await renderExternalDocument('asciidoc', asciidoc),
+      ),
     );
     expect(rstHtml).toContain('<h2 id="installation">');
     expect(rstHtml).toContain('<span id="install" aria-hidden="true"></span>');
@@ -169,8 +174,10 @@ describe('external document formats', () => {
     expect(asciidocHtml).toContain('Nested details.');
     expect(asciidocHtml).toContain('<h2 id="Late_Section">Late Section</h2>');
 
-    const unsafe = sanitizeExternalDocumentHtml(
-      '<h1 id="safe">Safe</h1><script>alert(1)</script>',
+    const unsafe = documentTreeToHtml(
+      externalHtmlToDocumentTree(
+        '<h1 id="safe">Safe</h1><script>alert(1)</script>',
+      ),
     );
     expect(unsafe).toContain('<h1 id="safe">Safe</h1>');
     expect(unsafe).not.toContain('<script');
