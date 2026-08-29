@@ -2,6 +2,30 @@
 
 Markdown parsing built on unified/remark v11. Entry point: [[src/parser.ts]]. Parse → render fidelity is verified by [[tests/roundtrip]].
 
+## Tables
+
+The shared AST recognizes [[markdown#Tables|GitHub-flavored pipe tables]] through the table-only micromark and mdast extensions, preserving table structure for rendering and serialization without enabling unrelated GFM syntax.
+
+## Strikethrough
+
+The shared AST recognizes [[markdown#Strikethrough|GitHub-flavored strikethrough]] with its focused micromark and mdast extensions, including GitHub's single-tilde form.
+
+## Task Lists
+
+The shared AST records [[markdown#Task Lists|GitHub task markers]] on list items through focused micromark and mdast extensions so rendering can emit semantic checkbox controls.
+
+## Bare Autolinks
+
+The shared AST recognizes [[markdown#Bare Autolinks|GitHub bare autolinks]] through focused micromark and mdast extensions, retaining their authored literal form during serialization.
+
+## Safe HTML
+
+CommonMark preserves authored HTML nodes for exact serialization; `lat ui` reparses them into HAST and applies the [[markdown#Safe HTML|GitHub-compatible sanitization boundary]] before stringifying.
+
+## Footnotes
+
+The shared AST recognizes [[markdown#Footnotes|GitHub footnote references and definitions]] through focused micromark and mdast extensions, preventing bracket syntax from degrading into ordinary reference links.
+
 ## Wiki Links
 
 Custom micromark + mdast extension implementing [[markdown#Wiki Links]]. Located in `src/extensions/wiki-link/` (see [[src/extensions/wiki-link/syntax.ts]] for the tokenizer).

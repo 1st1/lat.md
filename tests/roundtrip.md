@@ -20,7 +20,17 @@ A simple paragraph with plain text.
 
 A paragraph with *emphasis* and **strong** and ***strong emphasis*** inline.
 
+A paragraph with ~~obsolete guidance~~ struck out.
+
 A paragraph with `inline code` and a [link](https://example.com) and an [aliased link](https://example.com "Link Title").
+
+Bare autolinks include https://example.com, www.example.org, and docs@example.com.
+
+A sourced statement uses a footnote.[^source]
+
+[^source]: Supporting detail for the statement.
+
+Emoji shortcodes stay authored as :tada: and :shipit:.
 
 ![alt text](image.png)
 
@@ -43,6 +53,10 @@ A paragraph with `inline code` and a [link](https://example.com) and an [aliased
   * Sub-item B
 
 * Back to top level
+
+* [x] Completed task
+
+* [ ] Open task
 
 1. First ordered
 
@@ -70,6 +84,12 @@ function hello() {
 ```
 plain code block without language
 ```
+
+Inline math $E = mc^2$ stays exact.
+
+$$
+\int_0^1 x^2 \, dx
+$$
 
 ```
 indented code block line one
@@ -110,6 +130,21 @@ A paragraph with an ![inline image](img.png "Image Title") in the middle.
 * Another item with `code` and **bold**
 
 > Blockquote with [[wiki link]] and *emphasis*.
+
+> [!NOTE]
+> Useful information for readers.
+
+<details>
+<summary>More detail</summary>
+
+Safe <sub>subscript</sub> content.
+
+</details>
+
+| Feature     | Rendering                        |
+| ----------- | -------------------------------- |
+| Tables      | Semantic HTML with `inline code` |
+| Wide tables | Horizontal scrolling             |
 
 ## Final Section
 

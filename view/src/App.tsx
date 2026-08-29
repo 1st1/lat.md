@@ -17,6 +17,7 @@ import type {
 import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
 import latLogoUrl from '../../website/public/logo.svg?url';
 import { FileTree } from './FileTree';
+import { MarkdownContent } from './MarkdownContent';
 import { DocumentToc } from './DocumentToc';
 import { fetchViewJson } from './data-source';
 import GraphView, { preloadViewGraph } from './GraphView';
@@ -851,11 +852,7 @@ export function App() {
                   />
                 )}
               </div>
-              <article
-                className="markdown"
-                onClick={onDocumentClick}
-                dangerouslySetInnerHTML={{ __html: documentHtml }}
-              />
+              <MarkdownContent html={documentHtml} onClick={onDocumentClick} />
             </div>
           </div>
         ) : page?.kind === 'source' ? (

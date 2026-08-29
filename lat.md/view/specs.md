@@ -13,6 +13,8 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 By default the header renders the same Lat wordmark as the website. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
+The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
+
 ## Builds a static deployment
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
@@ -36,6 +38,34 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 ## Renders Markdown with navigable local links
 
 Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
+
+GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
+
+Single- and double-tilde GitHub strikethrough syntax renders semantic deleted text rather than literal delimiters.
+
+GitHub task-list markers render checked or unchecked disabled checkboxes with compact list alignment, preserving document readability without implying that the source file can be edited from the viewer.
+
+Bare HTTP(S), `www.`, and email addresses render as links. Web addresses receive the same external-site treatment as explicit Markdown links, while trailing prose punctuation stays outside the destination.
+
+GitHub-compatible raw HTML renders only through the sanitizer allowlist. Safe formatting and disclosure elements survive, while scripts, event handlers, and unsafe URL protocols never reach the client.
+
+Fenced code blocks with supported language labels render escaped, server-side syntax-highlighted markup. Unknown labels remain safely escaped plain code.
+
+Inline and display math render as accessible KaTeX after authored HTML has been sanitized, including display math written with dollar blocks or `math` code fences.
+
+`mermaid` fences retain escaped source in server and static payloads, then lazily become SVG diagrams in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
+
+`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data or renderer failures restore escaped source with a safe inline error and retry action; module-load failures offer a reload action that resets the browser's failed ES module record.
+
+ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, and automatic framing. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
+
+GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
+
+GitHub footnotes render linked superscript references and a compact end section with return links, rather than being misread as ordinary Markdown reference links.
+
+Recognized GitHub emoji shortcodes render as accessible Unicode emoji or GitHub custom emoji assets; unknown shortcodes stay literal, and rendering never rewrites the authored Markdown.
+
+GitHub conversation references such as `#26`, `GH-26`, account mentions, and commit SHAs remain literal in Lat documents, matching repository-file rendering. Full GitHub URLs remain ordinary external links rather than conversation-only shortlinks or embeds.
 
 ## Shows a local table of contents
 
@@ -123,6 +153,10 @@ Git worktrees show cached HEAD changes as yellow modified or green new-file mark
 
 Every rendered block in a new Markdown file inherits the added state, including headings, unordered and ordered lists with their markers, and fenced code blocks.
 
+Compatible table edits retain one rendered table, place inline additions and removals inside changed cells, and color inserted or deleted rows. Incompatible column or alignment changes fall back to colored whole-table replacements.
+
+Changed inline math keeps its surrounding prose and marks the rendered old and new formulas inline. Display-dollar and fenced math changes remain rendered inside removed and added block treatments.
+
 Blocks with less than 60% ordered word-token overlap render as whole removed and added blocks instead of noisy word-level replacements.
 
 Startup reads Git once, and a later vault change refreshes that state. Polling also detects commits without filesystem events, clearing stale diff markers while unchanged Git snapshots remain silent.
@@ -152,6 +186,10 @@ Fragment links position rendered documents without smooth scrolling so content i
 Changing only a Markdown fragment preserves the mounted document and cached response through direct clicks and Back or Forward navigation, avoiding a loading state or full-content repaint.
 
 Selecting the H1 entry in the page TOC keeps its canonical fragment while positioning the document at scroll-top zero instead of aligning the rendered heading.
+
+### Preserves rich renderers
+
+Fragment-only rerenders leave the enhanced Markdown DOM intact, so Mermaid, map, and STL renderers remain mounted instead of reverting to their authored source fallbacks.
 
 ## Restores history scroll positions
 

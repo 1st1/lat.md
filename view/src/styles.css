@@ -37,6 +37,7 @@
   --reference-control: #e5e5e5;
   --graph-document: #0070f3;
   --graph-code: #d97706;
+  --map-control-filter: none;
   --syntax-built-in: #9a3f75;
   --syntax-comment: #737373;
   --syntax-keyword: #6c4bc2;
@@ -73,6 +74,7 @@
     --reference-control: #262626;
     --graph-document: rgb(82, 168, 255);
     --graph-code: #f5a623;
+    --map-control-filter: invert(1);
     --syntax-built-in: #e6a2cc;
     --syntax-comment: #888;
     --syntax-keyword: #c2adff;
@@ -877,7 +879,9 @@ a {
 }
 
 .source-code .hljs-comment,
-.source-code .hljs-quote {
+.source-code .hljs-quote,
+.markdown .hljs-comment,
+.markdown .hljs-quote {
   color: var(--syntax-comment);
   font-style: italic;
 }
@@ -885,45 +889,66 @@ a {
 .source-code .hljs-keyword,
 .source-code .hljs-literal,
 .source-code .hljs-selector-tag,
-.source-code .hljs-section {
+.source-code .hljs-section,
+.markdown .hljs-keyword,
+.markdown .hljs-literal,
+.markdown .hljs-selector-tag,
+.markdown .hljs-section {
   color: var(--syntax-keyword);
 }
 
 .source-code .hljs-string,
 .source-code .hljs-regexp,
 .source-code .hljs-addition,
-.source-code .hljs-attribute {
+.source-code .hljs-attribute,
+.markdown .hljs-string,
+.markdown .hljs-regexp,
+.markdown .hljs-addition,
+.markdown .hljs-attribute {
   color: var(--syntax-string);
 }
 
 .source-code .hljs-number,
 .source-code .hljs-symbol,
-.source-code .hljs-bullet {
+.source-code .hljs-bullet,
+.markdown .hljs-number,
+.markdown .hljs-symbol,
+.markdown .hljs-bullet {
   color: var(--syntax-number);
 }
 
 .source-code .hljs-title,
 .source-code .hljs-function,
 .source-code .hljs-class,
-.source-code .hljs-type {
+.source-code .hljs-type,
+.markdown .hljs-title,
+.markdown .hljs-function,
+.markdown .hljs-class,
+.markdown .hljs-type {
   color: var(--syntax-title);
 }
 
 .source-code .hljs-built_in,
 .source-code .hljs-variable.language_,
-.source-code .hljs-meta {
+.source-code .hljs-meta,
+.markdown .hljs-built_in,
+.markdown .hljs-variable.language_,
+.markdown .hljs-meta {
   color: var(--syntax-built-in);
 }
 
-.source-code .hljs-deletion {
+.source-code .hljs-deletion,
+.markdown .hljs-deletion {
   color: #bd3d3d;
 }
 
-.source-code .hljs-emphasis {
+.source-code .hljs-emphasis,
+.markdown .hljs-emphasis {
   font-style: italic;
 }
 
-.source-code .hljs-strong {
+.source-code .hljs-strong,
+.markdown .hljs-strong {
   font-weight: 700;
 }
 
@@ -1089,11 +1114,73 @@ a {
   margin-top: 0.35em;
 }
 
+.markdown .contains-task-list,
+.markdown .task-list-item {
+  list-style: none;
+}
+
+.markdown .contains-task-list {
+  padding-left: 1.45em;
+}
+
+.markdown .task-list-item > input[type='checkbox'] {
+  margin: 0 0.5em 0 -1.45em;
+  accent-color: var(--accent);
+  pointer-events: none;
+}
+
 .markdown a {
   overflow-wrap: anywhere;
   text-decoration-line: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
+}
+
+.markdown table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 0 1.25em;
+  overflow-x: auto;
+  line-height: 1.5;
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+}
+
+.markdown th {
+  font-weight: 650;
+  background: var(--panel);
+}
+
+.markdown th:not([align]) {
+  text-align: left;
+}
+
+.markdown details:not(.maplibregl-ctrl-attrib) {
+  padding: 10px 14px;
+  margin: 0 0 1.25em;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.markdown details:not(.maplibregl-ctrl-attrib) > summary {
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.markdown details:not(.maplibregl-ctrl-attrib)[open] > summary {
+  margin-bottom: 0.75em;
+}
+
+.markdown details:not(.maplibregl-ctrl-attrib) > :last-child {
+  margin-bottom: 0;
 }
 
 .markdown .markdown-error {
@@ -1146,6 +1233,54 @@ a {
   color: var(--danger);
   background: var(--danger-soft);
   text-decoration-thickness: 1px;
+}
+
+.markdown .git-math-block {
+  padding: 1px 10px;
+  margin: 0 0 1.25em;
+  overflow-x: auto;
+}
+
+.markdown .git-math-block .katex-display {
+  margin: 0.75em 0;
+}
+
+.markdown .git-math-block.git-added {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.markdown .git-math-block.git-removed {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.markdown table.git-added {
+  box-shadow: inset 3px 0 0 var(--success);
+}
+
+.markdown table.git-removed {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.markdown table.git-added th,
+.markdown table.git-added td,
+.markdown tr.git-added > th,
+.markdown tr.git-added > td {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success-soft) 55%, transparent);
+}
+
+.markdown table.git-removed th,
+.markdown table.git-removed td,
+.markdown tr.git-removed > th,
+.markdown tr.git-removed > td {
+  color: var(--danger);
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger-soft) 55%, transparent);
 }
 
 .markdown p.git-added,
@@ -1287,6 +1422,90 @@ a.wiki-link-active {
   border-left: 3px solid var(--panel-border);
 }
 
+.markdown .markdown-alert {
+  --alert-color: var(--accent);
+
+  padding: 12px 16px;
+  margin: 0 0 1.25em;
+  color: var(--text);
+  background: color-mix(in srgb, var(--alert-color) 6%, transparent);
+  border-left: 4px solid var(--alert-color);
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown .markdown-alert-tip {
+  --alert-color: var(--success);
+}
+
+.markdown .markdown-alert-important {
+  --alert-color: #8957e5;
+}
+
+.markdown .markdown-alert-warning {
+  --alert-color: #bf8700;
+}
+
+.markdown .markdown-alert-caution {
+  --alert-color: var(--danger);
+}
+
+.markdown .markdown-alert-title {
+  margin: 0 0 0.35em;
+  color: var(--alert-color);
+  font-size: 0.88em;
+  font-weight: 700;
+}
+
+.markdown .markdown-alert-title::before {
+  display: inline-grid;
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 0.45em;
+  place-items: center;
+  font-size: 0.8em;
+  line-height: 1;
+  content: '!';
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.markdown .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown [data-footnote-ref] {
+  font-size: 0.72em;
+  font-weight: 700;
+  line-height: 1;
+  vertical-align: super;
+  text-decoration: none;
+}
+
+.markdown [data-footnotes] {
+  padding-top: 1em;
+  margin-top: 2.5em;
+  color: var(--muted);
+  font-size: 0.9em;
+  border-top: 1px solid var(--panel-border);
+}
+
+.markdown [data-footnotes] h2 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+}
+
+.markdown [data-footnote-backref] {
+  margin-left: 0.35em;
+  text-decoration: none;
+}
+
 .markdown code {
   padding: 0.16em 0.36em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -1308,8 +1527,176 @@ a.wiki-link-active {
   background: transparent;
 }
 
+.markdown .markdown-diagram {
+  padding: 18px;
+  margin: 0 0 1.25em;
+  overflow: auto;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+}
+
+.markdown .markdown-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.markdown .markdown-map {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+}
+
+.markdown .markdown-map-canvas {
+  width: 100%;
+  height: min(420px, 58vh);
+  min-height: 280px;
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(
+      color-mix(in srgb, var(--panel-border) 45%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--panel-border) 45%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 24px 24px;
+}
+
+.markdown .markdown-map-status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.85em;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-group {
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.markdown .markdown-map .maplibregl-ctrl-group button {
+  color: var(--text);
+  background: var(--panel);
+  border-color: var(--panel-border);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-group button:hover {
+  background: var(--accent-soft);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-icon {
+  filter: var(--map-control-filter, none);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-attrib {
+  color: #333;
+  background: rgb(255 255 255 / 82%);
+}
+
+.markdown .markdown-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+
+.markdown .markdown-stl {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 50% 42%,
+      color-mix(in srgb, var(--link) 8%, transparent),
+      transparent 58%
+    ),
+    var(--panel);
+}
+
+.markdown .markdown-stl-viewport {
+  width: 100%;
+  height: min(440px, 62vh);
+  min-height: 300px;
+}
+
+.markdown .markdown-stl-viewport canvas {
+  display: block;
+  cursor: grab;
+}
+
+.markdown .markdown-stl-viewport canvas:active {
+  cursor: grabbing;
+}
+
+.markdown .markdown-stl-caption {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  padding: 4px 7px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  border: 1px solid var(--panel-border);
+  border-radius: 5px;
+}
+
+.markdown .markdown-diagram-error {
+  padding: 10px 12px;
+  margin-bottom: 0;
+  color: var(--danger);
+  font-size: 0.85em;
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-bottom: 0;
+  border-radius: 10px 10px 0 0;
+}
+
+.markdown .markdown-diagram-error + .markdown-diagram-source {
+  border-radius: 0 0 10px 10px;
+}
+
+.markdown .markdown-map-error {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.markdown .markdown-diagram-retry {
+  flex: 0 0 auto;
+  padding: 4px 9px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.markdown .markdown-diagram-retry:hover {
+  border-color: var(--danger);
+}
+
 .markdown img {
   max-width: 100%;
+}
+
+.markdown img.markdown-emoji {
+  width: 1.2em;
+  height: 1.2em;
+  vertical-align: -0.2em;
 }
 
 .markdown hr {

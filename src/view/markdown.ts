@@ -1,14 +1,27 @@
 import { basename, extname } from 'node:path';
-import type { Link, PhrasingContent, Root, RootContent } from 'mdast';
+import type {
+  Blockquote,
+  Code,
+  Link,
+  PhrasingContent,
+  Root,
+  RootContent,
+} from 'mdast';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import type { Options as SanitizeSchema } from 'rehype-sanitize';
+import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
+import remarkEmoji from 'remark-emoji';
 import remarkRehype from 'remark-rehype';
+import type { Options as RemarkRehypeOptions } from 'remark-rehype';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
+import type { AlertMarker } from '../extensions/alert-marker.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
+import { highlightCode } from './highlight.js';
 
 export type WikiLinkContext = { line: number };
 
@@ -52,9 +65,46 @@ const ERROR_CLASS = 'markdown-error';
 const EXTERNAL_LINK_CLASS = 'external-link';
 const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
+const GEOJSON_SOURCE_CLASS = 'markdown-geojson-source';
+const HIGHLIGHT_CLASS = 'hljs';
+const MERMAID_SOURCE_CLASS = 'markdown-mermaid-source';
+const MATH_DIFF_BLOCK_CLASS = 'git-math-block';
+const RICH_FENCE_SOURCE_CLASS = 'markdown-diagram-source';
+const STL_SOURCE_CLASS = 'markdown-stl-source';
+const TOPOJSON_SOURCE_CLASS = 'markdown-topojson-source';
+const ALERT_KINDS = ['note', 'tip', 'important', 'warning', 'caution'] as const;
+const ALERT_CLASSES = [
+  'markdown-alert',
+  'markdown-alert-title',
+  ...ALERT_KINDS.map((kind) => `markdown-alert-${kind}`),
+];
+const GITHUB_CUSTOM_EMOJI = new Set([
+  'atom',
+  'basecamp',
+  'basecampy',
+  'bowtie',
+  'electron',
+  'feelsgood',
+  'finnadie',
+  'fishsticks',
+  'fu',
+  'goberserk',
+  'godmode',
+  'hurtrealbad',
+  'neckbeard',
+  'octocat',
+  'rage1',
+  'rage2',
+  'rage3',
+  'rage4',
+  'shipit',
+  'suspect',
+  'trollface',
+]);
 
 function classAttributes(
   tag: string,
+  extraClasses: string[] = [],
 ): NonNullable<SanitizeSchema['attributes']>[string] {
   const attributes = defaultSchema.attributes?.[tag] ?? [];
   const allowedClasses = attributes.flatMap((attribute) =>
@@ -67,7 +117,13 @@ function classAttributes(
       (attribute) =>
         !(Array.isArray(attribute) && attribute[0] === 'className'),
     ),
-    ['className', ...allowedClasses, ERROR_CLASS, ...GIT_CLASSES],
+    [
+      'className',
+      ...allowedClasses,
+      ERROR_CLASS,
+      ...GIT_CLASSES,
+      ...extraClasses,
+    ],
   ];
 }
 
@@ -93,25 +149,38 @@ const sanitizeSchema: SanitizeSchema = {
       ],
     ],
     blockquote: classAttributes('blockquote'),
-    code: classAttributes('code'),
+    code: classAttributes('code', [
+      HIGHLIGHT_CLASS,
+      'math-display',
+      'math-inline',
+    ]),
     del: classAttributes('del'),
-    div: classAttributes('div'),
+    details: [...(defaultSchema.attributes?.details ?? []), ['open', true]],
+    div: classAttributes('div', [...ALERT_CLASSES, MATH_DIFF_BLOCK_CLASS]),
     h1: classAttributes('h1'),
     h2: classAttributes('h2'),
     h3: classAttributes('h3'),
     h4: classAttributes('h4'),
     h5: classAttributes('h5'),
     h6: classAttributes('h6'),
-    img: classAttributes('img'),
+    img: classAttributes('img', ['markdown-emoji']),
+    input: [...(defaultSchema.attributes?.input ?? []), ['checked', true]],
     ins: classAttributes('ins'),
     li: classAttributes('li'),
     ol: classAttributes('ol'),
-    p: classAttributes('p'),
-    pre: classAttributes('pre'),
+    p: classAttributes('p', ALERT_CLASSES),
+    pre: classAttributes('pre', [
+      GEOJSON_SOURCE_CLASS,
+      MERMAID_SOURCE_CLASS,
+      RICH_FENCE_SOURCE_CLASS,
+      STL_SOURCE_CLASS,
+      TOPOJSON_SOURCE_CLASS,
+    ]),
     span: [
       ...(defaultSchema.attributes?.span ?? []),
       'ariaHidden',
       'ariaLabel',
+      'role',
       [
         'className',
         'wiki-link-context',
@@ -119,19 +188,113 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-ref-count',
         EXTERNAL_LINK_ICON_CLASS,
         ...CODE_LINK_CLASSES.slice(2),
+        /^hljs-./,
         ERROR_CLASS,
         ...GIT_CLASSES,
       ],
     ],
+    table: classAttributes('table'),
+    tr: classAttributes('tr'),
     ul: classAttributes('ul'),
   },
 };
 
+type RemarkCodeHandler = NonNullable<
+  NonNullable<RemarkRehypeOptions['handlers']>['code']
+>;
+
+const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
+  const node = rawNode as Code;
+  const language = node.lang?.split(/\s+/, 1)[0];
+  const richSourceClass =
+    language?.toLowerCase() === 'mermaid'
+      ? MERMAID_SOURCE_CLASS
+      : language?.toLowerCase() === 'geojson'
+        ? GEOJSON_SOURCE_CLASS
+        : language?.toLowerCase() === 'topojson'
+          ? TOPOJSON_SOURCE_CLASS
+          : language?.toLowerCase() === 'stl'
+            ? STL_SOURCE_CLASS
+            : null;
+  const highlighted =
+    language && !richSourceClass ? highlightCode(language, node.value) : null;
+  const code = {
+    type: 'element' as const,
+    tagName: 'code',
+    properties: {
+      className: [
+        ...(language ? [`language-${language}`] : []),
+        ...(highlighted === null ? [] : [HIGHLIGHT_CLASS]),
+      ],
+    },
+    children: [
+      highlighted === null
+        ? { type: 'text' as const, value: node.value ? `${node.value}\n` : '' }
+        : { type: 'raw' as const, value: `${highlighted}\n` },
+    ],
+    ...(node.meta ? { data: { meta: node.meta } } : {}),
+  };
+  state.patch(node, code);
+  const result = state.applyData(node, code);
+  const pre = {
+    type: 'element' as const,
+    tagName: 'pre',
+    properties: {
+      className: richSourceClass
+        ? [RICH_FENCE_SOURCE_CLASS, richSourceClass]
+        : [],
+    },
+    children: [result],
+  };
+  state.patch(node, pre);
+  return pre;
+};
+
 const htmlProcessor = unified()
-  .use(remarkRehype)
+  .use(remarkRehype, {
+    allowDangerousHtml: true,
+    handlers: { code: highlightedCodeHandler },
+  })
+  .use(rehypeRaw)
   .use(rehypeSanitize, sanitizeSchema)
+  .use(rehypeKatex)
   .use(rehypeSlug)
   .use(rehypeStringify);
+
+const emojiProcessor = unified().use(remarkEmoji, { accessible: true });
+
+function transformCustomEmoji(tree: Root): void {
+  visit(tree, 'text', (node, index, parent) => {
+    if (index === undefined || !parent || !node.value.includes(':')) return;
+    const pattern = /:([a-z0-9_+-]+):/g;
+    const children: PhrasingContent[] = [];
+    let cursor = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(node.value))) {
+      if (!GITHUB_CUSTOM_EMOJI.has(match[1])) continue;
+      if (match.index > cursor) {
+        children.push({
+          type: 'text',
+          value: node.value.slice(cursor, match.index),
+        });
+      }
+      children.push({
+        type: 'image',
+        url: `https://github.githubassets.com/images/icons/emoji/${match[1]}.png?v8`,
+        alt: match[0],
+        title: null,
+        data: { hProperties: { className: ['markdown-emoji'] } },
+      });
+      cursor = match.index + match[0].length;
+    }
+    if (children.length === 0) return;
+    if (cursor < node.value.length) {
+      children.push({ type: 'text', value: node.value.slice(cursor) });
+    }
+    parent.children.splice(index, 1, ...children);
+    return index + children.length;
+  });
+}
 
 function nodeText(node: { value?: unknown; children?: unknown }): string {
   if (typeof node.value === 'string') return node.value;
@@ -139,6 +302,38 @@ function nodeText(node: { value?: unknown; children?: unknown }): string {
   return node.children
     .map((child) => nodeText(child as { value?: unknown; children?: unknown }))
     .join('');
+}
+
+function transformAlerts(tree: Root): void {
+  visit(tree, 'blockquote', (node: Blockquote) => {
+    const firstBlock = node.children[0];
+    if (firstBlock?.type !== 'paragraph') return;
+    const firstInline = firstBlock.children[0];
+    if (firstInline?.type !== 'alertMarker') return;
+
+    const label = (firstInline as AlertMarker).value;
+    const kind = label.toLowerCase() as (typeof ALERT_KINDS)[number];
+    firstBlock.children.shift();
+    if (firstBlock.children.length === 0) node.children.shift();
+
+    node.data = {
+      ...node.data,
+      hName: 'div',
+      hProperties: {
+        ...(node.data?.hProperties ?? {}),
+        className: ['markdown-alert', `markdown-alert-${kind}`],
+      },
+    };
+    node.children.unshift({
+      type: 'paragraph',
+      data: {
+        hProperties: { className: ['markdown-alert-title'] },
+      },
+      children: [
+        { type: 'text', value: label[0] + label.slice(1).toLowerCase() },
+      ],
+    });
+  });
 }
 
 function wikiLinkContent(node: WikiLink): {
@@ -375,6 +570,9 @@ export async function renderMarkdown(
 ): Promise<{ html: string; title: string }> {
   const tree = parsedTree ? structuredClone(parsedTree) : parse(markdown);
   tree.children = tree.children.filter((node) => node.type !== 'yaml');
+  await emojiProcessor.run(tree);
+  transformCustomEmoji(tree);
+  transformAlerts(tree);
   if (options.errors) markMarkdownErrors(tree, options.errors);
 
   visit(tree, 'link', (node: Link) => {

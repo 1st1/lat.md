@@ -2,6 +2,72 @@
 
 Extensions to standard markdown used in `lat.md` files.
 
+## Tables
+
+GitHub-flavored pipe tables are parsed as structured rows and cells, so `lat ui` renders semantic, horizontally scrollable HTML tables instead of pipe-delimited text.
+
+Table syntax is supported by the shared [[parser#Tables|parser extension]], including inline Markdown inside cells.
+
+## Strikethrough
+
+GitHub-flavored single- or double-tilde delimiters render obsolete text with semantic `del` markup while preserving the authored delimiters during serialization.
+
+## Task Lists
+
+GitHub-flavored checked and unchecked list markers render as accessible, read-only checkboxes while remaining ordinary Markdown list structure for parsing and serialization.
+
+## Bare Autolinks
+
+GitHub-flavored bare HTTP(S), `www.`, and email addresses become links without requiring angle brackets or explicit Markdown link syntax.
+
+## Safe HTML
+
+GitHub-compatible HTML elements render through a strict allowlist, enabling constructs such as `details`, `summary`, `sub`, `sup`, and `picture` without allowing scripts or event handlers.
+
+Raw HTML is parsed before sanitization. Unsafe elements, URL protocols, and attributes are removed, while `details` may preserve its boolean `open` state for authored expanded sections.
+
+## Alerts
+
+GitHub alert blockquotes for `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` render as labeled callouts with distinct semantic colors while retaining ordinary blockquote source syntax.
+
+## Footnotes
+
+GitHub footnote references and definitions render as linked superscripts, a notes section, and return links while retaining their labels and definitions during serialization.
+
+## Emoji Shortcodes
+
+GitHub-style `:name:` emoji shortcodes render as accessible Unicode emoji or GitHub's custom emoji images, while unknown names and source serialization remain unchanged.
+
+## Fenced Code Highlighting
+
+Fenced code blocks use their language label for safe server-side syntax highlighting, with common source, shell, web, data, diff, and Markdown languages supported and unknown labels rendered as escaped plain code.
+
+## Math
+
+GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences render as accessible KaTeX while retaining their authored math syntax during parsing and serialization.
+
+## Mermaid Diagrams
+
+GitHub-style `mermaid` fences render as SVG diagrams in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
+
+## GeoJSON and TopoJSON Maps
+
+GitHub-style `geojson` and `topojson` fences render supplied geometry over an OpenStreetMap basemap from OpenFreeMap, with pan, zoom, and automatic data bounds.
+
+The browser loads the hosted vector style and tiles only when a map fence is present. If that service is unavailable, MapLibre keeps the geometry interactive over a local grid fallback; attribution remains visible whenever OpenFreeMap data is used.
+
+Before first client paint, the source fallback becomes a fixed-height loading shell. Renderer failures restore the escaped source with a visible retry action; module-load failures offer a reload action because browsers cache failed ES module records.
+
+## ASCII STL Models
+
+GitHub-style `stl` fences parse ASCII STL into responsive, automatically framed 3D models that can be rotated and zoomed in the browser without external services.
+
+## GitHub Surface Boundaries
+
+Lat documents follow GitHub's repository-file Markdown surface. Conversation-only issue, pull-request, commit, mention, color-chip, task-unfurl, custom-autolink, and code-permalink enrichments remain literal text or ordinary URLs.
+
+Those enrichments depend on live GitHub repository, account, permission, or issue metadata and are not part of portable document syntax. GitHub itself does not create issue or pull-request autolinks or code-snippet embeds in repository Markdown files.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

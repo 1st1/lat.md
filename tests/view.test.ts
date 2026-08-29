@@ -79,6 +79,14 @@ import {
   viewRouteIdentity,
   writeGraphMode,
 } from '../view/src/navigation.js';
+import {
+  geoJsonBounds,
+  OPENFREEMAP_STYLE_URL,
+  parseGeoJson,
+  parseStl,
+  parseTopoJson,
+  recoverableLazyImport,
+} from '../view/src/markdown-rich-fences.js';
 import { renderSectionBackReferences } from '../view/src/section-back-references.js';
 import {
   captureScrollAnchor,
@@ -171,6 +179,16 @@ describe('lat ui', () => {
     const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
     expect(shellResponse.status).toBe(200);
     expect(await shellResponse.text()).toContain('lat ui shell');
+    const contentSecurityPolicy = shellResponse.headers.get(
+      'content-security-policy',
+    );
+    expect(contentSecurityPolicy).toContain(
+      "connect-src 'self' https://tiles.openfreemap.org",
+    );
+    expect(contentSecurityPolicy).toContain("font-src 'self' data:");
+    expect(contentSecurityPolicy).toContain(
+      "img-src 'self' data: https://github.githubassets.com",
+    );
 
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);
@@ -678,6 +696,268 @@ describe('lat ui', () => {
     expect(links.html).toContain('<a href="guide.md#details">local</a>');
     expect(links.html).toContain('<a href="mailto:hi@example.com">email</a>');
 
+    const table = await renderMarkdown(
+      '| Mitigation | What Nub does |\n| --- | --- |\n| Native | Nothing. The version already ships it. |\n| Polyfill | Installs a JavaScript polyfill, guarded by a `typeof` feature detect. |',
+      'guide.md',
+    );
+    expect(table.html).toContain('<table>');
+    expect(table.html).toContain(
+      '<thead><tr><th>Mitigation</th><th>What Nub does</th>',
+    );
+    expect(table.html).toContain(
+      '<tbody><tr><td>Native</td><td>Nothing. The version already ships it.</td>',
+    );
+    expect(table.html).toContain('<code>typeof</code> feature detect.');
+    expect(table.html).not.toContain('| --- |');
+
+    const tableWithPipesInCode = await renderMarkdown(
+      '| Feature | Syntax sample |\n| --- | --- |\n| Table | `\\| cell \\|` |',
+      'guide.md',
+    );
+    expect(tableWithPipesInCode.html).toContain(
+      '<td>Table</td><td><code>| cell |</code></td>',
+    );
+
+    const strikethrough = await renderMarkdown(
+      'Keep ~~obsolete~~ current guidance.',
+      'guide.md',
+    );
+    expect(strikethrough.html).toBe(
+      '<p>Keep <del>obsolete</del> current guidance.</p>',
+    );
+
+    const tasks = await renderMarkdown(
+      '- [x] Shipped\n- [ ] Follow up',
+      'guide.md',
+    );
+    expect(tasks.html).toContain('<ul class="contains-task-list">');
+    expect(tasks.html).toContain(
+      '<input type="checkbox" checked disabled> Shipped',
+    );
+    expect(tasks.html).toContain(
+      '<input type="checkbox" disabled> Follow up',
+    );
+
+    const autolinks = await renderMarkdown(
+      'Visit https://example.com, www.example.org, or email docs@example.com.',
+      'guide.md',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="https://example.com" class="external-link">',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="http://www.example.org" class="external-link">',
+    );
+    expect(autolinks.html).toContain(
+      '<a href="mailto:docs@example.com">docs@example.com</a>',
+    );
+    expect(autolinks.html.match(/class="external-link-icon"/g)).toHaveLength(2);
+
+    const repositoryReferences = await renderMarkdown(
+      'Repository files keep #26, GH-26, owner/repo#26, @octocat, and a5c3785ed8d6a35868bc169f07e40e889087fd2e literal.',
+      'guide.md',
+    );
+    expect(repositoryReferences.html).toBe(
+      '<p>Repository files keep #26, GH-26, owner/repo#26, @octocat, and a5c3785ed8d6a35868bc169f07e40e889087fd2e literal.</p>',
+    );
+
+    const issueUrl = await renderMarkdown(
+      'See https://github.com/jlord/sheetsee.js/issues/26.',
+      'guide.md',
+    );
+    expect(issueUrl.html).toContain(
+      'href="https://github.com/jlord/sheetsee.js/issues/26"',
+    );
+    expect(issueUrl.html).toContain('>https://github.com/jlord/sheetsee.js/issues/26');
+    expect(issueUrl.html).not.toContain('>#26</a>');
+
+    const safeHtml = await renderMarkdown(
+      '<details open onclick="alert(1)">\n<summary>More</summary>\n\nSafe H<sub>2</sub>O.\n\n<script>alert(1)</script>\n</details>',
+      'guide.md',
+    );
+    expect(safeHtml.html).toContain('<details open>');
+    expect(safeHtml.html).toContain('<summary>More</summary>');
+    expect(safeHtml.html).toContain('H<sub>2</sub>O.');
+    expect(safeHtml.html).not.toContain('onclick');
+    expect(safeHtml.html).not.toContain('<script>');
+    expect(safeHtml.html).not.toContain('alert(1)');
+
+    for (const [kind, label] of [
+      ['note', 'Note'],
+      ['tip', 'Tip'],
+      ['important', 'Important'],
+      ['warning', 'Warning'],
+      ['caution', 'Caution'],
+    ]) {
+      const alert = await renderMarkdown(
+        `> [!${kind.toUpperCase()}]\n> ${label} body.`,
+        'guide.md',
+      );
+      expect(alert.html).toContain(
+        `class="markdown-alert markdown-alert-${kind}"`,
+      );
+      expect(alert.html).toContain(
+        `<p class="markdown-alert-title">${label}</p>`,
+      );
+      expect(alert.html).toContain(`<p>${label} body.</p>`);
+      expect(alert.html).not.toContain(`[!${kind.toUpperCase()}]`);
+    }
+
+    const footnotes = await renderMarkdown(
+      'Claim with a source.[^source]\n\n[^source]: Supporting detail.',
+      'guide.md',
+    );
+    expect(footnotes.html).toContain('data-footnote-ref');
+    expect(footnotes.html).toContain('<section data-footnotes');
+    expect(footnotes.html).toContain('Supporting detail.');
+    expect(footnotes.html).toContain('data-footnote-backref');
+    expect(footnotes.html).not.toContain('href="Supporting');
+
+    const emoji = await renderMarkdown(
+      'Ship it :shipit: :+1:, leave :not-a-real-emoji: alone.',
+      'guide.md',
+    );
+    expect(emoji.html).toContain('aria-label="+1 emoji"');
+    expect(emoji.html).toContain('role="img"');
+    expect(emoji.html).toContain(
+      'src="https://github.githubassets.com/images/icons/emoji/shipit.png?v8"',
+    );
+    expect(emoji.html).toContain('alt=":shipit:" class="markdown-emoji"');
+    expect(emoji.html).toContain(':not-a-real-emoji:');
+    expect(emoji.html).toContain('<p>Ship it <img');
+
+    const highlightedCode = await renderMarkdown(
+      "```ts\nconst value = '<script>alert(1)</script>';\n```",
+      'guide.md',
+    );
+    expect(highlightedCode.html).toContain(
+      '<code class="language-ts hljs">',
+    );
+    expect(highlightedCode.html).toContain('hljs-keyword');
+    expect(highlightedCode.html).toContain(
+      '&#x3C;script>alert(1)&#x3C;/script>',
+    );
+    expect(highlightedCode.html).not.toContain('<script>');
+
+    const unknownCode = await renderMarkdown(
+      "```unknown\n<script>alert(1)</script>\n```",
+      'guide.md',
+    );
+    expect(unknownCode.html).toContain('<code class="language-unknown">');
+    expect(unknownCode.html).toContain(
+      '&#x3C;script>alert(1)&#x3C;/script>',
+    );
+    expect(unknownCode.html).not.toContain('<script>');
+
+    const math = await renderMarkdown(
+      'Inline $E = mc^2$.\n\n$$\n\\int_0^1 x^2 \\, dx\n$$',
+      'guide.md',
+    );
+    expect(math.html).toContain('<span class="katex">');
+    expect(math.html).toContain('<span class="katex-display">');
+    expect(math.html).toContain('<math');
+    expect(math.html).not.toContain('language-math');
+
+    const fencedMath = await renderMarkdown(
+      '```math\n\\sum_{n=1}^{\\infty} 2^{-n} = 1\n```',
+      'guide.md',
+    );
+    expect(fencedMath.html).toContain('<span class="katex-display">');
+    expect(fencedMath.html).not.toContain('language-math');
+
+    const mermaid = await renderMarkdown(
+      '```mermaid\ngraph TD;\n  A-->B;\n```',
+      'guide.md',
+    );
+    expect(mermaid.html).toContain(
+      '<pre class="markdown-diagram-source markdown-mermaid-source">',
+    );
+    expect(mermaid.html).toContain('<code class="language-mermaid">');
+    expect(mermaid.html).toContain('graph TD;');
+    expect(mermaid.html).not.toContain('hljs');
+
+    const geoJson = await renderMarkdown(
+      '```geojson\n{"type":"Point","coordinates":[-122.4,37.8]}\n```',
+      'guide.md',
+    );
+    expect(geoJson.html).toContain(
+      '<pre class="markdown-diagram-source markdown-geojson-source">',
+    );
+    expect(geoJson.html).toContain('<code class="language-geojson">');
+    expect(geoJson.html).not.toContain('hljs');
+    expect(
+      parseGeoJson('{"type":"Point","coordinates":[-122.4,37.8]}'),
+    ).toEqual({ type: 'Point', coordinates: [-122.4, 37.8] });
+    expect(OPENFREEMAP_STYLE_URL).toBe(
+      'https://tiles.openfreemap.org/styles/liberty',
+    );
+    let rendererImportAttempts = 0;
+    const importRenderer = recoverableLazyImport(async () => {
+      rendererImportAttempts++;
+      if (rendererImportAttempts === 1) {
+        throw new Error('renderer chunk unavailable');
+      }
+      return { ready: true };
+    });
+    const failedRendererImport = importRenderer();
+    expect(importRenderer()).toBe(failedRendererImport);
+    await expect(failedRendererImport).rejects.toThrow(
+      'renderer chunk unavailable',
+    );
+    await expect(importRenderer()).resolves.toEqual({ ready: true });
+    expect(rendererImportAttempts).toBe(2);
+    expect(
+      geoJsonBounds(
+        parseGeoJson(
+          '{"type":"FeatureCollection","features":[{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[-122.4,37.8]}},{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[[-123,38],[-121,37]]}}]}',
+        ),
+      ),
+    ).toEqual([
+      [-123, 37],
+      [-121, 38],
+    ]);
+
+    const topoJson = await renderMarkdown(
+      '```topojson\n{"type":"Topology","objects":{},"arcs":[]}\n```',
+      'guide.md',
+    );
+    expect(topoJson.html).toContain(
+      '<pre class="markdown-diagram-source markdown-topojson-source">',
+    );
+    expect(topoJson.html).toContain('<code class="language-topojson">');
+    expect(topoJson.html).not.toContain('hljs');
+    const topojsonClient = await import('topojson-client');
+    expect(
+      parseTopoJson(
+        '{"type":"Topology","objects":{"place":{"type":"Point","coordinates":[1,2]}},"arcs":[]}',
+        topojsonClient,
+      ),
+    ).toMatchObject({
+      type: 'FeatureCollection',
+      features: [{ geometry: { type: 'Point', coordinates: [1, 2] } }],
+    });
+
+    const stlSource =
+      'solid triangle\nfacet normal 0 0 1\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid triangle';
+    const stl = await renderMarkdown(
+      `\`\`\`stl\n${stlSource}\n\`\`\``,
+      'guide.md',
+    );
+    expect(stl.html).toContain(
+      '<pre class="markdown-diagram-source markdown-stl-source">',
+    );
+    expect(stl.html).toContain('<code class="language-stl">');
+    expect(stl.html).not.toContain('hljs');
+    const { STLLoader } = await import(
+      'three/addons/loaders/STLLoader.js'
+    );
+    const geometry = parseStl(stlSource, STLLoader);
+    expect(geometry.getAttribute('position').count).toBe(3);
+    geometry.dispose();
+    expect(() => parseStl('not an ASCII STL model', STLLoader)).toThrow(
+      'expected an ASCII STL solid with facets',
+    );
+
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
@@ -687,6 +967,34 @@ describe('lat ui', () => {
     expect(styles.match(/\.markdown a\s*\{([^}]*)\}/)?.[1]).toContain(
       'text-decoration-line: underline;',
     );
+    expect(styles.match(/\.markdown table\s*\{([^}]*)\}/)?.[1]).toContain(
+      'overflow-x: auto;',
+    );
+    expect(styles).toContain("input[type='checkbox']");
+    expect(styles).toContain(
+      '.markdown details:not(.maplibregl-ctrl-attrib)',
+    );
+    expect(styles).toContain('.markdown .markdown-alert-caution');
+    expect(styles).toContain('[data-footnotes]');
+    expect(styles).toContain('img.markdown-emoji');
+    expect(styles).toContain('.markdown .hljs-keyword');
+    expect(styles).toContain('.markdown .markdown-mermaid svg');
+    expect(styles).toContain('.markdown .markdown-map-canvas');
+    expect(styles).toContain('.markdown .markdown-map-status');
+    expect(styles).toContain('.markdown .markdown-map-error');
+    expect(styles).toContain('.markdown .markdown-diagram-retry');
+    expect(styles).toContain('.markdown .markdown-map .maplibregl-ctrl-group');
+    const mapAttributionStyles = styles.match(
+      /\.markdown \.markdown-map \.maplibregl-ctrl-attrib\s*\{([^}]*)\}/,
+    )?.[1];
+    expect(mapAttributionStyles).toContain('color: #333;');
+    expect(mapAttributionStyles).toContain(
+      'background: rgb(255 255 255 / 82%);',
+    );
+    expect(styles).toContain('.markdown .git-math-block.git-added');
+    expect(styles).toContain('.markdown table.git-added');
+    expect(styles).toContain('.markdown tr.git-removed');
+    expect(styles).toContain('.markdown .markdown-stl-viewport');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
@@ -1559,6 +1867,117 @@ describe('lat ui git state', () => {
     );
   });
 
+  it('renders compatible table edits within one table', async () => {
+    const base = [
+      '| Feature | Syntax sample | Status |',
+      '| --- | --- | --- |',
+      '| Inline code | `const` | Stable |',
+      '| Description | old renderer stays | Stable |',
+      '| Removed row | old value | Gone |',
+      '| Stable row | same value | Here |',
+    ].join('\n');
+    const current = [
+      '| Feature | Syntax sample | Status |',
+      '| --- | --- | --- |',
+      '| Inline code | `co1nst` | Stable |',
+      '| Description | new renderer stays | Stable |',
+      '| Stable row | same value | Here |',
+      '| Added row | new value | Here |',
+    ].join('\n');
+    const rendered = await renderMarkdown(
+      current,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(base, current),
+    );
+
+    expect(rendered.html.match(/<table/g)).toHaveLength(1);
+    expect(rendered.html).toContain(
+      '<td><del class="git-removed"><code>const</code></del><ins class="git-added"><code>co1nst</code></ins></td>',
+    );
+    expect(rendered.html).toContain(
+      '<del class="git-removed">old</del><ins class="git-added">new</ins> renderer stays',
+    );
+    expect(rendered.html).toContain('<tr class="git-removed">');
+    expect(rendered.html).toContain('<tr class="git-added">');
+  });
+
+  it('colors whole-table fallbacks for incompatible table edits', async () => {
+    const base = '| Feature | Status |\n| --- | --- |\n| Table | Old |';
+    const current =
+      '| Feature | Syntax | Status |\n| --- | --- | --- |\n| Table | New | Ready |';
+    const rendered = await renderMarkdown(
+      current,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(base, current),
+    );
+
+    expect(rendered.html.match(/<table/g)).toHaveLength(2);
+    expect(rendered.html).toContain('<table class="git-removed">');
+    expect(rendered.html).toContain('<table class="git-added">');
+
+    const realignedBase = '| Feature |\n| :--- |\n| Table |';
+    const realignedCurrent = '| Feature |\n| ---: |\n| Table |';
+    const realigned = await renderMarkdown(
+      realignedCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(realignedBase, realignedCurrent),
+    );
+    expect(realigned.html.match(/<table/g)).toHaveLength(2);
+    expect(realigned.html).toContain('<table class="git-removed">');
+    expect(realigned.html).toContain('<table class="git-added">');
+  });
+
+  it('keeps changed math rendered while marking old and new formulas', async () => {
+    const inlineBase = 'The inline formula $x^2$ stays rendered.';
+    const inlineCurrent = 'The inline formula $x^3$ stays rendered.';
+    const inline = await renderMarkdown(
+      inlineCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(inlineBase, inlineCurrent),
+    );
+    expect(inline.html.match(/class="katex"/g)).toHaveLength(2);
+    expect(inline.html).toContain('<del class="git-removed"><span class="katex">');
+    expect(inline.html).toContain('<ins class="git-added"><span class="katex">');
+
+    const displayBase = '$$\n\\int_0^1 x^2 \\, dx\n$$';
+    const displayCurrent = '$$\n\\int_0^1 x^3 \\, dx\n$$';
+    const display = await renderMarkdown(
+      displayCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(displayBase, displayCurrent),
+    );
+    expect(display.html.match(/class="katex-display"/g)).toHaveLength(2);
+    expect(display.html).toMatch(
+      /<div class="git-math-block git-removed">\s*<span class="katex-display">/,
+    );
+    expect(display.html).toMatch(
+      /<div class="git-math-block git-added">\s*<span class="katex-display">/,
+    );
+
+    const fencedBase = '```math\nx^2\n```';
+    const fencedCurrent = '```math\nx^3\n```';
+    const fenced = await renderMarkdown(
+      fencedCurrent,
+      'lat.md',
+      undefined,
+      {},
+      buildGitDiffTree(fencedBase, fencedCurrent),
+    );
+    expect(fenced.html.match(/class="katex-display"/g)).toHaveLength(2);
+    expect(fenced.html).toContain('class="git-math-block git-removed"');
+    expect(fenced.html).toContain('class="git-math-block git-added"');
+  });
+
   it('marks every rendered block in a new Markdown file as added', async () => {
     const current = [
       '# New file',
@@ -1572,6 +1991,14 @@ describe('lat ui git state', () => {
       '```text',
       'code block',
       '```',
+      '',
+      '| New | Table |',
+      '| --- | --- |',
+      '| Added | Row |',
+      '',
+      '$$',
+      'x^2',
+      '$$',
       '',
     ].join('\n');
     const rendered = await renderMarkdown(
@@ -1587,6 +2014,10 @@ describe('lat ui git state', () => {
     expect(rendered.html).toContain('<ol class="git-added"');
     expect(rendered.html).toContain(
       '<code class="language-text git-added">code block',
+    );
+    expect(rendered.html).toContain('<table class="git-added">');
+    expect(rendered.html).toMatch(
+      /<div class="git-math-block git-added">\s*<span class="katex-display">/,
     );
   });
 });
