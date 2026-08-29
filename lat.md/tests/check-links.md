@@ -11,6 +11,10 @@ Tests for full CLI validation of ordinary markdown links to local files in `lat.
 
 Running `lat check links` with missing local targets or undefined full and collapsed reference-style links reports each error at the authored line.
 
+## Rejects undefined shortcut references
+
+Unescaped shortcut references require definitions; diagnostics tell authors to add one or escape the opening bracket for literal text, and packed same-line definitions cannot silently degrade into prose.
+
 ## Names the resolved file and the link kind
 
 Given an anchored link, [[cli#check#links]] should name the file it resolved to, without the anchor; given a broken image, it should say image rather than link.

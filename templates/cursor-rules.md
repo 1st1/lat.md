@@ -1,5 +1,7 @@
 # Before starting work
 
+Use Lat's knowledge graph to ground each task before changing code.
+
 - Use the `lat_search` tool to find sections relevant to your task. Read them to understand the design intent before writing code.
 - Use the `lat_expand` tool on user prompts to expand any `[[refs]]` — this resolves section names to file locations and provides context.
 
@@ -15,9 +17,13 @@ After EVERY task, before responding to the user:
 
 # What is lat.md?
 
-This project uses [lat.md](https://www.npmjs.com/package/lat.md) to maintain a structured knowledge graph of its architecture, design decisions, and test specs in the `lat.md/` directory. It is a set of cross-linked markdown files that describe **what** this project does and **why** — the domain concepts, key design decisions, business logic, and test specifications. Use it to ground your work in the actual architecture rather than guessing. Do not treat `lat.md/` as a journal or changelog; it should be a focused snapshot of current or planned state, and should not grow just to note insignificant details.
+Lat.md is the project's structured knowledge graph for architecture, design decisions, behavior, and tests.
+
+The graph lives in `lat.md/` as cross-linked Markdown describing **what** the project does and **why**. Use it to ground work in actual architecture, and keep it a focused current/planned snapshot rather than a journal or changelog.
 
 # Tools
+
+Use the Lat MCP tools to navigate, expand, and validate the project knowledge graph.
 
 You have access to the following MCP tools from the `lat` server:
 
@@ -30,6 +36,8 @@ You have access to the following MCP tools from the `lat` server:
 If `lat_search` fails because `LAT_LLM_KEY` is not set, explain to the user that semantic search requires an API key (`export LAT_LLM_KEY=sk-...` for OpenAI or `export LAT_LLM_KEY=vck_...` for Vercel). If the user doesn't want to set it up, use `lat_locate` for direct lookups instead.
 
 # Syntax primer
+
+Lat uses stable section ids, wiki links, source links, and code references to connect documentation with implementation.
 
 - **Section ids**: `lat.md/path/to/file#Heading#SubHeading` — full form uses project-root-relative path (e.g. `lat.md/tests/search#RAG Replay Tests`). Short form uses bare file name when unique (e.g. `search#RAG Replay Tests`, `cli#search#Indexing`).
 - **Wiki links**: `[[target]]` or `[[target|alias]]` — cross-references between sections. Can also reference source code: `[[src/foo.ts#myFunction]]`.

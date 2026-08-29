@@ -66,6 +66,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@asciidoctor/core": "4.0.6",
     "@folder/xdg": "^4.0.1",
     "@lat.md/embed": "workspace:*",
     "@lat.md/embed-minilm-fp16": "workspace:*",
@@ -100,11 +101,13 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "remark-stringify": "^11.0.0",
+    "rst-compiler": "0.5.9",
     "three": "^0.185.1",
     "topojson-client": "^3.1.0",
     "unified": "^11.0.0",
     "unist-util-visit": "^5.0.0",
     "web-tree-sitter": "^0.26.6",
+    "yaml": "^2.8.2",
     "zod": "^4.3.6"
   }
 }

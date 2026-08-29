@@ -44,7 +44,9 @@ function breadcrumbs(reference: ViewMarkdownBackReference): string {
   return reference.breadcrumbs
     .map(
       (part, index) =>
-        `${index > 0 ? '<span aria-hidden="true">›</span>' : ''}<span>${escapeHtml(part)}</span>`,
+        `<span class="section-back-reference-breadcrumb">${
+          index > 0 ? '<span aria-hidden="true">›</span>' : ''
+        }<span class="section-back-reference-breadcrumb-label">${escapeHtml(part)}</span></span>`,
     )
     .join('');
 }

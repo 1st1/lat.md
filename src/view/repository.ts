@@ -3,6 +3,7 @@ import {
   dirname,
   extname,
   isAbsolute,
+  join,
   relative,
   resolve,
   sep,
@@ -15,22 +16,36 @@ import {
   type Section,
 } from '../lattice.js';
 import {
+  createExternalResolver,
+  type ExternalResolver,
+} from '../external-sources.js';
+import {
+  addExternalDocumentAliasAnchors,
+  externalDocumentSections,
+  renderExternalDocument,
+} from '../external-documents.js';
+import {
   resolveSourceSymbol,
   SOURCE_EXTENSIONS,
   type SourceSymbol,
 } from '../source-parser.js';
 import { toPosix } from '../walk.js';
-import type { ViewSourceDocument } from './protocol.js';
+import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
+import { renderMarkdown, sanitizeExternalDocumentHtml } from './markdown.js';
 import {
+  renderExternalSectionBackReferences,
+  renderExternalSourceReferences,
   renderSourceReferenceContext,
   type SourceReferenceOrigin,
   type ViewReferenceIndex,
 } from './references.js';
+import { buildViewTableOfContents } from './table-of-contents.js';
 import { viewSourceTarget } from './source-target.js';
 
 export class ViewDocumentNotFoundError extends Error {}
 export class ViewSourceNotFoundError extends Error {}
+export class ViewExternalNotFoundError extends Error {}
 
 function isInside(root: string, candidate: string): boolean {
   const rel = relative(root, candidate);
@@ -60,6 +75,17 @@ function sourceUrl(
   return `/code/${encodedPath}${search}${fragment}`;
 }
 
+export function externalUrl(target: string): string {
+  const colon = target.indexOf(':');
+  const hash = target.indexOf('#', colon + 1);
+  const handle = target.slice(0, colon);
+  const path =
+    hash === -1 ? target.slice(colon + 1) : target.slice(colon + 1, hash);
+  const fragment = hash === -1 ? '' : target.slice(hash + 1);
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  return `/external/${encodeURIComponent(handle)}/${encodedPath}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
+}
+
 function matchingSymbol(
   symbols: SourceSymbol[],
   symbolPath: string,
@@ -81,12 +107,15 @@ export async function createMarkdownWikiLinkResolver(
   requestedPath: string,
   loadedSections: Section[],
   referenceIndex?: ViewReferenceIndex,
+  externalResolver?: ExternalResolver,
 ): Promise<
   (
     target: string,
     context: { line: number },
   ) => Promise<{ href: string; referenceCount: number } | null>
 > {
+  const external =
+    externalResolver ?? (await createExternalResolver(latDir, dirname(latDir)));
   const projectRoot = dirname(latDir);
   const flat = flattenSections(loadedSections);
   const sectionIds = new Set(flat.map((section) => section.id.toLowerCase()));
@@ -103,6 +132,18 @@ export async function createMarkdownWikiLinkResolver(
     .sort((a, b) => a.startLine - b.startLine);
 
   return async (target, context) => {
+    try {
+      const parsed = external.parse(target);
+      if (parsed) {
+        return {
+          href: externalUrl(parsed.identity),
+          referenceCount:
+            referenceIndex?.externalByTarget.get(parsed.identity)?.length ?? 0,
+        };
+      }
+    } catch {
+      return null;
+    }
     const result = resolveRef(target, sectionIds, fileIndex, slugIndex);
     if (result.ambiguous) return null;
 
@@ -143,6 +184,135 @@ export async function createMarkdownWikiLinkResolver(
       if (error instanceof ViewSourceNotFoundError) return null;
       throw error;
     }
+  };
+}
+
+/** Resolve and render one configured external file through the normal view models. */
+export async function getViewExternal(
+  latDir: string,
+  projectRoot: string,
+  targetValue: string,
+  external: ExternalResolver,
+  allSections: Section[],
+  referenceIndex: ViewReferenceIndex,
+): Promise<ViewExternalDocument> {
+  let resolved;
+  try {
+    resolved = await external.resolve(targetValue);
+  } catch (error) {
+    throw new ViewExternalNotFoundError((error as Error).message);
+  }
+  const createResolver = (path: string) =>
+    createMarkdownWikiLinkResolver(
+      latDir,
+      path,
+      allSections,
+      referenceIndex,
+      external,
+    );
+
+  if (resolved.kind === 'document') {
+    const virtualPath = join(
+      projectRoot,
+      'lat.md',
+      '.external',
+      resolved.target.handle,
+      resolved.target.resolvedPath,
+    );
+    const analysis = resolved.document;
+    const sections = externalDocumentSections(virtualPath, analysis);
+    const resolver = await createResolver(resolved.target.resolvedPath);
+    const rendered =
+      analysis.format === 'markdown'
+        ? await renderMarkdown(
+            resolved.fullContent,
+            resolved.target.resolvedPath,
+            resolver,
+            {},
+          )
+        : {
+            title: analysis.title,
+            html: sanitizeExternalDocumentHtml(
+              await renderExternalDocument(
+                analysis.format,
+                resolved.fullContent,
+              ),
+            ),
+          };
+    const fragmentIndex = resolved.target.identity.indexOf('#');
+    const baseTarget =
+      fragmentIndex === -1
+        ? resolved.target.identity
+        : resolved.target.identity.slice(0, fragmentIndex);
+    const targetHeadings = new Map<string, string>();
+    targetHeadings.set(baseTarget, analysis.sections[0]?.anchor ?? '');
+    for (const section of analysis.sections) {
+      for (const alias of section.aliases) {
+        const target = `${baseTarget}#${alias}`;
+        if (!targetHeadings.has(target)) {
+          targetHeadings.set(target, section.anchor);
+        }
+      }
+    }
+    return {
+      kind: 'markdown',
+      target: resolved.target.identity,
+      document: {
+        path: baseTarget,
+        ...rendered,
+        html: addExternalDocumentAliasAnchors(rendered.html, analysis),
+        gitHtml: null,
+        graphNodeIds: {},
+        tableOfContents: buildViewTableOfContents(
+          sections,
+          analysis.sections.map((section) => section.title),
+          {
+            errors: [],
+            gitTree: null,
+          },
+        ),
+        errors: [],
+        backReferences: await renderExternalSectionBackReferences(
+          referenceIndex,
+          targetHeadings,
+          latDir,
+          projectRoot,
+          createResolver,
+        ),
+        frontmatter: { requireCodeMention: false },
+      },
+    };
+  }
+
+  const references = await renderExternalSourceReferences(
+    referenceIndex,
+    resolved.target.identity,
+    latDir,
+    projectRoot,
+    createResolver,
+  );
+  return {
+    kind: 'source',
+    target: resolved.target.identity,
+    source: {
+      path: `${resolved.target.handle}:${resolved.target.authoredPath}`,
+      content: resolved.fullContent,
+      highlightedHtmlLines: highlightSource(
+        resolved.target.resolvedPath,
+        resolved.fullContent,
+      ),
+      focus: resolved.target.fragment
+        ? {
+            symbol: resolved.target.fragment,
+            kind: 'external',
+            signature: resolved.signature ?? resolved.target.fragment,
+            startLine: resolved.startLine,
+            endLine: resolved.endLine,
+          }
+        : null,
+      context: null,
+      otherReferences: references,
+    },
   };
 }
 

@@ -1,14 +1,15 @@
-import { loadAllSections, findSections } from '../lattice.js';
+import { findSections } from '../lattice.js';
 import { formatResultList } from '../format.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import { commandProjectAnalysis } from '../project-analysis.js';
 
 export async function locateCommand(
   ctx: CmdContext,
   query: string,
 ): Promise<CmdResult> {
   const stripped = query.replace(/^\[\[|\]\]$/g, '');
-  const sections = await loadAllSections(ctx.latDir);
-  const matches = findSections(sections, stripped);
+  const project = await commandProjectAnalysis(ctx);
+  const matches = findSections(project.allSections, stripped);
 
   if (matches.length === 0) {
     const s = ctx.styler;

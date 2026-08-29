@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import type { Client } from '@libsql/client';
-import { loadAllSections, flattenSections, type Section } from '../lattice.js';
+import type { Section } from '../lattice.js';
+import {
+  analyzeMarkdownProject,
+  type MarkdownProjectAnalysis,
+} from '../project-analysis.js';
 import type { Embedder } from './embedder.js';
 
 function hashContent(text: string): string {
@@ -15,14 +18,19 @@ function hashContent(text: string): string {
  * O(sections × file size) — a 3.5 MB file holding 12k sections was re-read 12k
  * times (~42 GB of string work) on every search.
  */
-async function loadFileLines(
+function loadFileLines(
   sections: Section[],
   projectRoot: string,
-): Promise<Map<string, string[]>> {
+  project: MarkdownProjectAnalysis,
+): Map<string, string[]> {
   const lines = new Map<string, string[]>();
   for (const { filePath } of sections) {
     if (lines.has(filePath)) continue;
-    const content = await readFile(join(projectRoot, filePath), 'utf-8');
+    const content = project.filesByAbsolutePath.get(
+      join(projectRoot, filePath),
+    )?.content;
+    if (content === undefined)
+      throw new Error(`Analyzed Markdown file not found: ${filePath}`);
     lines.set(filePath, content.split('\n'));
   }
   return lines;
@@ -50,17 +58,20 @@ export async function indexSections(
   db: Client,
   embedder: Embedder,
   onProgress?: (done: number, total: number) => void,
+  analyzedProject?: MarkdownProjectAnalysis,
 ): Promise<IndexStats> {
   const projectRoot = dirname(latDir);
-  const allSections = await loadAllSections(latDir);
-  const flat = flattenSections(allSections);
+  const project =
+    analyzedProject ??
+    (await analyzeMarkdownProject(latDir, projectRoot, { executor: 'auto' }));
+  const flat = project.sections;
 
   // Build current state: id -> { section, content, hash }
   const current = new Map<
     string,
     { section: Section; content: string; hash: string }
   >();
-  const lines = await loadFileLines(flat, projectRoot);
+  const lines = loadFileLines(flat, projectRoot, project);
   for (const s of flat) {
     const text = sectionContent(s, lines);
     current.set(s.id, { section: s, content: text, hash: hashContent(text) });

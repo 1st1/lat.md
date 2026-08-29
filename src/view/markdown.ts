@@ -296,6 +296,22 @@ function transformCustomEmoji(tree: Root): void {
   });
 }
 
+const externalHtmlProcessor = unified()
+  .use(rehypeRaw)
+  .use(rehypeSanitize, { ...sanitizeSchema, clobberPrefix: '' })
+  .use(rehypeStringify);
+
+/** Sanitize HTML emitted by a format-native external document renderer. */
+export function sanitizeExternalDocumentHtml(html: string): string {
+  const tree = {
+    type: 'root' as const,
+    children: [{ type: 'raw' as const, value: html }],
+  };
+  return String(
+    externalHtmlProcessor.stringify(externalHtmlProcessor.runSync(tree)),
+  );
+}
+
 function nodeText(node: { value?: unknown; children?: unknown }): string {
   if (typeof node.value === 'string') return node.value;
   if (!Array.isArray(node.children)) return '';
@@ -641,9 +657,10 @@ export async function renderMarkdown(
     if (resolution) {
       const { href, referenceCount } = resolution;
       const content = wikiLinkContent(node);
-      const language = href.startsWith('/code/')
-        ? codeLanguage(node.value)
-        : null;
+      const language =
+        href.startsWith('/code/') || href.startsWith('/external/')
+          ? codeLanguage(node.value)
+          : null;
       const classes = content.segmented ? ['wiki-link-segmented'] : [];
       if (language) classes.push('wiki-link-code');
       if (

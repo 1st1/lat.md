@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { join, posix, relative } from 'node:path';
 import { toPosix, walkEntries } from './walk.js';
+import type { Profiler } from './profiler.js';
 
 /** Glob patterns used to exclude directories/files from code-ref scanning.
  *  Shared between rg args and the TS fallback's walkFiles filter. */
@@ -63,6 +64,14 @@ export type ScanResult = {
   files: string[];
   usedRg: boolean;
 };
+
+function profileScan<T>(
+  profile: Pick<Profiler, 'time'> | undefined,
+  label: string,
+  work: () => Promise<T>,
+): Promise<T> {
+  return profile ? profile.time(label, work) : work();
+}
 
 /**
  * Run an external command and return stdout, or null if the command is not found
@@ -172,10 +181,17 @@ function rgExcludeArgs(
  */
 async function tryRipgrep(
   projectRoot: string,
+  profile?: Pick<Profiler, 'time'>,
 ): Promise<{ refs: CodeRef[]; files: string[] } | null> {
   // Detect sub-projects first so we can exclude them from all rg calls
-  const subProjects = await findSubProjects(projectRoot);
-  const generatedOutputs = await findGeneratedOutputs(projectRoot);
+  const [subProjects, generatedOutputs] = await Promise.all([
+    profileScan(profile, 'find nested lat.md projects with ripgrep', () =>
+      findSubProjects(projectRoot),
+    ),
+    profileScan(profile, 'find generated UI outputs with ripgrep', () =>
+      findGeneratedOutputs(projectRoot),
+    ),
+  ]);
   const excludes = rgExcludeArgs(subProjects, generatedOutputs);
 
   // Search for @lat refs
@@ -187,17 +203,19 @@ async function tryRipgrep(
     '@lat:.*\\[\\[',
     '.',
   ];
-  const out = await tryExec('rg', searchArgs, projectRoot);
+  const [out, filesOut] = await Promise.all([
+    profileScan(profile, 'scan @lat references with ripgrep', () =>
+      tryExec('rg', searchArgs, projectRoot),
+    ),
+    profileScan(profile, 'list project files with ripgrep', () =>
+      tryExec('rg', ['--files', ...excludes, '.'], projectRoot),
+    ),
+  ]);
   if (out === null) return null;
 
   const { refs } = parseGrepOutput(out, projectRoot);
 
-  // List all scanned files (for stats) — rg --files is fast
-  const filesOut = await tryExec(
-    'rg',
-    ['--files', ...excludes, '.'],
-    projectRoot,
-  );
+  // List all scanned files for the extension summary.
   const files = (filesOut || '')
     .split('\n')
     .filter(Boolean)
@@ -293,18 +311,27 @@ export async function hasRipgrep(): Promise<boolean> {
   return result !== null;
 }
 
-export async function scanCodeRefs(projectRoot: string): Promise<ScanResult> {
+export async function scanCodeRefs(
+  projectRoot: string,
+  profile?: Pick<Profiler, 'time'>,
+): Promise<ScanResult> {
   // Fast path: use rg for both searching and file listing
   // _LAT_DISABLE_RG is a test-only escape hatch to force the TS fallback
   if (process.env._LAT_DISABLE_RG !== '1') {
-    const rgResult = await tryRipgrep(projectRoot);
+    const rgResult = await tryRipgrep(projectRoot, profile);
     if (rgResult !== null) {
       return { refs: rgResult.refs, files: rgResult.files, usedRg: true };
     }
   }
 
   // Fallback: walk files ourselves and scan with TS
-  const files = await walkFiles(projectRoot);
-  const refs = await scanWithTs(files, projectRoot);
+  const files = await profileScan(profile, 'walk project files', () =>
+    walkFiles(projectRoot),
+  );
+  const refs = await profileScan(
+    profile,
+    'scan project files with TypeScript fallback',
+    () => scanWithTs(files, projectRoot),
+  );
   return { refs, files, usedRg: false };
 }

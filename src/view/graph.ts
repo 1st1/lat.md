@@ -20,6 +20,8 @@ import type {
 } from './references.js';
 import { viewSourceTarget } from './source-target.js';
 import type { ViewGitSnapshot } from './git.js';
+import type { ExternalResolver, ExternalTarget } from '../external-sources.js';
+import { isDocumentPath, stripDocumentExtension } from '../document-formats.js';
 
 function encodedPath(path: string): string {
   return path.split('/').map(encodeURIComponent).join('/');
@@ -35,12 +37,28 @@ function sourceUrl(path: string, symbol = '', line = 0): string {
   return `/code/${encodedPath(path)}${search}${fragment}`;
 }
 
+function externalUrl(target: string): string {
+  const colon = target.indexOf(':');
+  const hash = target.indexOf('#', colon + 1);
+  const handle = target.slice(0, colon);
+  const path =
+    hash === -1 ? target.slice(colon + 1) : target.slice(colon + 1, hash);
+  const fragment = hash === -1 ? '' : target.slice(hash + 1);
+  return `/external/${encodeURIComponent(handle)}/${encodedPath(path)}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
+}
+
+function externalNodeTarget(target: ExternalTarget): string {
+  if (!isDocumentPath(target.resolvedPath)) return target.identity;
+  const hash = target.identity.indexOf('#');
+  return hash === -1 ? target.identity : target.identity.slice(0, hash);
+}
+
 function pathBreadcrumbs(path: string): string[] {
-  return path.replace(/\.md$/i, '').split('/');
+  return stripDocumentExtension(path).split('/');
 }
 
 function nodeLabelFromPath(path: string): string {
-  return posix.basename(path).replace(/\.md$/i, '');
+  return posix.basename(stripDocumentExtension(path));
 }
 
 /** Project the cached view state into stable nodes and weighted relationships. */
@@ -51,6 +69,7 @@ export function buildViewGraph(
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
   git: ViewGitSnapshot,
   generation: number,
+  external?: ExternalResolver,
 ): ViewGraph {
   const files = [...markdownFiles].sort((left, right) =>
     left.path.localeCompare(right.path),
@@ -140,6 +159,38 @@ export function buildViewGraph(
       const from = sourceSection ? documentNodeForSection(sourceSection) : null;
       if (!from) continue;
 
+      let externalTarget: ExternalTarget | null = null;
+      try {
+        externalTarget = external?.parse(ref.target) ?? null;
+      } catch {
+        continue;
+      }
+      if (externalTarget) {
+        const target = externalNodeTarget(externalTarget);
+        const document = isDocumentPath(externalTarget.resolvedPath);
+        const to = addNode({
+          id: `${document ? 'external-document' : 'external-source'}:${target}`,
+          kind: document ? 'document' : 'source',
+          label: document
+            ? nodeLabelFromPath(externalTarget.resolvedPath)
+            : externalTarget.fragment ||
+              posix.basename(externalTarget.authoredPath),
+          url: externalUrl(target),
+          breadcrumbs: [
+            externalTarget.handle,
+            ...externalTarget.authoredPath.split('/'),
+            ...(!document && externalTarget.fragment
+              ? [externalTarget.fragment]
+              : []),
+          ],
+          externalTarget: target,
+          inDegree: 0,
+          outDegree: 0,
+        });
+        addEdge(from, to, document ? 'wiki' : 'source');
+        continue;
+      }
+
       const source = viewSourceTarget(ref.target);
       if (source) {
         if (
@@ -188,6 +239,47 @@ export function buildViewGraph(
     for (const ref of [...file.refs].sort(
       (left, right) => left.line - right.line,
     )) {
+      let externalTarget: ExternalTarget | null = null;
+      try {
+        externalTarget = external?.parse(ref.target) ?? null;
+      } catch {
+        continue;
+      }
+      if (externalTarget) {
+        const target = externalNodeTarget(externalTarget);
+        const document = isDocumentPath(externalTarget.resolvedPath);
+        const to = addNode({
+          id: `${document ? 'external-document' : 'external-source'}:${target}`,
+          kind: document ? 'document' : 'source',
+          label: document
+            ? nodeLabelFromPath(externalTarget.resolvedPath)
+            : externalTarget.fragment ||
+              posix.basename(externalTarget.authoredPath),
+          url: externalUrl(target),
+          breadcrumbs: [
+            externalTarget.handle,
+            ...externalTarget.authoredPath.split('/'),
+          ],
+          externalTarget: target,
+          inDegree: 0,
+          outDegree: 0,
+        });
+        const snippet = file.lines[ref.line - 1]?.trim() ?? '';
+        const from = addNode({
+          id: `code-ref:${file.path}:${ref.line}`,
+          kind: 'code-reference',
+          label: `${posix.basename(file.path)}:${ref.line}`,
+          url: sourceUrl(file.path, '', ref.line),
+          breadcrumbs: [...file.path.split('/'), `line ${ref.line}`],
+          sourcePath: file.path,
+          line: ref.line,
+          snippet,
+          inDegree: 0,
+          outDegree: 0,
+        });
+        addEdge(from, to, 'code-mention');
+        continue;
+      }
       const resolved = resolveRef(ref.target, sectionIds, fileIndex, slugIndex);
       if (resolved.ambiguous) continue;
       const target = sectionById.get(resolved.resolved.toLowerCase());

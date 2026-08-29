@@ -10,6 +10,7 @@ import { searchCommand } from '../cli/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
+import { externalListCommand, externalShowCommand } from '../cli/external.js';
 
 function toMcp(result: CmdResult) {
   const content = [{ type: 'text' as const, text: result.output }];
@@ -29,6 +30,7 @@ export async function startMcpServer(): Promise<void> {
     styler: plainStyler,
     mode: 'mcp',
   };
+  const requestContext = (): CmdContext => ({ ...ctx, analysis: undefined });
 
   const server = new McpServer({
     name: 'lat',
@@ -39,16 +41,18 @@ export async function startMcpServer(): Promise<void> {
     'lat_locate',
     'Find sections by name (exact, fuzzy, subsequence matching)',
     { query: z.string().describe('Section name or id to search for') },
-    async ({ query }) => toMcp(await locateCommand(ctx, query)),
+    async ({ query }) => toMcp(await locateCommand(requestContext(), query)),
   );
 
   server.tool(
     'lat_section',
-    'Show a section with its content, outgoing wiki link targets, and incoming references',
+    'Show a local section or exact external target with content and references',
     {
-      query: z.string().describe('Section id to look up (short or full form)'),
+      query: z
+        .string()
+        .describe('Local section id or exact handle:path#fragment target'),
     },
-    async ({ query }) => toMcp(await sectionCommand(ctx, query)),
+    async ({ query }) => toMcp(await sectionCommand(requestContext(), query)),
   );
 
   server.tool(
@@ -63,21 +67,22 @@ export async function startMcpServer(): Promise<void> {
         .describe('Max results (default 5)'),
     },
     async ({ query, limit }) =>
-      toMcp(await searchCommand(ctx, query, { limit })),
+      toMcp(await searchCommand(requestContext(), query, { limit })),
   );
 
   server.tool(
     'lat_expand',
     'Expand [[refs]] in text to resolved lat.md section paths with context',
     { text: z.string().describe('Text containing [[refs]] to expand') },
-    async ({ text: input }) => toMcp(await expandCommand(ctx, input)),
+    async ({ text: input }) =>
+      toMcp(await expandCommand(requestContext(), input)),
   );
 
   server.tool(
     'lat_check',
     'Run full lat.md validation: links, code references, indexes, and section structure',
     {},
-    async () => toMcp(await checkAllCommand(ctx)),
+    async () => toMcp(await checkAllCommand(requestContext())),
   );
 
   server.tool(
@@ -92,7 +97,23 @@ export async function startMcpServer(): Promise<void> {
         .describe('Where to search: md, code, or md+code'),
     },
     async ({ query, scope }) =>
-      toMcp(await refsCommand(ctx, query, scope as Scope)),
+      toMcp(await refsCommand(requestContext(), query, scope as Scope)),
+  );
+
+  server.tool(
+    'lat_external_list',
+    'List configured external sources without fetching or changing caches',
+    {},
+    async () => toMcp(await externalListCommand(ctx, true)),
+  );
+
+  server.tool(
+    'lat_external_show',
+    'Show one configured external source or exact external target without fetching it',
+    {
+      source: z.string().describe('External source handle or exact target'),
+    },
+    async ({ source }) => toMcp(await externalShowCommand(ctx, source, true)),
   );
 
   const transport = new StdioServerTransport();

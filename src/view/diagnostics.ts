@@ -5,62 +5,18 @@ import {
   buildFileIndex,
   buildSectionSlugIndex,
   flattenSections,
-  parseFrontmatter,
   resolveRef,
   type Section,
 } from '../lattice.js';
 import { clearSymbolCache } from '../source-parser.js';
+import type { ExternalResolver } from '../external-sources.js';
 import { toPosix } from '../walk.js';
+import { parseLocalMarkdownTarget } from '../markdown-validation.js';
 import type { ViewDocumentError } from './protocol.js';
 import type {
   ViewCodeReferenceFile,
   ViewParsedMarkdownFile,
 } from './references.js';
-
-const MAX_BODY_LENGTH = 250;
-
-type LocalLinkTarget =
-  | {
-      kind: 'target';
-      path: string | null;
-      fragment: string | null;
-    }
-  | { kind: 'invalid-backslash' };
-
-function decodeLinkPart(value: string): string {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
-  }
-}
-
-function localLinkTarget(url: string): LocalLinkTarget | null {
-  const value = url.trim();
-  if (value.startsWith('/')) return null;
-  const windowsDrivePath = /^[a-zA-Z]:\\/.test(value);
-  if (!windowsDrivePath && /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) {
-    return null;
-  }
-
-  const queryAt = value.indexOf('?');
-  const fragmentAt = value.indexOf('#');
-  const pathEnd = Math.min(
-    queryAt === -1 ? value.length : queryAt,
-    fragmentAt === -1 ? value.length : fragmentAt,
-  );
-  const rawPath = value.slice(0, pathEnd);
-  const path = rawPath === '' ? null : decodeLinkPart(rawPath);
-  const fragment =
-    fragmentAt === -1 ? null : decodeLinkPart(value.slice(fragmentAt + 1));
-  if (rawPath === '' && fragment === null) return null;
-  if (path?.includes('\\')) return { kind: 'invalid-backslash' };
-  return { kind: 'target', path, fragment };
-}
-
-function bodyTextLength(body: string): number {
-  return body.replace(/\[\[[^\]]*\]\]/g, '').length;
-}
 
 function error(
   line: number,
@@ -118,15 +74,9 @@ async function markdownLinkError(
   link: { kind: 'image' | 'link'; line: number; url: string },
   projectRoot: string,
 ): Promise<ViewDocumentError | null> {
-  const target = localLinkTarget(link.url);
+  const target = parseLocalMarkdownTarget(link.url);
   if (target === null) return null;
-  if (target.kind === 'invalid-backslash') {
-    return error(
-      link.line,
-      link.url,
-      `invalid ${link.kind} (${link.url}) — backslashes are not path separators in Markdown; use "/" instead`,
-    );
-  }
+  if (target.kind === 'invalid-backslash') return null;
 
   const absolutePath = target.path
     ? resolve(dirname(file.absolutePath), target.path)
@@ -165,6 +115,7 @@ export async function buildViewDiagnostics(
   codeFiles: Iterable<ViewCodeReferenceFile>,
   allSections: Section[],
   projectRoot: string,
+  external?: ExternalResolver,
 ): Promise<ReadonlyMap<string, readonly ViewDocumentError[]>> {
   clearSymbolCache();
   const files = [...markdownFiles];
@@ -179,8 +130,58 @@ export async function buildViewDiagnostics(
     files.map((file) => [resolve(file.absolutePath), file]),
   );
 
+  if (external) {
+    const root = files.find((file) => file.path === 'lat.md') ?? files[0];
+    if (root) {
+      for (const configError of external.snapshot.errors) {
+        addError(
+          errors,
+          root.path,
+          error(1, 'external-sources', configError.message, {
+            marker: 'line',
+          }),
+        );
+      }
+    }
+  }
+
   for (const file of files) {
+    for (const diagnostic of file.diagnostics) {
+      addError(
+        errors,
+        file.path,
+        error(diagnostic.line, diagnostic.target, diagnostic.message, {
+          anchor: diagnostic.anchor,
+          marker: diagnostic.marker,
+        }),
+      );
+    }
+
     for (const ref of file.wikiRefs) {
+      if (external) {
+        try {
+          if (external.parse(ref.target)) {
+            await external.resolve(ref.target);
+            continue;
+          }
+        } catch (externalError) {
+          addError(
+            errors,
+            file.path,
+            error(ref.line, ref.target, (externalError as Error).message),
+          );
+          continue;
+        }
+        const unknownExternal = external.unknownTargetMessage(ref.target);
+        if (unknownExternal) {
+          addError(
+            errors,
+            file.path,
+            error(ref.line, ref.target, unknownExternal),
+          );
+          continue;
+        }
+      }
       const resolved = resolveRef(ref.target, sectionIds, fileIndex, slugIndex);
       let message: string | null = null;
       if (resolved.ambiguous) {
@@ -201,18 +202,7 @@ export async function buildViewDiagnostics(
       { kind: 'image' | 'link'; line: number; url: string }
     >();
     for (const link of file.validationLinks) {
-      if ('identifier' in link) {
-        addError(
-          errors,
-          file.path,
-          error(
-            link.line,
-            link.identifier,
-            `undefined ${link.kind === 'imageReference' ? 'image' : 'link'} reference (${link.source}) — definition "[${link.identifier}]" not found`,
-            { marker: 'line' },
-          ),
-        );
-      } else if (link.kind !== 'definition') {
+      if (!('identifier' in link) && link.kind !== 'definition') {
         links.set(`${link.kind}:${link.line}:${link.url}`, {
           kind: link.kind,
           line: link.line,
@@ -232,35 +222,6 @@ export async function buildViewDiagnostics(
       );
       if (diagnostic) addError(errors, file.path, diagnostic);
     }
-
-    for (const section of flattenSections(file.sections)) {
-      if (!section.firstParagraph) {
-        addError(
-          errors,
-          file.path,
-          error(
-            section.startLine,
-            section.id,
-            `section "${section.id}" has no leading paragraph. Every section must start with a brief overview (≤${MAX_BODY_LENGTH} chars).`,
-            { anchor: section.githubSlug, marker: 'heading' },
-          ),
-        );
-        continue;
-      }
-      const length = bodyTextLength(section.firstParagraph);
-      if (length > MAX_BODY_LENGTH) {
-        addError(
-          errors,
-          file.path,
-          error(
-            section.startLine,
-            section.id,
-            `section "${section.id}" leading paragraph is ${length} characters (max ${MAX_BODY_LENGTH}, excluding [[wiki links]]).`,
-            { anchor: section.githubSlug, marker: 'heading' },
-          ),
-        );
-      }
-    }
   }
 
   const mentionedSections = new Set<string>();
@@ -276,7 +237,7 @@ export async function buildViewDiagnostics(
     }
   }
   for (const file of files) {
-    if (!parseFrontmatter(file.content).requireCodeMention) continue;
+    if (!file.frontmatter.requireCodeMention) continue;
     for (const section of flattenSections(file.sections)) {
       if (
         section.children.length === 0 &&

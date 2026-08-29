@@ -1,8 +1,10 @@
 import type { ViewGraph, ViewGraphNode } from '../../src/view/protocol';
+import { isDocumentPath } from '../../src/document-formats';
 import { staticViewRoute, viewPathname } from './static-mode';
 
 const DOCUMENT_PREFIX = '/docs/';
 const SOURCE_PREFIX = '/code/';
+const EXTERNAL_PREFIX = '/external/';
 
 type DocumentScroller = {
   getElementById: (id: string) => {
@@ -30,22 +32,76 @@ export function documentPath(pathname: string): string | null {
   }
 }
 
-/** Keep Markdown route identity stable when only its fragment changes. */
+/** Build the browser route for one canonical external target. */
+export function externalUrl(target: string): string {
+  const colon = target.indexOf(':');
+  const hash = target.indexOf('#', colon + 1);
+  const handle = target.slice(0, colon);
+  const path =
+    hash === -1 ? target.slice(colon + 1) : target.slice(colon + 1, hash);
+  const fragment = hash === -1 ? '' : target.slice(hash + 1);
+  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
+  const route = `external/${encodeURIComponent(handle)}/${encodedPath}/`;
+  const url =
+    staticViewRoute(route) ??
+    `${EXTERNAL_PREFIX}${encodeURIComponent(handle)}/${encodedPath}`;
+  return `${url}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
+}
+
+/** Keep rendered-document route identity stable when only its fragment changes. */
 export function viewRouteIdentity(location: string): string {
   const url = new URL(location, 'http://lat.local');
-  return documentPath(url.pathname)
+  const external = externalTarget(url.pathname, url.hash);
+  return documentPath(url.pathname) ||
+    (external && isDocumentPath(external.path))
     ? `${url.pathname}${url.search}`
     : `${url.pathname}${url.search}${url.hash}`;
 }
 
-/** Whether navigation stays within one rendered Markdown document. */
-export function isSameMarkdownDocument(current: URL, next: URL): boolean {
+/** Whether navigation stays within one rendered document. */
+export function isSameRenderedDocument(current: URL, next: URL): boolean {
+  const currentExternal = externalTarget(current.pathname, current.hash);
+  const nextExternal = externalTarget(next.pathname, next.hash);
   return (
-    documentPath(current.pathname) !== null &&
+    (documentPath(current.pathname) !== null ||
+      (currentExternal !== null && nextExternal !== null)) &&
     current.origin === next.origin &&
     current.pathname === next.pathname &&
     current.search === next.search
   );
+}
+
+export type ViewExternalTarget = {
+  handle: string;
+  path: string;
+  fragment: string;
+  identity: string;
+};
+
+export function externalTarget(
+  pathname: string,
+  hash = '',
+): ViewExternalTarget | null {
+  pathname = viewPathname(pathname);
+  if (!pathname.startsWith(EXTERNAL_PREFIX)) return null;
+  try {
+    const parts = pathname
+      .slice(EXTERNAL_PREFIX.length)
+      .split('/')
+      .map(decodeURIComponent);
+    const handle = parts.shift() ?? '';
+    const path = parts.join('/');
+    if (!handle || !path) return null;
+    const fragment = sourceSymbol(hash);
+    return {
+      handle,
+      path,
+      fragment,
+      identity: `${handle}:${path}${fragment ? `#${fragment}` : ''}`,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function sourcePath(pathname: string): string | null {
@@ -132,9 +188,19 @@ function positiveInteger(value: string | null): number {
 }
 
 /** Map a normal document or source URL to its stable graph node id. */
-export function graphNodeIdForUrl(url: URL): string {
+export function graphNodeIdForUrl(
+  url: URL,
+  externalKind?: 'document' | 'source',
+): string {
   const markdown = documentPath(url.pathname);
   if (markdown !== null) return `document:${markdown}`;
+  const external = externalTarget(url.pathname, url.hash);
+  if (external) {
+    return externalKind === 'document' ||
+      (externalKind === undefined && isDocumentPath(external.path))
+      ? `external-document:${external.handle}:${external.path}`
+      : `external-source:${external.identity}`;
+  }
   const source = sourcePath(url.pathname);
   if (source === null) return '';
   const focusLine = positiveInteger(url.searchParams.get('at'));
@@ -158,6 +224,16 @@ export function graphSelectionForUrl(
       (candidate) =>
         candidate.kind === 'document' && candidate.documentPath === markdown,
     );
+    return node ? { nodeId: node.id, target: internalRoute(url) } : null;
+  }
+
+  const external = externalTarget(url.pathname, url.hash);
+  if (external) {
+    const ids = [
+      `external-document:${external.handle}:${external.path}`,
+      `external-source:${external.identity}`,
+    ];
+    const node = graph.nodes.find((candidate) => ids.includes(candidate.id));
     return node ? { nodeId: node.id, target: internalRoute(url) } : null;
   }
 

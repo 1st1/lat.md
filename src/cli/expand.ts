@@ -1,11 +1,11 @@
 import { join, relative } from 'node:path';
-import {
-  loadAllSections,
-  findSections,
-  type Section,
-  type SectionMatch,
-} from '../lattice.js';
+import { findSections, type Section, type SectionMatch } from '../lattice.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import type { ResolvedExternalContent } from '../external-sources.js';
+import {
+  commandProjectAnalysis,
+  commandProjectSession,
+} from '../project-analysis.js';
 
 const WIKI_LINK_RE = /\[\[([^\]]+)\]\]/g;
 
@@ -20,6 +20,8 @@ type ResolvedRef = {
   alternatives: SectionMatch[];
 };
 
+type ResolvedExternalRef = ResolvedExternalContent;
+
 /**
  * Resolve [[refs]] in text and return the expanded output.
  * Returns null if there are no wiki links, or if resolution fails.
@@ -31,13 +33,30 @@ export async function expandPrompt(
   const refs = [...text.matchAll(WIKI_LINK_RE)];
   if (refs.length === 0) return null;
 
-  const allSections = await loadAllSections(ctx.latDir);
+  const { allSections } = await commandProjectAnalysis(ctx);
   const resolved = new Map<string, ResolvedRef>();
+  const externalResolved = new Map<string, ResolvedExternalRef>();
+  const external = await commandProjectSession(ctx).external();
   const errors: string[] = [];
 
   for (const match of refs) {
     const target = match[1];
-    if (resolved.has(target)) continue;
+    if (resolved.has(target) || externalResolved.has(target)) continue;
+
+    try {
+      if (external.parse(target)) {
+        externalResolved.set(target, await external.resolve(target));
+        continue;
+      }
+    } catch (error) {
+      errors.push((error as Error).message);
+      continue;
+    }
+    const unknownExternal = external.unknownTargetMessage(target);
+    if (unknownExternal) {
+      errors.push(unknownExternal);
+      continue;
+    }
 
     const matches = findSections(allSections, target);
     if (matches.length >= 1) {
@@ -55,12 +74,19 @@ export async function expandPrompt(
 
   // Replace [[refs]] inline
   let output = text.replace(WIKI_LINK_RE, (_match, target: string) => {
+    if (externalResolved.has(target)) return `[[${target}]]`;
     const ref = resolved.get(target)!;
     return `[[${ref.best.section.id}]]`;
   });
 
   // Append context block as nested outliner
   output += '\n\n<lat-context>\n';
+  for (const [target, value] of externalResolved) {
+    output += `* \`[[${target}]]\` is referring to:\n`;
+    output += `  * ${value.source.repo} @ ${value.source.commit} via ${value.provider}\n`;
+    output += `    * ${value.target.repositoryPath}:${value.startLine}-${value.endLine}\n`;
+    for (const line of value.content.split('\n')) output += `    | ${line}\n`;
+  }
   for (const ref of resolved.values()) {
     const isExact =
       ref.best.reason === 'exact match' ||
@@ -100,9 +126,28 @@ export async function expandCommand(
     }
 
     // Resolution failed — find which ref is broken
-    const allSections = await loadAllSections(ctx.latDir);
+    const { allSections } = await commandProjectAnalysis(ctx);
+    const external = await commandProjectSession(ctx).external();
     for (const match of refs) {
       const target = match[1];
+      try {
+        if (external.parse(target)) {
+          await external.resolve(target);
+          continue;
+        }
+      } catch (error) {
+        return {
+          output: ctx.styler.red((error as Error).message),
+          isError: true,
+        };
+      }
+      const unknownExternal = external.unknownTargetMessage(target);
+      if (unknownExternal) {
+        return {
+          output: ctx.styler.red(unknownExternal),
+          isError: true,
+        };
+      }
       const matches = findSections(allSections, target);
       if (matches.length === 0) {
         const s = ctx.styler;

@@ -17,6 +17,7 @@ import {
 } from '../search/embedder.js';
 import { getLlmKey, getRepoEmbedding, setRepoEmbedding } from '../config.js';
 import { indexSections } from '../search/index.js';
+import { commandProjectAnalysis } from '../project-analysis.js';
 
 const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 
@@ -143,7 +144,13 @@ export async function reindexCommand(
 
     let stats;
     try {
-      stats = await indexSections(ctx.latDir, db, embedder, onProgress);
+      stats = await indexSections(
+        ctx.latDir,
+        db,
+        embedder,
+        onProgress,
+        await commandProjectAnalysis(ctx),
+      );
       // Pin the backend only after a successful build, so a failed reindex never
       // records a model that doesn't match a completed index.
       await setStoredModel(db, modelKey(embedder));

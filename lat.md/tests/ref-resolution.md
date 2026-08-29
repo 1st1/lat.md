@@ -25,7 +25,7 @@ When two directories contain a file with the same stem, a `@lat:` code comment u
 
 ## Short ref passes check md
 
-When a file stem is unique in the vault (e.g. only one `setup.md` exists, under `guides/`), a wiki link using the short name `[[setup#Install]]` in a markdown file passes `check md` without errors.
+When a file stem is unique in the vault (e.g. only one `setup.md` exists, under `guides/`), wiki links using `[[setup#Install]]` or `[[setup.md#Install]]` pass `check md` without errors.
 
 ## Wiki links accept literal and GitHub headings
 
@@ -33,11 +33,11 @@ When a file stem is unique in the vault (e.g. only one `setup.md` exists, under 
 
 ## Short ref passes check code-refs
 
-When a file stem is unique in the vault, a `@lat:` code comment using the short name (e.g. `// @lat: [[setup#Configure]]`) passes `check code-refs` without errors.
+When a file stem is unique in the vault, `@lat:` code comments using `[[setup#Configure]]` or `[[setup.md#Configure]]` pass `check code-refs` without errors.
 
 ## Short ref findSections resolves
 
-`findSections` resolves a short ref like `setup#Install` to the full vault-relative section `guides/setup#Install` and returns the matching section.
+`findSections` resolves short refs like `setup#Install` and `setup.md#Install` to the full vault-relative section `guides/setup#Install` and returns the matching section.
 
 ## Short ref refs finds md references
 

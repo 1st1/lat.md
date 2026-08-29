@@ -145,7 +145,7 @@ The first search indexes lazily, while a later Markdown generation triggers exac
 
 Invalid Markdown files show a sidebar marker propagated through every ancestor directory, plus a top metadata error label whose entries jump to red-marked authored content.
 
-The initial snapshot and every refresh recompute diagnostics from cached syntax trees, removing markers immediately when errors are fixed.
+The initial snapshot and every refresh recompute diagnostics from cached AST-free file analyses, removing markers immediately when errors are fixed.
 
 ## Shows live Git state
 

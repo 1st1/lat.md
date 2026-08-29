@@ -65,7 +65,8 @@ Validation command group. Without a subcommand it runs every check against the
 discovered `lat.md/`; an explicit `-- <directory>` suffix validates any
 Markdown directory instead.
 
-Usage: `lat check [md|links|code-refs|index|sections] [-- <directory>]`
+Usage: `lat check [md|links|code-refs|index|sections] [-- <directory>]`; use
+`lat check --profile [-- <directory>]` to profile the full validation run.
 
 The separator is required. It keeps directory names distinct from subcommands:
 `lat check links` runs the relative-link subcommand against the discovered
@@ -80,7 +81,11 @@ directory is not required to have lat setup metadata.
 
 Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
 
-Implementation: [[src/cli/check.ts]]
+`--profile` adds a nested timing report for every validator and its major operations. Repeated work is aggregated with call counts, average and maximum duration, and the slowest file or target so large-repository bottlenecks remain visible without one output line per file. Concurrent timings remain attributed to their initiating validator and may overlap within the total wall time.
+
+The full check runs its validators concurrently through one lazy command-scoped context backed by [[architecture-analysis#Project snapshot]]. Markdown files are read and parsed once; their AST-free facts and indexes are shared while syntax trees are discarded. Promise-backed code scanning, external resolution, and source-symbol checks coalesce in-flight work. Nothing survives the atomic command.
+
+Implementation: [[src/cli/check.ts]], with check-specific inputs in [[src/cli/check-context.ts]] and shared Markdown analysis in [[src/project-analysis.ts]].
 
 ### md
 
@@ -88,7 +93,7 @@ Validate that all [[parser#Wiki Links]] in the checked markdown files point to e
 
 ### links
 
-Validate that ordinary markdown links in the checked files point to existing files, Markdown fragments use GitHub heading ids, and full or collapsed reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
+Validate that ordinary markdown links in the checked files point to existing files, Markdown fragments use GitHub heading ids, and all reference-style links have definitions. See [[markdown#Relative Links]] for exact rules.
 
 ### code-refs
 
@@ -246,6 +251,8 @@ All setup steps are idempotent — existing configuration is detected and skippe
 Generated agent instructions and `lat-md` skills direct project-specific documentation into `lat.md/` so it survives setup refreshes.
 
 The `AGENTS.md` and `lat-md` `SKILL.md` templates state that these generated files are owned by lat tooling and may be replaced by a later `lat init`. Agents must record project guidance in `lat.md/` rather than changing generated copies.
+
+Generated Markdown instructions obey Lat's local validation rules, so symlinked or shared instruction files remain valid even when they also live inside the project's graph directory.
 
 ### Marker-based append mode
 

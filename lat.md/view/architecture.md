@@ -44,13 +44,13 @@ The generated marker makes later project-wide scans ignore the artifact instead 
 
 A server-lifetime [[src/view/store.ts#createViewStore|ViewStore]] keeps document navigation and reverse references current without rescanning the project for every request.
 
-At startup the store reads each Markdown file once, extracts its sections, paragraphs, and outgoing links from one syntax tree, scans code references once, then resolves those cached occurrences into an immutable reverse-reference snapshot.
+At startup the store reads each Markdown file once through the shared [[architecture-analysis#File analysis|file analyzer]], scans code references once, then resolves the cached AST-free facts into an immutable reverse-reference snapshot.
 
 The store watches the project with a short debounce and serializes updates. Existing Markdown and code files are reread individually; file additions trigger a lightweight scope refresh, and deletions remove their cached contributions.
 
 Every update atomically replaces the snapshot. Section identity changes rebuild the global resolution maps and re-resolve cached occurrences from memory, but never force unchanged files to be reread or reparsed.
 
-Each snapshot also validates cached Markdown links, wiki targets, section structure, and required code mentions. Diagnostics carry source lines so the client can mark files, list errors in the top metadata, and highlight the authored content.
+Each snapshot also validates cached Markdown links, wiki targets, section structure, and required code mentions. It consumes the analyzer's local diagnostics and adds project-wide findings; source lines let the client mark files, list errors, and highlight authored content.
 
 Browser clients subscribe to snapshot generations over server-sent events. A new generation refreshes the sidebar and current route while preserving the active URL and viewport.
 
@@ -90,7 +90,7 @@ Wide layouts give the sticky TOC a fixed 286px column and the available viewport
 
 A moving end-of-page activation line makes short final sections reachable.
 
-The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory.
+The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
 
 Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
 

@@ -12,8 +12,11 @@ import {
 import { dirname, join, parse, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CmdContext } from '../context.js';
+import { isDocumentPath } from '../document-formats.js';
+import type { ExternalResolver } from '../external-sources.js';
 import type {
   ViewDocument,
+  ViewExternalDocument,
   ViewGraph,
   ViewMarkdownBackReference,
   ViewSectionBackReference,
@@ -23,6 +26,7 @@ import type {
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import {
   viewStaticSourceKey,
+  type ViewStaticExternalSourceView,
   type ViewStaticManifest,
   type ViewStaticSourceRequest,
 } from './static-protocol.js';
@@ -35,6 +39,7 @@ export type StaticViewBuildOptions = {
   basePath?: string;
   clientDir?: string;
   logoText?: string;
+  externalCa?: string | Buffer;
 };
 
 export type StaticViewBuildResult = {
@@ -98,7 +103,7 @@ export function staticViewUrl(value: string, basePath: string): string {
   }
   if (url.origin !== 'http://lat.local') return value;
 
-  for (const prefix of ['/docs/', '/code/'] as const) {
+  for (const prefix of ['/docs/', '/code/', '/external/'] as const) {
     if (!url.pathname.startsWith(prefix)) continue;
     const route = url.pathname.slice(1).replace(/\/+$/, '');
     return `${basePath}${route}/${url.search}${url.hash}`;
@@ -133,15 +138,30 @@ function rewriteHtmlLink(
 
   let resolved: URL;
   try {
+    const externalAt = sourcePath.indexOf(':');
     const currentPath = sourcePath.split('/').map(encodeURIComponent).join('/');
+    const currentRoute =
+      externalAt > 0 && !documentPaths.has(sourcePath)
+        ? `/external/${encodeURIComponent(sourcePath.slice(0, externalAt))}/${sourcePath
+            .slice(externalAt + 1)
+            .split('/')
+            .map(encodeURIComponent)
+            .join('/')}`
+        : `/docs/${currentPath}`;
     resolved = new URL(
       decodeHtmlUrlAttribute(value),
-      `http://lat.local/docs/${currentPath}`,
+      `http://lat.local${currentRoute}`,
     );
   } catch {
     return value;
   }
   const documentPath = documentPathFromUrl(resolved);
+  if (resolved.pathname.startsWith('/external/')) {
+    return staticViewUrl(
+      `${resolved.pathname}${resolved.search}${resolved.hash}`,
+      basePath,
+    );
+  }
   if (
     resolved.origin !== 'http://lat.local' ||
     !documentPath ||
@@ -311,6 +331,102 @@ function sourceRequest(value: string): ViewStaticSourceRequest | null {
   };
 }
 
+function externalRequest(
+  value: string,
+  external?: ExternalResolver,
+): string | null {
+  let url: URL;
+  try {
+    url = new URL(decodeHtmlUrlAttribute(value), 'http://lat.local');
+  } catch {
+    return null;
+  }
+  if (!url.pathname.startsWith('/external/')) return null;
+  try {
+    const parts = url.pathname
+      .slice('/external/'.length)
+      .split('/')
+      .map(decodeURIComponent);
+    const handle = parts.shift() ?? '';
+    const path = parts.join('/');
+    if (!handle || !path) return null;
+    const fragment = decodeURIComponent(url.hash.slice(1));
+    const target = `${handle}:${path}${fragment ? `#${fragment}` : ''}`;
+    const parsed = external?.parse(target);
+    if (parsed) {
+      if (!isDocumentPath(parsed.resolvedPath)) {
+        return parsed.identity;
+      }
+      const hash = parsed.identity.indexOf('#');
+      return hash === -1 ? parsed.identity : parsed.identity.slice(0, hash);
+    }
+    return `${handle}:${path}${isDocumentPath(path) || !fragment ? '' : `#${fragment}`}`;
+  } catch {
+    return null;
+  }
+}
+
+function externalRequestsFromDocument(
+  document: ViewDocument,
+  requests: Set<string>,
+  external?: ExternalResolver,
+  externalBase?: string,
+): void {
+  const add = (value: string) => {
+    let candidate = value;
+    if (externalBase && !value.startsWith('#')) {
+      try {
+        const colon = externalBase.indexOf(':');
+        const base = `/external/${encodeURIComponent(externalBase.slice(0, colon))}/${externalBase
+          .slice(colon + 1)
+          .split('/')
+          .map(encodeURIComponent)
+          .join('/')}`;
+        const resolved = new URL(
+          decodeHtmlUrlAttribute(value),
+          `http://lat.local${base}`,
+        );
+        if (resolved.origin === 'http://lat.local') {
+          candidate = `${resolved.pathname}${resolved.hash}`;
+        }
+      } catch {
+        // Leave malformed links to the renderer rather than exporting them.
+      }
+    }
+    const request = externalRequest(candidate, external);
+    if (request) requests.add(request);
+  };
+  for (const match of document.html.matchAll(/href="([^"]*)"/g)) add(match[1]);
+  for (const section of document.backReferences) {
+    for (const reference of section.references) {
+      add(reference.url);
+      if (reference.kind === 'markdown') {
+        for (const match of reference.paragraphHtml.matchAll(
+          /href="([^"]*)"/g,
+        )) {
+          add(match[1]);
+        }
+      }
+    }
+  }
+}
+
+function externalRequestsFromSource(
+  source: ViewSourceDocument,
+  requests: Set<string>,
+  external?: ExternalResolver,
+): void {
+  for (const reference of [
+    ...(source.context ? [source.context] : []),
+    ...source.otherReferences,
+  ]) {
+    for (const match of reference.paragraphHtml.matchAll(/href="([^"]*)"/g)) {
+      const request = externalRequest(match[1], external);
+      if (request) requests.add(request);
+    }
+  }
+}
+
 function sourceRequestsFromDocument(
   document: ViewDocument,
   requests: Map<string, ViewStaticSourceRequest>,
@@ -351,7 +467,13 @@ function sourceRequestsFromSource(
 }
 
 function dataFile(
-  kind: 'documents' | 'source-files' | 'source-views',
+  kind:
+    | 'documents'
+    | 'source-files'
+    | 'source-views'
+    | 'external-documents'
+    | 'external-source-files'
+    | 'external-source-views',
   key: string,
 ): string {
   const digest = createHash('sha256').update(key).digest('hex').slice(0, 20);
@@ -451,6 +573,8 @@ export async function buildStaticView(
     codeExcludePaths: [outputDir],
     git: false,
     watch: false,
+    externalIgnoreLocal: true,
+    externalCa: options.externalCa,
   });
 
   try {
@@ -462,11 +586,21 @@ export async function buildStaticView(
     const index = { ...store.getIndex(), git: null, logoText };
     const documents = new Map<string, ViewDocument>();
     const sourceRequests = new Map<string, ViewStaticSourceRequest>();
+    const externalRequests = new Set<string>();
+
+    for (const file of index.externalFiles) {
+      externalRequests.add(file.target);
+    }
 
     for (const path of index.files) {
       const document = await store.getDocument(path);
       documents.set(path, document);
       sourceRequestsFromDocument(document, sourceRequests);
+      externalRequestsFromDocument(
+        document,
+        externalRequests,
+        store.snapshot.external,
+      );
     }
     const documentPaths = new Set(documents.keys());
     const sectionPaths = sectionDocumentPaths(documents);
@@ -475,6 +609,47 @@ export async function buildStaticView(
     for (const node of graph.nodes) {
       const request = sourceRequest(node.url);
       if (request) sourceRequests.set(viewStaticSourceKey(request), request);
+      if (node.externalTarget) externalRequests.add(node.externalTarget);
+    }
+
+    const externals = new Map<string, ViewExternalDocument>();
+    const pendingExternal = [...externalRequests];
+    for (let index = 0; index < pendingExternal.length; index++) {
+      const target = pendingExternal[index];
+      if (externals.has(target)) continue;
+      let external: ViewExternalDocument;
+      try {
+        external = await store.getExternal(target);
+      } catch (error) {
+        throw new Error(
+          `Could not export external source ${target}: ${(error as Error).message}`,
+        );
+      }
+      externals.set(target, external);
+      const before = externalRequests.size;
+      if (external.kind === 'markdown') {
+        sourceRequestsFromDocument(external.document, sourceRequests);
+        externalRequestsFromDocument(
+          external.document,
+          externalRequests,
+          store.snapshot.external,
+          external.document.path,
+        );
+      } else {
+        sourceRequestsFromSource(external.source, sourceRequests);
+        externalRequestsFromSource(
+          external.source,
+          externalRequests,
+          store.snapshot.external,
+        );
+      }
+      if (externalRequests.size > before) {
+        for (const next of externalRequests) {
+          if (!externals.has(next) && !pendingExternal.includes(next)) {
+            pendingExternal.push(next);
+          }
+        }
+      }
     }
 
     const sources = new Map<string, ViewSourceDocument>();
@@ -517,6 +692,7 @@ export async function buildStaticView(
       graph: 'data/graph.json',
       documents: {},
       sources: {},
+      externals: {},
     };
     await writeJson(
       join(payloadDir, manifest.graph),
@@ -561,6 +737,66 @@ export async function buildStaticView(
       const route = `code/${path}`;
       await writeRouteShell(payloadDir, route, shell);
     }
+
+    const externalSourceFiles = new Map<string, string>();
+    const externalRoutes = new Set<string>();
+    for (const [target, external] of externals) {
+      if (external.kind === 'markdown') {
+        const dataPath = dataFile('external-documents', target);
+        manifest.externals[target] = { kind: 'markdown', document: dataPath };
+        await writeJson(join(payloadDir, dataPath), {
+          ...external,
+          document: rewriteDocument(
+            external.document,
+            basePath,
+            sectionPaths,
+            documentPaths,
+          ),
+        } satisfies ViewExternalDocument);
+        const colon = external.document.path.indexOf(':');
+        externalRoutes.add(
+          `external/${external.document.path.slice(0, colon)}/${external.document.path.slice(colon + 1)}`,
+        );
+        continue;
+      }
+
+      const rewritten = rewriteSource(
+        external.source,
+        basePath,
+        sectionPaths,
+        documentPaths,
+      );
+      const { path, content, highlightedHtmlLines, ...sourceView } = rewritten;
+      let fileDataPath = externalSourceFiles.get(path);
+      if (!fileDataPath) {
+        fileDataPath = dataFile('external-source-files', path);
+        externalSourceFiles.set(path, fileDataPath);
+        await writeJson(join(payloadDir, fileDataPath), {
+          path,
+          content,
+          highlightedHtmlLines,
+        });
+      }
+      const viewDataPath = dataFile('external-source-views', target);
+      manifest.externals[target] = {
+        kind: 'source',
+        file: fileDataPath,
+        view: viewDataPath,
+      };
+      const view: ViewStaticExternalSourceView = {
+        kind: 'source',
+        target: external.target,
+        source: sourceView,
+      };
+      await writeJson(join(payloadDir, viewDataPath), view);
+      const colon = path.indexOf(':');
+      externalRoutes.add(
+        `external/${path.slice(0, colon)}/${path.slice(colon + 1)}`,
+      );
+    }
+    for (const route of externalRoutes) {
+      await writeRouteShell(payloadDir, route, shell);
+    }
     await writeRouteShell(payloadDir, 'graph', shell);
     await writeJson(join(payloadDir, 'data/manifest.json'), manifest);
     const entryRedirect = redirectShell(
@@ -579,7 +815,7 @@ export async function buildStaticView(
     return {
       documents: documents.size,
       outputDir,
-      sources: sources.size,
+      sources: sources.size + externals.size,
     };
   } catch (error) {
     await rm(stagingDir, { recursive: true, force: true });
