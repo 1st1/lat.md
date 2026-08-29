@@ -1,3 +1,4 @@
+import { dirname } from 'node:path';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import {
   openDb,
@@ -18,11 +19,12 @@ import {
 } from '../search/embedder.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
+import type { SectionMatch } from '../lattice.js';
 import {
-  loadAllSections,
-  flattenSections,
-  type SectionMatch,
-} from '../lattice.js';
+  analyzeMarkdownProject,
+  commandProjectAnalysis,
+  type MarkdownProjectAnalysis,
+} from '../project-analysis.js';
 import { formatResultList, formatNavHints } from '../format.js';
 
 export type SearchResult = {
@@ -40,9 +42,11 @@ export type IndexProgress = {
 async function withDb<T>(
   latDir: string,
   progress: IndexProgress | undefined,
+  project: MarkdownProjectAnalysis,
   fn: (
     db: Awaited<ReturnType<typeof openDb>>,
     embedder: Embedder,
+    project: MarkdownProjectAnalysis,
   ) => Promise<T>,
 ): Promise<T> {
   const db = openDb(latDir);
@@ -89,7 +93,13 @@ async function withDb<T>(
 
     progress?.beforeIndex?.(isEmpty);
     try {
-      const stats = await indexSections(latDir, db, embedder);
+      const stats = await indexSections(
+        latDir,
+        db,
+        embedder,
+        undefined,
+        project,
+      );
       // Pin the backend only after a successful index, so a failed build never
       // leaves the repo wrongly pinned to an empty index.
       if (!stored) await setStoredModel(db, modelKey(embedder));
@@ -101,7 +111,7 @@ async function withDb<T>(
       throw err;
     }
 
-    return await fn(db, embedder);
+    return await fn(db, embedder, project);
   } finally {
     await closeDb(db);
   }
@@ -109,17 +119,13 @@ async function withDb<T>(
 
 /** Resolve raw search hits (by id) to full section matches. */
 async function resolveMatches(
-  latDir: string,
+  project: MarkdownProjectAnalysis,
   results: { id: string; score: number }[],
 ): Promise<SectionMatch[]> {
   if (results.length === 0) return [];
 
-  const allSections = await loadAllSections(latDir);
-  const flat = flattenSections(allSections);
-  const byId = new Map(flat.map((s) => [s.id, s]));
-
   return results.flatMap((result) => {
-    const section = byId.get(result.id);
+    const section = project.sectionById.get(result.id.toLowerCase());
     return section
       ? [{ section, reason: 'semantic match', score: result.score }]
       : [];
@@ -141,7 +147,7 @@ export async function runSearch(
   query: string,
   limit: number,
   progress?: IndexProgress,
-  opts?: { buildIndex?: boolean },
+  opts?: { buildIndex?: boolean; project?: MarkdownProjectAnalysis },
 ): Promise<SearchResult> {
   if (opts?.buildIndex === false) {
     const db = openDb(latDir);
@@ -154,15 +160,25 @@ export async function runSearch(
       const embedder = await embedderForIndex(stored, latDir);
       await ensureSectionsSchema(db, embedder.dimensions);
       const results = await searchSections(db, query, embedder, limit);
-      return { query, matches: await resolveMatches(latDir, results) };
+      const project =
+        opts.project ??
+        (await analyzeMarkdownProject(latDir, dirname(latDir), {
+          executor: 'auto',
+        }));
+      return { query, matches: await resolveMatches(project, results) };
     } finally {
       await closeDb(db);
     }
   }
 
-  return withDb(latDir, progress, async (db, embedder) => {
+  const project =
+    opts?.project ??
+    (await analyzeMarkdownProject(latDir, dirname(latDir), {
+      executor: 'auto',
+    }));
+  return withDb(latDir, progress, project, async (db, embedder, analyzed) => {
     const results = await searchSections(db, query, embedder, limit);
-    return { query, matches: await resolveMatches(latDir, results) };
+    return { query, matches: await resolveMatches(analyzed, results) };
   });
 }
 
@@ -173,8 +189,14 @@ export async function runSearch(
 export async function runIndex(
   latDir: string,
   progress?: IndexProgress,
+  analyzedProject?: MarkdownProjectAnalysis,
 ): Promise<void> {
-  await withDb(latDir, progress, async () => {});
+  const project =
+    analyzedProject ??
+    (await analyzeMarkdownProject(latDir, dirname(latDir), {
+      executor: 'auto',
+    }));
+  await withDb(latDir, progress, project, async () => {});
 }
 
 export function cliProgress(s: Styler): IndexProgress {
@@ -211,11 +233,14 @@ export async function searchCommand(
   const s = ctx.styler;
   try {
     if (!query) {
-      await runIndex(ctx.latDir, progress);
+      await runIndex(ctx.latDir, progress, await commandProjectAnalysis(ctx));
       return { output: '' };
     }
 
-    const result = await runSearch(ctx.latDir, query, opts.limit, progress);
+    const project = await commandProjectAnalysis(ctx);
+    const result = await runSearch(ctx.latDir, query, opts.limit, progress, {
+      project,
+    });
 
     if (result.matches.length === 0) {
       return { output: 'No results found.' };

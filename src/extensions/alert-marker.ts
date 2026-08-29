@@ -34,6 +34,20 @@ export function markAlertMarkers(tree: Root): void {
       type: 'alertMarker',
       value: match[1] as AlertKind,
     };
+    const start = firstInline.position?.start;
+    if (start) {
+      const markerLength = match[0].replace(/\r?\n$/, '').length;
+      marker.position = {
+        start,
+        end: {
+          line: start.line,
+          column: start.column + markerLength,
+          ...(start.offset === undefined
+            ? {}
+            : { offset: start.offset + markerLength }),
+        },
+      };
+    }
     const remaining = firstInline.value.slice(match[0].length);
     const replacement: PhrasingContent[] = [marker];
     if (remaining !== '') replacement.push({ type: 'text', value: remaining });

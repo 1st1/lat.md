@@ -52,3 +52,11 @@ A current-version non-interactive init with a configured key neither displays a 
 ### Non-interactive mismatch prints command
 
 A non-interactive init with a configured backend that differs from the stored index prints the exact reindex command without starting an expensive rebuild.
+
+## Generated instructions
+
+Generated agent guidance must remain valid Markdown wherever project layouts expose it to Lat's graph scanner.
+
+### Templates satisfy graph validation
+
+Every generated Markdown instruction template passes local graph validation, preventing setup-owned content from breaking `lat check` when an instruction file is symlinked into `lat.md/`.

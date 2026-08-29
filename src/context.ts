@@ -1,3 +1,5 @@
+import type { MarkdownProjectSession } from './project-analysis.js';
+
 export type Styler = {
   bold: (s: string) => string;
   dim: (s: string) => string;
@@ -29,6 +31,8 @@ export type CmdContext = {
   mode: 'cli' | 'mcp';
   /** The check target was supplied explicitly instead of discovered as lat.md. */
   headless?: boolean;
+  /** Lazy Markdown analysis shared by nested operations in this request. */
+  analysis?: MarkdownProjectSession;
 };
 
 export type CmdResult = {

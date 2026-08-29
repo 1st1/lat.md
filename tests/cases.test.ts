@@ -440,12 +440,41 @@ describe('error-md-links', () => {
       'lat.md/a.md:12: undefined link reference',
       'lat.md/a.md:13: undefined image reference',
       'lat.md/a.md:14: undefined link reference',
-      'lat.md/a.md:15: broken link (#Alpha)',
-      'lat.md/a.md:20: broken link (./does-not-exist-def.md)',
+      'lat.md/a.md:15: undefined shortcut link reference',
+      'lat.md/a.md:16: undefined shortcut image reference',
+      'lat.md/a.md:17: broken link (#Alpha)',
+      'lat.md/a.md:22: broken link (./does-not-exist-def.md)',
+      'lat.md/a.md:24: malformed reference definition ([packed one]:)',
+      'lat.md/a.md:24: malformed reference definition ([packed two]:)',
     ]) {
       expect(output).toContain(expected);
     }
-    expect(output).toContain('14 errors found');
+    expect(output).toContain('18 errors found');
+  });
+
+  // @lat: [[check-links#Rejects undefined shortcut references]]
+  it('lat check links explains how to fix undefined shortcut references', () => {
+    const { stderr: output, exitCode } = runCli('error-md-links', [
+      'check',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(1);
+    expect(output).toContain(
+      'undefined shortcut link reference ([undefined shortcut]) — ' +
+        'add a definition "[undefined shortcut]: <destination>" to make it a link, ' +
+        'or escape the opening bracket as "\\[undefined shortcut]" to keep it as literal text',
+    );
+    expect(output).toContain(
+      'undefined shortcut image reference (![undefined shortcut image]) — ' +
+        'add a definition "[undefined shortcut image]: <destination>" to make it an image, ' +
+        'or escape the opening bracket as "!\\[undefined shortcut image]" to keep it as literal text',
+    );
+    expect(output).toContain(
+      'malformed reference definition ([packed one]:) — ' +
+        'write it as "[packed one]: <destination>" on its own line, ' +
+        'or escape the opening bracket as "\\[packed one]:" to keep it as literal text',
+    );
   });
 
   // @lat: [[check-links#Rejects backslash path separators]]
@@ -502,7 +531,7 @@ describe('error-md-links', () => {
     expect(exitCode).toBe(1);
     expect(stdout).toBe('');
     expect(output).toContain('lat.md/a.md:5: broken link (does-not-exist.md)');
-    expect(output).toContain('14 errors found');
+    expect(output).toContain('18 errors found');
     expect(output).not.toContain('missing index file');
   });
 });
@@ -538,6 +567,51 @@ describe('valid-md-links', () => {
 // --- headless check targets ---
 
 describe('headless-check', () => {
+  // @lat: [[tests/check-headless#Profiles validation work]]
+  it('reports detailed validation timings only with --profile', () => {
+    const regular = runCli('headless-check', ['check', '--', 'links']);
+    const profiled = runCli('headless-check', [
+      'check',
+      '--profile',
+      '--',
+      'links',
+    ]);
+
+    expect(regular.stdout).not.toContain('Profile (');
+    expect(profiled.exitCode).toBe(0);
+    expect(profiled.stderr).toBe('');
+    for (const operation of [
+      'check Markdown wiki links',
+      'parse Markdown AST',
+      'extract wiki links',
+      'check relative Markdown links',
+      'check @lat code references',
+      'scan project files for @lat references',
+      'check directory indexes',
+      'check section structure',
+      'extract Markdown sections',
+    ]) {
+      expect(profiled.stdout).toContain(operation);
+    }
+    expect(profiled.stdout).toMatch(/across \d+ calls/);
+    expect(profiled.stdout).toContain('All checks passed');
+  });
+
+  // @lat: [[tests/check-headless#Reuses check data across validators]]
+  it('parses each Markdown file once across the full check', () => {
+    const { stdout, stderr, exitCode } = runCli('headless-check', [
+      'check',
+      '--profile',
+      '--',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout.match(/parse Markdown AST:/g)).toHaveLength(1);
+    expect(stdout).toMatch(/parse Markdown AST: .* across 2 calls/);
+  });
+
   // @lat: [[tests/check-headless#Separator disambiguates directory names]]
   it('treats a name after -- as a directory, not a subcommand', () => {
     const full = runCli('headless-check', ['check', '--', 'links']);
@@ -819,6 +893,12 @@ describe('short-ref', () => {
     expect(matches).toHaveLength(1);
     expect(matches[0].section.id).toBe('lat.md/guides/setup#Setup#Install');
     expect(matches[0].reason).toMatch(/file stem expanded/);
+
+    const explicitExtension = findSections(sections, 'setup.md#Install');
+    expect(explicitExtension).toHaveLength(1);
+    expect(explicitExtension[0].section.id).toBe(
+      'lat.md/guides/setup#Setup#Install',
+    );
   });
 
   // @lat: [[locate#File stem fuzzy does not over-match]]

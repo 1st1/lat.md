@@ -1,5 +1,4 @@
-import type { Heading, Root, RootContent } from 'mdast';
-import { visit } from 'unist-util-visit';
+import type { Root, RootContent } from 'mdast';
 import { flattenSections, type Section } from '../lattice.js';
 import type { ViewDocumentError, ViewDocumentTocItem } from './protocol.js';
 
@@ -11,27 +10,6 @@ export type ViewTableOfContentsOptions = {
   errors?: readonly ViewDocumentError[];
   gitTree?: Root | null;
 };
-
-function headingText(node: unknown): string {
-  if (!node || typeof node !== 'object') return '';
-  const value = node as {
-    alt?: string | null;
-    children?: unknown[];
-    data?: { alias?: string | null };
-    type?: string;
-    value?: string;
-  };
-  if (value.type === 'text' || value.type === 'inlineCode') {
-    return value.value ?? '';
-  }
-  if (value.type === 'image' || value.type === 'imageReference') {
-    return value.alt ?? '';
-  }
-  if (value.type === 'wikiLink') {
-    return value.data?.alias ?? value.value ?? '';
-  }
-  return value.children?.map(headingText).join('') ?? '';
-}
 
 function sectionAtLine(sections: Section[], line: number): Section | null {
   let owner: Section | null = null;
@@ -102,14 +80,10 @@ function gitChangedSections(
 /** Project rendered headings into the document's local navigation. */
 export function buildViewTableOfContents(
   sections: Section[],
-  tree: Root,
+  titles: readonly string[],
   options: ViewTableOfContentsOptions = {},
 ): ViewDocumentTocItem[] {
   const flatSections = flattenSections(sections);
-  const titles: string[] = [];
-  visit(tree, 'heading', (node: Heading) => {
-    titles.push(headingText(node));
-  });
   const errorCounts = new Map<string, number>();
   for (const error of options.errors ?? []) {
     const owner = sectionAtLine(flatSections, error.line);

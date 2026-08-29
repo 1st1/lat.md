@@ -9,6 +9,7 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
+  ViewExternalDocument,
   ViewGraphNode,
   ViewIndex,
   ViewProjectChange,
@@ -24,13 +25,14 @@ import GraphView, { preloadViewGraph } from './GraphView';
 import {
   documentPath,
   documentUrl,
+  externalTarget,
   graphModeStorageKey,
   graphNode,
   graphNodeIdForUrl,
   graphTarget,
   historyScrollPosition,
   historyStateWithScroll,
-  isSameMarkdownDocument,
+  isSameRenderedDocument,
   readGraphMode,
   searchButtonAction,
   searchHistoryState,
@@ -56,6 +58,7 @@ type ViewRoute =
   | { kind: 'search' }
   | { kind: 'graph'; nodeId: string; target: string }
   | { kind: 'markdown'; path: string }
+  | { kind: 'external'; target: string }
   | {
       kind: 'source';
       path: string;
@@ -305,6 +308,8 @@ export function App() {
     }
     const markdown = documentPath(url.pathname);
     if (markdown) return { kind: 'markdown', path: markdown };
+    const external = externalTarget(url.pathname, url.hash);
+    if (external) return { kind: 'external', target: external.identity };
     const source = sourcePath(url.pathname);
     if (source) {
       const query = new URLSearchParams(url.search);
@@ -329,14 +334,23 @@ export function App() {
     route !== null &&
     (route.kind === 'graph' ||
       route.kind === 'markdown' ||
-      route.kind === 'source');
+      route.kind === 'source' ||
+      route.kind === 'external');
   const graphSelectionTarget =
     route?.kind === 'graph' ? route.target : location;
   const graphSelectedNodeId =
     route?.kind === 'graph'
       ? route.nodeId
-      : graphNodeIdForUrl(new URL(location, window.location.origin));
+      : graphNodeIdForUrl(
+          new URL(location, window.location.origin),
+          route?.kind === 'external' && page?.kind === 'markdown'
+            ? 'document'
+            : route?.kind === 'external' && page?.kind === 'source'
+              ? 'source'
+              : undefined,
+        );
   const activePath = route?.kind === 'markdown' ? route.path : null;
+  const activeExternalTarget = route?.kind === 'external' ? route.target : null;
   const gitHasChanges =
     Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
   const errorPanelKey =
@@ -359,9 +373,11 @@ export function App() {
   const mobileNavigationLabel =
     route?.kind === 'markdown' || route?.kind === 'source'
       ? route.path
-      : route?.kind === 'search'
-        ? 'Search'
-        : 'Files';
+      : route?.kind === 'external'
+        ? route.target
+        : route?.kind === 'search'
+          ? 'Search'
+          : 'Files';
 
   useEffect(() => {
     void preloadViewGraph().catch(() => {
@@ -376,7 +392,9 @@ export function App() {
       const url = new URL(target, window.location.origin);
       if (
         url.origin !== window.location.origin ||
-        (!documentPath(url.pathname) && !sourcePath(url.pathname))
+        (!documentPath(url.pathname) &&
+          !sourcePath(url.pathname) &&
+          !externalTarget(url.pathname, url.hash))
       ) {
         target = '';
       } else {
@@ -433,9 +451,17 @@ export function App() {
       positionedLocation.current = null;
       setHistoryScroll(historyScrollPosition(event.state));
       const nextDocumentPath = documentPath(window.location.pathname);
+      const nextExternal = externalTarget(
+        window.location.pathname,
+        window.location.hash,
+      );
       const preservesDocument =
         pageRef.current?.kind === 'markdown' &&
-        pageRef.current.document.path === nextDocumentPath;
+        (pageRef.current.document.path === nextDocumentPath ||
+          pageRef.current.document.path ===
+            (nextExternal
+              ? `${nextExternal.handle}:${nextExternal.path}`
+              : null));
       if (
         viewPathname(window.location.pathname) !== '/graph' &&
         !preservesDocument
@@ -499,10 +525,21 @@ export function App() {
             `/api/document?path=${encodeURIComponent(route.path)}`,
             controller.signal,
           ).then((document) => setPage({ kind: 'markdown', document }))
-        : fetchViewJson<ViewSourceDocument>(
-            `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
-            controller.signal,
-          ).then((source) => setPage({ kind: 'source', source }));
+        : route.kind === 'external'
+          ? fetchViewJson<ViewExternalDocument>(
+              `/api/external?target=${encodeURIComponent(route.target)}`,
+              controller.signal,
+            ).then((external) =>
+              setPage(
+                external.kind === 'markdown'
+                  ? { kind: 'markdown', document: external.document }
+                  : { kind: 'source', source: external.source },
+              ),
+            )
+          : fetchViewJson<ViewSourceDocument>(
+              `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
+              controller.signal,
+            ).then((source) => setPage({ kind: 'source', source }));
     request.catch((reason: Error) => {
       if (reason.name !== 'AbortError') {
         setHistoryScroll(null);
@@ -591,8 +628,13 @@ export function App() {
     const returnTo = currentLocation();
     const preservesDocument =
       page?.kind === 'markdown' &&
-      page.document.path === documentPath(url.pathname) &&
-      isSameMarkdownDocument(new URL(window.location.href), url);
+      (page.document.path === documentPath(url.pathname) ||
+        page.document.path ===
+          (() => {
+            const external = externalTarget(url.pathname, url.hash);
+            return external ? `${external.handle}:${external.path}` : null;
+          })()) &&
+      isSameRenderedDocument(new URL(window.location.href), url);
     saveCurrentScroll();
     const nextLocation = `${url.pathname}${url.search}${url.hash}`;
     if (nextLocation === currentLocation()) return;
@@ -703,7 +745,9 @@ export function App() {
     const url = new URL(anchor.href, window.location.href);
     if (
       url.origin !== window.location.origin ||
-      (!documentPath(url.pathname) && !sourcePath(url.pathname))
+      (!documentPath(url.pathname) &&
+        !sourcePath(url.pathname) &&
+        !externalTarget(url.pathname, url.hash))
     ) {
       return;
     }
@@ -774,14 +818,16 @@ export function App() {
           open={mobileNavigationOpen}
         />
         <nav
-          aria-label="Markdown files"
+          aria-label="Project files"
           id="mobile-file-navigation"
           tabIndex={-1}
         >
           {index && (
             <FileTree
               activePath={activePath}
+              activeExternalTarget={activeExternalTarget}
               errorCounts={index.errorCounts}
+              externalFiles={index.externalFiles}
               files={index.files}
               gitFiles={
                 gitEnabled ? (index.git?.files ?? NO_GIT_FILES) : NO_GIT_FILES

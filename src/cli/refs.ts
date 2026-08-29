@@ -1,21 +1,18 @@
-import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { extname, join, relative } from 'node:path';
 import {
-  listLatticeFiles,
-  loadAllSections,
   findSections,
-  extractRefs,
-  flattenSections,
-  buildFileIndex,
-  buildSectionSlugIndex,
   resolveRef,
   type Section,
   type SectionMatch,
 } from '../lattice.js';
 import { formatResultList } from '../format.js';
-import { scanCodeRefs } from '../code-refs.js';
 import type { CmdContext, CmdResult } from '../context.js';
+import {
+  commandProjectAnalysis,
+  commandProjectSession,
+} from '../project-analysis.js';
+import { SOURCE_EXTENSIONS } from '../source-parser.js';
 
 export type Scope = 'md' | 'code' | 'md+code';
 
@@ -29,22 +26,10 @@ export type RefsFound = {
 export type RefsError = {
   kind: 'no-match';
   suggestions: SectionMatch[];
+  message?: string;
 };
 
 export type RefsResult = RefsFound | RefsError;
-
-/** Extensions recognized as source code for ref queries. */
-const SOURCE_EXTS = new Set([
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.py',
-  '.rs',
-  '.go',
-  '.c',
-  '.h',
-]);
 
 /**
  * Check if a query looks like a source file path (has a recognized extension
@@ -58,7 +43,7 @@ function isSourceQuery(
   const filePart = hashIdx === -1 ? query : query.slice(0, hashIdx);
   const symbolPart = hashIdx === -1 ? '' : query.slice(hashIdx + 1);
   const ext = extname(filePart);
-  if (!SOURCE_EXTS.has(ext)) return null;
+  if (!SOURCE_EXTENSIONS.has(ext)) return null;
   if (!existsSync(join(projectRoot, filePart))) return null;
   return { filePart, symbolPart };
 }
@@ -69,11 +54,11 @@ function isSourceQuery(
  * that file or any symbol in it.
  */
 async function findSourceRefs(
-  latDir: string,
-  projectRoot: string,
+  ctx: CmdContext,
   query: string,
   scope: Scope,
 ): Promise<RefsResult> {
+  const { projectRoot } = ctx;
   const hashIdx = query.indexOf('#');
   const filePart = hashIdx === -1 ? query : query.slice(0, hashIdx);
   const isFileLevel = hashIdx === -1;
@@ -121,18 +106,15 @@ async function findSourceRefs(
     // source parser unavailable — proceed without line info
   }
 
-  const allSections = await loadAllSections(latDir);
-  const flat = flattenSections(allSections);
+  const project = await commandProjectAnalysis(ctx);
+  const flat = project.sections;
   const mdRefs: SectionMatch[] = [];
   const codeRefs: string[] = [];
 
   if (scope === 'md' || scope === 'md+code') {
-    const files = await listLatticeFiles(latDir);
     const matchingFromSections = new Set<string>();
-    for (const file of files) {
-      const content = await readFile(file, 'utf-8');
-      const fileRefs = extractRefs(file, content, projectRoot);
-      for (const ref of fileRefs) {
+    for (const file of project.files.values()) {
+      for (const ref of file.wikiRefs) {
         const targetLower = ref.target.toLowerCase();
         const matches = isFileLevel
           ? targetLower === fileLower || targetLower.startsWith(fileLower + '#')
@@ -154,7 +136,7 @@ async function findSourceRefs(
   }
 
   if (scope === 'code' || scope === 'md+code') {
-    const { refs: scannedRefs } = await scanCodeRefs(projectRoot);
+    const { refs: scannedRefs } = await commandProjectSession(ctx).codeRefs();
     for (const ref of scannedRefs) {
       const targetLower = ref.target.toLowerCase();
       const matches = isFileLevel
@@ -173,6 +155,62 @@ async function findSourceRefs(
   return { kind: 'found', target, mdRefs, codeRefs };
 }
 
+async function findExternalRefs(
+  ctx: CmdContext,
+  query: string,
+  scope: Scope,
+): Promise<RefsResult> {
+  const external = await commandProjectSession(ctx).external();
+  const parsed = external.parse(query)!;
+  const target: Section = {
+    id: parsed.identity,
+    heading: parsed.fragment || parsed.authoredPath,
+    depth: 0,
+    file: parsed.identity,
+    filePath: parsed.identity,
+    children: [],
+    startLine: 0,
+    endLine: 0,
+    firstParagraph: '',
+  };
+  const project = await commandProjectAnalysis(ctx);
+  const flat = project.sections;
+  const matchingSections = new Set<string>();
+  const codeRefs: string[] = [];
+  const matchesTarget = (candidate: string): boolean => {
+    try {
+      return external.parse(candidate)?.identity === parsed.identity;
+    } catch {
+      return false;
+    }
+  };
+  if (scope !== 'code') {
+    for (const file of project.files.values()) {
+      for (const ref of file.wikiRefs) {
+        if (matchesTarget(ref.target))
+          matchingSections.add(ref.fromSection.toLowerCase());
+      }
+    }
+  }
+  if (scope !== 'md') {
+    for (const ref of (await commandProjectSession(ctx).codeRefs()).refs) {
+      if (matchesTarget(ref.target)) {
+        codeRefs.push(
+          `${relative(process.cwd(), join(ctx.projectRoot, ref.file))}:${ref.line}`,
+        );
+      }
+    }
+  }
+  return {
+    kind: 'found',
+    target,
+    mdRefs: flat
+      .filter((section) => matchingSections.has(section.id.toLowerCase()))
+      .map((section) => ({ section, reason: 'wiki link' })),
+    codeRefs,
+  };
+}
+
 /**
  * Find all sections and code locations that reference a given section or
  * source file. Accepts section ids (full-path, short-form) and source file
@@ -186,16 +224,29 @@ export async function findRefs(
 ): Promise<RefsResult> {
   query = query.replace(/^\[\[|\]\]$/g, '');
 
-  // Source file queries bypass section resolution
-  if (isSourceQuery(query, ctx.projectRoot)) {
-    return findSourceRefs(ctx.latDir, ctx.projectRoot, query, scope);
+  const external = await commandProjectSession(ctx).external();
+  try {
+    if (external.parse(query)) return findExternalRefs(ctx, query, scope);
+  } catch (error) {
+    return {
+      kind: 'no-match',
+      suggestions: [],
+      message: (error as Error).message,
+    };
+  }
+  const unknownExternal = external.unknownTargetMessage(query);
+  if (unknownExternal) {
+    return { kind: 'no-match', suggestions: [], message: unknownExternal };
   }
 
-  const allSections = await loadAllSections(ctx.latDir);
-  const flat = flattenSections(allSections);
-  const sectionIds = new Set(flat.map((s) => s.id.toLowerCase()));
-  const fileIndex = buildFileIndex(allSections);
-  const slugIndex = buildSectionSlugIndex(allSections);
+  // Source file queries bypass section resolution
+  if (isSourceQuery(query, ctx.projectRoot)) {
+    return findSourceRefs(ctx, query, scope);
+  }
+
+  const project = await commandProjectAnalysis(ctx);
+  const { allSections, sections: flat, fileIndex, slugIndex } = project;
+  const sectionIds = new Set(project.sectionIds);
   const { resolved } = resolveRef(query, sectionIds, fileIndex, slugIndex);
   const q = resolved.toLowerCase();
   let exactMatch = flat.find((s) => s.id.toLowerCase() === q);
@@ -224,22 +275,9 @@ export async function findRefs(
   const codeRefs: string[] = [];
 
   if (scope === 'md' || scope === 'md+code') {
-    const files = await listLatticeFiles(ctx.latDir);
     const matchingFromSections = new Set<string>();
-    for (const file of files) {
-      const content = await readFile(file, 'utf-8');
-      const fileRefs = extractRefs(file, content, ctx.projectRoot);
-      for (const ref of fileRefs) {
-        const { resolved: refResolved } = resolveRef(
-          ref.target,
-          sectionIds,
-          fileIndex,
-          slugIndex,
-        );
-        if (refResolved.toLowerCase() === targetId) {
-          matchingFromSections.add(ref.fromSection.toLowerCase());
-        }
-      }
+    for (const ref of project.incomingRefsBySection.get(targetId) ?? []) {
+      matchingFromSections.add(ref.fromSection.toLowerCase());
     }
 
     if (matchingFromSections.size > 0) {
@@ -253,7 +291,7 @@ export async function findRefs(
   }
 
   if (scope === 'code' || scope === 'md+code') {
-    const { refs: scannedRefs } = await scanCodeRefs(ctx.projectRoot);
+    const { refs: scannedRefs } = await commandProjectSession(ctx).codeRefs();
     for (const ref of scannedRefs) {
       const { resolved: codeResolved } = resolveRef(
         ref.target,
@@ -283,6 +321,9 @@ export async function refsCommand(
 
   if (result.kind === 'no-match') {
     const s = ctx.styler;
+    if (result.message) {
+      return { output: s.red(result.message), isError: true };
+    }
     if (result.suggestions.length > 0) {
       const suggestions = result.suggestions
         .map(

@@ -69,11 +69,18 @@ Sections are addressed by file path and heading chain:
 
 Examples: `lat.md/tests/search#RAG Replay Tests`, `cli#init`, `parser#Wiki Links`.
 
+Configured external sources use `[[handle:path/to/file.md#Heading]]` for
+Markdown headings and `[[handle:path/to/file.ts#symbol]]` for supported code
+symbols. Run `lat external show <handle>` before cloning an external source;
+its output includes the pinned commit and safe checkout suggestions.
+
 ## Wiki links
 
 Cross-reference other sections or source code with `[[target]]` or `[[target|alias]]`.
 
 ### Section links
+
+Section links connect related concepts while keeping their stable graph identities explicit.
 
 ```markdown
 See [[cli#init]] for setup details.

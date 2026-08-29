@@ -10,11 +10,13 @@ import type {
   Heading,
   Image,
   Link,
+  ListItem,
   Root,
   RootContent,
   Text,
 } from 'mdast';
 import type { WikiLink } from './extensions/wiki-link/types.js';
+import type { Profiler } from './profiler.js';
 
 export type Section = {
   id: string;
@@ -51,6 +53,7 @@ export type MdLink =
       /** Full reference syntax exactly as authored. */
       source: string;
       kind: 'linkReference' | 'imageReference';
+      style: 'full' | 'collapsed' | 'shortcut' | 'definition';
       line: number;
     };
 
@@ -236,12 +239,31 @@ export function parseSections(
 export async function loadAllSections(
   latticeDir: string,
   projectRoot = dirname(latticeDir),
+  profile?: Profiler,
 ): Promise<Section[]> {
-  const files = await listLatticeFiles(latticeDir);
+  const files = profile
+    ? await profile.time('list Markdown files', () =>
+        listLatticeFiles(latticeDir),
+      )
+    : await listLatticeFiles(latticeDir);
   const all: Section[] = [];
   for (const file of files) {
-    const content = await readFile(file, 'utf-8');
-    all.push(...parseSections(file, content, projectRoot));
+    const detail = toPosix(relative(latticeDir, file));
+    const content = profile
+      ? await profile.time(
+          'read Markdown file',
+          () => readFile(file, 'utf-8'),
+          detail,
+        )
+      : await readFile(file, 'utf-8');
+    const sections = profile
+      ? profile.timeSync(
+          'parse Markdown sections',
+          () => parseSections(file, content, projectRoot),
+          detail,
+        )
+      : parseSections(file, content, projectRoot);
+    all.push(...sections);
   }
   return all;
 }
@@ -391,8 +413,9 @@ export type ResolveResult = {
  */
 function normalizeRefFilePath(target: string): string {
   const hashIdx = target.indexOf('#');
-  if (hashIdx === -1) return toPosix(target);
-  return toPosix(target.slice(0, hashIdx)) + target.slice(hashIdx);
+  const file = toPosix(hashIdx === -1 ? target : target.slice(0, hashIdx));
+  const normalizedFile = file.replace(/\.md$/i, '');
+  return normalizedFile + (hashIdx === -1 ? '' : target.slice(hashIdx));
 }
 
 /**
@@ -862,7 +885,7 @@ function closingBracket(value: string, open: number): number {
   return -1;
 }
 
-/** Extract link destinations and undefined full/collapsed references. */
+/** Extract link destinations and undefined reference syntax. */
 export function extractLinks(
   content: string,
   tree: Root = parse(content),
@@ -884,12 +907,16 @@ export function extractLinks(
       'code',
       'inlineCode',
       'html',
+      'math',
+      'inlineMath',
       'yaml',
       'link',
       'image',
       'definition',
       'linkReference',
       'imageReference',
+      'footnoteReference',
+      'alertMarker',
       'wikiLink',
     ],
     (node) => {
@@ -901,6 +928,32 @@ export function extractLinks(
     },
   );
 
+  // GFM removes task-list markers from the paragraph AST. Exclude just the
+  // marker prefix so strict shortcut checks still apply to the item body.
+  visit(tree, 'listItem', (node: ListItem) => {
+    if (typeof node.checked !== 'boolean') return;
+    const start = node.position?.start.offset;
+    const bodyStart = node.children[0]?.position?.start.offset;
+    if (start === undefined || bodyStart === undefined) return;
+    const marker = /\[[ xX]\]/.exec(content.slice(start, bodyStart));
+    if (marker) {
+      excluded.push({
+        start: start + marker.index,
+        end: start + marker.index + marker[0].length,
+      });
+    }
+  });
+
+  // Likewise, exclude only a footnote definition's label and delimiter. Its
+  // body remains prose and must still obey strict shortcut validation.
+  visit(tree, 'footnoteDefinition', (node) => {
+    const start = node.position?.start.offset;
+    const bodyStart = node.children[0]?.position?.start.offset;
+    if (start !== undefined && bodyStart !== undefined) {
+      excluded.push({ start, end: bodyStart });
+    }
+  });
+
   const overlapsExcluded = (start: number, end: number) =>
     excluded.some((range) => start < range.end && end > range.start);
 
@@ -908,31 +961,31 @@ export function extractLinks(
     if (content[open] !== '[' || isEscapedAt(content, open)) continue;
 
     const labelEnd = closingBracket(content, open);
-    const identifierStart = labelEnd + 1;
-    if (
-      labelEnd === -1 ||
-      content[identifierStart] !== '[' ||
-      isEscapedAt(content, identifierStart)
-    ) {
-      continue;
-    }
+    if (labelEnd === -1) continue;
 
-    const identifierEnd = closingBracket(content, identifierStart);
+    const identifierStart = labelEnd + 1;
+    const hasSecondLabel =
+      content[identifierStart] === '[' &&
+      !isEscapedAt(content, identifierStart);
+    const identifierEnd = hasSecondLabel
+      ? closingBracket(content, identifierStart)
+      : labelEnd;
     if (identifierEnd === -1) continue;
 
     const isImage =
       open > 0 && content[open - 1] === '!' && !isEscapedAt(content, open - 1);
+    const isMalformedDefinition =
+      !isImage && !hasSecondLabel && content[labelEnd + 1] === ':';
     const start = isImage ? open - 1 : open;
-    const end = identifierEnd + 1;
+    const end = identifierEnd + 1 + (isMalformedDefinition ? 1 : 0);
     if (overlapsExcluded(start, end)) {
       open = identifierEnd;
       continue;
     }
 
-    const explicitIdentifier = content.slice(
-      identifierStart + 1,
-      identifierEnd,
-    );
+    const explicitIdentifier = hasSecondLabel
+      ? content.slice(identifierStart + 1, identifierEnd)
+      : '';
     const identifier = explicitIdentifier || content.slice(open + 1, labelEnd);
     if (identifier.trim() === '') {
       open = identifierEnd;
@@ -943,6 +996,13 @@ export function extractLinks(
       identifier: identifier.trim(),
       source: content.slice(start, end),
       kind: isImage ? 'imageReference' : 'linkReference',
+      style: !hasSecondLabel
+        ? isMalformedDefinition
+          ? 'definition'
+          : 'shortcut'
+        : explicitIdentifier
+          ? 'full'
+          : 'collapsed',
       line: content.slice(0, start).split('\n').length,
     });
     open = identifierEnd;

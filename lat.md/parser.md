@@ -1,6 +1,6 @@
 # Parser
 
-Markdown parsing built on unified/remark v11. Entry point: [[src/parser.ts]]. Parse → render fidelity is verified by [[tests/roundtrip]].
+Markdown syntax parsing is built on unified/remark v11. Syntax trees stay inside parsing, [[architecture-analysis|analysis]], and presentation operations; semantic commands consume the shared AST-free analysis model. Parse → render fidelity is verified by [[tests/roundtrip]].
 
 ## Tables
 

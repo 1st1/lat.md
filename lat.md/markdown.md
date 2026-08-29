@@ -80,9 +80,11 @@ Validated by [[cli#check#md]].
 
 Aligned with Obsidian conventions:
 
-- **`[[foo]]`** — link to the **file** `foo.md`. Resolves to the root section of that file. Does not search section headings.
-- **`[[foo#Bar]]`** — heading `Bar` in file `foo.md`. The path after `#` must be an exact heading chain — no intermediate headings can be omitted.
+- **`[[foo]]`** or **`[[foo.md]]`** — link to the **file** `foo.md`. Resolves to the root section of that file. Does not search section headings.
+- **`[[foo#Bar]]`** or **`[[foo.md#Bar]]`** — heading `Bar` in file `foo.md`. The path after `#` must be an exact heading chain — no intermediate headings can be omitted.
 - **`[[path/foo#Bar]]`** — fully qualified: file `path/foo.md`, heading `Bar`.
+
+The `.md` extension is optional in local Markdown links and is removed during resolution. Lat prefers and emits the cleaner extensionless form; both spellings resolve to the same canonical section id. Explicit extensions remain required for source code and other non-Markdown files.
 
 Heading segments accept either their literal Obsidian form (`Some Section!`) or their GitHub slug (`some-section`). Resolution always returns and displays the canonical literal-heading section id, so existing links and CLI output remain unchanged. Literal matches win if the two forms collide.
 
@@ -136,7 +138,7 @@ Targets resolve against the containing file's directory. A link that leaves `lat
 
 Fragments targeting Markdown files must match a GitHub-style heading id. GitHub lowercases headings, removes punctuation, replaces spaces with hyphens, and suffixes duplicate ids with `-1`, `-2`, and so on. Bare fragments target the containing file and are validated the same way.
 
-Full (`[text][id]`) and collapsed (`[id][]`) references without a matching definition are errors. An undefined shortcut form (`[id]`) is indistinguishable from bracketed prose and remains text, following CommonMark parsing.
+Full (`[text][id]`), collapsed (`[id][]`), and shortcut (`[id]`) references without a matching definition are errors. Literal bracketed prose must escape its opening bracket (`\[id]`), keeping link intent explicit in Lat's strict Markdown dialect.
 
 Destinations that are not local paths are skipped and never reported:
 

@@ -15,8 +15,7 @@ import { plainStyler, type CmdContext } from '../src/context.js';
 import { scanCodeRefs } from '../src/code-refs.js';
 import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
-import { parseSections } from '../src/lattice.js';
-import { parse } from '../src/parser.js';
+import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
 import {
   DEFAULT_VIEW_PORT,
   startViewServer,
@@ -50,11 +49,13 @@ import {
   documentTocIndentationDepth,
 } from '../view/src/document-toc.js';
 import {
+  buildExternalFileTree,
   buildFileTree,
   directoryIndex,
   expandDirectory,
   fileTreeErrorCount,
   fileTreeGitStatus,
+  type FileTreeNode,
 } from '../view/src/file-tree.js';
 import {
   graphInspectorLinkUrl,
@@ -67,7 +68,8 @@ import {
   graphUrl,
   historyScrollPosition,
   historyStateWithScroll,
-  isSameMarkdownDocument,
+  isSameRenderedDocument,
+  externalUrl,
   readGraphMode,
   scrollToDocumentLocation,
   searchButtonAction,
@@ -166,6 +168,7 @@ describe('lat ui', () => {
     expect(indexResponse.status).toBe(200);
     expect((await indexResponse.json()) as ViewIndex).toEqual({
       files: ['guide.md', 'lat.md'],
+      externalFiles: [],
       entry: 'lat.md',
       errorCounts: {},
       git: null,
@@ -256,6 +259,7 @@ describe('lat ui', () => {
       expect(manifest.version).toBe(1);
       expect(manifest.index).toEqual({
         files: ['guide.md', 'lat.md'],
+        externalFiles: [],
         entry: 'lat.md',
         errorCounts: {},
         git: null,
@@ -496,6 +500,12 @@ describe('lat ui', () => {
     expect(graphNodeIdForUrl(new URL('/code/src/app.ts#run', view.url))).toBe(
       'source:src/app.ts#run',
     );
+    expect(
+      graphNodeIdForUrl(
+        new URL('/external/upstream/guide#navigation', view.url),
+        'document',
+      ),
+    ).toBe('external-document:upstream:guide');
     expect(
       graphSelectionForUrl(graph, new URL(sectionTarget, view.url)),
     ).toEqual({
@@ -1001,10 +1011,10 @@ describe('lat ui', () => {
   it('builds nested document navigation and tracks the active heading', async () => {
     const content =
       '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
-    const tree = parse(content);
-    const sections = parseSections('guide.md', content, undefined, tree);
+    const analysis = analyzeMarkdownFile('guide.md', content, '.', '.');
+    const sections = analysis.sections;
     expect(
-      buildViewTableOfContents(sections, tree, {
+      buildViewTableOfContents(sections, analysis.headingTitles, {
         errors: [
           {
             anchor: 'user-content-markdown-error-11',
@@ -1017,7 +1027,6 @@ describe('lat ui', () => {
         gitTree: buildGitDiffTree(
           '# Guide\n\nOverview.\n\n## Features\n\nOld details.\n\n### `strict`\n\nMore details.',
           content,
-          tree,
         ),
       }),
     ).toEqual([
@@ -1375,6 +1384,8 @@ describe('lat ui', () => {
     expect(rendered).toContain('<span>Refs</span>');
     expect(rendered).toContain('section-back-reference-count">5</span>');
     expect(rendered).toContain('id="section-back-references-1"');
+    expect(rendered).toContain('section-back-reference-breadcrumb');
+    expect(rendered).toContain('section-back-reference-breadcrumb-label');
     expect(rendered).toContain('href="/code/src/app.ts?at=5"');
     expect(rendered).toContain('wiki-link-active');
 
@@ -1532,6 +1543,34 @@ describe('lat ui', () => {
     expect(directory.open).toBe(true);
   });
 
+  // @lat: [[tests/external-tests#External Sources#Browser and static export#Sidebar discovery]]
+  it('builds an external sidebar tree from referenced files', () => {
+    expect(buildExternalFileTree([])).toEqual([]);
+    const tree = buildExternalFileTree([
+      { handle: 'node', path: 'api/assert.md', target: 'node:api/assert' },
+      { handle: 'node', path: 'lib/assert.js', target: 'node:lib/assert.js' },
+      { handle: 'rust', path: 'guide.rst', target: 'rust:guide.rst' },
+    ]);
+    expect(tree.map(({ name }) => name)).toEqual(['node', 'rust']);
+    const files = (node: FileTreeNode): FileTreeNode[] =>
+      node.kind === 'file' ? [node] : node.children.flatMap(files);
+    expect(tree.flatMap(files)).toMatchObject([
+      {
+        path: '@external/node/api/assert.md',
+        externalTarget: 'node:api/assert',
+      },
+      {
+        path: '@external/node/lib/assert.js',
+        externalTarget: 'node:lib/assert.js',
+      },
+      {
+        path: '@external/rust/guide.rst',
+        externalTarget: 'rust:guide.rst',
+      },
+    ]);
+    expect(externalUrl('node:api/assert')).toBe('/external/node/api/assert');
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately]]
   it('positions fragment navigation without smooth scrolling', () => {
     const scrollIntoView = vi.fn();
@@ -1575,17 +1614,23 @@ describe('lat ui', () => {
       '/code/parser.ts#parse',
     );
     expect(
-      isSameMarkdownDocument(
+      isSameRenderedDocument(
         new URL('http://lat.local/docs/guide.md#features'),
         new URL('http://lat.local/docs/guide.md#installation'),
       ),
     ).toBe(true);
     expect(
-      isSameMarkdownDocument(
+      isSameRenderedDocument(
         new URL('http://lat.local/docs/guide.md'),
         new URL('http://lat.local/docs/other.md'),
       ),
     ).toBe(false);
+    expect(
+      isSameRenderedDocument(
+        new URL('http://lat.local/external/upstream/guide#intro'),
+        new URL('http://lat.local/external/upstream/guide#navigation'),
+      ),
+    ).toBe(true);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]

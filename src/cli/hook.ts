@@ -6,7 +6,9 @@ import { expandPrompt } from './expand.js';
 import { runSearch } from './search.js';
 import { getSection, formatSectionOutput } from './section.js';
 import { checkMd, checkCodeRefs, checkIndex, checkSections } from './check.js';
+import { CheckRunContext } from './check-context.js';
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { commandProjectAnalysis } from '../project-analysis.js';
 
 function outputPromptSubmit(context: string): void {
   process.stdout.write(
@@ -68,6 +70,7 @@ async function searchAndExpand(
     // `lat search` / `lat reindex` are for. Returns no matches until then.
     result = await runSearch(ctx.latDir, userPrompt, 5, undefined, {
       buildIndex: false,
+      project: await commandProjectAnalysis(ctx),
     });
   } catch {
     // No usable backend (e.g. reindex required, key rejected) — skip semantic
@@ -210,10 +213,14 @@ type StopStatus = {
 };
 
 async function getStopStatus(latDir: string): Promise<StopStatus> {
-  const md = await checkMd(latDir);
-  const code = await checkCodeRefs(latDir);
-  const indexErrors = await checkIndex(latDir);
-  const sectionErrors = await checkSections(latDir);
+  const projectRoot = dirname(latDir);
+  const run = new CheckRunContext(latDir, projectRoot);
+  const [md, code, indexErrors, sectionErrors] = await Promise.all([
+    checkMd(latDir, projectRoot, run),
+    checkCodeRefs(latDir, projectRoot, run),
+    checkIndex(latDir, run),
+    checkSections(latDir, projectRoot, run),
+  ]);
   const totalErrors =
     md.errors.length +
     code.errors.length +
@@ -221,7 +228,6 @@ async function getStopStatus(latDir: string): Promise<StopStatus> {
     sectionErrors.length;
   const checkFailed = totalErrors > 0;
 
-  const projectRoot = dirname(latDir);
   const { codeLines, latMdLines } = analyzeDiff(projectRoot);
   let needsSync = false;
   if (codeLines >= DIFF_THRESHOLD && latMdLines < LATMD_UPPER_THRESHOLD) {

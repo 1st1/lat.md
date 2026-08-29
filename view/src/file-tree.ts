@@ -1,4 +1,7 @@
-import type { ViewGitFileStatus } from '../../src/view/protocol';
+import type {
+  ViewExternalFile,
+  ViewGitFileStatus,
+} from '../../src/view/protocol';
 
 export type FileTreeNode =
   | {
@@ -11,6 +14,8 @@ export type FileTreeNode =
       kind: 'file';
       name: string;
       path: string;
+      externalTarget?: string;
+      externalPathTarget?: string;
     };
 
 type MutableDirectory = {
@@ -100,12 +105,17 @@ export function fileTreeGitStatus(
   return status;
 }
 
-/** Convert vault-relative file paths into the hierarchy shown in the sidebar. */
-export function buildFileTree(files: string[]): FileTreeNode[] {
+function buildTree(
+  files: Array<{
+    path: string;
+    externalTarget?: string;
+    externalPathTarget?: string;
+  }>,
+): FileTreeNode[] {
   const root = new Map<string, MutableNode>();
 
   for (const file of files) {
-    const parts = file.split('/').filter(Boolean);
+    const parts = file.path.split('/').filter(Boolean);
     if (parts.length === 0) continue;
 
     let children = root;
@@ -126,8 +136,36 @@ export function buildFileTree(files: string[]): FileTreeNode[] {
     }
 
     const name = parts[parts.length - 1];
-    children.set(name, { kind: 'file', name, path: file });
+    children.set(name, {
+      kind: 'file',
+      name,
+      path: file.path,
+      ...(file.externalTarget ? { externalTarget: file.externalTarget } : {}),
+      ...(file.externalPathTarget
+        ? { externalPathTarget: file.externalPathTarget }
+        : {}),
+    });
   }
 
   return sortedChildren(root, 'lat.md');
+}
+
+/** Convert vault-relative file paths into the hierarchy shown in the sidebar. */
+export function buildFileTree(files: string[]): FileTreeNode[] {
+  return buildTree(files.map((path) => ({ path })));
+}
+
+/** Group referenced external files into source-handle roots for the sidebar. */
+export function buildExternalFileTree(
+  files: ViewExternalFile[],
+): FileTreeNode[] {
+  if (files.length === 0) return [];
+  const [root] = buildTree(
+    files.map((file) => ({
+      path: `@external/${file.handle}/${file.path}`,
+      externalTarget: file.target,
+      externalPathTarget: `${file.handle}:${file.path}`,
+    })),
+  );
+  return root?.kind === 'directory' ? root.children : [];
 }

@@ -3,7 +3,9 @@ This directory defines the high-level concepts, business logic, and architecture
 **Markdown-first.** This project is built around markdown and its output should reflect that. CLI error messages, diagnostics, and reports use structured, readable formatting — bullet-point lists, indented context, and clear spacing between items — so output is scannable both by humans and by LLM-based agents consuming it.
 
 - [[cli]] — CLI commands, options, and output formats for the `lat` tool
+- [[architecture-analysis|analysis]] — Shared AST-free Markdown analysis, project snapshots, validation, and worker execution
 - [[dev-process]] — Development tooling, testing, formatting, and publishing conventions
+- [[external-sources]] — External repository references, retrieval providers, caching, and design boundaries
 - [[markdown]] — Markdown extensions (wiki links, frontmatter) used in lat.md files
 - [[parser]] — Markdown parsing architecture, section tree construction, and ref extraction
 - [[tests]] — High-level test specifications mapped to code via require-code-mention

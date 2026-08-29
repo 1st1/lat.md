@@ -17,6 +17,12 @@ import {
   readInitVersion,
   writeInitMeta,
 } from '../src/init-version.js';
+import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
+import {
+  readAgentsTemplate,
+  readCursorRulesTemplate,
+  readSkillTemplate,
+} from '../src/cli/gen.js';
 
 const cliPath = join(
   import.meta.dirname,
@@ -75,6 +81,27 @@ vi.mock('../src/search/db.js', () => ({
 }));
 
 import { initCmd } from '../src/cli/init.js';
+
+describe('generated Markdown templates', () => {
+  // @lat: [[init#Generated instructions#Templates satisfy graph validation]]
+  it('satisfies local graph validation in every Markdown template', () => {
+    const templates = [
+      ['AGENTS.md', readAgentsTemplate()],
+      ['cursor-rules.md', readCursorRulesTemplate()],
+      ['SKILL.md', readSkillTemplate()],
+    ] as const;
+
+    for (const [name, content] of templates) {
+      const analysis = analyzeMarkdownFile(
+        `/project/lat.md/${name}`,
+        content,
+        '/project/lat.md',
+        '/project',
+      );
+      expect(analysis.diagnostics, name).toEqual([]);
+    }
+  });
+});
 
 type CliResult = {
   stdout: string;

@@ -228,6 +228,30 @@ a {
   gap: 2px;
 }
 
+.file-tree-section-label {
+  display: flex;
+  margin-top: 27px;
+  padding: 30px 10px 5px;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  border-top: 1px solid var(--panel-border);
+}
+
+.file-tree-section-label svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
 .tree-directory > summary {
   display: flex;
   padding: 7px 10px;
@@ -1041,14 +1065,18 @@ a {
 }
 
 .section-back-reference-location {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 5px;
+  width: fit-content;
+  max-width: 100%;
+  align-items: baseline;
   color: var(--link);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 12px;
   font-weight: 650;
   line-height: 1.35;
+  overflow-wrap: normal;
   text-decoration: none;
 }
 
@@ -1057,8 +1085,34 @@ a {
   text-underline-offset: 3px;
 }
 
-.section-back-reference-location > span[aria-hidden='true'] {
+.section-back-reference-breadcrumb {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 5px;
+  max-width: 100%;
+  align-items: baseline;
+}
+
+.section-back-reference-breadcrumb > span[aria-hidden='true'] {
+  flex: 0 0 auto;
   color: var(--muted);
+}
+
+.section-back-reference-breadcrumb-label {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.section-back-reference-code .section-back-reference-location {
+  flex-wrap: nowrap;
+}
+
+.section-back-reference-code
+  .section-back-reference-location
+  > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .section-back-reference-paragraph p {
@@ -1073,6 +1127,7 @@ a {
 }
 
 .section-back-reference-code .code-link-language {
+  flex: 0 0 auto;
   margin-right: 0;
   font-size: 7px;
 }

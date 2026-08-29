@@ -25,9 +25,23 @@ Skipped forms:
 
 Code is not a link: `[fake](./nope.md)`
 
-Escaped reference syntax is not a link: \[fake][missing]
+Escaped reference syntax is not a link: \[fake]\[missing]
 
-Undefined shortcut brackets remain text: [not-a-reference]
+Escaped shortcut brackets remain text: \[not-a-reference]
+
+Defined shortcut reference: [bravo]
+
+- [x] Checked task list item
+- [ ] Unchecked task list item
+
+Footnote syntax is not a shortcut reference.[^note]
+
+[^note]: Footnote body with an escaped literal \[detail].
+
+> [!NOTE]
+> GitHub alert syntax is not a shortcut reference.
+
+Math is not reference syntax: $[x]$.
 
 HTML is not markdown link syntax: <span data-example="[fake][missing]">text</span>
 

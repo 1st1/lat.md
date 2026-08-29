@@ -10,10 +10,10 @@ import {
 } from 'node:path';
 import { LAT_REF_RE, scanCodeRefs, type CodeRef } from '../code-refs.js';
 import {
-  listLatticeFiles,
-  parseFrontmatter,
-  type Section,
-} from '../lattice.js';
+  createExternalResolver,
+  type ExternalResolver,
+} from '../external-sources.js';
+import { listLatticeFiles, type Section } from '../lattice.js';
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
@@ -32,6 +32,8 @@ import {
 import type {
   ViewDocument,
   ViewDocumentError,
+  ViewExternalDocument,
+  ViewExternalFile,
   ViewGraph,
   ViewIndex,
   ViewProjectChange,
@@ -40,6 +42,7 @@ import type {
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import {
   createMarkdownWikiLinkResolver,
+  getViewExternal,
   getViewSource,
   ViewDocumentNotFoundError,
 } from './repository.js';
@@ -54,6 +57,7 @@ import {
 
 const DEFAULT_DEBOUNCE_MS = 75;
 const DEFAULT_GIT_POLL_MS = 2_000;
+const EXTERNAL_REFRESH_PATH = '@lat-external-refresh';
 
 export type ViewProjectSnapshot = {
   generation: number;
@@ -65,6 +69,7 @@ export type ViewProjectSnapshot = {
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>;
   git: ViewGitSnapshot;
   index: ViewIndex;
+  external: ExternalResolver;
 };
 
 export type ViewStoreOptions = {
@@ -73,6 +78,8 @@ export type ViewStoreOptions = {
   git?: boolean;
   gitPollMs?: number;
   watch?: boolean;
+  externalIgnoreLocal?: boolean;
+  externalCa?: string | Buffer;
 };
 
 type ViewStoreListener = (change: ViewProjectChange) => void;
@@ -177,14 +184,38 @@ function viewIndex(
   paths: string[],
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
   git: ViewGitSnapshot,
+  references: ViewReferenceIndex,
+  external: ExternalResolver,
 ): ViewIndex {
   const files = [...paths].sort();
+  const externalFiles = new Map<string, ViewExternalFile>();
+  for (const target of references.externalByTarget.keys()) {
+    try {
+      const parsed = external.parse(target);
+      if (!parsed) continue;
+      const hash = parsed.identity.indexOf('#');
+      const baseTarget =
+        hash === -1 ? parsed.identity : parsed.identity.slice(0, hash);
+      externalFiles.set(baseTarget, {
+        handle: parsed.handle,
+        path: parsed.resolvedPath,
+        target: baseTarget,
+      });
+    } catch {
+      // Invalid external targets remain diagnostics, not sidebar entries.
+    }
+  }
   const directoryName = basename(latDir);
   const indexName = directoryName.endsWith('.md')
     ? directoryName
     : `${directoryName}.md`;
   return {
     files,
+    externalFiles: [...externalFiles.values()].sort(
+      (left, right) =>
+        left.handle.localeCompare(right.handle) ||
+        left.path.localeCompare(right.path),
+    ),
     entry: files.includes(indexName) ? indexName : (files[0] ?? ''),
     errorCounts: Object.fromEntries(
       [...diagnostics]
@@ -210,21 +241,35 @@ async function buildSnapshot(
   git: ViewGitSnapshot,
   generation: number,
   markdownGeneration: number,
+  options: ViewStoreOptions,
 ): Promise<ViewProjectSnapshot> {
   const files = new Map(
     [...markdownFiles].sort(([left], [right]) => left.localeCompare(right)),
   );
   const allSections = [...files.values()].flatMap((file) => file.sections);
+  const external = await createExternalResolver(latDir, projectRoot, {
+    ignoreLocal: options.externalIgnoreLocal,
+    ca: options.externalCa,
+  });
+  await external.reconcile();
   const diagnostics = await buildViewDiagnostics(
     files.values(),
     codeFiles.values(),
     allSections,
     projectRoot,
+    external,
   );
   const references = buildViewReferenceIndex(
     files.values(),
     codeFiles.values(),
     allSections,
+    (target) => {
+      try {
+        return external.parse(target)?.identity ?? null;
+      } catch {
+        return target;
+      }
+    },
   );
   return {
     generation,
@@ -239,10 +284,19 @@ async function buildSnapshot(
       diagnostics,
       git,
       generation,
+      external,
     ),
     diagnostics,
     git,
-    index: viewIndex(latDir, [...files.keys()], diagnostics, git),
+    index: viewIndex(
+      latDir,
+      [...files.keys()],
+      diagnostics,
+      git,
+      references,
+      external,
+    ),
+    external,
   };
 }
 
@@ -254,6 +308,7 @@ export class ViewStore {
   private ignoredCodePaths = new Set<string>();
   private listeners = new Set<ViewStoreListener>();
   private watcher: FSWatcher | null = null;
+  private externalWatchers: FSWatcher[] = [];
   private pendingPaths = new Set<string>();
   private debounceTimer: NodeJS.Timeout | null = null;
   private gitPollTimer: NodeJS.Timeout | null = null;
@@ -299,6 +354,33 @@ export class ViewStore {
     } catch (error) {
       process.stderr.write(`lat ui watcher: ${(error as Error).message}\n`);
     }
+    this.refreshExternalWatchers();
+  }
+
+  private refreshExternalWatchers(): void {
+    for (const watcher of this.externalWatchers) watcher.close();
+    this.externalWatchers = [];
+    if (this.options.watch === false) return;
+    const paths = new Set(
+      [...this.snapshotValue.external.snapshot.sources.values()]
+        .map((source) => source.localPath)
+        .filter((path): path is string => Boolean(path)),
+    );
+    for (const path of paths) {
+      try {
+        const watcher = watchFiles(path, { recursive: true }, () =>
+          this.scheduleRefresh(EXTERNAL_REFRESH_PATH),
+        );
+        watcher.on('error', (error) => {
+          process.stderr.write(`lat ui external watcher: ${error.message}\n`);
+        });
+        this.externalWatchers.push(watcher);
+      } catch (error) {
+        process.stderr.write(
+          `lat ui external watcher: ${(error as Error).message}\n`,
+        );
+      }
+    }
   }
 
   subscribe(listener: ViewStoreListener): () => void {
@@ -333,18 +415,18 @@ export class ViewStore {
       requestedPath,
       snapshot.allSections,
       snapshot.references,
+      snapshot.external,
     );
     const rendered = await renderMarkdown(
       file.content,
       requestedPath,
       resolver,
       { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
-      file.tree,
     );
     const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     const gitFile = snapshot.git.files.get(requestedPath);
     const gitTree = gitFile
-      ? buildGitDiffTree(gitFile.baseContent, file.content, file.tree)
+      ? buildGitDiffTree(gitFile.baseContent, file.content)
       : null;
     const gitRendered = gitTree
       ? await renderMarkdown(
@@ -359,10 +441,11 @@ export class ViewStore {
       path: requestedPath,
       ...rendered,
       gitHtml: gitRendered?.html ?? null,
-      tableOfContents: buildViewTableOfContents(file.sections, file.tree, {
-        errors,
-        gitTree,
-      }),
+      tableOfContents: buildViewTableOfContents(
+        file.sections,
+        file.headingTitles,
+        { errors, gitTree },
+      ),
       graphNodeIds: Object.fromEntries(
         snapshot.graph.nodes
           .filter(
@@ -392,11 +475,11 @@ export class ViewStore {
             path,
             snapshot.allSections,
             snapshot.references,
+            snapshot.external,
           ),
       ),
       frontmatter: {
-        requireCodeMention:
-          parseFrontmatter(file.content).requireCodeMention === true,
+        requireCodeMention: file.frontmatter.requireCodeMention === true,
       },
     };
   }
@@ -415,6 +498,18 @@ export class ViewStore {
       requestedSymbol,
       origin,
       requestedLine,
+      snapshot.allSections,
+      snapshot.references,
+    );
+  }
+
+  getExternal(target: string): Promise<ViewExternalDocument> {
+    const snapshot = this.snapshotValue;
+    return getViewExternal(
+      this.latDir,
+      this.projectRoot,
+      target,
+      snapshot.external,
       snapshot.allSections,
       snapshot.references,
     );
@@ -444,13 +539,21 @@ export class ViewStore {
     this.gitPollTimer = null;
     this.watcher?.close();
     this.watcher = null;
+    for (const watcher of this.externalWatchers) watcher.close();
+    this.externalWatchers = [];
     await this.refreshTail;
     this.listeners.clear();
   }
 
   private scheduleRefresh(path: string): void {
     if (this.closed) return;
-    this.pendingPaths.add(path ? projectPath(this.projectRoot, path) : '');
+    this.pendingPaths.add(
+      path === EXTERNAL_REFRESH_PATH
+        ? path
+        : path
+          ? projectPath(this.projectRoot, path)
+          : '',
+    );
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = null;
@@ -501,6 +604,9 @@ export class ViewStore {
   private async applyRefresh(paths: string[], pollGit: boolean): Promise<void> {
     const fullRefresh = paths.includes('');
     const latPath = projectPath(this.projectRoot, this.latDir);
+    const externalChanged =
+      paths.includes(EXTERNAL_REFRESH_PATH) ||
+      paths.includes(`${latPath}/config.local.yaml`);
     const touchesMarkdown =
       fullRefresh ||
       paths.some((path) => path === latPath || path.startsWith(`${latPath}/`));
@@ -638,7 +744,8 @@ export class ViewStore {
       !markdownChanged &&
       !codeChanged &&
       !gitChanged &&
-      !linkedResourceChanged
+      !linkedResourceChanged &&
+      !externalChanged
     )
       return;
     this.codeFiles = codeFiles;
@@ -650,7 +757,9 @@ export class ViewStore {
       git,
       this.snapshotValue.generation + 1,
       this.snapshotValue.markdownGeneration + (markdownChanged ? 1 : 0),
+      this.options,
     );
+    this.refreshExternalWatchers();
     const change = {
       generation: this.snapshotValue.generation,
       markdownGeneration: this.snapshotValue.markdownGeneration,
@@ -718,6 +827,7 @@ export async function createViewStore(
       git,
       0,
       0,
+      options,
     ),
     codeState.files,
     codeState.scope,
