@@ -135,6 +135,7 @@ export async function getSection(
             filePart,
             symbolPart,
             ctx.projectRoot,
+            commandProjectSession(ctx).sourceSymbolOptions(),
           );
           if (found) {
             const parts = symbolPart.split('#');

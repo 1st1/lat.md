@@ -648,6 +648,22 @@ describe('headless-check', () => {
     expect(stdout).not.toContain('parse Markdown AST');
   });
 
+  // @lat: [[tests/check-headless#Profiles persistent source cache hits]]
+  it('reports source cache hits without tree-sitter work on a warm check', () => {
+    clearParsedCache('source-ref-ts-valid');
+    const cold = runCli('source-ref-ts-valid', ['check', '--profile']);
+    expect(cold.exitCode).toBe(0);
+    expect(cold.stderr).toBe('');
+    expect(cold.stdout).toContain('parsed source cache miss');
+    expect(cold.stdout).toContain('parse source symbols');
+
+    const warm = runCli('source-ref-ts-valid', ['check', '--profile']);
+    expect(warm.exitCode).toBe(0);
+    expect(warm.stderr).toBe('');
+    expect(warm.stdout).toContain('parsed source cache hit');
+    expect(warm.stdout).not.toContain('parse source symbols');
+  });
+
   // @lat: [[tests/check-headless#Separator disambiguates directory names]]
   it('treats a name after -- as a directory, not a subcommand', () => {
     const full = runCli('headless-check', ['check', '--', 'links']);

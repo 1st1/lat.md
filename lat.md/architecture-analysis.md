@@ -1,6 +1,6 @@
-# Markdown Analysis
+# Parsed Analysis
 
-Every semantic Markdown consumer shares one AST-free analysis model so commands cannot diverge in how they discover sections, references, links, frontmatter, or diagnostics.
+Lat turns Markdown and referenced source files into serializable semantic facts so commands can share parser results without retaining syntax trees.
 
 ## File analysis
 
@@ -12,23 +12,31 @@ The syntax tree is private working state. It is created, visited, and discarded 
 
 HTML and Git-diff rendering may parse Markdown through dedicated presentation APIs, but presentation syntax trees do not provide semantic project facts.
 
+## Source analysis
+
+A source analysis is the serializable symbol table extracted from one supported JavaScript, TypeScript, Python, Rust, Go, or C file.
+
+It records symbol names, kinds, parents, source ranges, and signatures. Tree-sitter syntax trees and grammar instances remain private parser state and are never serialized.
+
+Source analysis stays lazy: only a file named by a source-code wiki link is read. Concurrent references to the same file share one promise-backed runtime result.
+
 ## Persistent cache
 
-Successful file analyses persist below `lat.md/.cache/parsed/` so later commands can reuse unchanged semantic facts without loading a parser or starting workers.
+Successful Markdown and source analyses persist below `lat.md/.cache/parsed/` so later commands can reuse unchanged semantic facts without loading their parsers.
 
-Each cache identity is the normalized project-relative full path. The first two lowercased characters of the file's short name supply a predictable shard directory, while a full-path SHA-1 digest prevents collisions and a bounded readable suffix makes entries inspectable. Non-ASCII or punctuation shard characters become `_`.
+Each local cache identity is the normalized project-relative full path. External source code uses `@external/<handle>/<path>` so different providers cannot collide. The first two lowercased characters of the short name supply a predictable shard directory, while a full-identity SHA-1 digest prevents collisions and a bounded readable suffix makes entries inspectable. Non-ASCII or punctuation shard characters become `_`.
 
 ```text
 lat.md/.cache/parsed/se/abcdef0123456789abcdef0123456789abcdef01_lat_md_guide_setup_md
 ```
 
-The first line is `v<N>:<sha1>`, where `N` is [[src/markdown-analysis-cache.ts#PARSER_CACHE_VERSION]] and the hash covers the complete Markdown content. The remaining bytes are the compact JSON serialization of the file analysis.
+The first line is `v<N>:<sha1>`, where `N` is [[src/parser-cache.ts#PARSER_CACHE_VERSION]] and the hash covers the complete input content. The remaining bytes are the compact JSON serialization of either the Markdown analysis or source symbol table.
 
-A hit requires both the current parser-cache version and content hash, plus matching path identity and a structurally valid analysis payload. Changed content, parser semantics, truncated writes, malformed JSON, or unexpected shapes become ordinary misses.
+A hit requires both the current parser-cache version and content hash, plus matching path identity and a structurally valid payload for that parser. Changed content, parser semantics, truncated writes, malformed JSON, or unexpected shapes become ordinary misses.
 
-Cache lookup happens before executor selection. The main process reads and hashes every file, returns hits immediately, and sends only misses to inline analysis or the worker pool. Newly parsed entries use atomic replacement; cache read or write failures never prevent analysis because the directory is disposable and may be read-only.
+Markdown cache lookup happens before executor selection, so only misses reach inline analysis or the worker pool. Source lookup happens after a referenced file is read and before tree-sitter initialization, so a hit never loads the runtime or grammar WASM. Newly parsed entries use atomic replacement; cache read or write failures never prevent analysis because the directory is disposable and may be read-only.
 
-Cached analyses retain source content but not their old performance measurements. A hit records current read, hash, and cache-load timings with zero parse work. Orphaned entries from deleted or renamed files are harmless and may remain until `.cache` is removed.
+Cached Markdown analyses retain source content; source entries retain only their symbol table. Neither reuses old performance measurements: a hit records current read, hash, and cache-load timings with zero parse work. Orphaned entries from deleted or renamed files are harmless and may remain until `.cache` is removed.
 
 ## Project snapshot
 

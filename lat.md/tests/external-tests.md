@@ -51,6 +51,8 @@ View tests verify external previews share the versioned document tree with local
 
 The live server renders each supported external document kind and exposes its backlinks and graph relationships without relying on browser-side repository access.
 
+External source-code previews persist their AST-free symbol tables under a handle-scoped parser-cache identity.
+
 ### Local watcher refresh
 
 A watched local checkout rebuilds the view generation after a referenced file changes, and the next external document request returns the dirty working-tree content.

@@ -8,7 +8,7 @@ import {
   resolveRef,
   type Section,
 } from '../lattice.js';
-import { clearSymbolCache } from '../source-parser.js';
+import { SourceParserRuntime } from '../source-parser.js';
 import type { ExternalResolver } from '../external-sources.js';
 import { toPosix } from '../walk.js';
 import { parseLocalMarkdownTarget } from '../markdown-validation.js';
@@ -116,8 +116,9 @@ export async function buildViewDiagnostics(
   allSections: Section[],
   projectRoot: string,
   external?: ExternalResolver,
+  latDir = resolve(projectRoot, 'lat.md'),
 ): Promise<ReadonlyMap<string, readonly ViewDocumentError[]>> {
-  clearSymbolCache();
+  const sourceParserRuntime = new SourceParserRuntime();
   const files = [...markdownFiles];
   const errors = new Map<string, ViewDocumentError[]>();
   const sections = flattenSections(allSections);
@@ -191,7 +192,10 @@ export async function buildViewDiagnostics(
           resolved.suggested,
         );
       } else if (!sectionIds.has(resolved.resolved.toLowerCase())) {
-        message = await sourceRefError(ref.target, projectRoot);
+        message = await sourceRefError(ref.target, projectRoot, {
+          latDir,
+          runtime: sourceParserRuntime,
+        });
       }
       if (message)
         addError(errors, file.path, error(ref.line, ref.target, message));

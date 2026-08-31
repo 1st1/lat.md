@@ -87,6 +87,7 @@ async function findSourceRefs(
         filePart,
         symbolPart,
         projectRoot,
+        commandProjectSession(ctx).sourceSymbolOptions(),
       );
       if (found) {
         const parts = symbolPart.split('#');

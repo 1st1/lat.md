@@ -26,6 +26,10 @@ import type {
 import { walkEntries } from './walk.js';
 import { scanCodeRefs, type ScanResult } from './code-refs.js';
 import {
+  SourceParserRuntime,
+  type ResolveSourceSymbolOptions,
+} from './source-parser.js';
+import {
   createExternalResolver,
   type ExternalResolver,
 } from './external-sources.js';
@@ -295,6 +299,7 @@ export class MarkdownProjectSession {
   private analysisPromise?: Promise<MarkdownProjectAnalysis>;
   private codeRefsPromise?: Promise<ScanResult>;
   private externalPromise?: Promise<ExternalResolver>;
+  private readonly sourceParserRuntime = new SourceParserRuntime();
 
   constructor(
     readonly latDir: string,
@@ -326,6 +331,13 @@ export class MarkdownProjectSession {
       return resolver;
     })();
     return this.externalPromise;
+  }
+
+  sourceSymbolOptions(): ResolveSourceSymbolOptions {
+    return {
+      latDir: this.latDir,
+      runtime: this.sourceParserRuntime,
+    };
   }
 }
 

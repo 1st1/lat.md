@@ -38,7 +38,8 @@ import {
 } from './external-documents.js';
 import {
   SOURCE_EXTENSIONS,
-  parseSourceSymbols,
+  SourceParserRuntime,
+  analyzeSourceSymbols,
   type SourceSymbol,
 } from './source-parser.js';
 
@@ -1091,6 +1092,8 @@ function sourceSymbol(
 async function selectFragment(
   target: ExternalTarget,
   fullContent: string,
+  latDir: string,
+  sourceParserRuntime: SourceParserRuntime,
 ): Promise<
   | {
       content: string;
@@ -1141,7 +1144,15 @@ async function selectFragment(
       endLine: lines.length,
       kind: 'source',
     };
-  const symbols = await parseSourceSymbols(target.resolvedPath, fullContent);
+  const { symbols } = await analyzeSourceSymbols(
+    target.resolvedPath,
+    fullContent,
+    latDir,
+    {
+      identity: `@external/${target.handle}/${target.resolvedPath}`,
+      runtime: sourceParserRuntime,
+    },
+  );
   const symbol = sourceSymbol(symbols, target.fragment);
   if (!symbol)
     throw new Error(
@@ -1157,6 +1168,8 @@ async function selectFragment(
 }
 
 export class ExternalResolver {
+  private readonly sourceParserRuntime = new SourceParserRuntime();
+
   constructor(
     readonly latDir: string,
     readonly projectRoot: string,
@@ -1191,7 +1204,12 @@ export class ExternalResolver {
         this.ca,
         this.ignoreLocal,
       );
-      const fragment = await selectFragment(target, loaded.content);
+      const fragment = await selectFragment(
+        target,
+        loaded.content,
+        this.latDir,
+        this.sourceParserRuntime,
+      );
       return {
         target,
         source,

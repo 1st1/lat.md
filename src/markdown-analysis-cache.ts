@@ -1,16 +1,23 @@
-import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, extname, join, relative } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { relative } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import {
   analyzeMarkdownFile,
   type MarkdownAnalysisTimings,
   type MarkdownFileAnalysis,
 } from './markdown-analysis.js';
+import {
+  PARSER_CACHE_VERSION,
+  hashParserContent,
+  parsedCachePath,
+  parserCacheIdentity,
+  readParsedCache,
+  writeParsedCache,
+  type ParsedCacheEntry,
+} from './parser-cache.js';
 import { toPosix } from './walk.js';
 
-/** Version of the persistent parser output and on-disk cache contract. */
-export const PARSER_CACHE_VERSION = 1;
+export { PARSER_CACHE_VERSION } from './parser-cache.js';
 
 export type MarkdownAnalysisCacheStatus = 'disabled' | 'hit' | 'miss';
 
@@ -26,42 +33,15 @@ export type PreparedMarkdownAnalysis = {
   >;
 };
 
-function sha1(value: string): string {
-  return createHash('sha1').update(value).digest('hex');
-}
-
-function cacheIdentity(absolutePath: string, projectRoot: string): string {
-  return toPosix(relative(projectRoot, absolutePath)).normalize('NFC');
-}
-
-function readablePath(identity: string): string {
-  const normalized = identity
-    .replace(/[^a-zA-Z0-9_-]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .toLowerCase();
-  return (normalized || 'markdown').slice(-120);
-}
-
-function cacheShard(absolutePath: string): string {
-  const stem = basename(absolutePath, extname(absolutePath));
-  const firstTwo = [...stem.toLowerCase()].slice(0, 2).join('');
-  return firstTwo.replace(/[^a-z0-9]/g, '_') || '_';
-}
-
 /** Return the collision-safe, sharded cache path for one Markdown file. */
 export function markdownAnalysisCachePath(
   latDir: string,
   projectRoot: string,
   absolutePath: string,
 ): string {
-  const identity = cacheIdentity(absolutePath, projectRoot);
-  const digest = sha1(identity);
-  return join(
+  return parsedCachePath(
     latDir,
-    '.cache',
-    'parsed',
-    cacheShard(absolutePath),
-    `${digest}_${readablePath(identity)}`,
+    parserCacheIdentity(absolutePath, projectRoot),
   );
 }
 
@@ -90,27 +70,23 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function cachedAnalysis(
-  serialized: string | null,
+  entry: ParsedCacheEntry | null,
   contentHash: string,
   content: string,
   absolutePath: string,
   latDir: string,
   projectRoot: string,
 ): MarkdownFileAnalysis | null {
-  if (!serialized) return null;
-  const newline = serialized.indexOf('\n');
   if (
-    newline < 0 ||
-    serialized.slice(0, newline).trim() !==
-      `v${PARSER_CACHE_VERSION}:${contentHash}`
+    !entry ||
+    entry.version !== PARSER_CACHE_VERSION ||
+    entry.contentHash !== contentHash
   ) {
     return null;
   }
 
   try {
-    const analysis = JSON.parse(
-      serialized.slice(newline + 1),
-    ) as MarkdownFileAnalysis;
+    const analysis = entry.value as MarkdownFileAnalysis;
     const expectedPath = toPosix(relative(latDir, absolutePath));
     const expectedProjectPath = toPosix(relative(projectRoot, absolutePath));
     if (
@@ -136,14 +112,6 @@ function cachedAnalysis(
   }
 }
 
-async function optionalCacheRead(path: string): Promise<string | null> {
-  try {
-    return await readFile(path, 'utf8');
-  } catch {
-    return null;
-  }
-}
-
 /** Read, hash, and attempt to hydrate one Markdown file from persistent cache. */
 export async function prepareMarkdownAnalysis(
   absolutePath: string,
@@ -163,21 +131,21 @@ export async function prepareMarkdownAnalysis(
   }));
   const cacheStarted = performance.now();
   const cachePromise = cache
-    ? optionalCacheRead(cachePath).then((serialized) => ({
-        serialized,
+    ? readParsedCache(cachePath).then((entry) => ({
+        entry,
         cacheReadMs: performance.now() - cacheStarted,
       }))
-    : Promise.resolve({ serialized: null, cacheReadMs: 0 });
-  const [{ content, readMs }, { serialized, cacheReadMs }] = await Promise.all([
+    : Promise.resolve({ entry: null, cacheReadMs: 0 });
+  const [{ content, readMs }, { entry, cacheReadMs }] = await Promise.all([
     contentPromise,
     cachePromise,
   ]);
   const hashStarted = performance.now();
-  const contentHash = sha1(content);
+  const contentHash = hashParserContent(content);
   const hashMs = performance.now() - hashStarted;
   const analysis = cache
     ? cachedAnalysis(
-        serialized,
+        entry,
         contentHash,
         content,
         absolutePath,
@@ -204,17 +172,6 @@ export async function prepareMarkdownAnalysis(
   };
 }
 
-async function atomicCacheWrite(path: string, content: string): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  const temp = `${path}.${process.pid}.${randomUUID()}.tmp`;
-  try {
-    await writeFile(temp, content);
-    await rename(temp, path);
-  } finally {
-    await rm(temp, { force: true }).catch(() => {});
-  }
-}
-
 /** Attach I/O timings and best-effort publish one newly parsed analysis. */
 export async function publishMarkdownAnalysis(
   prepared: PreparedMarkdownAnalysis,
@@ -232,10 +189,7 @@ export async function publishMarkdownAnalysis(
 
   const started = performance.now();
   try {
-    await atomicCacheWrite(
-      prepared.cachePath,
-      `v${PARSER_CACHE_VERSION}:${prepared.contentHash}\n${JSON.stringify(base)}\n`,
-    );
+    await writeParsedCache(prepared.cachePath, prepared.contentHash, base);
   } catch {
     // The cache is a disposable optimization; analysis must work read-only.
   }

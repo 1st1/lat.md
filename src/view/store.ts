@@ -259,6 +259,7 @@ async function buildSnapshot(
     allSections,
     projectRoot,
     external,
+    latDir,
   );
   const references = buildViewReferenceIndex(
     files.values(),

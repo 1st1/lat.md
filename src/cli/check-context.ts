@@ -7,7 +7,11 @@ import {
   type SectionSlugIndex,
 } from '../lattice.js';
 import { scanCodeRefs, type ScanResult } from '../code-refs.js';
-import { clearSymbolCache } from '../source-parser.js';
+import {
+  SourceParserRuntime,
+  type ResolveSourceSymbolOptions,
+  type SourceFileAnalysis,
+} from '../source-parser.js';
 import {
   createExternalResolver,
   type ExternalResolver,
@@ -36,6 +40,7 @@ export class CheckRunContext {
   private externalResolverPromise?: Promise<ExternalResolver>;
   private reconciledExternalPromise?: Promise<void>;
   private sourceSymbolCacheCleared = false;
+  private readonly sourceParserRuntime = new SourceParserRuntime();
 
   private readonly headingPromises = new Map<string, Promise<Set<string>>>();
   private readonly externalContentPromises = new Map<
@@ -122,10 +127,45 @@ export class CheckRunContext {
     }
   }
 
+  private recordSourceAnalysis(analysis: SourceFileAnalysis): void {
+    if (!this.profile) return;
+    const detail = analysis.path;
+    const timings = analysis.timings;
+    this.profile.record('read source file', timings.readMs, detail);
+    this.profile.record('hash source file', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed source cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(`parsed source cache ${timings.cacheStatus}`, 0);
+    }
+    if (timings.cacheStatus === 'hit') return;
+    this.profile.record('parse source symbols', timings.parseMs, detail);
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed source cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
+  }
+
+  sourceSymbolOptions(): ResolveSourceSymbolOptions {
+    return {
+      latDir: this.latticeDir,
+      runtime: this.sourceParserRuntime,
+      onFileAnalyzed: (analysis) => this.recordSourceAnalysis(analysis),
+    };
+  }
+
   clearSourceSymbolCache(): void {
     if (this.sourceSymbolCacheCleared) return;
     this.sourceSymbolCacheCleared = true;
-    this.timeSync('clear source-symbol cache', clearSymbolCache);
+    this.timeSync('clear source-symbol cache', () =>
+      this.sourceParserRuntime.clear(),
+    );
   }
 
   project(): Promise<MarkdownProjectAnalysis> {

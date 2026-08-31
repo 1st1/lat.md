@@ -25,6 +25,10 @@ A cold full `lat check` parses each Markdown file once, then shares the resultin
 
 A warm profiled check reports one persistent-cache hit per Markdown file and no parser work, proving lookup completes before worker or AST construction.
 
+## Profiles persistent source cache hits
+
+A warm profiled check reports source-symbol cache hits and no tree-sitter work, while a cold run distinguishes source reads, hashing, parsing, and publication.
+
 ## Separator disambiguates directory names
 
 `lat check -- links` checks a directory named `links`, while `lat check links`

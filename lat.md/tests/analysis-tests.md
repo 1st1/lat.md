@@ -3,9 +3,9 @@ lat:
   require-code-mention: true
 ---
 
-# Markdown Analysis Tests
+# Parser Analysis Tests
 
-These tests keep the shared Markdown analysis boundary deterministic, AST-free, and independent of its execution strategy.
+These tests keep Markdown and source analysis deterministic, AST-free, serializable, and safely reusable across parser executions.
 
 ## Returns serializable file facts
 
@@ -25,7 +25,7 @@ An unchanged Markdown file reloads the complete serializable analysis from its c
 
 ## Invalidates changed content and cache schemas
 
-Changed source bytes or an unsupported analysis-cache schema force a fresh parse and atomically replace the stale entry with current facts.
+Changed Markdown bytes or an unsupported analysis-cache schema force a fresh parse and atomically replace the stale entry with current facts.
 
 ## Recovers from malformed cache entries
 
@@ -34,3 +34,15 @@ Malformed or partial cache data is treated as a disposable miss and replaced wit
 ## Uses collision-safe sharded cache paths
 
 The first two lowercased short-name characters select a readable shard, while a normalized full-path digest keeps same-name and normalized-suffix entries collision-safe.
+
+## Caches every supported source language
+
+Unchanged JavaScript, TypeScript, Python, Rust, Go, C, and header files reload complete symbol tables without constructing tree-sitter syntax trees or loading grammar WASM.
+
+## Invalidates source content and cache schemas
+
+Changed source bytes or an unsupported shared parser-cache version force a fresh symbol extraction and atomically replace the stale entry.
+
+## Recovers from malformed source cache entries
+
+Malformed or partial source-symbol payloads become disposable misses and are replaced without making source-link validation fail.
