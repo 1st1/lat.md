@@ -195,7 +195,7 @@ Focused source views place reference context before the highlighted definition, 
 
 ## Highlights source syntax safely
 
-Supported languages become structured line trees without HTML serialization. HTML-like source remains inert text and multiline tokens retain their styling across every line.
+Supported languages, including Dart, become structured line trees without HTML serialization. HTML-like source remains inert text and multiline tokens retain their styling across every line.
 
 ## Builds a nested file tree
 

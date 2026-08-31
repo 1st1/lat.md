@@ -2,6 +2,7 @@
 lat:
   require-code-mention: true
 ---
+
 # Check Code Refs
 
 Tests for validating `@lat:` code references and required code mention coverage.
@@ -17,3 +18,7 @@ Given a `lat.md` file with [[markdown#Frontmatter#require-code-mention]] and a l
 ## Scans only supported source files
 
 Ripgrep and the TypeScript fallback both scan every centrally registered source extension for `@lat:` comments and ignore markers in unsupported files while preserving the complete file inventory used by `lat check` statistics.
+
+## Scans Dart references around annotations
+
+Dart `// @lat:` references retain their authored line numbers before ordinary declarations and between metadata annotations and declarations, and dangling targets remain normal code-reference errors.

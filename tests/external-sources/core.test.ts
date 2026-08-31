@@ -253,6 +253,17 @@ describe.sequential('external source core', () => {
     });
     expect(asciidoc.content).toContain('First version AsciiDoc navigation.');
 
+    const dartSource = await fetchResolver.resolve(
+      'upstream:widget.dart#widget',
+    );
+    expect(dartSource).toMatchObject({
+      kind: 'source',
+      startLine: 1,
+      endLine: 3,
+      signature: 'String widget() {',
+    });
+    expect(dartSource.content).toContain("return 'first';");
+
     const defaultRst = createExternalProject(fixture, {
       strategy: 'fetch',
       commit: fixture.commit1,

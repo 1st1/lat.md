@@ -27,8 +27,8 @@ importers:
         specifier: ^1.27.1
         version: 1.27.1(zod@4.3.6)
       '@repomix/tree-sitter-wasms':
-        specifier: ^0.1.16
-        version: 0.1.16
+        specifier: ^0.1.17
+        version: 0.1.17
       commander:
         specifier: ^14.0.3
         version: 14.0.3
@@ -915,8 +915,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@repomix/tree-sitter-wasms@0.1.16':
-    resolution: {integrity: sha512-CIINozBWFwjhH4DQALN/b4n1S08fHhXQOdjX2G7s4w+Urew37aLU0AHVyCjHM5Pbnh63tDYt4YyUkS6vRUV38A==}
+  '@repomix/tree-sitter-wasms@0.1.17':
+    resolution: {integrity: sha512-tc3HnFqdMF1pXhIMzG3aTaBDpIiHK2tPfn3fwqA6P3WTbHa+1EuuTubbKshvmN7xCHP5Ojz0/VW4R+XvR88KOw==}
 
   '@rolldown/pluginutils@1.0.0-rc.3':
     resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
@@ -3541,7 +3541,7 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.5.12':
     optional: true
 
-  '@repomix/tree-sitter-wasms@0.1.16': {}
+  '@repomix/tree-sitter-wasms@0.1.17': {}
 
   '@rolldown/pluginutils@1.0.0-rc.3': {}
 
