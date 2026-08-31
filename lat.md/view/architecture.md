@@ -142,7 +142,7 @@ The wiki-link resolver returns the target URL and count together, letting [[src/
 
 Validated [[markdown#Wiki Links#Source Code Links]] open highlighted source definitions with the originating lat paragraph rendered as context.
 
-The source view keeps five surrounding lines, collapses distant code, preserves the viewport when expanding upward, and links to other lat sections that reference the same symbol.
+The source view keeps five surrounding lines, collapses distant code, preserves the viewport when expanding upward, and links to other lat sections that reference the same symbol. Its source container fixes mobile text adjustment at the authored scale so line numbers and highlighted tokens stay uniform.
 
 ## Search and history
 

@@ -91,7 +91,7 @@ Sections containing rendered Git changes carry an orange disc when Git is enable
 
 Below 64rem, files remain reachable through a sticky two-row header and a scrollable full-viewport navigation overlay instead of a compressed or hidden desktop sidebar.
 
-The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally, and the graph stacks above its inspector.
+The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally without browser text inflation, and the graph stacks above its inspector.
 
 When the desktop TOC rail no longer fits, a compact `On this page` control shares an aligned metadata row and expands its links in a bounded overlay without moving content. On mobile it becomes a full-width row below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
 

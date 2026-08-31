@@ -847,6 +847,8 @@ a {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background: var(--code);
   border: 1px solid var(--panel-border);
   border-radius: 10px;

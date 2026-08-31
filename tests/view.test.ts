@@ -1231,6 +1231,9 @@ describe('lat ui', () => {
     expect(styles).toMatch(
       /@media \(width < 64rem\)[\s\S]*?\.document-toc-toggle \{[\s\S]*?border-top: 0;/,
     );
+    expect(styles).toMatch(
+      /\.source-code \{[^}]*-webkit-text-size-adjust: 100%;[^}]*text-size-adjust: 100%;/,
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
