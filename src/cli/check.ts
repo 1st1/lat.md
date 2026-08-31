@@ -2,7 +2,11 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { flattenSections, resolveRef } from '../lattice.js';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import type { ResolveSourceSymbolOptions } from '../source-parser.js';
+import {
+  isSourceFileExtension,
+  SOURCE_FILE_EXTENSIONS,
+} from '../source-formats.js';
 import { toPosix } from '../walk.js';
 import { TimingProfiler, type Profiler } from '../profiler.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
@@ -90,7 +94,7 @@ function isSourcePath(target: string): boolean {
   const hashIdx = target.indexOf('#');
   const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
   const ext = extname(filePart);
-  return SOURCE_EXTENSIONS.has(ext);
+  return isSourceFileExtension(ext);
 }
 
 /**
@@ -100,6 +104,7 @@ function isSourcePath(target: string): boolean {
 export async function sourceRefError(
   target: string,
   projectRoot: string,
+  sourceOptions: ResolveSourceSymbolOptions = {},
 ): Promise<string | null> {
   if (!isSourcePath(target)) {
     // Check if it looks like a file path with an unsupported extension
@@ -107,7 +112,7 @@ export async function sourceRefError(
     const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
     const ext = extname(filePart);
     if (ext && hashIdx !== -1) {
-      const supported = [...SOURCE_EXTENSIONS].sort().join(', ');
+      const supported = SOURCE_FILE_EXTENSIONS.join(', ');
       return `broken link [[${target}]] — unsupported file extension "${ext}". Supported: ${supported}`;
     }
     return `broken link [[${target}]] — no matching section found`;
@@ -133,6 +138,7 @@ export async function sourceRefError(
       filePart,
       symbolPart,
       projectRoot,
+      sourceOptions,
     );
     if (error) {
       return `broken link [[${target}]] — ${error}`;
@@ -212,7 +218,7 @@ export async function checkMd(
       } else if (!sectionIds.has(resolved.toLowerCase())) {
         // Try resolving as a source code reference (e.g. [[src/foo.ts#bar]])
         const sourceErr = await run.resolveSourceLink(ref.target, () =>
-          sourceRefError(ref.target, projectRoot),
+          sourceRefError(ref.target, projectRoot, run.sourceSymbolOptions()),
         );
         if (sourceErr !== null) {
           errors.push({

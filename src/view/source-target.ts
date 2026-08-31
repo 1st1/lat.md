@@ -1,5 +1,5 @@
 import { extname, posix } from 'node:path';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 
 export type ViewSourceTarget = {
   path: string;
@@ -16,7 +16,7 @@ export function viewSourceTarget(target: string): ViewSourceTarget | null {
     !authoredPath ||
     authoredPath.includes('\\') ||
     posix.isAbsolute(authoredPath) ||
-    !SOURCE_EXTENSIONS.has(extname(authoredPath))
+    !isSourceFileExtension(extname(authoredPath))
   ) {
     return null;
   }

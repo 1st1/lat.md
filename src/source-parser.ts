@@ -1,13 +1,27 @@
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
+import { performance } from 'node:perf_hooks';
 import type { Section } from './lattice.js';
+import {
+  PARSER_CACHE_VERSION,
+  hashParserContent,
+  parsedCachePath,
+  parserCacheIdentity,
+  readParsedCache,
+  writeParsedCache,
+  type ParsedCacheEntry,
+} from './parser-cache.js';
 import {
   Parser,
   Language,
   type Node as SyntaxNode,
   type Tree,
 } from 'web-tree-sitter';
+import {
+  sourceFileExtension,
+  type SourceFileExtension,
+} from './source-formats.js';
 
 export type SourceSymbol = {
   name: string;
@@ -23,6 +37,37 @@ export type SourceSymbol = {
   startLine: number;
   endLine: number;
   signature: string;
+};
+
+export type SourceAnalysisCacheStatus = 'disabled' | 'hit' | 'miss';
+
+export type SourceAnalysisTimings = {
+  readMs: number;
+  hashMs: number;
+  cacheReadMs: number;
+  cacheWriteMs: number;
+  parseMs: number;
+  cacheStatus: SourceAnalysisCacheStatus;
+};
+
+export type SourceFileAnalysis = {
+  path: string;
+  symbols: SourceSymbol[];
+  timings: SourceAnalysisTimings;
+};
+
+export type AnalyzeSourceSymbolsOptions = {
+  identity?: string;
+  cache?: boolean;
+  readMs?: number;
+  runtime?: SourceParserRuntime;
+};
+
+export type ResolveSourceSymbolOptions = {
+  latDir?: string;
+  cache?: boolean;
+  onFileAnalyzed?: (analysis: SourceFileAnalysis) => void;
+  runtime?: SourceParserRuntime;
 };
 
 // Lazy singleton for the parser
@@ -48,28 +93,21 @@ async function ensureParser(): Promise<Parser> {
   return parserInstance;
 }
 
-/** Extension → tree-sitter WASM grammar mapping. This is the single source of
- *  truth for which source file extensions lat supports. */
-const grammarMap: Record<string, string> = {
-  '.ts': 'tree-sitter-typescript.wasm',
-  '.tsx': 'tree-sitter-tsx.wasm',
+/** Every supported source extension must declare a tree-sitter grammar. */
+const grammarMap = {
+  '.c': 'tree-sitter-c.wasm',
+  '.go': 'tree-sitter-go.wasm',
+  '.h': 'tree-sitter-c.wasm',
   '.js': 'tree-sitter-javascript.wasm',
   '.jsx': 'tree-sitter-javascript.wasm',
   '.py': 'tree-sitter-python.wasm',
   '.rs': 'tree-sitter-rust.wasm',
-  '.go': 'tree-sitter-go.wasm',
-  '.c': 'tree-sitter-c.wasm',
-  '.h': 'tree-sitter-c.wasm',
-};
+  '.ts': 'tree-sitter-typescript.wasm',
+  '.tsx': 'tree-sitter-tsx.wasm',
+} satisfies Record<SourceFileExtension, string>;
 
-/** All source file extensions that lat can parse (derived from grammarMap). */
-export const SOURCE_EXTENSIONS: ReadonlySet<string> = new Set(
-  Object.keys(grammarMap),
-);
-
-async function getLanguage(ext: string): Promise<Language | null> {
+async function getLanguage(ext: SourceFileExtension): Promise<Language> {
   const wasmFile = grammarMap[ext];
-  if (!wasmFile) return null;
 
   // Ensure WASM runtime is initialized before loading languages
   await ensureParser();
@@ -836,13 +874,26 @@ function firstLine(text: string): string {
   return nl === -1 ? text : text.slice(0, nl);
 }
 
+/** Every supported source extension must declare a symbol extractor. */
+const symbolExtractors = {
+  '.c': extractCSymbols,
+  '.go': extractGoSymbols,
+  '.h': extractCSymbols,
+  '.js': extractTsSymbols,
+  '.jsx': extractTsSymbols,
+  '.py': extractPySymbols,
+  '.rs': extractRustSymbols,
+  '.ts': extractTsSymbols,
+  '.tsx': extractTsSymbols,
+} satisfies Record<SourceFileExtension, (tree: Tree) => SourceSymbol[]>;
+
 export async function parseSourceSymbols(
   filePath: string,
   content: string,
 ): Promise<SourceSymbol[]> {
-  const ext = filePath.match(/\.[^.]+$/)?.[0] ?? '';
+  const ext = sourceFileExtension(filePath);
+  if (!ext) return [];
   const lang = await getLanguage(ext);
-  if (!lang) return [];
 
   const p = await ensureParser();
   p.setLanguage(lang);
@@ -850,35 +901,165 @@ export async function parseSourceSymbols(
   if (!tree) return [];
 
   try {
-    if (ext === '.py') {
-      return extractPySymbols(tree);
-    }
-    if (ext === '.rs') {
-      return extractRustSymbols(tree);
-    }
-    if (ext === '.go') {
-      return extractGoSymbols(tree);
-    }
-    if (ext === '.c' || ext === '.h') {
-      return extractCSymbols(tree);
-    }
-    return extractTsSymbols(tree);
+    return symbolExtractors[ext](tree);
   } finally {
     tree.delete();
   }
 }
 
-// Per-invocation cache for parsed source symbols, keyed by absolute file path.
-// Prevents re-parsing the same file when multiple wiki links reference it
-// (e.g. 20+ links to quickjs.c would otherwise parse a 60K-line file 20 times).
-const symbolCache = new Map<
-  string,
-  { symbols: SourceSymbol[]; error?: string }
->();
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const sourceSymbolKinds = new Set<SourceSymbol['kind']>([
+  'function',
+  'class',
+  'const',
+  'type',
+  'interface',
+  'method',
+  'variable',
+]);
+
+function isSourceSymbol(value: unknown): value is SourceSymbol {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.name === 'string' &&
+    typeof value.kind === 'string' &&
+    sourceSymbolKinds.has(value.kind as SourceSymbol['kind']) &&
+    (value.parent === undefined || typeof value.parent === 'string') &&
+    Number.isInteger(value.startLine) &&
+    (value.startLine as number) > 0 &&
+    Number.isInteger(value.endLine) &&
+    (value.endLine as number) >= (value.startLine as number) &&
+    typeof value.signature === 'string'
+  );
+}
+
+function cachedSourceAnalysis(
+  entry: ParsedCacheEntry | null,
+  contentHash: string,
+  identity: string,
+  timings: Omit<SourceAnalysisTimings, 'cacheWriteMs' | 'parseMs'>,
+): SourceFileAnalysis | null {
+  if (
+    !entry ||
+    entry.version !== PARSER_CACHE_VERSION ||
+    entry.contentHash !== contentHash ||
+    !isRecord(entry.value) ||
+    entry.value.path !== identity ||
+    !Array.isArray(entry.value.symbols) ||
+    !entry.value.symbols.every(isSourceSymbol)
+  ) {
+    return null;
+  }
+  return {
+    path: identity,
+    symbols: entry.value.symbols,
+    timings: {
+      ...timings,
+      cacheStatus: 'hit',
+      cacheWriteMs: 0,
+      parseMs: 0,
+    },
+  };
+}
+
+type ResolvedSourceCacheEntry = {
+  symbols: SourceSymbol[];
+  analysis?: SourceFileAnalysis;
+  error?: string;
+};
+
+/** Request-scoped owner for in-flight and completed source parser work. */
+export class SourceParserRuntime {
+  readonly analyses = new Map<string, Promise<SourceFileAnalysis>>();
+  readonly symbols = new Map<string, Promise<ResolvedSourceCacheEntry>>();
+
+  clear(): void {
+    this.analyses.clear();
+    this.symbols.clear();
+  }
+}
+
+const defaultSourceParserRuntime = new SourceParserRuntime();
+
+/** Return the parser cache path for one project source file. */
+export function sourceAnalysisCachePath(
+  latDir: string,
+  projectRoot: string,
+  absolutePath: string,
+): string {
+  return parsedCachePath(
+    latDir,
+    parserCacheIdentity(absolutePath, projectRoot),
+  );
+}
+
+/** Analyze source content through the shared versioned persistent cache. */
+export async function analyzeSourceSymbols(
+  filePath: string,
+  content: string,
+  latDir: string,
+  options: AnalyzeSourceSymbolsOptions = {},
+): Promise<SourceFileAnalysis> {
+  const identity = (options.identity ?? filePath)
+    .replaceAll('\\', '/')
+    .normalize('NFC');
+  const hashStarted = performance.now();
+  const contentHash = hashParserContent(content);
+  const hashMs = performance.now() - hashStarted;
+  const cache = options.cache !== false;
+  const cachePath = parsedCachePath(latDir, identity);
+  const promiseKey = `${cache ? 'cache' : 'direct'}\0${cachePath}\0${contentHash}`;
+  const runtime = options.runtime ?? defaultSourceParserRuntime;
+  let analysis = runtime.analyses.get(promiseKey);
+  if (!analysis) {
+    analysis = (async () => {
+      const cacheStarted = performance.now();
+      const entry = cache ? await readParsedCache(cachePath) : null;
+      const cacheReadMs = cache ? performance.now() - cacheStarted : 0;
+      const timings = {
+        readMs: options.readMs ?? 0,
+        hashMs,
+        cacheReadMs,
+        cacheStatus: cache ? ('miss' as const) : ('disabled' as const),
+      };
+      const cached = cache
+        ? cachedSourceAnalysis(entry, contentHash, identity, timings)
+        : null;
+      if (cached) return cached;
+
+      const parseStarted = performance.now();
+      const symbols = await parseSourceSymbols(filePath, content);
+      const result: SourceFileAnalysis = {
+        path: identity,
+        symbols,
+        timings: {
+          ...timings,
+          cacheWriteMs: 0,
+          parseMs: performance.now() - parseStarted,
+        },
+      };
+      if (!cache) return result;
+
+      const writeStarted = performance.now();
+      try {
+        await writeParsedCache(cachePath, contentHash, result);
+      } catch {
+        // The cache is a disposable optimization; parsing must work read-only.
+      }
+      result.timings.cacheWriteMs = performance.now() - writeStarted;
+      return result;
+    })();
+    runtime.analyses.set(promiseKey, analysis);
+  }
+  return analysis;
+}
 
 /** Clear the symbol cache. Call between top-level operations. */
 export function clearSymbolCache(): void {
-  symbolCache.clear();
+  defaultSourceParserRuntime.clear();
 }
 
 /**
@@ -889,31 +1070,44 @@ export async function resolveSourceSymbol(
   filePath: string,
   symbolPath: string,
   projectRoot: string,
+  options: ResolveSourceSymbolOptions = {},
 ): Promise<{ found: boolean; symbols: SourceSymbol[]; error?: string }> {
   const absPath = join(projectRoot, filePath);
+  const latDir = options.latDir ?? join(projectRoot, 'lat.md');
+  const cacheKey = `${latDir}\0${absPath}`;
+  const runtime = options.runtime ?? defaultSourceParserRuntime;
+  let cachedPromise = runtime.symbols.get(cacheKey);
+  const created = !cachedPromise;
+  if (!cachedPromise) {
+    cachedPromise = (async () => {
+      const readStarted = performance.now();
+      let content: string;
+      try {
+        content = await readFile(absPath, 'utf-8');
+      } catch {
+        return { symbols: [] };
+      }
+      const readMs = performance.now() - readStarted;
 
-  let cached = symbolCache.get(absPath);
-  if (!cached) {
-    let content: string;
-    try {
-      content = readFileSync(absPath, 'utf-8');
-    } catch {
-      cached = { symbols: [] };
-      symbolCache.set(absPath, cached);
-      return { found: false, symbols: [] };
-    }
-
-    try {
-      const symbols = await parseSourceSymbols(filePath, content);
-      cached = { symbols };
-    } catch (err) {
-      cached = {
-        symbols: [],
-        error: `failed to parse "${filePath}": ${err instanceof Error ? err.message : String(err)}`,
-      };
-    }
-    symbolCache.set(absPath, cached);
+      try {
+        const analysis = await analyzeSourceSymbols(filePath, content, latDir, {
+          cache: options.cache,
+          identity: parserCacheIdentity(absPath, projectRoot),
+          readMs,
+          runtime,
+        });
+        return { symbols: analysis.symbols, analysis };
+      } catch (err) {
+        return {
+          symbols: [],
+          error: `failed to parse "${filePath}": ${err instanceof Error ? err.message : String(err)}`,
+        };
+      }
+    })();
+    runtime.symbols.set(cacheKey, cachedPromise);
   }
+  const cached = await cachedPromise;
+  if (created && cached.analysis) options.onFileAnalyzed?.(cached.analysis);
 
   if (cached.error) {
     return { found: false, symbols: cached.symbols, error: cached.error };

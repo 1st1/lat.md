@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { flattenSections, type Section } from './lattice.js';
 import { analyzeMarkdownFile } from './markdown-analysis.js';
 import { documentFormat, type DocumentFormat } from './document-formats.js';
@@ -7,6 +8,14 @@ import type {
   ViewDocumentNode,
   ViewDocumentTree,
 } from './view/protocol.js';
+import {
+  PARSER_CACHE_VERSION,
+  hashParserContent,
+  parsedCachePath,
+  readParsedCache,
+  writeParsedCache,
+  type ParsedCacheEntry,
+} from './parser-cache.js';
 
 export type ExternalDocumentSection = {
   title: string;
@@ -23,6 +32,29 @@ export type ExternalDocumentAnalysis = {
   format: DocumentFormat;
   title: string;
   sections: ExternalDocumentSection[];
+};
+
+export type ExternalDocumentCacheStatus = 'disabled' | 'hit' | 'miss';
+
+export type ExternalDocumentAnalysisTimings = {
+  hashMs: number;
+  cacheReadMs: number;
+  cacheWriteMs: number;
+  parseMs: number;
+  cacheStatus: ExternalDocumentCacheStatus;
+};
+
+export type ExternalDocumentFileAnalysis = {
+  path: string;
+  document: ExternalDocumentAnalysis;
+  timings: ExternalDocumentAnalysisTimings;
+};
+
+export type AnalyzeExternalDocumentOptions = {
+  identity?: string;
+  cache?: boolean;
+  runtime?: ExternalDocumentParserRuntime;
+  onFileAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void;
 };
 
 type OpenSection = Omit<ExternalDocumentSection, 'endLine'>;
@@ -234,6 +266,151 @@ export async function analyzeExternalDocument(
     default:
       throw new Error(`unsupported external document format for "${path}"`);
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === 'string')
+  );
+}
+
+function isExternalDocumentSection(
+  value: unknown,
+): value is ExternalDocumentSection {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.title === 'string' &&
+    Number.isInteger(value.depth) &&
+    (value.depth as number) > 0 &&
+    typeof value.anchor === 'string' &&
+    isStringArray(value.aliases) &&
+    isStringArray(value.hierarchy) &&
+    Number.isInteger(value.startLine) &&
+    (value.startLine as number) > 0 &&
+    Number.isInteger(value.endLine) &&
+    (value.endLine as number) >= (value.startLine as number)
+  );
+}
+
+function cachedExternalDocumentAnalysis(
+  entry: ParsedCacheEntry | null,
+  contentHash: string,
+  identity: string,
+  timings: Omit<ExternalDocumentAnalysisTimings, 'cacheWriteMs' | 'parseMs'>,
+): ExternalDocumentFileAnalysis | null {
+  if (
+    !entry ||
+    entry.version !== PARSER_CACHE_VERSION ||
+    entry.contentHash !== contentHash ||
+    !isRecord(entry.value) ||
+    entry.value.path !== identity ||
+    !isRecord(entry.value.document) ||
+    !['markdown', 'restructuredtext', 'asciidoc'].includes(
+      String(entry.value.document.format),
+    ) ||
+    typeof entry.value.document.title !== 'string' ||
+    !Array.isArray(entry.value.document.sections) ||
+    !entry.value.document.sections.every(isExternalDocumentSection)
+  ) {
+    return null;
+  }
+  return {
+    path: identity,
+    document: entry.value.document as ExternalDocumentAnalysis,
+    timings: {
+      ...timings,
+      cacheStatus: 'hit',
+      cacheWriteMs: 0,
+      parseMs: 0,
+    },
+  };
+}
+
+/** Request-scoped owner for external document parser work. */
+export class ExternalDocumentParserRuntime {
+  readonly analyses = new Map<string, Promise<ExternalDocumentFileAnalysis>>();
+
+  clear(): void {
+    this.analyses.clear();
+  }
+}
+
+const defaultExternalDocumentParserRuntime =
+  new ExternalDocumentParserRuntime();
+
+/** Return the shared parsed-cache path for one external document identity. */
+export function externalDocumentAnalysisCachePath(
+  latDir: string,
+  identity: string,
+): string {
+  return parsedCachePath(latDir, identity);
+}
+
+/** Analyze an external document through the shared persistent parser cache. */
+export async function analyzeExternalDocumentCached(
+  path: string,
+  content: string,
+  latDir: string,
+  options: AnalyzeExternalDocumentOptions = {},
+): Promise<ExternalDocumentFileAnalysis> {
+  const identity = (options.identity ?? path)
+    .replaceAll('\\', '/')
+    .normalize('NFC');
+  const hashStarted = performance.now();
+  const contentHash = hashParserContent(content);
+  const hashMs = performance.now() - hashStarted;
+  const cache = options.cache !== false;
+  const cachePath = externalDocumentAnalysisCachePath(latDir, identity);
+  const promiseKey = `${cache ? 'cache' : 'direct'}\0${cachePath}\0${contentHash}`;
+  const runtime = options.runtime ?? defaultExternalDocumentParserRuntime;
+  let analysis = runtime.analyses.get(promiseKey);
+  const created = !analysis;
+  if (!analysis) {
+    analysis = (async () => {
+      const cacheStarted = performance.now();
+      const entry = cache ? await readParsedCache(cachePath) : null;
+      const cacheReadMs = cache ? performance.now() - cacheStarted : 0;
+      const timings = {
+        hashMs,
+        cacheReadMs,
+        cacheStatus: cache ? ('miss' as const) : ('disabled' as const),
+      };
+      const cached = cache
+        ? cachedExternalDocumentAnalysis(entry, contentHash, identity, timings)
+        : null;
+      if (cached) return cached;
+
+      const parseStarted = performance.now();
+      const document = await analyzeExternalDocument(path, content);
+      const result: ExternalDocumentFileAnalysis = {
+        path: identity,
+        document,
+        timings: {
+          ...timings,
+          cacheWriteMs: 0,
+          parseMs: performance.now() - parseStarted,
+        },
+      };
+      if (!cache) return result;
+
+      const writeStarted = performance.now();
+      try {
+        await writeParsedCache(cachePath, contentHash, result);
+      } catch {
+        // Parsed caches are disposable; document resolution must work read-only.
+      }
+      result.timings.cacheWriteMs = performance.now() - writeStarted;
+      return result;
+    })();
+    runtime.analyses.set(promiseKey, analysis);
+  }
+  const result = await analysis;
+  if (created) options.onFileAnalyzed?.(result);
+  return result;
 }
 
 export function findExternalDocumentSection(

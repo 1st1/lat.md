@@ -32,15 +32,18 @@ import {
   isDocumentPath,
 } from './document-formats.js';
 import {
-  analyzeExternalDocument,
+  ExternalDocumentParserRuntime,
+  analyzeExternalDocumentCached,
   findExternalDocumentSection,
   type ExternalDocumentAnalysis,
+  type ExternalDocumentFileAnalysis,
 } from './external-documents.js';
 import {
-  SOURCE_EXTENSIONS,
-  parseSourceSymbols,
+  SourceParserRuntime,
+  analyzeSourceSymbols,
   type SourceSymbol,
 } from './source-parser.js';
+import { SOURCE_FILE_EXTENSIONS } from './source-formats.js';
 
 const execFileAsync = promisify(execFile);
 const HANDLE_RE = /^[a-z0-9][a-z0-9_-]*$/;
@@ -55,7 +58,7 @@ export const EXTERNAL_SOURCES_SCHEMA_VER = 1;
 /** File types external sources can parse and resolve. */
 const EXTERNAL_FILE_EXTENSIONS: ReadonlySet<string> = new Set([
   ...DOCUMENT_FILE_EXTENSIONS,
-  ...SOURCE_EXTENSIONS,
+  ...SOURCE_FILE_EXTENSIONS,
 ]);
 
 export type ExternalStrategy = 'fetch' | 'checkout';
@@ -1091,6 +1094,10 @@ function sourceSymbol(
 async function selectFragment(
   target: ExternalTarget,
   fullContent: string,
+  latDir: string,
+  externalDocumentParserRuntime: ExternalDocumentParserRuntime,
+  sourceParserRuntime: SourceParserRuntime,
+  onDocumentAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void,
 ): Promise<
   | {
       content: string;
@@ -1109,9 +1116,15 @@ async function selectFragment(
 > {
   const lines = fullContent.split('\n');
   if (isDocumentPath(target.resolvedPath)) {
-    const document = await analyzeExternalDocument(
+    const { document } = await analyzeExternalDocumentCached(
       target.resolvedPath,
       fullContent,
+      latDir,
+      {
+        identity: `@external/${target.handle}/${target.resolvedPath}`,
+        runtime: externalDocumentParserRuntime,
+        onFileAnalyzed: onDocumentAnalyzed,
+      },
     );
     if (!target.fragment)
       return {
@@ -1141,7 +1154,15 @@ async function selectFragment(
       endLine: lines.length,
       kind: 'source',
     };
-  const symbols = await parseSourceSymbols(target.resolvedPath, fullContent);
+  const { symbols } = await analyzeSourceSymbols(
+    target.resolvedPath,
+    fullContent,
+    latDir,
+    {
+      identity: `@external/${target.handle}/${target.resolvedPath}`,
+      runtime: sourceParserRuntime,
+    },
+  );
   const symbol = sourceSymbol(symbols, target.fragment);
   if (!symbol)
     throw new Error(
@@ -1157,12 +1178,24 @@ async function selectFragment(
 }
 
 export class ExternalResolver {
+  private reconciliationPromise?: Promise<void>;
+  private readonly externalFilePromises = new Map<
+    string,
+    Promise<{ content: string; provider: EffectiveExternalStrategy }>
+  >();
+  private readonly externalDocumentParserRuntime =
+    new ExternalDocumentParserRuntime();
+  private readonly sourceParserRuntime = new SourceParserRuntime();
+
   constructor(
     readonly latDir: string,
     readonly projectRoot: string,
     readonly snapshot: ExternalSourcesSnapshot,
     private readonly ca?: string | Buffer,
     private readonly ignoreLocal = false,
+    private readonly onDocumentAnalyzed?: (
+      analysis: ExternalDocumentFileAnalysis,
+    ) => void,
   ) {}
 
   parse(target: string): ExternalTarget | null {
@@ -1173,8 +1206,32 @@ export class ExternalResolver {
     return unknownExternalHandle(target, this.snapshot);
   }
 
-  async reconcile(): Promise<void> {
-    await validateRemovedCaches(this.snapshot, this.latDir);
+  reconcile(): Promise<void> {
+    this.reconciliationPromise ??= validateRemovedCaches(
+      this.snapshot,
+      this.latDir,
+    );
+    return this.reconciliationPromise;
+  }
+
+  private readFile(
+    source: EffectiveExternalSource,
+    target: ExternalTarget,
+  ): Promise<{ content: string; provider: EffectiveExternalStrategy }> {
+    const key = `${source.handle}\0${target.repositoryPath}`;
+    let loaded = this.externalFilePromises.get(key);
+    if (!loaded) {
+      loaded = readProviderContent(
+        this.latDir,
+        this.projectRoot,
+        source,
+        target,
+        this.ca,
+        this.ignoreLocal,
+      );
+      this.externalFilePromises.set(key, loaded);
+    }
+    return loaded;
   }
 
   async resolve(targetValue: string): Promise<ResolvedExternalContent> {
@@ -1183,15 +1240,15 @@ export class ExternalResolver {
     const source = this.snapshot.sources.get(target.handle)!;
     await this.reconcile();
     try {
-      const loaded = await readProviderContent(
-        this.latDir,
-        this.projectRoot,
-        source,
+      const loaded = await this.readFile(source, target);
+      const fragment = await selectFragment(
         target,
-        this.ca,
-        this.ignoreLocal,
+        loaded.content,
+        this.latDir,
+        this.externalDocumentParserRuntime,
+        this.sourceParserRuntime,
+        this.onDocumentAnalyzed,
       );
-      const fragment = await selectFragment(target, loaded.content);
       return {
         target,
         source,
@@ -1211,7 +1268,11 @@ export class ExternalResolver {
 export async function createExternalResolver(
   latDir: string,
   projectRoot = dirname(latDir),
-  options: { ignoreLocal?: boolean; ca?: string | Buffer } = {},
+  options: {
+    ignoreLocal?: boolean;
+    ca?: string | Buffer;
+    onDocumentAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void;
+  } = {},
 ): Promise<ExternalResolver> {
   return new ExternalResolver(
     latDir,
@@ -1219,6 +1280,7 @@ export async function createExternalResolver(
     await loadExternalSources(latDir, projectRoot, options),
     options.ca,
     options.ignoreLocal,
+    options.onDocumentAnalyzed,
   );
 }
 

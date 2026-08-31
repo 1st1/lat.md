@@ -1,8 +1,13 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
+import {
+  PARSER_CACHE_VERSION,
+  markdownAnalysisCachePath,
+} from '../src/markdown-analysis-cache.js';
 import {
   analyzeMarkdownProject,
   MarkdownProjectSession,
@@ -86,10 +91,12 @@ See [[other#Details]], [guide](guide.md), and [missing][nowhere].
     const { root, latDir } = await projectWithFiles(8);
     const inline = await analyzeMarkdownProject(latDir, root, {
       executor: 'inline',
+      cache: false,
     });
     const workers = await analyzeMarkdownProject(latDir, root, {
       executor: 'workers',
       maxWorkers: 2,
+      cache: false,
     });
 
     expect(semanticFiles(workers)).toEqual(semanticFiles(inline));
@@ -108,5 +115,114 @@ See [[other#Details]], [guide](guide.md), and [missing][nowhere].
 
     const first = await session.analysis();
     expect(await session.analysis()).toBe(first);
+  });
+
+  // @lat: [[tests/analysis-tests#Persists and reuses unchanged file analysis]]
+  it('persists and reuses unchanged file analysis', async () => {
+    const { root, latDir } = await projectWithFiles(1);
+    const absolutePath = join(latDir, 'lat.md');
+    const first = await analyzeMarkdownProject(latDir, root, {
+      executor: 'inline',
+    });
+    const firstFile = first.files.get('lat.md')!;
+    const cachePath = markdownAnalysisCachePath(latDir, root, absolutePath);
+    const serialized = await readFile(cachePath, 'utf8');
+    const newline = serialized.indexOf('\n');
+    const contentHash = createHash('sha1')
+      .update(firstFile.content)
+      .digest('hex');
+    const cached = JSON.parse(serialized.slice(newline + 1));
+
+    expect(firstFile.timings.cacheStatus).toBe('miss');
+    expect(serialized.slice(0, newline)).toBe(
+      `v${PARSER_CACHE_VERSION}:${contentHash}`,
+    );
+    expect(cached.path).toBe('lat.md');
+
+    const second = await analyzeMarkdownProject(latDir, root, {
+      executor: 'workers',
+      maxWorkers: 2,
+    });
+    const secondFile = second.files.get('lat.md')!;
+    expect(secondFile.timings.cacheStatus).toBe('hit');
+    expect(secondFile.timings.parseMs).toBe(0);
+    expect({ ...secondFile, timings: undefined }).toEqual({
+      ...firstFile,
+      timings: undefined,
+    });
+  });
+
+  // @lat: [[tests/analysis-tests#Invalidates changed content and cache schemas]]
+  it('invalidates changed content and cache schemas', async () => {
+    const { root, latDir } = await projectWithFiles(1);
+    const absolutePath = join(latDir, 'lat.md');
+    const cachePath = markdownAnalysisCachePath(latDir, root, absolutePath);
+    await analyzeMarkdownProject(latDir, root, { executor: 'inline' });
+    const before = await readFile(cachePath, 'utf8');
+
+    await writeFile(
+      absolutePath,
+      '# Changed\n\nNow links to [[lat#Changed]].\n',
+    );
+    const changed = await analyzeMarkdownProject(latDir, root, {
+      executor: 'inline',
+    });
+    expect(changed.files.get('lat.md')!.timings.cacheStatus).toBe('miss');
+    expect(await readFile(cachePath, 'utf8')).not.toBe(before);
+
+    const serialized = await readFile(cachePath, 'utf8');
+    const newline = serialized.indexOf('\n');
+    await writeFile(
+      cachePath,
+      `v${PARSER_CACHE_VERSION + 1}:${
+        serialized.slice(0, newline).split(':')[1]
+      }\n${serialized.slice(newline + 1)}`,
+    );
+    const staleSchema = await analyzeMarkdownProject(latDir, root, {
+      executor: 'inline',
+    });
+    expect(staleSchema.files.get('lat.md')!.timings.cacheStatus).toBe('miss');
+    const refreshed = await readFile(cachePath, 'utf8');
+    expect(refreshed.slice(0, refreshed.indexOf('\n'))).toMatch(
+      new RegExp(`^v${PARSER_CACHE_VERSION}:[a-f0-9]{40}$`),
+    );
+  });
+
+  // @lat: [[tests/analysis-tests#Recovers from malformed cache entries]]
+  it('recovers from malformed cache entries', async () => {
+    const { root, latDir } = await projectWithFiles(1);
+    const absolutePath = join(latDir, 'lat.md');
+    const cachePath = markdownAnalysisCachePath(latDir, root, absolutePath);
+    await mkdir(dirname(cachePath), { recursive: true });
+    await writeFile(cachePath, 'not a cache entry');
+
+    const project = await analyzeMarkdownProject(latDir, root, {
+      executor: 'inline',
+    });
+    expect(project.files.get('lat.md')!.timings.cacheStatus).toBe('miss');
+    const serialized = await readFile(cachePath, 'utf8');
+    expect(serialized).toMatch(
+      new RegExp(`^v${PARSER_CACHE_VERSION}:[a-f0-9]{40}\\n\\{`),
+    );
+  });
+
+  // @lat: [[tests/analysis-tests#Uses collision-safe sharded cache paths]]
+  it('uses collision-safe sharded cache paths', async () => {
+    const { root, latDir } = await projectWithFiles(1);
+    const nested = markdownAnalysisCachePath(
+      latDir,
+      root,
+      join(latDir, 'Alpha', 'Beta.md'),
+    );
+    const dotted = markdownAnalysisCachePath(
+      latDir,
+      root,
+      join(latDir, 'Alpha.Beta.md'),
+    );
+    const shard = basename(dirname(nested));
+
+    expect(nested).not.toBe(dotted);
+    expect(shard).toBe('be');
+    expect(basename(nested)).toMatch(/^[a-f0-9]{40}_lat_md_alpha_beta_md$/);
   });
 });

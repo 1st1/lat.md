@@ -14,7 +14,8 @@ import {
   type ExternalResolver,
 } from '../external-sources.js';
 import { listLatticeFiles, type Section } from '../lattice.js';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
@@ -49,7 +50,6 @@ import {
 } from './repository.js';
 import {
   buildViewReferenceIndex,
-  parseViewMarkdownFile,
   renderSectionBackReferences,
   type ViewCodeReferenceFile,
   type ViewParsedMarkdownFile,
@@ -108,7 +108,7 @@ function excludedCodePath(
 }
 
 function sourcePath(path: string): boolean {
-  return SOURCE_EXTENSIONS.has(extname(path).toLowerCase());
+  return isSourceFileExtension(extname(path).toLowerCase());
 }
 
 function obviouslyIgnoredCodePath(path: string, latPath: string): boolean {
@@ -259,6 +259,7 @@ async function buildSnapshot(
     allSections,
     projectRoot,
     external,
+    latDir,
   );
   const references = buildViewReferenceIndex(
     files.values(),
@@ -616,13 +617,7 @@ export class ViewStore {
       return null;
     }
     if (!isInside(this.realLatDir, realFile)) return null;
-    const content = await readFile(realFile, 'utf8');
-    return parseViewMarkdownFile(
-      absolutePath,
-      content,
-      this.latDir,
-      this.projectRoot,
-    );
+    return analyzeMarkdownPath(absolutePath, this.latDir, this.projectRoot);
   }
 
   private async applyRefresh(paths: string[], pollGit: boolean): Promise<void> {
@@ -816,10 +811,8 @@ export async function createViewStore(
     markdownPaths.map(async (absolutePath) => {
       const realFile = await realpath(absolutePath);
       if (!isInside(realLatDir, realFile)) return;
-      const content = await readFile(realFile, 'utf8');
-      const parsed = parseViewMarkdownFile(
+      const parsed = await analyzeMarkdownPath(
         absolutePath,
-        content,
         latDir,
         projectRoot,
       );

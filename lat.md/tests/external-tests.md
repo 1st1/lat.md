@@ -25,6 +25,10 @@ Format tests verify Markdown, reStructuredText, and AsciiDoc expose complete tit
 
 AsciiDoc coverage includes explicit document-title IDs and sections after legacy source blocks whose opening and closing delimiter lengths differ.
 
+## Persistent document analysis cache
+
+External Markdown, reStructuredText, and AsciiDoc analyses use validated versioned cache entries, invalidate changed content, recover from malformed payloads, and share one provider load and parse across every fragment of a file.
+
 ## Cache reconciliation
 
 Cache tests verify schema-version, exact provider-source, commit, and strategy generations, atomic publication, concurrency, removal, local transitions, and failure without stale fallback.
@@ -50,6 +54,8 @@ View tests verify external previews share the versioned document tree with local
 ### Live external previews
 
 The live server renders each supported external document kind and exposes its backlinks and graph relationships without relying on browser-side repository access.
+
+External source-code previews persist their AST-free symbol tables under a handle-scoped parser-cache identity.
 
 ### Local watcher refresh
 

@@ -8,7 +8,8 @@ import {
   type SectionMatch,
 } from '../lattice.js';
 import { MAX_SECTION_SUMMARY_LENGTH } from '../markdown-validation.js';
-import { SOURCE_EXTENSIONS, resolveSourceSymbol } from '../source-parser.js';
+import { resolveSourceSymbol } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import {
   formatNavHints,
@@ -122,7 +123,7 @@ export async function getSection(
     const hashIdx = ref.target.indexOf('#');
     const filePart = hashIdx === -1 ? ref.target : ref.target.slice(0, hashIdx);
     const ext = extname(filePart);
-    if (SOURCE_EXTENSIONS.has(ext)) {
+    if (isSourceFileExtension(ext)) {
       const targetLower = ref.target.toLowerCase();
       if (!seen.has(targetLower)) {
         seen.add(targetLower);
@@ -135,6 +136,7 @@ export async function getSection(
             filePart,
             symbolPart,
             ctx.projectRoot,
+            commandProjectSession(ctx).sourceSymbolOptions(),
           );
           if (found) {
             const parts = symbolPart.split('#');

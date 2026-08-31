@@ -19,9 +19,15 @@ the timing hierarchy stays accurate when asynchronous operations interleave.
 
 ## Reuses check data across validators
 
-A full `lat check` parses each Markdown file once, then shares the resulting
-command-scoped data across concurrently running validators without persisting
-it between runs.
+A cold full `lat check` parses each Markdown file once, then shares the resulting command-scoped snapshot across concurrent validators and persists only its AST-free per-file facts for later commands.
+
+## Profiles persistent parser cache hits
+
+A warm profiled check reports one persistent-cache hit per Markdown file and no parser work, proving lookup completes before worker or AST construction.
+
+## Profiles persistent source cache hits
+
+A warm profiled check reports source-symbol cache hits and no tree-sitter work, while a cold run distinguishes source reads, hashing, parsing, and publication.
 
 ## Separator disambiguates directory names
 

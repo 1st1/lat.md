@@ -12,7 +12,7 @@ import {
   commandProjectAnalysis,
   commandProjectSession,
 } from '../project-analysis.js';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 
 export type Scope = 'md' | 'code' | 'md+code';
 
@@ -43,7 +43,7 @@ function isSourceQuery(
   const filePart = hashIdx === -1 ? query : query.slice(0, hashIdx);
   const symbolPart = hashIdx === -1 ? '' : query.slice(hashIdx + 1);
   const ext = extname(filePart);
-  if (!SOURCE_EXTENSIONS.has(ext)) return null;
+  if (!isSourceFileExtension(ext)) return null;
   if (!existsSync(join(projectRoot, filePart))) return null;
   return { filePart, symbolPart };
 }
@@ -87,6 +87,7 @@ async function findSourceRefs(
         filePart,
         symbolPart,
         projectRoot,
+        commandProjectSession(ctx).sourceSymbolOptions(),
       );
       if (found) {
         const parts = symbolPart.split('#');

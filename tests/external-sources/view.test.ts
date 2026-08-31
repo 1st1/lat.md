@@ -9,6 +9,7 @@ import {
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { plainStyler, type CmdContext } from '../../src/context.js';
+import { parsedCachePath } from '../../src/parser-cache.js';
 import type {
   ViewDocument,
   ViewExternalDocument,
@@ -186,6 +187,11 @@ describe.sequential('external source view', () => {
         expect(externalSource.source.focus?.symbol).toBe('widget');
         expect(externalSource.source.content).toContain('return "second"');
       }
+      expect(
+        existsSync(
+          parsedCachePath(project.latDir, '@external/upstream/widget.ts'),
+        ),
+      ).toBe(true);
 
       const graph = await json<ViewGraph>(`${server.url}api/graph`);
       expect(

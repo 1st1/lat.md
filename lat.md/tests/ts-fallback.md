@@ -26,3 +26,11 @@ With `_LAT_DISABLE_RG=1`, `findRefs` with `code` scope still finds `@lat:` back-
 ## getSection includes code back-refs without rg
 
 With `_LAT_DISABLE_RG=1`, `getSection` still populates `codeRefs` with `@lat:` back-references from source files.
+
+## Bounded pool preserves source order
+
+With more source files than the machine-derived fallback concurrency slots, the bounded TypeScript read-and-grep pool returns references in discovered file order rather than completion order.
+
+## Matches ripgrep discovery semantics
+
+The TypeScript and ripgrep paths return the same ordered files and references across nested ignore files, negations, dot paths, generated output, nested Lat projects, and scans outside Git checkouts.

@@ -26,9 +26,10 @@ import {
 } from '../external-documents.js';
 import {
   resolveSourceSymbol,
-  SOURCE_EXTENSIONS,
+  SourceParserRuntime,
   type SourceSymbol,
 } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
@@ -166,7 +167,7 @@ export async function createMarkdownWikiLinkResolver(
     const source = viewSourceTarget(target);
     if (!source) return null;
     try {
-      await readViewSource(projectRoot, source.path, source.symbol);
+      await readViewSource(latDir, projectRoot, source.path, source.symbol);
       let section: Section | undefined;
       for (const candidate of currentSections) {
         if (candidate.startLine > context.line) break;
@@ -317,6 +318,7 @@ export async function getViewExternal(
 }
 
 async function readViewSource(
+  latDir: string,
   projectRoot: string,
   requestedPath: string,
   requestedSymbol = '',
@@ -328,7 +330,7 @@ async function readViewSource(
     !requestedPath ||
     requestedPath.includes('\\') ||
     isAbsolute(requestedPath) ||
-    !SOURCE_EXTENSIONS.has(extname(requestedPath))
+    !isSourceFileExtension(extname(requestedPath))
   ) {
     throw new ViewSourceNotFoundError('Source document not found');
   }
@@ -372,6 +374,7 @@ async function readViewSource(
     requestedPath,
     requestedSymbol,
     projectRoot,
+    { latDir, runtime: new SourceParserRuntime() },
   );
   const symbol = resolved.found
     ? matchingSymbol(resolved.symbols, requestedSymbol)
@@ -405,6 +408,7 @@ export async function getViewSource(
   referenceIndex?: ViewReferenceIndex,
 ): Promise<ViewSourceDocument> {
   const source = await readViewSource(
+    latDir,
     projectRoot,
     requestedPath,
     requestedSymbol,

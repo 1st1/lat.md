@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import { performance } from 'node:perf_hooks';
 import {
   flattenSections,
   type LatFrontmatter,
@@ -9,7 +7,11 @@ import {
   type SectionSlugIndex,
 } from '../lattice.js';
 import { scanCodeRefs, type ScanResult } from '../code-refs.js';
-import { clearSymbolCache } from '../source-parser.js';
+import {
+  SourceParserRuntime,
+  type ResolveSourceSymbolOptions,
+  type SourceFileAnalysis,
+} from '../source-parser.js';
 import {
   createExternalResolver,
   type ExternalResolver,
@@ -21,11 +23,10 @@ import {
   type MarkdownAnalysisExecutor,
   type MarkdownProjectAnalysis,
 } from '../project-analysis.js';
-import {
-  analyzeMarkdownFile,
-  type MarkdownFileAnalysis,
-} from '../markdown-analysis.js';
+import type { MarkdownFileAnalysis } from '../markdown-analysis.js';
+import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import type { LocalMarkdownDiagnostic } from '../markdown-validation.js';
+import type { ExternalDocumentFileAnalysis } from '../external-documents.js';
 
 export type CheckSectionIndex = {
   sectionIds: Set<string>;
@@ -40,6 +41,7 @@ export class CheckRunContext {
   private externalResolverPromise?: Promise<ExternalResolver>;
   private reconciledExternalPromise?: Promise<void>;
   private sourceSymbolCacheCleared = false;
+  private readonly sourceParserRuntime = new SourceParserRuntime();
 
   private readonly headingPromises = new Map<string, Promise<Set<string>>>();
   private readonly externalContentPromises = new Map<
@@ -79,6 +81,16 @@ export class CheckRunContext {
     const detail = analysis.path;
     const timings = analysis.timings;
     this.profile.record('read Markdown file', timings.readMs, detail);
+    this.profile.record('hash Markdown file', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed Markdown cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(`parsed Markdown cache ${timings.cacheStatus}`, 0);
+    }
+    if (timings.cacheStatus === 'hit') return;
     this.profile.record('parse Markdown AST', timings.parseMs, detail);
     this.profile.record(
       'extract Markdown sections',
@@ -107,12 +119,83 @@ export class CheckRunContext {
       timings.diagnosticsMs,
       detail,
     );
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed Markdown cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
+  }
+
+  private recordSourceAnalysis(analysis: SourceFileAnalysis): void {
+    if (!this.profile) return;
+    const detail = analysis.path;
+    const timings = analysis.timings;
+    this.profile.record('read source file', timings.readMs, detail);
+    this.profile.record('hash source file', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed source cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(`parsed source cache ${timings.cacheStatus}`, 0);
+    }
+    if (timings.cacheStatus === 'hit') return;
+    this.profile.record('parse source symbols', timings.parseMs, detail);
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed source cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
+  }
+
+  private recordExternalDocumentAnalysis(
+    analysis: ExternalDocumentFileAnalysis,
+  ): void {
+    if (!this.profile) return;
+    const detail = analysis.path;
+    const timings = analysis.timings;
+    this.profile.record('hash external document', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed external document cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(
+        `parsed external document cache ${timings.cacheStatus}`,
+        0,
+      );
+    }
+    if (timings.cacheStatus === 'hit') return;
+    this.profile.record('parse external document', timings.parseMs, detail);
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed external document cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
+  }
+
+  sourceSymbolOptions(): ResolveSourceSymbolOptions {
+    return {
+      latDir: this.latticeDir,
+      runtime: this.sourceParserRuntime,
+      onFileAnalyzed: (analysis) => this.recordSourceAnalysis(analysis),
+    };
   }
 
   clearSourceSymbolCache(): void {
     if (this.sourceSymbolCacheCleared) return;
     this.sourceSymbolCacheCleared = true;
-    this.timeSync('clear source-symbol cache', clearSymbolCache);
+    this.timeSync('clear source-symbol cache', () =>
+      this.sourceParserRuntime.clear(),
+    );
   }
 
   project(): Promise<MarkdownProjectAnalysis> {
@@ -140,16 +223,11 @@ export class CheckRunContext {
     let auxiliary = this.auxiliaryFilePromises.get(file);
     if (!auxiliary) {
       auxiliary = (async () => {
-        const started = performance.now();
-        const content = await readFile(file, 'utf8');
-        const readMs = performance.now() - started;
-        const result = analyzeMarkdownFile(
+        const result = await analyzeMarkdownPath(
           file,
-          content,
           this.latticeDir,
           this.projectRoot,
         );
-        result.timings.readMs = readMs;
         this.recordAnalysis(result);
         return result;
       })();
@@ -225,7 +303,11 @@ export class CheckRunContext {
   private loadExternalResolver(): Promise<ExternalResolver> {
     this.externalResolverPromise ??= this.time(
       'load external-source configuration',
-      () => createExternalResolver(this.latticeDir, this.projectRoot),
+      () =>
+        createExternalResolver(this.latticeDir, this.projectRoot, {
+          onDocumentAnalyzed: (analysis) =>
+            this.recordExternalDocumentAnalysis(analysis),
+        }),
     );
     return this.externalResolverPromise;
   }
