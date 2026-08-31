@@ -68,7 +68,7 @@ export async function startMcpServer(): Promise<void> {
         .describe('Max results (default 5)'),
       threshold: z
         .number()
-        .min(-1)
+        .min(0)
         .max(1)
         .optional()
         .default(DEFAULT_SEARCH_THRESHOLD)

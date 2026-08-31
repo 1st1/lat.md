@@ -39,6 +39,11 @@ first.
 Semantic search returns only candidates at or above the requested cosine-similarity threshold so
 callers can trade recall for less low-relevance noise.
 
+### Discards negative similarity scores
+
+Every semantic-search path applies a zero score floor even without an explicit relevance threshold,
+so results pointing away from the query in embedding space are never returned.
+
 ### Finds performance section for latency query
 
 Search for "what tools do we use to measure response times?" and verify the Performance Tests

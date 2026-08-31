@@ -182,6 +182,41 @@ describe('search result formatting', () => {
   });
 });
 
+describe('search score floor', () => {
+  // @lat: [[search#RAG Tests#Discards negative similarity scores]]
+  it('discards negative cosine similarities without an explicit threshold', async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue({
+        rows: [
+          {
+            id: 'negative',
+            file: 'negative.md',
+            heading: 'Negative',
+            content: 'Negative match',
+            score: -0.1,
+          },
+          {
+            id: 'zero',
+            file: 'zero.md',
+            heading: 'Zero',
+            content: 'Zero match',
+            score: 0,
+          },
+        ],
+      }),
+    } as unknown as Client;
+    const embedder: Embedder = {
+      name: 'test',
+      dimensions: 1,
+      embed: vi.fn().mockResolvedValue([[1]]),
+    };
+
+    const results = await searchSections(db, 'query', embedder);
+
+    expect(results.map((result) => result.id)).toEqual(['zero']);
+  });
+});
+
 // --- Legacy cache upgrade: rebuild a pre-versioning index ---
 //
 // A `.cache` built by a version that never recorded `meta.embedding_model` has

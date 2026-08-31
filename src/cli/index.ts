@@ -30,8 +30,8 @@ function parsePort(value: string): number {
 
 function parseSimilarityThreshold(value: string): number {
   const threshold = Number(value);
-  if (!Number.isFinite(threshold) || threshold < -1 || threshold > 1) {
-    throw new InvalidArgumentError('threshold must be a number from -1 to 1');
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+    throw new InvalidArgumentError('threshold must be a number from 0 to 1');
   }
   return threshold;
 }

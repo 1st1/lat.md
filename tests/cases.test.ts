@@ -128,16 +128,18 @@ describe('cli command surface', () => {
     expect(search.stdout).toContain('--threshold <score>');
     expect(search.stdout).toContain('default: 0.35');
 
-    const invalidThreshold = runCli('basic-project', [
-      'search',
-      'query',
-      '--threshold',
-      '1.1',
-    ]);
-    expect(invalidThreshold.exitCode).toBe(1);
-    expect(invalidThreshold.stderr).toContain(
-      'threshold must be a number from -1 to 1',
-    );
+    for (const threshold of ['-0.1', '1.1']) {
+      const invalidThreshold = runCli('basic-project', [
+        'search',
+        'query',
+        '--threshold',
+        threshold,
+      ]);
+      expect(invalidThreshold.exitCode).toBe(1);
+      expect(invalidThreshold.stderr).toContain(
+        'threshold must be a number from 0 to 1',
+      );
+    }
   });
 });
 

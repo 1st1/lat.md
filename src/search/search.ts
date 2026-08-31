@@ -16,7 +16,7 @@ export async function searchSections(
   query: string,
   embedder: Embedder,
   limit = 5,
-  threshold?: number,
+  threshold = 0,
 ): Promise<SearchResult[]> {
   const [queryVec] = await embedder.embed([query]);
   const vecJson = JSON.stringify(queryVec);
@@ -41,7 +41,5 @@ export async function searchSections(
     };
   });
 
-  return threshold === undefined
-    ? results
-    : results.filter((result) => result.score >= threshold);
+  return results.filter((result) => result.score >= threshold);
 }
