@@ -39,6 +39,14 @@ A section that is referenced by wiki links from other sections returns those ref
 
 Verifies that `formatSectionOutput` correctly renders the "Referenced by" block when a section has incoming references.
 
+## Parent section aggregates descendant references
+
+Requesting a parent section recursively includes outgoing references owned by descendant sections, plus code backlinks targeting any descendant.
+
+## Reference summaries preserve leading paragraphs
+
+Outgoing and incoming section lists render complete valid leading paragraphs rather than short previews, with a 300-character safety cap for invalid documents.
+
 ## Source refs include line range
 
 `getSection` populates `outgoingSourceRefs` with `line` and `endLine` from the resolved symbol, so callers can display the full extent of a function or class.

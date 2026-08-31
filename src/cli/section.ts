@@ -2,10 +2,12 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import {
   findSections,
+  flattenSections,
   resolveRef,
   type Section,
   type SectionMatch,
 } from '../lattice.js';
+import { MAX_SECTION_SUMMARY_LENGTH } from '../markdown-validation.js';
 import { SOURCE_EXTENSIONS, resolveSourceSymbol } from '../source-parser.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import {
@@ -93,7 +95,14 @@ export async function getSection(
   const sectionIds = new Set(project.sectionIds);
   const { fileIndex, slugIndex } = project;
   const sectionId = section.id.toLowerCase();
-  const sectionRefs = project.outgoingRefsBySection.get(sectionId) ?? [];
+  const subtreeSections = flattenSections([section]);
+  const subtreeSectionIds = new Set(
+    subtreeSections.map((subtreeSection) => subtreeSection.id.toLowerCase()),
+  );
+  const sectionRefs = subtreeSections.flatMap(
+    (subtreeSection) =>
+      project.outgoingRefsBySection.get(subtreeSection.id.toLowerCase()) ?? [],
+  );
 
   const outgoingRefs: { target: string; resolved: Section }[] = [];
   const outgoingSourceRefs: SourceRef[] = [];
@@ -101,7 +110,7 @@ export async function getSection(
   const external = await commandProjectSession(ctx).external();
   const seen = new Set<string>();
   for (const ref of sectionRefs) {
-    if (ref.fromSection.toLowerCase() !== sectionId) continue;
+    if (!subtreeSectionIds.has(ref.fromSection.toLowerCase())) continue;
     if (external.parse(ref.target)) {
       if (!seen.has(ref.target)) {
         seen.add(ref.target);
@@ -206,7 +215,7 @@ export async function getSection(
       fileIndex,
       slugIndex,
     );
-    if (codeResolved.toLowerCase() === sectionId) {
+    if (subtreeSectionIds.has(codeResolved.toLowerCase())) {
       const absFile = join(ctx.projectRoot, ref.file);
       let snippet = '';
       try {
@@ -241,6 +250,12 @@ function fullEndLine(section: Section): number {
 
 function truncate(s: string, max: number): string {
   return s.length > max ? s.slice(0, max) + '...' : s;
+}
+
+const SECTION_SUMMARY_SAFETY_LIMIT = MAX_SECTION_SUMMARY_LENGTH + 50;
+
+function sectionSummary(section: Section): string {
+  return truncate(section.firstParagraph, SECTION_SUMMARY_SAFETY_LIMIT);
 }
 
 /**
@@ -285,7 +300,7 @@ export function formatSectionOutput(
     parts.push('', '## This section references:', '');
     for (const ref of outgoingRefs) {
       const body = ref.resolved.firstParagraph
-        ? ` ${s.dim('—')} ${truncate(ref.resolved.firstParagraph, 120)}`
+        ? ` ${s.dim('—')} ${sectionSummary(ref.resolved)}`
         : '';
       parts.push(
         `${s.dim('*')} [[${formatSectionId(ref.resolved.id, s)}]]${body}`,
@@ -319,7 +334,7 @@ export function formatSectionOutput(
     parts.push('', '## Referenced by:', '');
     for (const ref of incomingRefs) {
       const body = ref.section.firstParagraph
-        ? ` ${s.dim('—')} ${truncate(ref.section.firstParagraph, 120)}`
+        ? ` ${s.dim('—')} ${sectionSummary(ref.section)}`
         : '';
       parts.push(
         `${s.dim('*')} [[${formatSectionId(ref.section.id, s)}]]${body}`,
