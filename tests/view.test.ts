@@ -109,6 +109,7 @@ import {
   getSourceWindowRows,
 } from '../view/src/source-window.js';
 import { staticViewAssetUrl } from '../view/src/static-mode.js';
+import viewViteConfig from '../view/vite.config.js';
 import {
   deterministicGraphPosition,
   graphDisplayLabel,
@@ -178,9 +179,10 @@ describe('lat ui', () => {
     mkdirSync(join(clientDir, 'assets'));
     writeFileSync(
       join(clientDir, 'index.html'),
-      '<!doctype html><html><head><script type="module" src="/assets/app.js"></script></head><body><main>lat ui shell</main></body></html>',
+      '<!doctype html><html><head><script type="module" src="./assets/app.js"></script><link rel="stylesheet" href="./assets/app.css"></head><body><main>lat ui shell</main></body></html>',
     );
     writeFileSync(join(clientDir, 'assets', 'app.js'), 'export {};');
+    writeFileSync(join(clientDir, 'assets', 'app.css'), 'main {}');
     view = await startViewServer(testContext(), {
       clientDir,
       git: false,
@@ -212,7 +214,11 @@ describe('lat ui', () => {
 
     const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
     expect(shellResponse.status).toBe(200);
-    expect(await shellResponse.text()).toContain('lat ui shell');
+    const shell = await shellResponse.text();
+    expect(shell).toContain('lat ui shell');
+    expect(shell).toContain('src="/assets/app.js"');
+    expect(shell).toContain('href="/assets/app.css"');
+    expect(shell).not.toContain('./assets/');
     const contentSecurityPolicy = shellResponse.headers.get(
       'content-security-policy',
     );
@@ -249,6 +255,7 @@ describe('lat ui', () => {
 
   // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
   it('builds a static deployment without live Git or search services', async () => {
+    expect(viewViteConfig).toMatchObject({ base: './' });
     expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
@@ -367,6 +374,8 @@ describe('lat ui', () => {
         'utf8',
       );
       expect(shell).toContain('/project/assets/app.js');
+      expect(shell).toContain('/project/assets/app.css');
+      expect(shell).not.toContain('./assets/');
       expect(shell).toContain(
         'globalThis.__LAT_STATIC_VIEW__={"basePath":"/project/"}',
       );

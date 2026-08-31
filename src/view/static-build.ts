@@ -32,6 +32,7 @@ import {
   type ViewStaticSourceRequest,
 } from './static-protocol.js';
 import { createViewStore } from './store.js';
+import { rewriteClientAssetUrls } from './client-shell.js';
 
 const BUILD_MARKER = '.lat-ui-build';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
@@ -507,10 +508,7 @@ function sectionDocumentPaths(
 }
 
 function clientShell(html: string, basePath: string): string {
-  const assets = html.replace(
-    /(["'])\/assets\//g,
-    (_match, quote: string) => `${quote}${basePath}assets/`,
-  );
+  const assets = rewriteClientAssetUrls(html, basePath);
   const configValue = JSON.stringify({ basePath }).replaceAll('<', '\\u003c');
   const config = `<script>globalThis.__LAT_STATIC_VIEW__=${configValue}</script>`;
   return assets.includes('</head>')

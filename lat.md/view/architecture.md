@@ -50,6 +50,8 @@ The browser reads an immutable manifest instead of `/api/*`, never opens an even
 
 `--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path, so deploying the output directory at a host's root serves the UI from that subpath. `/` is the default.
 
+Vite emits lazy chunks, imported CSS, fonts, and renderer dependencies relative to their owning JavaScript or stylesheet. Generated route shells anchor only the entry assets at the configured base, so nested deployments do not leak requests to root `/assets/`.
+
 Relative Markdown links are rewritten against their source document so the extra static route directory does not change their target. Both the deployment root and a non-root base directory redirect to the exported entry document.
 
 Builds reject any existing destination, including an empty directory or prior export. For a new path, the builder stages the complete artifact beside the destination and renames it into place only after generation succeeds.

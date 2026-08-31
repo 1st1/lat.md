@@ -15,6 +15,8 @@ By default the header renders the same Lat wordmark as the website. `lat ui --lo
 
 The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
 
+The server anchors Vite's relative entry assets at `/assets/`, so every live document, source, search, and graph route loads the same production shell.
+
 ## Builds a static deployment
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
@@ -26,6 +28,8 @@ Every source file stores its raw text and highlighted lines once. Request-specif
 `lat ui build --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the website wordmark.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
+
+Entry assets use that base, while lazy JavaScript, CSS, fonts, and renderer chunks resolve relative to their owning production asset. Rich fences therefore work at both root and nested deployments.
 
 Any existing output path is rejected before snapshot work begins, including an empty directory or prior generated export. Callers must remove it explicitly or choose a new destination.
 

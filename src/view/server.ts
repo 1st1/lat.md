@@ -18,6 +18,7 @@ import {
 } from './repository.js';
 import { createViewSearch, type ViewSearch } from './search.js';
 import { createViewStore, type ViewStore } from './store.js';
+import { rewriteClientAssetUrls } from './client-shell.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_VIEW_PORT = 4242;
@@ -129,6 +130,21 @@ async function sendClientFile(
       immutable ? 'public, max-age=31536000, immutable' : 'no-cache',
     );
     send(res, 200, contentType(path), body, headOnly);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    send(res, 404, 'text/plain; charset=utf-8', 'Not found', headOnly);
+  }
+}
+
+async function sendClientShell(
+  res: ServerResponse,
+  path: string,
+  headOnly: boolean,
+): Promise<void> {
+  try {
+    const body = rewriteClientAssetUrls(await readFile(path, 'utf8'), '/');
+    res.setHeader('Cache-Control', 'no-cache');
+    send(res, 200, 'text/html; charset=utf-8', body, headOnly);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     send(res, 404, 'text/plain; charset=utf-8', 'Not found', headOnly);
@@ -377,7 +393,7 @@ export async function startViewServer(
         url.pathname.startsWith('/code/') ||
         url.pathname.startsWith('/external/')
       ) {
-        await sendClientFile(res, join(clientDir, 'index.html'), headOnly);
+        await sendClientShell(res, join(clientDir, 'index.html'), headOnly);
         return;
       }
 
