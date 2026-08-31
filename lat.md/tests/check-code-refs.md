@@ -17,7 +17,7 @@ Given a `lat.md` file with [[markdown#Frontmatter#require-code-mention]] and a l
 
 ## Scans only supported source files
 
-Ripgrep and the TypeScript fallback both scan every centrally registered source extension for `@lat:` comments and ignore markers in unsupported files while preserving the complete file inventory used by `lat check` statistics.
+Ripgrep and the TypeScript fallback both scan every centrally registered source extension for `@lat:` comments. Unsupported files are neither searched nor included in `lat check` scan statistics.
 
 ## Scans Dart references around annotations
 

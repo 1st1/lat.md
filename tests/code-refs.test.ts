@@ -44,8 +44,10 @@ function expectRegisteredSourcesOnly(scan: ScanResult): void {
     false,
   );
   expect(scan.files.some((file) => file.endsWith('unsupported.txt'))).toBe(
-    true,
+    false,
   );
+  expect(scan.files.every(isSourceFilePath)).toBe(true);
+  expect(scan.files).toHaveLength(SOURCE_FILE_EXTENSIONS.length);
 }
 
 function relativeFiles(root: string, scan: ScanResult): string[] {
@@ -203,9 +205,9 @@ describe('supported source code-reference scanning', () => {
     try {
       process.env._LAT_DISABLE_RG = '1';
       const scan = await scanCodeRefs(root);
-      const sourceOrder = scan.files
-        .filter(isSourceFilePath)
-        .map((file) => relative(root, file).replaceAll('\\', '/'));
+      const sourceOrder = scan.files.map((file) =>
+        relative(root, file).replaceAll('\\', '/'),
+      );
       expect(scan.refs.map((ref) => ref.file)).toEqual(sourceOrder);
     } finally {
       if (original === undefined) delete process.env._LAT_DISABLE_RG;
@@ -224,7 +226,6 @@ describe('supported source code-reference scanning', () => {
       expect(relativeFiles(root, fallback)).toEqual([
         'nested/kept.skip.ts',
         'nested/visible.ts',
-        'plain.txt',
         'pruned/reincluded/kept.ts',
         'src/kept.tmp.ts',
         'src/visible.ts',

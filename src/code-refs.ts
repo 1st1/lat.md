@@ -13,8 +13,9 @@ const EXCLUDE_DIRS = ['lat.md', '.claude'];
 const EXCLUDE_GLOBS = ['*.md', '.*', '**/.*'];
 const RG_IGNORE_ARGS = ['--no-require-git', '--ignore-file-case-insensitive'];
 
-/** Walk project files for code-ref scanning. Uses walkEntries for .gitignore
- *  support, then additionally skips .md files, lat.md/, .claude/, and sub-projects. */
+/** Walk supported source files for code-ref scanning. Uses walkEntries for
+ *  .gitignore support, then additionally skips lat.md/, .claude/, generated
+ *  output, and sub-projects. */
 export async function walkFiles(dir: string): Promise<string[]> {
   const entries = (await walkEntries(dir)).map(toPosix);
   const generatedOutputs = new Set(
@@ -33,7 +34,7 @@ export async function walkFiles(dir: string): Promise<string[]> {
   return entries
     .filter(
       (e) =>
-        !e.endsWith('.md') &&
+        isSourceFilePath(e) &&
         !e.startsWith('lat.md/') &&
         !e.startsWith('.claude/') &&
         ![...generatedOutputs].some((prefix) => e.startsWith(prefix)) &&
@@ -235,7 +236,13 @@ async function tryRipgrep(
     profileScan(profile, 'list project files with ripgrep', () =>
       tryExec(
         'rg',
-        ['--files', ...RG_IGNORE_ARGS, ...excludes, '.'],
+        [
+          '--files',
+          ...RG_IGNORE_ARGS,
+          ...rgSourceIncludeArgs(),
+          ...excludes,
+          '.',
+        ],
         projectRoot,
       ),
     ),
@@ -245,7 +252,7 @@ async function tryRipgrep(
   const { refs } = parseGrepOutput(out, projectRoot);
   refs.sort((a, b) => a.file.localeCompare(b.file, 'en') || a.line - b.line);
 
-  // List all scanned files for the extension summary.
+  // List every supported source file searched for the extension summary.
   const files = (filesOut || '')
     .split('\n')
     .filter(Boolean)
