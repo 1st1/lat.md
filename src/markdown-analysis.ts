@@ -7,13 +7,10 @@ import {
   extractRefs,
   parseFrontmatter,
   parseSections,
-  type LatFrontmatter,
-  type MdLink,
-  type Ref,
-  type Section,
 } from './lattice.js';
+import type { LatFrontmatter, MdLink, Ref, Section } from './lattice-model.js';
 import { parse } from './parser.js';
-import { toPosix } from './walk.js';
+import { toPosix } from './path.js';
 import type { WikiLink } from './extensions/wiki-link/types.js';
 import {
   analyzeLocalMarkdownDiagnostics,

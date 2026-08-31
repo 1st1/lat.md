@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, relative } from 'node:path';
-import { toPosix } from './walk.js';
+import { toPosix } from './path.js';
 
 /** Version of persistent parser outputs and their shared on-disk contract. */
 export const PARSER_CACHE_VERSION = 1;

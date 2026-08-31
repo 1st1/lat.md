@@ -1,4 +1,4 @@
-import { findSections } from '../lattice.js';
+import { findSections } from '../lattice-model.js';
 import { formatResultList } from '../format.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import { commandProjectAnalysis } from '../project-analysis.js';

@@ -7,7 +7,7 @@ import {
   buildFileIndex,
   resolveRef,
 } from '../src/lattice.js';
-import { toPosix } from '../src/walk.js';
+import { toPosix } from '../src/path.js';
 
 const basicDir = join(import.meta.dirname, 'cases', 'basic-project');
 const basicLat = join(basicDir, 'lat.md');

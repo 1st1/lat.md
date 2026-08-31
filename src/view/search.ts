@@ -1,6 +1,6 @@
 import { dirname, relative, resolve } from 'node:path';
-import type { SectionMatch } from '../lattice.js';
-import { toPosix } from '../walk.js';
+import type { SectionMatch } from '../lattice-model.js';
+import { toPosix } from '../path.js';
 import type { ViewSearchResponse, ViewSearchResult } from './protocol.js';
 
 const VIEW_SEARCH_LIMIT = 10;

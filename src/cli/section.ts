@@ -6,7 +6,7 @@ import {
   resolveRef,
   type Section,
   type SectionMatch,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import { MAX_SECTION_SUMMARY_LENGTH } from '../markdown-validation.js';
 import { resolveSourceSymbol } from '../source-parser.js';
 import { isSourceFileExtension } from '../source-formats.js';

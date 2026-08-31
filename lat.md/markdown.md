@@ -98,7 +98,7 @@ When multiple files share the same stem (e.g. `alpha/notes.md` and `beta/notes.m
 
 Source code references (e.g. `[[src/config.ts#getConfigDir]]`) always require the full path — no short refs for source files.
 
-Resolution is handled by [[src/lattice.ts#resolveRef]]. See [[parser#Short Ref Resolution]] for implementation details.
+Resolution is handled by [[src/lattice-model.ts#resolveRef]]. See [[parser#Short Ref Resolution]] for implementation details.
 
 ### Source Code Links
 

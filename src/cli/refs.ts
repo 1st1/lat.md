@@ -5,7 +5,7 @@ import {
   resolveRef,
   type Section,
   type SectionMatch,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import { formatResultList } from '../format.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import {

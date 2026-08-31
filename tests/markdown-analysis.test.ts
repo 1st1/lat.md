@@ -12,6 +12,7 @@ import {
   analyzeMarkdownProject,
   MarkdownProjectSession,
 } from '../src/project-analysis.js';
+import type { ParserImportEvent } from '../src/parser-import.js';
 
 const temporaryRoots: string[] = [];
 
@@ -93,10 +94,12 @@ See [[other#Details]], [guide](guide.md), and [missing][nowhere].
       executor: 'inline',
       cache: false,
     });
+    const imports: ParserImportEvent[] = [];
     const workers = await analyzeMarkdownProject(latDir, root, {
       executor: 'workers',
       maxWorkers: 2,
       cache: false,
+      onParserImport: (event) => imports.push(event),
     });
 
     expect(semanticFiles(workers)).toEqual(semanticFiles(inline));
@@ -104,6 +107,21 @@ See [[other#Details]], [guide](guide.md), and [missing][nowhere].
     expect([...workers.incomingRefsBySection]).toEqual([
       ...inline.incomingRefsBySection,
     ]);
+    expect(imports).toHaveLength(2);
+    expect(imports).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          parser: 'Markdown analyzer',
+          imported: true,
+          detail: 'worker 1',
+        }),
+        expect.objectContaining({
+          parser: 'Markdown analyzer',
+          imported: true,
+          detail: 'worker 2',
+        }),
+      ]),
+    );
   });
 
   // @lat: [[tests/analysis-tests#Reuses one command session snapshot]]

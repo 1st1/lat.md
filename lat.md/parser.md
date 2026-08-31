@@ -61,13 +61,13 @@ For example, `[[search#Provider Detection]]` resolves to `lat.md/tests/search#Se
 
 The root (h1) heading can be omitted in references: `[[backend#CORS]]` resolves to `lat.md/backend#Backend#CORS` because the h1 heading is implicit from the file. Both `resolveRef()` and `findSections()` handle this by trying to insert root headings when a direct match fails.
 
-[[src/lattice.ts#buildSectionSlugIndex]] maps GitHub-slugged heading paths back to canonical literal-heading ids. Strict and lenient resolution accept either form while continuing to return the original section ids used by existing CLI output.
+[[src/lattice-model.ts#buildSectionSlugIndex]] maps GitHub-slugged heading paths back to canonical literal-heading ids. Strict and lenient resolution accept either form while continuing to return the original section ids used by existing CLI output.
 
-The file index ([[src/lattice.ts#buildFileIndex]]) maps all trailing path suffixes to their full paths. For `lat.md/guides/setup`, both `guides/setup` and `setup` are indexed. All keys are lowercase for case-insensitive lookup.
+The file index ([[src/lattice-model.ts#buildFileIndex]]) maps all trailing path suffixes to their full paths. For `lat.md/guides/setup`, both `guides/setup` and `setup` are indexed. All keys are lowercase for case-insensitive lookup.
 
-Stored paths are always forward-slash (POSIX), independent of host OS. Node's `path.relative()` emits the native separator (`\` on Windows), so every OS-relative path is normalized through [[src/walk.ts#toPosix]] at construction — in [[src/lattice.ts#parseSections]], [[src/lattice.ts#extractRefs]], and the code-ref scanner ([[src/code-refs.ts#scanCodeRefs]]). Reference resolution also accepts Windows-style backslashes in the file portion and normalizes them before matching, preserving refs generated before this invariant was introduced. Without this, `buildFileIndex` (which splits on `/`) failed to index any suffix on Windows, so bare-name links in directory-index files never resolved (issue #69).
+Stored paths are always forward-slash (POSIX), independent of host OS. Node's `path.relative()` emits the native separator (`\` on Windows), so every OS-relative path is normalized through [[src/path.ts#toPosix]] at construction — in [[src/lattice.ts#parseSections]], [[src/lattice.ts#extractRefs]], and the code-ref scanner ([[src/code-refs.ts#scanCodeRefs]]). Reference resolution also accepts Windows-style backslashes in the file portion and normalizes them before matching, preserving refs generated before this invariant was introduced. Without this, `buildFileIndex` (which splits on `/`) failed to index any suffix on Windows, so bare-name links in directory-index files never resolved (issue #69).
 
-Resolution is handled by [[src/lattice.ts#resolveRef]] for strict contexts (`lat check`, `lat refs`) where authored links must resolve unambiguously. Lenient contexts (`lat locate`, `lat expand`) use [[src/lattice.ts#findSections]] directly, which has its own file stem expansion built in — it does not call `resolveRef`.
+Resolution is handled by [[src/lattice-model.ts#resolveRef]] for strict contexts (`lat check`, `lat refs`) where authored links must resolve unambiguously. Lenient contexts (`lat locate`, `lat expand`) use [[src/lattice-model.ts#findSections]] directly, which has its own file stem expansion built in — it does not call `resolveRef`.
 
 ## Refs Extraction
 

@@ -1,5 +1,5 @@
 import type { Root, RootContent } from 'mdast';
-import { flattenSections, type Section } from '../lattice.js';
+import { flattenSections, type Section } from '../lattice-model.js';
 import type { ViewDocumentError, ViewDocumentTocItem } from './protocol.js';
 
 type StateNode = RootContent & {

@@ -1,4 +1,4 @@
-import { flattenSections, type MdLink, type Section } from './lattice.js';
+import { flattenSections, type MdLink, type Section } from './lattice-model.js';
 
 export const MAX_SECTION_SUMMARY_LENGTH = 250;
 

@@ -6,13 +6,13 @@ import {
   flattenSections,
   resolveRef,
   type Section,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import {
   analyzeMarkdownFile,
   type MarkdownFileAnalysis,
   type MarkdownParagraph,
 } from '../markdown-analysis.js';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import { renderMarkdown, type WikiLinkResolver } from './markdown.js';
 import type {
   ViewCodeBackReference,

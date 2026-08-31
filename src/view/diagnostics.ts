@@ -7,10 +7,10 @@ import {
   flattenSections,
   resolveRef,
   type Section,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import { SourceParserRuntime } from '../source-parser.js';
 import type { ExternalResolver } from '../external-sources.js';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import { parseLocalMarkdownTarget } from '../markdown-validation.js';
 import type { ViewDocumentError } from './protocol.js';
 import type {

@@ -3,7 +3,8 @@ import { execFile } from 'node:child_process';
 import { availableParallelism } from 'node:os';
 import { join, posix, relative } from 'node:path';
 import { isSourceFilePath, SOURCE_FILE_EXTENSIONS } from './source-formats.js';
-import { toPosix, walkEntries } from './walk.js';
+import { toPosix } from './path.js';
+import { walkEntries } from './walk.js';
 import type { Profiler } from './profiler.js';
 
 /** Glob patterns used to exclude directories/files from code-ref scanning.

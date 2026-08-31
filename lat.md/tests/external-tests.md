@@ -33,6 +33,8 @@ reStructuredText and AsciiDoc parse nodes project directly into safe canonical t
 
 External Markdown, reStructuredText, and AsciiDoc analyses use validated versioned cache entries, invalidate changed content, recover from malformed payloads, and share one provider load and parse across every fragment of a file.
 
+Misses report their format-parser import; hits report that import as skipped.
+
 ## Cache reconciliation
 
 Cache tests verify schema-version, exact provider-source, commit, and strategy generations, atomic publication, concurrency, removal, local transitions, and failure without stale fallback.

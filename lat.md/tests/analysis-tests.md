@@ -13,7 +13,7 @@ One parse produces sections, references, links, frontmatter, presentation facts,
 
 ## Produces equivalent inline and worker snapshots
 
-Inline and worker executors produce identical semantic files and project indexes while worker count and timing remain implementation details.
+Inline and worker executors produce identical semantic files and project indexes. Worker-backed runs expose exactly one analyzer-import event per worker while measured durations remain implementation details.
 
 ## Reuses one command session snapshot
 
@@ -22,6 +22,10 @@ A command session returns the same lazily created project snapshot to nested sem
 ## Persists and reuses unchanged file analysis
 
 An unchanged Markdown file reloads the complete serializable analysis from its content-addressed persistent cache without constructing a parser AST or worker pool.
+
+## Keeps format parsers off warm cache paths
+
+Warm local and external document cache hits hydrate serializable facts without importing the Markdown, reStructuredText, or AsciiDoc parser modules.
 
 ## Invalidates changed content and cache schemas
 

@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { dirname, extname } from 'node:path';
-import { findLatticeDir } from '../lattice.js';
+import { findLatticeDir } from '../project-discovery.js';
 import { plainStyler, type CmdContext } from '../context.js';
 import { expandPrompt } from './expand.js';
 import { runSearch } from './search.js';

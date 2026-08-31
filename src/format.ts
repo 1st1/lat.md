@@ -1,5 +1,5 @@
 import { join, relative } from 'node:path';
-import type { Section, SectionMatch } from './lattice.js';
+import type { Section, SectionMatch } from './lattice-model.js';
 import type { CmdContext, Styler } from './context.js';
 
 export function formatSectionId(id: string, s: Styler): string {

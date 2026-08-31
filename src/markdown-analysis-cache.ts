@@ -1,10 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import {
-  analyzeMarkdownFile,
-  type MarkdownAnalysisTimings,
-  type MarkdownFileAnalysis,
+import type {
+  MarkdownAnalysisTimings,
+  MarkdownFileAnalysis,
 } from './markdown-analysis.js';
 import {
   PARSER_CACHE_VERSION,
@@ -15,7 +14,9 @@ import {
   writeParsedCache,
   type ParsedCacheEntry,
 } from './parser-cache.js';
-import { toPosix } from './walk.js';
+import { toPosix } from './path.js';
+import { loadMarkdownAnalyzer } from './markdown-analyzer-loader.js';
+import type { ParserImportObserver } from './parser-import.js';
 
 export { PARSER_CACHE_VERSION } from './parser-cache.js';
 
@@ -203,6 +204,7 @@ export async function analyzeMarkdownPath(
   latDir: string,
   projectRoot: string,
   cache = true,
+  onParserImport?: ParserImportObserver,
 ): Promise<MarkdownFileAnalysis> {
   const prepared = await prepareMarkdownAnalysis(
     absolutePath,
@@ -210,7 +212,20 @@ export async function analyzeMarkdownPath(
     projectRoot,
     cache,
   );
-  if (prepared.analysis) return prepared.analysis;
+  const detail = toPosix(relative(latDir, absolutePath));
+  if (prepared.analysis) {
+    onParserImport?.({
+      parser: 'Markdown analyzer',
+      imported: false,
+      durationMs: 0,
+      detail: `${detail} cached`,
+    });
+    return prepared.analysis;
+  }
+  const analyzeMarkdownFile = await loadMarkdownAnalyzer(
+    onParserImport,
+    detail,
+  );
   return publishMarkdownAnalysis(
     prepared,
     analyzeMarkdownFile(absolutePath, prepared.content, latDir, projectRoot),
