@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -19,6 +21,7 @@ import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
 import latLogoUrl from '../../website/public/logo.svg?url';
 import { FileTree } from './FileTree';
 import { MarkdownContent } from './MarkdownContent';
+import { DocumentModeSwitch, type DocumentMode } from './DocumentModeSwitch';
 import { DocumentToc } from './DocumentToc';
 import { fetchViewJson } from './data-source';
 import GraphView, { preloadViewGraph } from './GraphView';
@@ -55,6 +58,12 @@ import {
   staticViewBasePath,
   viewPathname,
 } from './static-mode';
+import {
+  blockUnsavedChangesUnload,
+  confirmDiscardUnsavedChanges,
+} from './unsaved-changes';
+
+const MarkdownEditor = lazy(() => import('./MarkdownEditor'));
 
 type ViewRoute =
   | { kind: 'search' }
@@ -299,11 +308,14 @@ export function App() {
   const [mobileNavigationOpen, setMobileNavigationOpen] = useState(false);
   const [openErrorsFor, setOpenErrorsFor] = useState<string | null>(null);
   const [sectionOutputId, setSectionOutputId] = useState<string | null>(null);
+  const [documentMode, setDocumentMode] = useState<DocumentMode>('view');
   const [historyScroll, setHistoryScroll] = useState<ViewScrollPosition | null>(
     null,
   );
   const pageRef = useRef<ViewPage | null>(page);
   pageRef.current = page;
+  const documentDirty = useRef(false);
+  const acceptedLocation = useRef(currentLocation());
   const pageRequestId = useRef(0);
   const positionedLocation = useRef<string | null>(null);
   const routeLocation = useMemo(() => viewRouteIdentity(location), [location]);
@@ -362,6 +374,8 @@ export function App() {
               : undefined,
         );
   const activePath = route?.kind === 'markdown' ? route.path : null;
+  const editingDocument =
+    !staticView && route?.kind === 'markdown' && documentMode === 'edit';
   const activeExternalTarget = route?.kind === 'external' ? route.target : null;
   const gitHasChanges =
     Object.keys(index?.git?.files ?? NO_GIT_FILES).length > 0;
@@ -426,6 +440,19 @@ export function App() {
   }, [routeLocation]);
 
   useEffect(() => {
+    setDocumentMode('view');
+    documentDirty.current = false;
+  }, [activePath]);
+
+  useEffect(() => {
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      blockUnsavedChangesUnload(documentDirty.current, event);
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
+
+  useEffect(() => {
     if (!mobileNavigationOpen) return;
     const body = window.document.body;
     const navigation = window.document.getElementById('mobile-file-navigation');
@@ -458,8 +485,8 @@ export function App() {
 
   useEffect(() => {
     const onPopState = (event: PopStateEvent) => {
-      positionedLocation.current = null;
-      setHistoryScroll(historyScrollPosition(event.state));
+      const previousLocation = acceptedLocation.current;
+      const nextLocation = currentLocation();
       const nextDocumentPath = documentPath(window.location.pathname);
       const nextExternal = externalTarget(
         window.location.pathname,
@@ -472,6 +499,20 @@ export function App() {
             (nextExternal
               ? `${nextExternal.handle}:${nextExternal.path}`
               : null));
+      if (
+        !preservesDocument &&
+        !confirmDiscardUnsavedChanges(
+          documentDirty.current,
+          window.confirm.bind(window),
+        )
+      ) {
+        window.history.pushState(null, '', previousLocation);
+        return;
+      }
+      if (!preservesDocument) documentDirty.current = false;
+      acceptedLocation.current = nextLocation;
+      positionedLocation.current = null;
+      setHistoryScroll(historyScrollPosition(event.state));
       if (
         viewPathname(window.location.pathname) !== '/graph' &&
         !preservesDocument
@@ -669,12 +710,22 @@ export function App() {
             return external ? `${external.handle}:${external.path}` : null;
           })()) &&
       isSameRenderedDocument(new URL(window.location.href), url);
-    saveCurrentScroll();
     const nextLocation = `${url.pathname}${url.search}${url.hash}`;
     if (nextLocation === currentLocation()) {
       if (!page || error) retryPage();
       return;
     }
+    if (
+      !preservesDocument &&
+      !confirmDiscardUnsavedChanges(
+        documentDirty.current,
+        window.confirm.bind(window),
+      )
+    ) {
+      return;
+    }
+    if (!preservesDocument) documentDirty.current = false;
+    saveCurrentScroll();
     positionedLocation.current = null;
     setHistoryScroll(null);
     const state =
@@ -682,6 +733,7 @@ export function App() {
         ? searchHistoryState(returnTo)
         : null;
     window.history.pushState(state, '', url);
+    acceptedLocation.current = nextLocation;
     if (!preservesDocument) {
       pageRequestId.current++;
       setPage(null);
@@ -760,7 +812,31 @@ export function App() {
       return;
     }
     event.preventDefault();
+    if (
+      !graphMode &&
+      !confirmDiscardUnsavedChanges(
+        documentDirty.current,
+        window.confirm.bind(window),
+      )
+    ) {
+      return;
+    }
+    if (!graphMode) documentDirty.current = false;
     setPersistedGraphMode(!graphMode);
+  }
+
+  function onDocumentModeChange(mode: DocumentMode): void {
+    if (
+      mode === 'view' &&
+      !confirmDiscardUnsavedChanges(
+        documentDirty.current,
+        window.confirm.bind(window),
+      )
+    ) {
+      return;
+    }
+    if (mode === 'view') documentDirty.current = false;
+    setDocumentMode(mode);
   }
 
   function onDocumentClick(event: MouseEvent<HTMLElement>): void {
@@ -917,36 +993,46 @@ export function App() {
           />
         ) : page?.kind === 'markdown' ? (
           <div className="document-layout">
-            <DocumentToc
-              gitEnabled={gitEnabled}
-              items={page.document.tableOfContents}
-              onNavigate={onNavigationClick}
-            />
+            {!editingDocument && (
+              <DocumentToc
+                gitEnabled={gitEnabled}
+                items={page.document.tableOfContents}
+                onNavigate={onNavigationClick}
+              />
+            )}
             <div className="document-column">
               <div className="document-header">
-                <div className="document-metadata">
-                  <div className="document-path">{page.document.path}</div>
-                  {page.document.frontmatter.requireCodeMention && (
-                    <div
-                      className="document-flag"
-                      title="Every leaf section must have an @lat code reference"
-                    >
-                      Code mentions required
-                    </div>
-                  )}
-                  {page.document.errors.length > 0 && (
-                    <button
-                      aria-controls="document-errors"
-                      aria-expanded={errorsOpen}
-                      className="document-error-toggle"
-                      onClick={() =>
-                        setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
-                      }
-                      type="button"
-                    >
-                      {page.document.errors.length}{' '}
-                      {page.document.errors.length === 1 ? 'error' : 'errors'}
-                    </button>
+                <div className="document-header-line">
+                  <div className="document-metadata">
+                    <div className="document-path">{page.document.path}</div>
+                    {page.document.frontmatter.requireCodeMention && (
+                      <div
+                        className="document-flag"
+                        title="Every leaf section must have an @lat code reference"
+                      >
+                        Code mentions required
+                      </div>
+                    )}
+                    {page.document.errors.length > 0 && (
+                      <button
+                        aria-controls="document-errors"
+                        aria-expanded={errorsOpen}
+                        className="document-error-toggle"
+                        onClick={() =>
+                          setOpenErrorsFor(errorsOpen ? null : errorPanelKey)
+                        }
+                        type="button"
+                      >
+                        {page.document.errors.length}{' '}
+                        {page.document.errors.length === 1 ? 'error' : 'errors'}
+                      </button>
+                    )}
+                  </div>
+                  {!staticView && route?.kind === 'markdown' && (
+                    <DocumentModeSwitch
+                      mode={documentMode}
+                      onChange={onDocumentModeChange}
+                    />
                   )}
                 </div>
                 {errorsOpen && (
@@ -956,7 +1042,24 @@ export function App() {
                   />
                 )}
               </div>
-              {documentTree && (
+              {editingDocument && route?.kind === 'markdown' && (
+                <Suspense
+                  fallback={
+                    <div className="markdown-editor-state">Loading editor…</div>
+                  }
+                >
+                  <MarkdownEditor
+                    active
+                    key={route.path}
+                    onDirtyChange={(dirty) => {
+                      documentDirty.current = dirty;
+                    }}
+                    path={route.path}
+                    revision={projectChange.markdownGeneration}
+                  />
+                </Suspense>
+              )}
+              {!editingDocument && documentTree && (
                 <MarkdownContent
                   backReferences={page.document.backReferences}
                   onClick={onDocumentClick}

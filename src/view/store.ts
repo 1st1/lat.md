@@ -1,5 +1,13 @@
+import { randomUUID } from 'node:crypto';
 import { watch as watchFiles, type FSWatcher } from 'node:fs';
-import { readFile, realpath } from 'node:fs/promises';
+import {
+  readFile,
+  realpath,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import {
   basename,
   extname,
@@ -24,6 +32,10 @@ import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../path.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
+import {
+  applyDocumentEdit,
+  ViewDocumentConflictError,
+} from './document-edit.js';
 import { buildGitDiffTree } from './git-diff.js';
 import { buildViewGraph } from './graph.js';
 import { buildViewTableOfContents } from './table-of-contents.js';
@@ -37,7 +49,9 @@ import {
 } from './git.js';
 import type {
   ViewDocument,
+  ViewDocumentEditResponse,
   ViewDocumentError,
+  ViewDocumentSource,
   ViewExternalDocument,
   ViewExternalFile,
   ViewGraph,
@@ -64,6 +78,8 @@ import {
 const DEFAULT_DEBOUNCE_MS = 75;
 const DEFAULT_GIT_POLL_MS = 2_000;
 const EXTERNAL_REFRESH_PATH = '@lat-external-refresh';
+const DOCUMENT_EDIT_WRITE_ATTEMPTS = 3;
+const DOCUMENT_EDIT_TEMP_PREFIX = '.lat-edit-';
 
 export type ViewProjectSnapshot = {
   generation: number;
@@ -330,6 +346,7 @@ export class ViewStore {
   private gitPollTimer: NodeJS.Timeout | null = null;
   private gitPollQueued = false;
   private refreshTail: Promise<void> = Promise.resolve();
+  private editTail: Promise<void> = Promise.resolve();
   private closed = false;
 
   constructor(
@@ -523,6 +540,81 @@ export class ViewStore {
     };
   }
 
+  private async editableDocumentPath(requestedPath: string): Promise<string> {
+    if (
+      !requestedPath ||
+      requestedPath.includes('\\') ||
+      isAbsolute(requestedPath) ||
+      !requestedPath.toLowerCase().endsWith('.md') ||
+      !this.snapshotValue.files.has(requestedPath)
+    ) {
+      throw new ViewDocumentNotFoundError('Markdown document not found');
+    }
+    let realFile: string;
+    try {
+      realFile = await realpath(resolve(this.latDir, requestedPath));
+    } catch {
+      throw new ViewDocumentNotFoundError('Markdown document not found');
+    }
+    if (!isInside(this.realLatDir, realFile)) {
+      throw new ViewDocumentNotFoundError('Markdown document not found');
+    }
+    return realFile;
+  }
+
+  async getDocumentSource(requestedPath: string): Promise<ViewDocumentSource> {
+    const path = await this.editableDocumentPath(requestedPath);
+    return { path: requestedPath, content: await readFile(path, 'utf8') };
+  }
+
+  editDocument(
+    requestedPath: string,
+    baseContent: string,
+    editedContent: string,
+  ): Promise<ViewDocumentEditResponse> {
+    const operation = this.editTail.then(async () => {
+      const path = await this.editableDocumentPath(requestedPath);
+      for (let attempt = 0; attempt < DOCUMENT_EDIT_WRITE_ATTEMPTS; attempt++) {
+        const currentContent = await readFile(path, 'utf8');
+        const edit = applyDocumentEdit(
+          baseContent,
+          editedContent,
+          currentContent,
+        );
+        if (edit.content === currentContent) {
+          return { path: requestedPath, ...edit };
+        }
+
+        const currentStat = await stat(path);
+        const temporaryPath = resolve(
+          this.latDir,
+          `${DOCUMENT_EDIT_TEMP_PREFIX}${process.pid}-${randomUUID()}.tmp`,
+        );
+        try {
+          await writeFile(temporaryPath, edit.content, {
+            encoding: 'utf8',
+            flag: 'wx',
+            mode: currentStat.mode,
+          });
+          if ((await readFile(path, 'utf8')) !== currentContent) continue;
+          await rename(temporaryPath, path);
+        } finally {
+          await rm(temporaryPath, { force: true });
+        }
+        await this.refresh([resolve(this.latDir, requestedPath)]);
+        return { path: requestedPath, ...edit };
+      }
+      throw new ViewDocumentConflictError(
+        'Could not save because this file kept changing. Your edits are still in the editor.',
+      );
+    });
+    this.editTail = operation.then(
+      () => undefined,
+      () => undefined,
+    );
+    return operation;
+  }
+
   getSource(
     requestedPath: string,
     requestedSymbol = '',
@@ -584,12 +676,20 @@ export class ViewStore {
     this.watcher = null;
     for (const watcher of this.externalWatchers) watcher.close();
     this.externalWatchers = [];
+    await this.editTail;
     await this.refreshTail;
     this.listeners.clear();
   }
 
   private scheduleRefresh(path: string): void {
     if (this.closed) return;
+    if (
+      path !== EXTERNAL_REFRESH_PATH &&
+      basename(path).startsWith(DOCUMENT_EDIT_TEMP_PREFIX) &&
+      path.endsWith('.tmp')
+    ) {
+      return;
+    }
     const normalizedPath =
       path === EXTERNAL_REFRESH_PATH
         ? path

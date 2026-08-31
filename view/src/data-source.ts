@@ -1,4 +1,7 @@
 import type {
+  ViewDocumentEditRequest,
+  ViewDocumentEditResponse,
+  ViewDocumentSource,
   ViewError,
   ViewExternalDocument,
   ViewSourceDocument,
@@ -36,7 +39,11 @@ function isTransientRequestError(reason: unknown): boolean {
   );
 }
 
-async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
+async function fetchJsonFile<T>(
+  url: string,
+  signal?: AbortSignal,
+  init: RequestInit = {},
+): Promise<T> {
   const controller = new AbortController();
   let timedOut = false;
   const abort = () => controller.abort();
@@ -46,10 +53,15 @@ async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
     timedOut = true;
     controller.abort();
   }, VIEW_REQUEST_TIMEOUT_MS);
+  const method = (init.method ?? 'GET').toUpperCase();
+  const attempts = method === 'GET' || method === 'HEAD' ? 2 : 1;
   try {
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < attempts; attempt++) {
       try {
-        const response = await fetch(url, { signal: controller.signal });
+        const response = await fetch(url, {
+          ...init,
+          signal: controller.signal,
+        });
         const value = (await response.json()) as T | ViewError;
         if (!response.ok) {
           throw new Error(
@@ -67,7 +79,7 @@ async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
         }
         if (controller.signal.aborted) throw reason;
         if (!isTransientRequestError(reason)) throw reason;
-        if (attempt === 0) continue;
+        if (attempt + 1 < attempts) continue;
         throw new ViewRequestConnectionError(
           'The server connection was interrupted. Try again.',
         );
@@ -80,6 +92,38 @@ async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
     globalThis.clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);
   }
+}
+
+export function fetchViewDocumentSource(
+  path: string,
+  signal?: AbortSignal,
+): Promise<ViewDocumentSource> {
+  if (staticViewBasePath()) {
+    return Promise.reject(new Error('Static views cannot edit documents'));
+  }
+  return fetchJsonFile<ViewDocumentSource>(
+    `/api/document-source?path=${encodeURIComponent(path)}`,
+    signal,
+  );
+}
+
+export function updateViewDocument(
+  path: string,
+  edit: ViewDocumentEditRequest,
+  signal?: AbortSignal,
+): Promise<ViewDocumentEditResponse> {
+  if (staticViewBasePath()) {
+    return Promise.reject(new Error('Static views cannot edit documents'));
+  }
+  return fetchJsonFile<ViewDocumentEditResponse>(
+    `/api/document?path=${encodeURIComponent(path)}`,
+    signal,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(edit),
+    },
+  );
 }
 
 function staticDataUrl(path: string): string {

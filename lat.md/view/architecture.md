@@ -60,6 +60,22 @@ Builds reject any existing destination, including an empty directory or prior ex
 
 The generated marker makes later project-wide scans ignore the artifact instead of indexing rendered JSON or bundles as source. Any destination that could contain the project root is also rejected.
 
+## Live Markdown editing
+
+Live local documents can switch between the rendered tree and an editable Markdown source while static and external documents remain read-only.
+
+[[view/src/MarkdownEditor.tsx#MarkdownEditor]] and its CodeMirror dependencies load only after Edit is selected. The editor provides soft wrapping, line numbers, history, Markdown syntax highlighting, and keyboard indentation without increasing production dependency installs.
+
+CodeMirror incrementally compares the draft with the last loaded or saved source. A narrow gutter and subtle line tint distinguish added, modified, and deleted lines until a successful explicit save resets the baseline.
+
+The editor writes only through its Save button or the platform save shortcut. Later keystrokes made during a request remain a dirty draft for another explicit save instead of being silently queued.
+
+Switching to View, navigating to another document, or opening Graph asks before discarding a dirty draft. Browser reload and close use the native unsaved-changes prompt; same-document navigation preserves the mounted editor and its draft.
+
+Each request carries the source originally loaded or acknowledged plus the user's edited source. [[src/view/document-edit.ts#applyDocumentEdit]] creates a contextual patch and applies it to the latest disk content, preserving unrelated concurrent changes while rejecting overlapping edits without discarding the browser draft.
+
+The server serializes editor writes, verifies the target is a known real Markdown file inside the vault, replaces it atomically, and refreshes the live project snapshot before acknowledging the save.
+
 ## Live project index
 
 A server-lifetime [[src/view/store.ts#createViewStore|ViewStore]] keeps document navigation and reverse references current without rescanning the project for every request.

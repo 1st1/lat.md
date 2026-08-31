@@ -43,6 +43,13 @@
     "cook-test-rag": "tsx scripts/cook-test-rag.ts"
   },
   "devDependencies": {
+    "@codemirror/commands": "^6.11.0",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/merge": "^6.12.2",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.9",
+    "@lezer/highlight": "^1.2.3",
     "@types/geojson": "^7946.0.16",
     "@types/hast": "^3.0.5",
     "@types/mdast": "^4.0.4",
@@ -82,6 +89,7 @@
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@repomix/tree-sitter-wasms": "^0.1.17",
     "commander": "^14.0.3",
+    "diff": "^8.0.4",
     "github-slugger": "^2.0.0",
     "ignore-walk": "^8.0.0",
     "mdast-util-gfm-autolink-literal": "^2.0.1",

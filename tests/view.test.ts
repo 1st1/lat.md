@@ -36,6 +36,8 @@ import { buildGitDiffTree } from '../src/view/git-diff.js';
 import { renderMarkdown as renderMarkdownTree } from '../src/view/markdown.js';
 import type {
   ViewDocument,
+  ViewDocumentEditResponse,
+  ViewDocumentSource,
   ViewDocumentTree,
   ViewGraph,
   ViewIndex,
@@ -490,6 +492,13 @@ describe('lat ui', () => {
       devDependencies: Record<string, string>;
     };
     const buildOnlyPackages = [
+      '@codemirror/commands',
+      '@codemirror/lang-markdown',
+      '@codemirror/language',
+      '@codemirror/merge',
+      '@codemirror/state',
+      '@codemirror/view',
+      '@lezer/highlight',
       'katex',
       'maplibre-gl',
       'mermaid',
@@ -2314,6 +2323,94 @@ describe('lat ui git state', () => {
 });
 
 describe('lat ui live project index', () => {
+  // @lat: [[lat.md/view/specs#View Tests#Edits local Markdown safely]]
+  it('applies editor patches over unrelated disk changes and rejects overlaps', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'lat-view-edit-'));
+    const liveLatDir = join(root, 'lat.md');
+    const documentPath = join(liveLatDir, 'lat.md');
+    mkdirSync(liveLatDir);
+    const base =
+      '# Editable\n\nThe editable document.\n\n## User area\n\nOriginal user text.\n\n## Concurrent area\n\nOriginal concurrent text.\n';
+    writeFileSync(documentPath, base);
+    const live = await startViewServer(
+      {
+        latDir: liveLatDir,
+        projectRoot: root,
+        styler: plainStyler,
+        mode: 'cli',
+      },
+      { clientDir: root, git: false, watch: false },
+    );
+
+    try {
+      const sourceResponse = await fetch(
+        new URL('/api/document-source?path=lat.md', live.url),
+      );
+      expect(sourceResponse.status).toBe(200);
+      await expect(sourceResponse.json()).resolves.toEqual({
+        path: 'lat.md',
+        content: base,
+      } satisfies ViewDocumentSource);
+
+      const concurrent = base.replace(
+        'Original concurrent text.',
+        'Concurrent disk text.',
+      );
+      writeFileSync(documentPath, concurrent);
+      const edited = base.replace('Original user text.', 'Edited user text.');
+      const editResponse = await fetch(
+        new URL('/api/document?path=lat.md', live.url),
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ baseContent: base, content: edited }),
+        },
+      );
+      expect(editResponse.status).toBe(200);
+      const edit = (await editResponse.json()) as ViewDocumentEditResponse;
+      expect(edit.merged).toBe(true);
+      expect(edit.content).toContain('Edited user text.');
+      expect(edit.content).toContain('Concurrent disk text.');
+      expect(readFileSync(documentPath, 'utf8')).toBe(edit.content);
+      expect(live.store.snapshot.files.get('lat.md')?.content).toBe(
+        edit.content,
+      );
+
+      writeFileSync(
+        documentPath,
+        edit.content.replace('Edited user text.', 'Second disk edit.'),
+      );
+      const conflictResponse = await fetch(
+        new URL('/api/document?path=lat.md', live.url),
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            baseContent: edit.content,
+            content: edit.content.replace(
+              'Edited user text.',
+              'Second browser edit.',
+            ),
+          }),
+        },
+      );
+      expect(conflictResponse.status).toBe(409);
+      await expect(conflictResponse.json()).resolves.toEqual({
+        error:
+          'Could not save because this file changed in the same area. Your edits are still in the editor.',
+      });
+      expect(readFileSync(documentPath, 'utf8')).toContain('Second disk edit.');
+
+      const outside = await fetch(
+        new URL('/api/document-source?path=../README.md', live.url),
+      );
+      expect(outside.status).toBe(404);
+    } finally {
+      await live.close();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally]]
   it('updates cached files, backlinks, code refs, and clients incrementally', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-live-'));

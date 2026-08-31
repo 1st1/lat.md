@@ -146,6 +146,20 @@ export type ViewDocument = {
   };
 };
 
+export type ViewDocumentSource = {
+  path: string;
+  content: string;
+};
+
+export type ViewDocumentEditRequest = {
+  baseContent: string;
+  content: string;
+};
+
+export type ViewDocumentEditResponse = ViewDocumentSource & {
+  merged: boolean;
+};
+
 export type ViewMarkdownBackReference = {
   kind: 'markdown';
   sectionId: string;

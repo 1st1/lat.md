@@ -443,6 +443,66 @@ a {
   margin-bottom: 34px;
 }
 
+.document-header-line {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.document-header-line > .document-metadata {
+  min-width: 0;
+  flex: 1;
+}
+
+.document-mode-switch {
+  display: inline-flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.document-mode-switch button {
+  display: inline-flex;
+  padding: 4px 9px;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.document-mode-switch svg {
+  width: 11px;
+  height: 11px;
+  opacity: 0.7;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.15;
+}
+
+.document-mode-switch button + button {
+  border-left: 1px solid var(--panel-border);
+}
+
+.document-mode-switch button:hover {
+  color: var(--text);
+  background: var(--reference-control-hover);
+}
+
+.document-mode-switch button[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--reference-control);
+}
+
 .document-layout {
   display: grid;
   grid-template-columns: minmax(0, 760px) 286px;
@@ -678,6 +738,193 @@ a {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 11px;
   font-weight: 700;
+}
+
+.markdown-editor,
+.markdown-editor-state {
+  width: 100%;
+  max-width: 760px;
+}
+
+.markdown-editor {
+  --editor-font-size: 13px;
+
+  overflow: hidden;
+  background: var(--code);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.markdown-editor-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-height: 30px;
+  padding: 8px 12px 7px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  line-height: 14px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.markdown-editor-status button {
+  padding: 2px 8px;
+  color: var(--muted);
+  font: inherit;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: var(--reference-control);
+  cursor: pointer;
+}
+
+.markdown-editor-status button:hover:not(:disabled) {
+  color: var(--text-secondary);
+  background: var(--reference-control-hover);
+}
+
+.markdown-editor-status button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.markdown-editor-status[data-state='dirty'],
+.markdown-editor-status[data-state='saving'] {
+  color: var(--warning);
+}
+
+.markdown-editor-status[data-state='error'] {
+  color: var(--danger);
+}
+
+.markdown-editor-body {
+  min-width: 0;
+}
+
+.markdown-editor .cm-editor {
+  min-height: calc(100vh - 180px);
+  color: var(--text);
+  background: transparent;
+}
+
+.markdown-editor .cm-editor.cm-focused {
+  outline: none;
+}
+
+.markdown-editor .cm-scroller {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--editor-font-size);
+  line-height: 1.6;
+  overflow: auto;
+}
+
+.markdown-editor .cm-content {
+  min-height: calc(100vh - 180px);
+  padding: 18px 0 28px;
+  caret-color: var(--text);
+  tab-size: 2;
+}
+
+.markdown-editor .cm-line {
+  padding: 0 20px;
+}
+
+.markdown-editor .cm-gutters {
+  color: var(--muted);
+  background: var(--panel);
+  border-right: 1px solid var(--panel-border);
+}
+
+.markdown-editor .cm-lineNumbers .cm-gutterElement {
+  min-width: 42px;
+  padding: 0 10px 0 8px;
+}
+
+.markdown-editor .cm-activeLine,
+.markdown-editor .cm-activeLineGutter {
+  background: color-mix(in srgb, var(--sidebar-selection) 45%, transparent);
+}
+
+.markdown-editor .cm-editorDiffGutter {
+  width: 7px;
+  background: var(--panel);
+}
+
+.markdown-editor .cm-editorDiffGutter .cm-gutterElement {
+  display: flex;
+  padding: 0 2px;
+  align-items: stretch;
+}
+
+.markdown-editor .cm-editor-diff-marker {
+  display: block;
+  width: 3px;
+  min-height: 100%;
+  border-radius: 2px;
+}
+
+.markdown-editor .cm-editor-diff-marker-added {
+  background: var(--success);
+}
+
+.markdown-editor .cm-editor-diff-marker-modified {
+  background: var(--warning);
+}
+
+.markdown-editor .cm-editor-diff-marker-deleted {
+  background: var(--danger);
+}
+
+.markdown-editor .cm-editor-diff-marker-spacer {
+  visibility: hidden;
+}
+
+.markdown-editor .cm-editor-diff-line-added {
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+}
+
+.markdown-editor .cm-editor-diff-line-modified {
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+}
+
+.markdown-editor .cm-cursor,
+.markdown-editor .cm-dropCursor {
+  border-left-color: var(--text);
+}
+
+.markdown-editor .cm-selectionBackground,
+.markdown-editor .cm-content ::selection,
+.markdown-editor .cm-focused .cm-selectionBackground {
+  background: var(--sidebar-selection);
+}
+
+.markdown-editor-state {
+  display: flex;
+  min-height: 140px;
+  padding: 24px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.markdown-editor-state[data-state='error'] {
+  color: var(--danger);
+}
+
+.markdown-editor-state button {
+  padding: 5px 9px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 5px;
 }
 
 .document-error-message {
@@ -2626,6 +2873,12 @@ a.wiki-link-active {
     grid-area: document;
     min-width: 0;
   }
+
+  .markdown-editor,
+  .markdown-editor-state {
+    grid-area: document;
+    min-width: 0;
+  }
 }
 
 @media (width < 64rem) {
@@ -2765,6 +3018,24 @@ a.wiki-link-active {
     --mobile-gutter: clamp(20px, 5vw, 48px);
 
     padding: 28px clamp(20px, 5vw, 48px) 80px;
+  }
+
+  .document-header-line {
+    align-items: flex-start;
+  }
+
+  .markdown-editor .cm-editor,
+  .markdown-editor .cm-content {
+    min-height: calc(100dvh - 240px);
+  }
+
+  .markdown-editor .cm-line {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .markdown-editor {
+    --editor-font-size: 16px;
   }
 
   .document-toc {

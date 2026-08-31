@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchViewJson,
+  updateViewDocument,
   VIEW_REQUEST_TIMEOUT_MS,
 } from '../view/src/data-source.js';
 
@@ -78,5 +79,24 @@ describe('view data source', () => {
 
     await expect(request).rejects.toMatchObject({ name: 'AbortError' });
     expect(cancelledFetch).toHaveBeenCalledTimes(1);
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Edits local Markdown safely#Does not replay uncertain writes]]
+  it('does not replay an interrupted editor write', async () => {
+    const fetch = vi
+      .fn()
+      .mockRejectedValue(new DOMException('Aborted', 'AbortError'));
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      updateViewDocument('lat.md', {
+        baseContent: '# Before\n',
+        content: '# After\n',
+      }),
+    ).rejects.toMatchObject({
+      name: 'NetworkError',
+      message: 'The server connection was interrupted. Try again.',
+    });
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });
