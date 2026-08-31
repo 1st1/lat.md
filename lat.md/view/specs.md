@@ -39,6 +39,10 @@ The generated marker excludes the entire artifact from both ripgrep and fallback
 
 Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
 
+## Keeps build-only packages out of runtime dependencies
+
+The published CLI declares browser renderer inputs and test-only serializers as development dependencies because consumers execute prebuilt artifacts and should not install redundant source trees.
+
 ## Renders canonical document trees
 
 Document, Git, section-output, reference, and highlighted-source APIs expose versioned JSON trees of safe root, element, and text nodes without legacy HTML fields.

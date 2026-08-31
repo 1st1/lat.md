@@ -469,6 +469,30 @@ describe('lat ui', () => {
     expect(buildScript).not.toContain("'buildall'");
   });
 
+  // @lat: [[lat.md/view/specs#View Tests#Keeps build-only packages out of runtime dependencies]]
+  it('keeps build-only packages out of runtime dependencies', () => {
+    const repositoryRoot = join(import.meta.dirname, '..');
+    const rootPackage = JSON.parse(
+      readFileSync(join(repositoryRoot, 'package.json'), 'utf8'),
+    ) as {
+      dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
+    };
+    const buildOnlyPackages = [
+      'katex',
+      'maplibre-gl',
+      'mermaid',
+      'rehype-stringify',
+      'three',
+      'topojson-client',
+    ];
+
+    for (const packageName of buildOnlyPackages) {
+      expect(rootPackage.devDependencies).toHaveProperty(packageName);
+      expect(rootPackage.dependencies).not.toHaveProperty(packageName);
+    }
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
     const shell = await fetch(new URL('/graph', view.url));
