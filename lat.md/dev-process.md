@@ -120,9 +120,9 @@ pnpm --filter lat-md-website build
 
 ## File Walking
 
-All directory walking goes through [[src/walk.ts#walkEntries]], the single entry point with `.gitignore` support that filters out `.git/` and dotfiles.
+All directory walking goes through [[src/walk.ts#walkEntries]], the single entry point with `.gitignore` support that excludes `.git/` and dotfiles or dot-directories before stat or recursive traversal.
 
-It wraps the `ignore-walk` npm package to ensure `.gitignore` rules are consistently honored everywhere. Results are not cached — each call re-walks the filesystem, which is necessary for long-lived processes like the MCP server.
+It wraps the `ignore-walk` npm package to ensure `.gitignore` rules are consistently honored everywhere. Pre-traversal dot filtering prevents transient files under Lat-owned `.cache` directories from racing concurrent project scans. The nested `.lat-ui-build` marker is the sole exception because the TypeScript code scanner consumes it to exclude the marker's complete generated output directory. Results are not cached — each call re-walks the filesystem, which is necessary for long-lived processes like the MCP server.
 
 [[src/code-refs.ts#walkFiles]] calls `walkEntries()` then additionally skips `.md` files, `lat.md/`, `.claude/`, and sub-projects (directories containing their own `lat.md/`).
 

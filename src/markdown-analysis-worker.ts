@@ -1,6 +1,4 @@
 import { parentPort } from 'node:worker_threads';
-import { performance } from 'node:perf_hooks';
-import { readFile } from 'node:fs/promises';
 import type {
   analyzeMarkdownFile,
   MarkdownFileAnalysis,
@@ -9,6 +7,7 @@ import type {
 export type MarkdownWorkerTask = {
   id: number;
   absolutePath: string;
+  content: string;
   latDir: string;
   projectRoot: string;
 };
@@ -42,16 +41,12 @@ const analyzerPromise = loadAnalyzer();
 parentPort.on('message', async (task: MarkdownWorkerTask) => {
   try {
     const analyzeMarkdownFile = await analyzerPromise;
-    const readStarted = performance.now();
-    const content = await readFile(task.absolutePath, 'utf8');
-    const readMs = performance.now() - readStarted;
     const analysis = analyzeMarkdownFile(
       task.absolutePath,
-      content,
+      task.content,
       task.latDir,
       task.projectRoot,
     );
-    analysis.timings.readMs = readMs;
     parentPort!.postMessage({ id: task.id, analysis });
   } catch (error) {
     parentPort!.postMessage({

@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-import { performance } from 'node:perf_hooks';
 import {
   flattenSections,
   type LatFrontmatter,
@@ -21,10 +19,8 @@ import {
   type MarkdownAnalysisExecutor,
   type MarkdownProjectAnalysis,
 } from '../project-analysis.js';
-import {
-  analyzeMarkdownFile,
-  type MarkdownFileAnalysis,
-} from '../markdown-analysis.js';
+import type { MarkdownFileAnalysis } from '../markdown-analysis.js';
+import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import type { LocalMarkdownDiagnostic } from '../markdown-validation.js';
 
 export type CheckSectionIndex = {
@@ -79,6 +75,16 @@ export class CheckRunContext {
     const detail = analysis.path;
     const timings = analysis.timings;
     this.profile.record('read Markdown file', timings.readMs, detail);
+    this.profile.record('hash Markdown file', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed Markdown cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(`parsed Markdown cache ${timings.cacheStatus}`, 0);
+    }
+    if (timings.cacheStatus === 'hit') return;
     this.profile.record('parse Markdown AST', timings.parseMs, detail);
     this.profile.record(
       'extract Markdown sections',
@@ -107,6 +113,13 @@ export class CheckRunContext {
       timings.diagnosticsMs,
       detail,
     );
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed Markdown cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
   }
 
   clearSourceSymbolCache(): void {
@@ -140,16 +153,11 @@ export class CheckRunContext {
     let auxiliary = this.auxiliaryFilePromises.get(file);
     if (!auxiliary) {
       auxiliary = (async () => {
-        const started = performance.now();
-        const content = await readFile(file, 'utf8');
-        const readMs = performance.now() - started;
-        const result = analyzeMarkdownFile(
+        const result = await analyzeMarkdownPath(
           file,
-          content,
           this.latticeDir,
           this.projectRoot,
         );
-        result.timings.readMs = readMs;
         this.recordAnalysis(result);
         return result;
       })();

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync, spawnSync } from 'node:child_process';
+import { globSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import {
   findLatticeDir,
@@ -37,6 +38,12 @@ const cliPath = join(
   'index.js',
 );
 
+afterAll(() => {
+  for (const cache of globSync('**/.cache', { cwd: casesDir })) {
+    rmSync(join(casesDir, cache), { recursive: true, force: true });
+  }
+});
+
 function runCli(
   caseName: string,
   args: string[],
@@ -60,6 +67,13 @@ function caseDir(name: string): string {
 
 function latDir(name: string): string {
   return join(casesDir, name, 'lat.md');
+}
+
+function clearParsedCache(name: string, target = 'lat.md'): void {
+  rmSync(join(caseDir(name), target, '.cache', 'parsed'), {
+    recursive: true,
+    force: true,
+  });
 }
 
 function testCtx(name: string): CmdContext {
@@ -569,7 +583,9 @@ describe('valid-md-links', () => {
 describe('headless-check', () => {
   // @lat: [[tests/check-headless#Profiles validation work]]
   it('reports detailed validation timings only with --profile', () => {
+    clearParsedCache('headless-check', 'links');
     const regular = runCli('headless-check', ['check', '--', 'links']);
+    clearParsedCache('headless-check', 'links');
     const profiled = runCli('headless-check', [
       'check',
       '--profile',
@@ -583,6 +599,8 @@ describe('headless-check', () => {
     for (const operation of [
       'check Markdown wiki links',
       'parse Markdown AST',
+      'hash Markdown file',
+      'parsed Markdown cache miss',
       'extract wiki links',
       'check relative Markdown links',
       'check @lat code references',
@@ -599,6 +617,7 @@ describe('headless-check', () => {
 
   // @lat: [[tests/check-headless#Reuses check data across validators]]
   it('parses each Markdown file once across the full check', () => {
+    clearParsedCache('headless-check', 'links');
     const { stdout, stderr, exitCode } = runCli('headless-check', [
       'check',
       '--profile',
@@ -610,6 +629,23 @@ describe('headless-check', () => {
     expect(stderr).toBe('');
     expect(stdout.match(/parse Markdown AST:/g)).toHaveLength(1);
     expect(stdout).toMatch(/parse Markdown AST: .* across 2 calls/);
+  });
+
+  // @lat: [[tests/check-headless#Profiles persistent parser cache hits]]
+  it('reports cache hits without parser work on a warm check', () => {
+    clearParsedCache('headless-check', 'links');
+    expect(runCli('headless-check', ['check', '--', 'links']).exitCode).toBe(0);
+    const { stdout, stderr, exitCode } = runCli('headless-check', [
+      'check',
+      '--profile',
+      '--',
+      'links',
+    ]);
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe('');
+    expect(stdout).toMatch(/parsed Markdown cache hit: .* across 2 calls/);
+    expect(stdout).not.toContain('parse Markdown AST');
   });
 
   // @lat: [[tests/check-headless#Separator disambiguates directory names]]

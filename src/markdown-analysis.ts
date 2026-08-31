@@ -35,6 +35,10 @@ export type MarkdownDestinationLink = {
 
 export type MarkdownAnalysisTimings = {
   readMs: number;
+  hashMs: number;
+  cacheReadMs: number;
+  cacheWriteMs: number;
+  cacheStatus: 'disabled' | 'hit' | 'miss';
   parseMs: number;
   sectionsMs: number;
   refsMs: number;
@@ -201,6 +205,10 @@ export function analyzeMarkdownFile(
     diagnostics,
     timings: {
       readMs: 0,
+      hashMs: 0,
+      cacheReadMs: 0,
+      cacheWriteMs: 0,
+      cacheStatus: 'disabled',
       parseMs,
       sectionsMs,
       refsMs,

@@ -14,6 +14,7 @@ import {
   type ExternalResolver,
 } from '../external-sources.js';
 import { listLatticeFiles, type Section } from '../lattice.js';
+import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import { SOURCE_EXTENSIONS } from '../source-parser.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
@@ -49,7 +50,6 @@ import {
 } from './repository.js';
 import {
   buildViewReferenceIndex,
-  parseViewMarkdownFile,
   renderSectionBackReferences,
   type ViewCodeReferenceFile,
   type ViewParsedMarkdownFile,
@@ -616,13 +616,7 @@ export class ViewStore {
       return null;
     }
     if (!isInside(this.realLatDir, realFile)) return null;
-    const content = await readFile(realFile, 'utf8');
-    return parseViewMarkdownFile(
-      absolutePath,
-      content,
-      this.latDir,
-      this.projectRoot,
-    );
+    return analyzeMarkdownPath(absolutePath, this.latDir, this.projectRoot);
   }
 
   private async applyRefresh(paths: string[], pollGit: boolean): Promise<void> {
@@ -816,10 +810,8 @@ export async function createViewStore(
     markdownPaths.map(async (absolutePath) => {
       const realFile = await realpath(absolutePath);
       if (!isInside(realLatDir, realFile)) return;
-      const content = await readFile(realFile, 'utf8');
-      const parsed = parseViewMarkdownFile(
+      const parsed = await analyzeMarkdownPath(
         absolutePath,
-        content,
         latDir,
         projectRoot,
       );

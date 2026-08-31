@@ -1,5 +1,60 @@
+import type { EventEmitter } from 'node:events';
 // @ts-expect-error -- no type declarations
 import walk from 'ignore-walk';
+
+type IgnoreWalkerInstance = EventEmitter & {
+  filterEntry(
+    entry: string,
+    partial?: boolean,
+    entryBasename?: string,
+  ): boolean;
+  walkerOpt(
+    entry: string,
+    options: Record<string, unknown>,
+  ): Record<string, unknown>;
+  start(): IgnoreWalkerInstance;
+};
+
+type IgnoreWalkerConstructor = new (
+  options: Record<string, unknown>,
+) => IgnoreWalkerInstance;
+
+const IgnoreWalker = (walk as unknown as { Walker: IgnoreWalkerConstructor })
+  .Walker;
+
+class DotIgnoringWalker extends IgnoreWalker {
+  filterEntry(
+    entry: string,
+    partial?: boolean,
+    entryBasename?: string,
+  ): boolean {
+    const candidate = entryBasename ?? entry;
+    if (
+      candidate
+        .split(/[\\/]/)
+        .some(
+          (part) =>
+            part.startsWith('.') &&
+            part !== '.' &&
+            part !== '..' &&
+            part !== '.lat-ui-build',
+        )
+    ) {
+      return false;
+    }
+    return super.filterEntry(entry, partial, entryBasename);
+  }
+
+  walker(
+    entry: string,
+    options: Record<string, unknown>,
+    done: () => void,
+  ): void {
+    new DotIgnoringWalker(this.walkerOpt(entry, options))
+      .on('done', done)
+      .start();
+  }
+}
 
 /**
  * Walk a directory tree respecting .gitignore rules. Returns relative paths
@@ -10,12 +65,15 @@ import walk from 'ignore-walk';
  * are consistently honored.
  */
 export function walkEntries(dir: string): Promise<string[]> {
-  return walk({
-    path: dir,
-    ignoreFiles: ['.gitignore'],
-  }).then((entries: string[]) =>
-    entries.filter((e: string) => !e.startsWith('.git/') && !e.startsWith('.')),
-  );
+  return new Promise((resolve, reject) => {
+    new DotIgnoringWalker({
+      path: dir,
+      ignoreFiles: ['.gitignore'],
+    })
+      .on('done', resolve)
+      .on('error', reject)
+      .start();
+  });
 }
 
 /**

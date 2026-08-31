@@ -1,7 +1,5 @@
-import { readFile } from 'node:fs/promises';
 import { availableParallelism } from 'node:os';
 import { join } from 'node:path';
-import { performance } from 'node:perf_hooks';
 import { Worker } from 'node:worker_threads';
 import {
   buildFileIndex,
@@ -16,6 +14,11 @@ import {
   analyzeMarkdownFile,
   type MarkdownFileAnalysis,
 } from './markdown-analysis.js';
+import {
+  prepareMarkdownAnalysis,
+  publishMarkdownAnalysis,
+  type PreparedMarkdownAnalysis,
+} from './markdown-analysis-cache.js';
 import type {
   MarkdownWorkerResponse,
   MarkdownWorkerTask,
@@ -51,28 +54,27 @@ export type MarkdownProjectAnalysis = {
 export type AnalyzeMarkdownProjectOptions = {
   executor?: MarkdownAnalysisExecutor;
   maxWorkers?: number;
+  cache?: boolean;
   onFileAnalyzed?: (analysis: MarkdownFileAnalysis) => void;
 };
 
 async function analyzeInline(
-  paths: string[],
+  files: PreparedMarkdownAnalysis[],
   latDir: string,
   projectRoot: string,
 ): Promise<MarkdownFileAnalysis[]> {
   return Promise.all(
-    paths.map(async (absolutePath) => {
-      const readStarted = performance.now();
-      const content = await readFile(absolutePath, 'utf8');
-      const readMs = performance.now() - readStarted;
-      const analysis = analyzeMarkdownFile(
-        absolutePath,
-        content,
-        latDir,
-        projectRoot,
-      );
-      analysis.timings.readMs = readMs;
-      return analysis;
-    }),
+    files.map((file) =>
+      publishMarkdownAnalysis(
+        file,
+        analyzeMarkdownFile(
+          file.absolutePath,
+          file.content,
+          latDir,
+          projectRoot,
+        ),
+      ),
+    ),
   );
 }
 
@@ -118,7 +120,7 @@ function runWorkerTask(
 }
 
 async function analyzeWithWorkers(
-  paths: string[],
+  files: PreparedMarkdownAnalysis[],
   latDir: string,
   projectRoot: string,
   maxWorkers: number | undefined,
@@ -126,7 +128,7 @@ async function analyzeWithWorkers(
   const workerCount = Math.max(
     1,
     Math.min(
-      paths.length,
+      files.length,
       maxWorkers ?? 10,
       Math.max(1, availableParallelism() - 1),
     ),
@@ -149,24 +151,30 @@ async function analyzeWithWorkers(
       },
     );
   });
-  const analyses = new Array<MarkdownFileAnalysis>(paths.length);
+  const analyses = new Array<MarkdownFileAnalysis>(files.length);
   let next = 0;
   try {
     await Promise.all(
       workers.map(async (worker) => {
         while (true) {
           const id = next++;
-          if (id >= paths.length) return;
+          if (id >= files.length) return;
+          const file = files[id];
           analyses[id] = await runWorkerTask(worker, {
             id,
-            absolutePath: paths[id],
+            absolutePath: file.absolutePath,
+            content: file.content,
             latDir,
             projectRoot,
           });
         }
       }),
     );
-    return analyses;
+    return Promise.all(
+      analyses.map((analysis, index) =>
+        publishMarkdownAnalysis(files[index], analysis),
+      ),
+    );
   } finally {
     await Promise.all(workers.map((worker) => worker.terminate()));
   }
@@ -183,21 +191,44 @@ export async function analyzeMarkdownProject(
     .filter((entry) => entry.endsWith('.md'))
     .sort()
     .map((entry) => join(latDir, entry));
+  const prepared = await Promise.all(
+    markdownFiles.map((absolutePath) =>
+      prepareMarkdownAnalysis(
+        absolutePath,
+        latDir,
+        projectRoot,
+        options.cache !== false,
+      ),
+    ),
+  );
+  const analyses = new Array<MarkdownFileAnalysis>(markdownFiles.length);
+  const misses: PreparedMarkdownAnalysis[] = [];
+  const missIndexes: number[] = [];
+  for (const [index, file] of prepared.entries()) {
+    if (file.analysis) analyses[index] = file.analysis;
+    else {
+      misses.push(file);
+      missIndexes.push(index);
+    }
+  }
   const executor =
     options.executor === 'auto' || options.executor === undefined
-      ? markdownFiles.length >= 8
+      ? misses.length >= 8
         ? 'workers'
         : 'inline'
       : options.executor;
-  const analyses =
-    executor === 'workers' && markdownFiles.length > 1
+  const parsed =
+    executor === 'workers' && misses.length > 1
       ? await analyzeWithWorkers(
-          markdownFiles,
+          misses,
           latDir,
           projectRoot,
           options.maxWorkers,
         )
-      : await analyzeInline(markdownFiles, latDir, projectRoot);
+      : await analyzeInline(misses, latDir, projectRoot);
+  for (const [index, analysis] of parsed.entries()) {
+    analyses[missIndexes[index]] = analysis;
+  }
 
   const files = new Map<string, MarkdownFileAnalysis>();
   const filesByAbsolutePath = new Map<string, MarkdownFileAnalysis>();

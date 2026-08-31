@@ -12,6 +12,24 @@ The syntax tree is private working state. It is created, visited, and discarded 
 
 HTML and Git-diff rendering may parse Markdown through dedicated presentation APIs, but presentation syntax trees do not provide semantic project facts.
 
+## Persistent cache
+
+Successful file analyses persist below `lat.md/.cache/parsed/` so later commands can reuse unchanged semantic facts without loading a parser or starting workers.
+
+Each cache identity is the normalized project-relative full path. The first two lowercased characters of the file's short name supply a predictable shard directory, while a full-path SHA-1 digest prevents collisions and a bounded readable suffix makes entries inspectable. Non-ASCII or punctuation shard characters become `_`.
+
+```text
+lat.md/.cache/parsed/se/abcdef0123456789abcdef0123456789abcdef01_lat_md_guide_setup_md
+```
+
+The first line is `v<N>:<sha1>`, where `N` is [[src/markdown-analysis-cache.ts#PARSER_CACHE_VERSION]] and the hash covers the complete Markdown content. The remaining bytes are the compact JSON serialization of the file analysis.
+
+A hit requires both the current parser-cache version and content hash, plus matching path identity and a structurally valid analysis payload. Changed content, parser semantics, truncated writes, malformed JSON, or unexpected shapes become ordinary misses.
+
+Cache lookup happens before executor selection. The main process reads and hashes every file, returns hits immediately, and sends only misses to inline analysis or the worker pool. Newly parsed entries use atomic replacement; cache read or write failures never prevent analysis because the directory is disposable and may be read-only.
+
+Cached analyses retain source content but not their old performance measurements. A hit records current read, hash, and cache-load timings with zero parse work. Orphaned entries from deleted or renamed files are harmless and may remain until `.cache` is removed.
+
 ## Project snapshot
 
 A project snapshot reduces file analyses into immutable lookup structures shared by every operation in one command or request.
