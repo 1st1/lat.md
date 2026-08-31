@@ -20,7 +20,10 @@ import { visit } from 'unist-util-visit';
 import type { AlertMarker } from '../extensions/alert-marker.js';
 import type { WikiLink } from '../extensions/wiki-link/types.js';
 import { parse } from '../parser.js';
-import { toViewDocumentTree } from './document-tree.js';
+import {
+  decorateExternalSiteLinks,
+  toViewDocumentTree,
+} from './document-tree.js';
 import { highlightCode } from './highlight.js';
 import type { ViewDocumentTree } from './protocol.js';
 
@@ -63,8 +66,6 @@ const CODE_LINK_CLASSES = [
 ];
 
 const ERROR_CLASS = 'markdown-error';
-const EXTERNAL_LINK_CLASS = 'external-link';
-const EXTERNAL_LINK_ICON_CLASS = 'external-link-icon';
 const GIT_CLASSES = ['git-added', 'git-removed'];
 const GEOJSON_SOURCE_CLASS = 'markdown-geojson-source';
 const HIGHLIGHT_CLASS = 'hljs';
@@ -144,7 +145,6 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-segmented',
         'wiki-link-code',
         'wiki-link-active',
-        EXTERNAL_LINK_CLASS,
         ERROR_CLASS,
         ...GIT_CLASSES,
       ],
@@ -187,7 +187,6 @@ const sanitizeSchema: SanitizeSchema = {
         'wiki-link-context',
         'wiki-link-leaf',
         'wiki-link-ref-count',
-        EXTERNAL_LINK_ICON_CLASS,
         ...CODE_LINK_CLASSES.slice(2),
         /^hljs-./,
         ERROR_CLASS,
@@ -298,19 +297,6 @@ function transformCustomEmoji(tree: Root): void {
     parent.children.splice(index, 1, ...children);
     return index + children.length;
   });
-}
-
-const externalHtmlProcessor = unified()
-  .use(rehypeRaw)
-  .use(rehypeSanitize, { ...sanitizeSchema, clobberPrefix: '' });
-
-/** Normalize HTML emitted by a format-native parser into the document tree. */
-export function externalHtmlToDocumentTree(html: string): ViewDocumentTree {
-  const tree = {
-    type: 'root' as const,
-    children: [{ type: 'raw' as const, value: html }],
-  };
-  return toViewDocumentTree(externalHtmlProcessor.runSync(tree));
 }
 
 function nodeText(node: { value?: unknown; children?: unknown }): string {
@@ -468,24 +454,6 @@ function codeLinkContent(
   ];
 }
 
-function externalLinkIcon(): PhrasingContent {
-  return {
-    type: 'emphasis',
-    data: {
-      hName: 'span',
-      hProperties: {
-        ariaHidden: 'true',
-        className: [EXTERNAL_LINK_ICON_CLASS],
-      },
-    },
-    children: [],
-  } as PhrasingContent;
-}
-
-function isExternalSiteUrl(url: string): boolean {
-  return /^(?:https?:)?\/\//i.test(url);
-}
-
 function referenceCountBadge(count: number): RootContent {
   return {
     type: 'emphasis',
@@ -609,23 +577,6 @@ export async function renderMarkdown(
     if (options.rewriteMarkdownLink) {
       node.url = options.rewriteMarkdownLink(authoredUrl);
     }
-    if (!isExternalSiteUrl(node.url)) return;
-
-    const properties = node.data?.hProperties ?? {};
-    const currentClasses = properties.className;
-    const classes = Array.isArray(currentClasses)
-      ? currentClasses.map(String)
-      : currentClasses
-        ? [String(currentClasses)]
-        : [];
-    node.data = {
-      ...node.data,
-      hProperties: {
-        ...properties,
-        className: [...classes, EXTERNAL_LINK_CLASS],
-      },
-    };
-    node.children.push(externalLinkIcon());
   });
 
   const firstHeading = tree.children.find((node) => node.type === 'heading');
@@ -714,5 +665,8 @@ export async function renderMarkdown(
   });
 
   const hast = await documentTreeProcessor.run(tree);
-  return { tree: toViewDocumentTree(hast), title };
+  return {
+    tree: decorateExternalSiteLinks(toViewDocumentTree(hast)),
+    title,
+  };
 }

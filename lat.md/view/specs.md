@@ -43,7 +43,7 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 
 Document, Git, section-output, reference, and highlighted-source APIs expose versioned JSON trees of safe root, element, and text nodes without legacy HTML fields.
 
-Markdown, reStructuredText, and AsciiDoc normalize into the same protocol. The client recursively reflects it into React elements, rejects executable properties and unsafe URL protocols, and owns interactive section menus without `innerHTML`.
+Markdown, reStructuredText, and AsciiDoc normalize into the same protocol. Native external parse trees project directly without an HTML round trip; shared tree decoration marks external links, and the client rejects executable properties and unsafe URL protocols.
 
 Static export discovers and rewrites links by traversing node properties while retaining the same document-tree payload as the live server.
 

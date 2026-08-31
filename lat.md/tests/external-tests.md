@@ -25,6 +25,10 @@ Format tests verify Markdown, reStructuredText, and AsciiDoc expose complete tit
 
 AsciiDoc coverage includes explicit document-title IDs and sections after legacy source blocks whose opening and closing delimiter lengths differ.
 
+### Native document tree projection
+
+reStructuredText and AsciiDoc parse nodes project directly into safe canonical trees. External links share document icons, labeled supported source blocks highlight, unlabeled literals stay plain, and raw pass-through markup remains inert.
+
 ## Persistent document analysis cache
 
 External Markdown, reStructuredText, and AsciiDoc analyses use validated versioned cache entries, invalidate changed content, recover from malformed payloads, and share one provider load and parse across every fragment of a file.

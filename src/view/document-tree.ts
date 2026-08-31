@@ -94,6 +94,53 @@ export function visitDocumentElements(
   for (const child of tree.children) visit(child);
 }
 
+function classNames(value: ViewDocumentProperty | undefined): string[] {
+  if (Array.isArray(value)) return value.map(String);
+  return typeof value === 'string' ? value.split(/\s+/).filter(Boolean) : [];
+}
+
+function isExternalSiteUrl(value: string): boolean {
+  return /^(?:https?:)?\/\//i.test(value);
+}
+
+/** Apply parser-neutral presentation to links that leave the current site. */
+export function decorateExternalSiteLinks(
+  tree: ViewDocumentTree,
+): ViewDocumentTree {
+  visitDocumentElements(tree, (element) => {
+    const href = element.properties.href;
+    if (
+      element.tagName !== 'a' ||
+      typeof href !== 'string' ||
+      !isExternalSiteUrl(href)
+    ) {
+      return;
+    }
+
+    const classes = classNames(element.properties.className);
+    if (!classes.includes('external-link')) classes.push('external-link');
+    element.properties.className = classes;
+    const alreadyDecorated = element.children.some(
+      (child) =>
+        child.type === 'element' &&
+        child.tagName === 'span' &&
+        classNames(child.properties.className).includes('external-link-icon'),
+    );
+    if (!alreadyDecorated) {
+      element.children.push({
+        type: 'element',
+        tagName: 'span',
+        properties: {
+          ariaHidden: 'true',
+          className: ['external-link-icon'],
+        },
+        children: [],
+      });
+    }
+  });
+  return tree;
+}
+
 /** Clone a document tree while structurally rewriting navigable URLs. */
 export function rewriteDocumentTreeUrls(
   tree: ViewDocumentTree,

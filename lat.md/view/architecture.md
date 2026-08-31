@@ -26,13 +26,13 @@ Document APIs carry one versioned, parser-neutral presentation tree so the brows
 
 [[src/view/markdown.ts#renderMarkdown]] resolves Markdown semantics and converts mdast through the sanitizer, KaTeX, slug, and highlighting pipeline, then [[src/view/document-tree.ts#toViewDocumentTree]] retains only JSON-safe `root`, `element`, and `text` nodes. Parser positions, plugin objects, and executable properties never cross the boundary.
 
-reStructuredText and AsciiDoc use their native processors, then [[src/view/markdown.ts#externalHtmlToDocumentTree]] reflects the sanitized format output into the same tree. The browser therefore receives one rendering contract for local Markdown, external documents, Git projections, section output, and reference excerpts.
+[[src/view/external-document-tree.ts#renderExternalDocumentTree]] projects reStructuredText nodes and Asciidoctor block and inline nodes directly into the same tree. Native renderers never serialize external documents to HTML for the server to parse again.
 
 [[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus and rich fences as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
 
 Rich fences remain `pre` and `code` elements with inert text children in the contract. [[view/src/MarkdownRichFence.tsx#MarkdownRichFence]] recognizes those nodes while reflecting the tree, owns every renderer resource through React effects, and restores the same source fallback on failure or unmount.
 
-Source and fenced-code highlighting starts as Lowlight HAST and becomes document-tree nodes without HTML serialization. Multiline tokens are split structurally into independently renderable lines. Only native reStructuredText or AsciiDoc HTML remains a sanitized server-side adapter input.
+Source and fenced-code highlighting starts as Lowlight HAST and becomes document-tree nodes without HTML serialization. Multiline tokens are split structurally into independently renderable lines. Raw reStructuredText and AsciiDoc pass-through content remains inert text.
 
 Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
 
@@ -98,7 +98,7 @@ Markdown and source metadata rows align with the sidebar header, while source me
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
 
-Rendered link text is always underlined. Segmented wiki and source links underline muted context and active targets separately so each line matches its text color; language badges, reference counts, and external-link icons remain undecorated.
+Rendered link text is always underlined. A [[src/view/document-tree.ts#decorateExternalSiteLinks|parser-neutral tree pass]] adds external-link icons across Markdown, reStructuredText, and AsciiDoc; language badges, reference counts, and those icons remain undecorated.
 
 Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
 

@@ -22,7 +22,6 @@ import {
 import {
   addExternalDocumentAliasAnchors,
   externalDocumentSections,
-  renderExternalDocument,
 } from '../external-documents.js';
 import {
   resolveSourceSymbol,
@@ -31,9 +30,10 @@ import {
 } from '../source-parser.js';
 import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
+import { renderExternalDocumentTree } from './external-document-tree.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
-import { externalHtmlToDocumentTree, renderMarkdown } from './markdown.js';
+import { renderMarkdown } from './markdown.js';
 import {
   renderExternalSectionBackReferences,
   renderExternalSourceReferences,
@@ -233,11 +233,9 @@ export async function getViewExternal(
           )
         : {
             title: analysis.title,
-            tree: externalHtmlToDocumentTree(
-              await renderExternalDocument(
-                analysis.format,
-                resolved.fullContent,
-              ),
+            tree: await renderExternalDocumentTree(
+              analysis.format,
+              resolved.fullContent,
             ),
           };
     const fragmentIndex = resolved.target.identity.indexOf('#');
