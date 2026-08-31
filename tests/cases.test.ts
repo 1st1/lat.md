@@ -1479,6 +1479,46 @@ describe('getSection', () => {
     expect(output).toContain('lat.md/links#Links');
   });
 
+  // @lat: [[tests/section#Parent section aggregates descendant references]]
+  it('aggregates outgoing refs and code backlinks from descendants', async () => {
+    const ctx = testCtx('section-nested');
+    const result = await getSection(ctx, 'guide#Guide');
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+
+    expect(result.outgoingRefs.map((ref) => ref.resolved.id)).toEqual([
+      'lat.md/target#Target',
+    ]);
+    expect(result.outgoingSourceRefs.map((ref) => ref.target)).toEqual([
+      'src/example.ts#child',
+    ]);
+    expect(result.codeRefs.map((ref) => ref.line)).toEqual([1, 4]);
+
+    const output = stripAnsi(formatSectionOutput(ctx, result));
+    expect(output).toContain('This section references:');
+    expect(output).toContain('Referenced by code:');
+    expect(output).toContain('@lat: [[guide#Guide#Child]]');
+    expect(output).toContain('@lat: [[guide#Guide#Child#Grandchild]]');
+  });
+
+  // @lat: [[tests/section#Reference summaries preserve leading paragraphs]]
+  it('renders full reference summaries with a malformed-content safety cap', async () => {
+    const ctx = testCtx('section-nested');
+    const result = await getSection(ctx, 'guide#Guide');
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+
+    const completeOutput = stripAnsi(formatSectionOutput(ctx, result));
+    expect(completeOutput).toContain('outgoing summary ending.');
+    expect(completeOutput).toContain('incoming summary ending.');
+
+    result.outgoingRefs[0].resolved.firstParagraph =
+      'x'.repeat(300) + 'content beyond the safety limit';
+    const cappedOutput = stripAnsi(formatSectionOutput(ctx, result));
+    expect(cappedOutput).toContain('x'.repeat(300) + '...');
+    expect(cappedOutput).not.toContain('content beyond the safety limit');
+  });
+
   // @lat: [[tests/section#Source refs include line range]]
   it('TS: outgoingSourceRefs include endLine for function, class, type, interface', async () => {
     const ctx = testCtx('source-ref-ts-valid');
@@ -1610,6 +1650,31 @@ describe('getSection', () => {
     expect(output).toContain('src/app.ts:13-16');
     // Interface: should show range
     expect(output).toContain('src/app.ts:18-21');
+  });
+
+  // @lat: [[tests/section#formatSectionOutput marks source snippets as inline code]]
+  it('formatSectionOutput marks source snippets as robust Markdown inline code', async () => {
+    const sourceCtx = testCtx('source-ref-ts-valid');
+    const sourceResult = await getSection(sourceCtx, 'lat.md/docs#Docs');
+    expect(sourceResult.kind).toBe('found');
+    if (sourceResult.kind !== 'found') return;
+    const sourceOutput = stripAnsi(
+      formatSectionOutput(sourceCtx, sourceResult),
+    );
+    expect(sourceOutput).toContain(
+      '| `export function greet(name: string): string {`',
+    );
+    expect(sourceOutput).toContain('| ``  return `Hello, ${name}!`;``');
+
+    const backlinkCtx = testCtx('section-nested');
+    const backlinkResult = await getSection(backlinkCtx, 'guide#Guide');
+    expect(backlinkResult.kind).toBe('found');
+    if (backlinkResult.kind !== 'found') return;
+    const backlinkOutput = stripAnsi(
+      formatSectionOutput(backlinkCtx, backlinkResult),
+    );
+    const backlinkAnnotation = '// @' + 'lat: [[guide#Guide#Child]]';
+    expect(backlinkOutput).toContain(`| \`${backlinkAnnotation}\``);
   });
 
   // @lat: [[tests/section#formatSectionOutput includes all parts]]

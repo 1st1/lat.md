@@ -36,6 +36,16 @@
   --inline-code: #ededed;
   --reference-control: #e5e5e5;
   --reference-control-hover: #ededed;
+  --section-menu-control: color-mix(
+    in srgb,
+    var(--reference-control) 70%,
+    var(--background)
+  );
+  --section-menu-control-hover: color-mix(
+    in srgb,
+    var(--reference-control-hover) 70%,
+    var(--background)
+  );
   --graph-document: #0070f3;
   --graph-code: #d97706;
   --map-control-filter: none;
@@ -1039,7 +1049,7 @@ a {
   letter-spacing: 0.01em;
   vertical-align: middle;
   cursor: pointer;
-  background: var(--reference-control);
+  background: var(--section-menu-control);
   border: 0;
   border-radius: 5px;
 }
@@ -1048,13 +1058,18 @@ a {
   width: 14px;
   height: 14px;
   fill: none;
+  opacity: 0.7;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-width: 1.5;
 }
 
 .section-back-reference-toggle:hover {
-  background: var(--reference-control-hover);
+  background: var(--section-menu-control-hover);
+}
+
+.section-back-reference-toggle:hover svg {
+  opacity: 0.82;
 }
 
 .section-back-reference-count {

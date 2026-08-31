@@ -1459,7 +1459,19 @@ describe('lat ui', () => {
       'utf8',
     );
     expect(styles).toMatch(
-      /\.section-back-reference-toggle:hover \{\s*background: var\(--reference-control-hover\);/,
+      /--section-menu-control: color-mix\([\s\S]*?var\(--reference-control\) 70%,[\s\S]*?var\(--background\)[\s\S]*?\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle \{[^}]*background: var\(--section-menu-control\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle:hover \{\s*background: var\(--section-menu-control-hover\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle svg \{[^}]*opacity: 0\.7;/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle:hover svg \{\s*opacity: 0\.82;/,
     );
     expect(styles).toMatch(
       /\.section-back-reference-actions \{\s*display: grid;/,
@@ -1550,6 +1562,23 @@ describe('lat ui', () => {
     expect(documentTreeToHtml(sectionOutput.tree)).toContain(
       '<h2 id="unreferenced">Unreferenced</h2>',
     );
+
+    const referencedSectionOutputResponse = await fetch(
+      new URL(sectionOutputRequestUrl('lat.md/guide#Guide#Details'), view.url),
+    );
+    const referencedSectionOutput =
+      (await referencedSectionOutputResponse.json()) as ViewSectionCommandOutput;
+    expect(referencedSectionOutput.output).toContain(
+      '| `export function run(): string {`',
+    );
+    const referencedSectionHtml = documentTreeToHtml(
+      referencedSectionOutput.tree,
+    );
+    expect(referencedSectionHtml).toContain(
+      '<code>export function run(): string {</code>',
+    );
+    const codeReference = '// @' + 'lat: [[guide#Details]]';
+    expect(referencedSectionHtml).toContain(`<code>${codeReference}</code>`);
 
     const sourceResponse = await fetch(
       new URL('/api/source?path=src/app.ts&at=5', view.url),
