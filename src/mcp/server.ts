@@ -7,6 +7,7 @@ import { plainStyler, type CmdContext, type CmdResult } from '../context.js';
 import { locateCommand } from '../cli/locate.js';
 import { sectionCommand } from '../cli/section.js';
 import { searchCommand } from '../cli/search.js';
+import { DEFAULT_SEARCH_THRESHOLD } from '../search/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
@@ -65,9 +66,16 @@ export async function startMcpServer(): Promise<void> {
         .optional()
         .default(5)
         .describe('Max results (default 5)'),
+      threshold: z
+        .number()
+        .min(-1)
+        .max(1)
+        .optional()
+        .default(DEFAULT_SEARCH_THRESHOLD)
+        .describe('Minimum cosine similarity score (default 0.35)'),
     },
-    async ({ query, limit }) =>
-      toMcp(await searchCommand(requestContext(), query, { limit })),
+    async ({ query, limit, threshold }) =>
+      toMcp(await searchCommand(requestContext(), query, { limit, threshold })),
   );
 
   server.tool(

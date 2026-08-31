@@ -13,7 +13,7 @@ export function formatSectionId(id: string, s: Styler): string {
 export function formatSectionPreview(
   ctx: CmdContext,
   section: Section,
-  opts?: { reason?: string },
+  opts?: { reason?: string; score?: number },
 ): string {
   const s = ctx.styler;
   const relPath = relative(
@@ -22,9 +22,14 @@ export function formatSectionPreview(
   );
 
   const kind = section.id.includes('#') ? 'Section' : 'File';
-  const reasonSuffix = opts?.reason ? ' ' + s.dim(`(${opts.reason})`) : '';
+  const details = [
+    opts?.reason,
+    opts?.score === undefined ? undefined : `score: ${opts.score.toFixed(6)}`,
+  ].filter((detail): detail is string => detail !== undefined);
+  const detailsSuffix =
+    details.length > 0 ? ' ' + s.dim(`(${details.join(', ')})`) : '';
   const lines: string[] = [
-    `${s.dim('*')} ${s.dim(kind + ':')} [[${formatSectionId(section.id, s)}]]${reasonSuffix}`,
+    `${s.dim('*')} ${s.dim(kind + ':')} [[${formatSectionId(section.id, s)}]]${detailsSuffix}`,
     `  ${s.dim('Defined in')} ${s.cyan(relPath)}${s.dim(`:${section.startLine}-${section.endLine}`)}`,
   ];
 
@@ -39,6 +44,7 @@ export function formatResultList(
   ctx: CmdContext,
   header: string,
   matches: SectionMatch[],
+  opts?: { showScores?: boolean },
 ): string {
   const lines: string[] = ['', `## ${header}`, ''];
 
@@ -47,6 +53,7 @@ export function formatResultList(
     lines.push(
       formatSectionPreview(ctx, matches[i].section, {
         reason: matches[i].reason,
+        score: opts?.showScores ? matches[i].score : undefined,
       }),
     );
   }

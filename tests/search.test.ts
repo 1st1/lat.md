@@ -14,6 +14,9 @@ import {
 import { indexSections } from '../src/search/index.js';
 import { searchSections } from '../src/search/search.js';
 import { runSearch } from '../src/cli/search.js';
+import { formatResultList } from '../src/format.js';
+import { plainStyler, type CmdContext } from '../src/context.js';
+import type { Section } from '../src/lattice-model.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
 import type { Client } from '@libsql/client';
 import type { Server } from 'node:http';
@@ -99,6 +102,17 @@ describe('search (rag, local)', () => {
     expect(results[0].score).toBeGreaterThanOrEqual(results.at(-1)!.score);
   });
 
+  // @lat: [[search#RAG Tests#Filters results below the similarity threshold]]
+  it('filters results below the similarity threshold', async () => {
+    const query = 'how do we handle user login and security?';
+    const results = await searchSections(db, query, embedder);
+    const threshold = (results[0].score + results[1].score) / 2;
+    const filtered = await searchSections(db, query, embedder, 5, threshold);
+
+    expect(filtered.map((result) => result.id)).toEqual([results[0].id]);
+    expect(filtered[0].score).toBeGreaterThanOrEqual(threshold);
+  });
+
   // @lat: [[search#RAG Tests#Finds performance section for latency query]]
   it('finds performance section for latency query', async () => {
     const results = await searchSections(
@@ -132,6 +146,39 @@ describe('search (rag, local)', () => {
     const stats = await indexSections(latDir, db, embedder);
     expect(stats.removed).toBe(4); // testing + unit + integration + performance
     expect(stats.unchanged).toBe(5); // architecture sections remain
+  });
+});
+
+describe('search result formatting', () => {
+  const ctx: CmdContext = {
+    latDir: '/project/lat.md',
+    projectRoot: '/project',
+    styler: plainStyler,
+    mode: 'cli',
+  };
+  const section: Section = {
+    id: 'lat.md/architecture#Authentication',
+    heading: 'Authentication',
+    depth: 2,
+    file: 'lat.md/architecture',
+    filePath: 'lat.md/architecture.md',
+    children: [],
+    startLine: 3,
+    endLine: 8,
+    firstParagraph: 'Authentication uses signed sessions.',
+  };
+  const matches = [{ section, reason: 'semantic match', score: 0.8123456789 }];
+
+  // @lat: [[search#RAG Tests#Debug output includes similarity scores]]
+  it('shows scores only when debug output is requested', () => {
+    const normal = formatResultList(ctx, 'Results:', matches);
+    const debug = formatResultList(ctx, 'Results:', matches, {
+      showScores: true,
+    });
+
+    expect(normal).toContain('(semantic match)');
+    expect(normal).not.toContain('score:');
+    expect(debug).toContain('(semantic match, score: 0.812346)');
   });
 });
 

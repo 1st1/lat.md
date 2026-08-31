@@ -18,7 +18,7 @@ import {
   type Embedder,
 } from '../search/embedder.js';
 import { indexSections, type IndexStats } from '../search/index.js';
-import { searchSections } from '../search/search.js';
+import { DEFAULT_SEARCH_THRESHOLD, searchSections } from '../search/search.js';
 import type { SectionMatch } from '../lattice-model.js';
 import {
   analyzeMarkdownProject,
@@ -147,7 +147,11 @@ export async function runSearch(
   query: string,
   limit: number,
   progress?: IndexProgress,
-  opts?: { buildIndex?: boolean; project?: MarkdownProjectAnalysis },
+  opts?: {
+    buildIndex?: boolean;
+    project?: MarkdownProjectAnalysis;
+    threshold?: number;
+  },
 ): Promise<SearchResult> {
   if (opts?.buildIndex === false) {
     const db = openDb(latDir);
@@ -159,7 +163,13 @@ export async function runSearch(
       if (stored === null) return { query, matches: [] };
       const embedder = await embedderForIndex(stored, latDir);
       await ensureSectionsSchema(db, embedder.dimensions);
-      const results = await searchSections(db, query, embedder, limit);
+      const results = await searchSections(
+        db,
+        query,
+        embedder,
+        limit,
+        opts.threshold,
+      );
       const project =
         opts.project ??
         (await analyzeMarkdownProject(latDir, dirname(latDir), {
@@ -177,7 +187,13 @@ export async function runSearch(
       executor: 'auto',
     }));
   return withDb(latDir, progress, project, async (db, embedder, analyzed) => {
-    const results = await searchSections(db, query, embedder, limit);
+    const results = await searchSections(
+      db,
+      query,
+      embedder,
+      limit,
+      opts?.threshold,
+    );
     return { query, matches: await resolveMatches(analyzed, results) };
   });
 }
@@ -227,7 +243,7 @@ export function cliProgress(s: Styler): IndexProgress {
 export async function searchCommand(
   ctx: CmdContext,
   query: string | undefined,
-  opts: { limit: number },
+  opts: { limit: number; debug?: boolean; threshold?: number },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
   const s = ctx.styler;
@@ -240,6 +256,7 @@ export async function searchCommand(
     const project = await commandProjectAnalysis(ctx);
     const result = await runSearch(ctx.latDir, query, opts.limit, progress, {
       project,
+      threshold: opts.threshold ?? DEFAULT_SEARCH_THRESHOLD,
     });
 
     if (result.matches.length === 0) {
@@ -252,6 +269,7 @@ export async function searchCommand(
           ctx,
           `Search results for "${query}":`,
           result.matches,
+          { showScores: opts.debug },
         ) + formatNavHints(ctx),
     };
   } catch (err) {

@@ -340,9 +340,13 @@ Implementation: [[src/mcp/server.ts]]
 Semantic search across `lat.md` sections using vector embeddings. Works **offline by default** — no
 API key required.
 
-Usage: `lat search [query] [--limit=5]`
+Usage: `lat search [query] [--limit=5] [--threshold=0.35] [--debug]`
 
 Query is optional — `lat search` with no query just builds the index on first use. `lat search` only reads; rebuilding is [[cli#reindex]]. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
+
+`--debug` appends each result's cosine-similarity score, rounded to six decimal places. Scores stay hidden by default, including in the MCP `lat_search` output.
+
+Search returns only results whose cosine-similarity score is at least `--threshold` (`0.35` by default). The accepted range is `-1` to `1`; lower the threshold to favor recall or raise it to favor precision. MCP `lat_search` uses the same default and accepts the same optional threshold.
 
 Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
 
