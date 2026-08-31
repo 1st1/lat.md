@@ -64,6 +64,7 @@ const CODE_LINK_CLASSES = [
   'code-language-go',
   'code-language-c',
   'code-language-dart',
+  'code-language-java',
 ];
 
 const ERROR_CLASS = 'markdown-error';
@@ -404,6 +405,8 @@ function codeLanguage(target: string): {
       return { className: 'code-language-c', label: 'C' };
     case '.dart':
       return { className: 'code-language-dart', label: 'DART' };
+    case '.java':
+      return { className: 'code-language-java', label: 'JAVA' };
     default:
       return null;
   }

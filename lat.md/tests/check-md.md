@@ -30,3 +30,7 @@ Given links to Dart declarations and nested members, [[cli#check#md]] resolves f
 ### Accepts Dart dot shorthand
 
 The bundled Dart grammar parses Dart 3.7 dot shorthand such as `.red` without syntax errors while Lat resolves the containing definitions normally.
+
+### Passes with Java source symbol links
+
+Given links to Java types and members, [[cli#check#md]] resolves classes, interfaces, enums, records, annotation types, nested types, fields, constants, methods, record components, and ordinary or compact constructors with complete source ranges.

@@ -1308,6 +1308,14 @@ describe('source-ref-dart-valid', () => {
   });
 });
 
+describe('source-ref-java-valid', () => {
+  // @lat: [[tests/check-md#Passes with valid links#Passes with Java source symbol links]]
+  it('resolves Java types and nested members without errors', async () => {
+    const { errors } = await checkMd(latDir('source-ref-java-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
 describe('error-source-ref-rs-missing', () => {
   it('check md reports all missing Rust symbols', async () => {
     const { errors } = await checkMd(latDir('error-source-ref-rs-missing'));
@@ -1379,6 +1387,27 @@ describe('error-source-ref-dart-missing', () => {
     );
     expect(
       byTarget.get('src/app.dart#Greeter#missingMethod')?.message,
+    ).toContain('symbol "Greeter#missingMethod" not found');
+  });
+});
+
+describe('error-source-ref-java-missing', () => {
+  it('check md reports all missing Java symbols', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-java-missing'));
+    expect(errors).toHaveLength(4);
+
+    const byTarget = new Map(errors.map((error) => [error.target, error]));
+    expect(byTarget.get('src/Greeter.java#nonexistent')?.message).toContain(
+      'symbol "nonexistent" not found',
+    );
+    expect(byTarget.get('src/Greeter.java#MissingClass')?.message).toContain(
+      'symbol "MissingClass" not found',
+    );
+    expect(byTarget.get('src/Greeter.java#MISSING_CONST')?.message).toContain(
+      'symbol "MISSING_CONST" not found',
+    );
+    expect(
+      byTarget.get('src/Greeter.java#Greeter#missingMethod')?.message,
     ).toContain('symbol "Greeter#missingMethod" not found');
   });
 });
@@ -1781,6 +1810,34 @@ describe('getSection', () => {
     expect(ref('src/app.dart#UserId#format')).toMatchObject({
       line: 44,
       endLine: 44,
+    });
+  });
+
+  it('Java: outgoingSourceRefs include annotated types and member ranges', async () => {
+    const ctx = testCtx('source-ref-java-valid');
+    const result = await getSection(ctx, 'lat.md/docs#Docs');
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+    const ref = (target: string) =>
+      result.outgoingSourceRefs.find(
+        (reference) => reference.target === target,
+      );
+
+    expect(ref('src/Greeter.java#Greeter')).toMatchObject({
+      line: 3,
+      endLine: 25,
+    });
+    expect(ref('src/Greeter.java#Greeter#greet')).toMatchObject({
+      line: 13,
+      endLine: 16,
+    });
+    expect(ref('src/Greeter.java#Point#Point')).toMatchObject({
+      line: 53,
+      endLine: 55,
+    });
+    expect(ref('src/Greeter.java#Marker#value')).toMatchObject({
+      line: 63,
+      endLine: 63,
     });
   });
 

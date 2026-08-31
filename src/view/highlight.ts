@@ -7,6 +7,7 @@ import css from 'highlight.js/lib/languages/css';
 import dart from 'highlight.js/lib/languages/dart';
 import diff from 'highlight.js/lib/languages/diff';
 import go from 'highlight.js/lib/languages/go';
+import java from 'highlight.js/lib/languages/java';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
 import markdown from 'highlight.js/lib/languages/markdown';
@@ -26,6 +27,7 @@ const lowlight = createLowlight({
   dart,
   diff,
   go,
+  java,
   javascript,
   json,
   markdown,
@@ -46,6 +48,7 @@ const languageAliases: Record<string, string> = {
   go: 'go',
   h: 'c',
   html: 'xml',
+  java: 'java',
   js: 'javascript',
   javascript: 'javascript',
   json: 'json',
@@ -74,6 +77,7 @@ const languageByExtension: Record<string, string> = {
   '.dart': 'dart',
   '.go': 'go',
   '.h': 'c',
+  '.java': 'java',
   '.js': 'javascript',
   '.jsx': 'javascript',
   '.py': 'python',

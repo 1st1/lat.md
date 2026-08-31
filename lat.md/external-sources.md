@@ -105,7 +105,7 @@ The supported fields are:
 - `repo` — required canonical HTTPS Git repository URL.
 - `commit` — required immutable full commit SHA.
 - `prefix` — optional `/`-separated POSIX directory prepended to every authored external path; Windows path syntax is not accepted.
-- `default-file-extension` — optional extension appended when an authored path has none. Values omit the leading dot and are limited to `md`, `rst`, `adoc`, `asciidoc`, `ts`, `tsx`, `js`, `jsx`, `py`, `dart`, `rs`, `go`, `c`, or `h`.
+- `default-file-extension` — optional extension appended when an authored path has none. Values omit the leading dot and are limited to `md`, `rst`, `adoc`, `asciidoc`, `ts`, `tsx`, `js`, `jsx`, `py`, `dart`, `java`, `rs`, `go`, `c`, or `h`.
 - `strategy` — required retrieval strategy, either `fetch` or `checkout`.
 - `fetch-url` — optional raw-file HTTP URL template for the `fetch` strategy.
 

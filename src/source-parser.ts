@@ -99,6 +99,7 @@ const grammarMap = {
   '.dart': 'tree-sitter-dart.wasm',
   '.go': 'tree-sitter-go.wasm',
   '.h': 'tree-sitter-c.wasm',
+  '.java': 'tree-sitter-java.wasm',
   '.js': 'tree-sitter-javascript.wasm',
   '.jsx': 'tree-sitter-javascript.wasm',
   '.py': 'tree-sitter-python.wasm',
@@ -623,6 +624,134 @@ function extractDartSymbols(tree: Tree): SourceSymbol[] {
     }
   }
 
+  return symbols;
+}
+
+const javaTypeKinds: Record<string, SourceSymbol['kind']> = {
+  annotation_type_declaration: 'interface',
+  class_declaration: 'class',
+  enum_declaration: 'class',
+  interface_declaration: 'interface',
+  record_declaration: 'class',
+};
+
+function javaSignature(
+  sourceLines: readonly string[],
+  node: SyntaxNode,
+): string {
+  const declarator = node.namedChildren.find(
+    (child) => child.type === 'variable_declarator',
+  );
+  const name =
+    node.childForFieldName('name') ?? declarator?.childForFieldName('name');
+  return sourceLines[(name ?? node).startPosition.row]?.trim() ?? '';
+}
+
+function pushJavaSymbol(
+  sourceLines: readonly string[],
+  symbols: SourceSymbol[],
+  name: string,
+  kind: SourceSymbol['kind'],
+  node: SyntaxNode,
+  parent?: string,
+): SourceSymbol {
+  const symbol: SourceSymbol = {
+    name,
+    kind,
+    ...(parent ? { parent } : {}),
+    startLine: node.startPosition.row + 1,
+    endLine: node.endPosition.row + 1,
+    signature: javaSignature(sourceLines, node),
+  };
+  symbols.push(symbol);
+  return symbol;
+}
+
+function extractJavaVariables(
+  sourceLines: readonly string[],
+  symbols: SourceSymbol[],
+  node: SyntaxNode,
+  parent: string,
+): void {
+  const kind = node.type === 'constant_declaration' ? 'const' : 'variable';
+  for (const declarator of node.namedChildren) {
+    if (declarator.type !== 'variable_declarator') continue;
+    const name = extractName(declarator);
+    if (name) {
+      pushJavaSymbol(sourceLines, symbols, name, kind, node, parent);
+    }
+  }
+}
+
+function collectJavaScope(
+  sourceLines: readonly string[],
+  scope: SyntaxNode,
+  parent: string | undefined,
+  symbols: SourceSymbol[],
+): void {
+  for (const node of scope.namedChildren) {
+    const typeKind = javaTypeKinds[node.type];
+    if (typeKind) {
+      const name = extractName(node);
+      if (!name) continue;
+
+      const symbol = pushJavaSymbol(sourceLines, symbols, name, typeKind, node);
+      if (parent) symbols.push({ ...symbol, parent });
+
+      if (node.type === 'record_declaration') {
+        const parameters = node.childForFieldName('parameters');
+        for (const parameter of parameters?.namedChildren ?? []) {
+          const component = extractName(parameter);
+          if (component) {
+            pushJavaSymbol(
+              sourceLines,
+              symbols,
+              component,
+              'variable',
+              parameter,
+              name,
+            );
+          }
+        }
+      }
+
+      const body = node.childForFieldName('body');
+      if (body) collectJavaScope(sourceLines, body, name, symbols);
+      continue;
+    }
+
+    if (!parent) continue;
+
+    if (
+      node.type === 'method_declaration' ||
+      node.type === 'constructor_declaration' ||
+      node.type === 'compact_constructor_declaration' ||
+      node.type === 'annotation_type_element_declaration'
+    ) {
+      const name = extractName(node);
+      if (name) {
+        pushJavaSymbol(sourceLines, symbols, name, 'method', node, parent);
+      }
+    } else if (
+      node.type === 'field_declaration' ||
+      node.type === 'constant_declaration'
+    ) {
+      extractJavaVariables(sourceLines, symbols, node, parent);
+    } else if (node.type === 'enum_constant') {
+      const name = extractName(node);
+      if (name) {
+        pushJavaSymbol(sourceLines, symbols, name, 'const', node, parent);
+      }
+    } else if (node.type === 'enum_body_declarations') {
+      collectJavaScope(sourceLines, node, parent, symbols);
+    }
+  }
+}
+
+function extractJavaSymbols(tree: Tree): SourceSymbol[] {
+  const symbols: SourceSymbol[] = [];
+  const sourceLines = tree.rootNode.text.split('\n');
+  collectJavaScope(sourceLines, tree.rootNode, undefined, symbols);
   return symbols;
 }
 
@@ -1168,6 +1297,7 @@ const symbolExtractors = {
   '.dart': extractDartSymbols,
   '.go': extractGoSymbols,
   '.h': extractCSymbols,
+  '.java': extractJavaSymbols,
   '.js': extractTsSymbols,
   '.jsx': extractTsSymbols,
   '.py': extractPySymbols,

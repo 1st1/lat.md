@@ -102,22 +102,25 @@ Resolution is handled by [[src/lattice-model.ts#resolveRef]]. See [[parser#Short
 
 ### Source Code Links
 
-Wiki links can reference symbols in TypeScript, JavaScript, Python, Dart, Rust, Go, and C source files:
+Wiki links can reference symbols in TypeScript, JavaScript, Python, Dart, Java, Rust, Go, and C source files:
 
 - **`[[src/config.ts#getConfigDir]]`** — the `getConfigDir` function in `src/config.ts`
 - **`[[src/server.ts#App#listen]]`** — the `listen` method on class `App` in `src/server.ts`
 - **`[[lib/service.dart#Greeter#greet]]`** — the `greet` method on class `Greeter` in Dart
+- **`[[src/Greeter.java#Greeter#greet]]`** — the `greet` method on class `Greeter` in Java
 - **`[[src/lib.rs#Greeter#greet]]`** — the `greet` method on struct `Greeter` in Rust
 - **`[[src/app.go#Greeter#Greet]]`** — the `Greet` method on type `Greeter` in Go
 - **`[[src/app.h#Greeter]]`** — the `Greeter` struct in a C header
 - **`[[src/app.h#Greeter#prefix]]`** — the `prefix` field of struct `Greeter` in C
 - **`[[src/config.ts]]`** — link to the file itself (no symbol)
 
-Supported extensions: `.c`, `.dart`, `.go`, `.h`, `.js`, `.jsx`, `.py`, `.rs`, `.ts`, `.tsx`. The typed [[src/source-formats.ts#SOURCE_FILE_EXTENSIONS]] registry governs source-link parsing, external source validation, and `@lat:` code-mention scanning.
+Supported extensions: `.c`, `.dart`, `.go`, `.h`, `.java`, `.js`, `.jsx`, `.py`, `.rs`, `.ts`, `.tsx`. The typed [[src/source-formats.ts#SOURCE_FILE_EXTENSIONS]] registry governs source-link parsing, external source validation, and `@lat:` code-mention scanning.
 
 Python symbols: functions, classes, methods, module-level variables. Decorated definitions (`@decorator`) are unwrapped transparently — `[[file.py#my_func]]` resolves whether or not `my_func` has decorators, and `# @lat:` comments placed between decorators and the `def`/`class` line are scanned normally.
 
 Dart symbols: functions, getters, setters, classes, constructors, fields, mixins, named extensions, enums and values, extension types, type aliases, and top-level variables. Nested members use `[[file.dart#Type#member]]`; named constructors use their suffix (`#Type#named`), while unnamed constructors use the class name (`#Type#Type`). Operators retain Dart spelling, such as `[[file.dart#Greeter#operator ==]]`. Annotations are included in definition ranges, and `// @lat:` comments are scanned like other C-style source comments.
+
+Java symbols: classes, interfaces, enums, records, annotation types, constructors, methods, fields, constants, enum values, record components, and annotation elements. Nested types resolve standalone and as `[[file.java#Outer#Inner]]`; their members use the standalone type, such as `[[file.java#Inner#method]]`, because source paths support two symbol levels. Ordinary and compact constructors use the enclosing type name. Annotations are included in source ranges, and overloads resolve by name like other languages.
 
 Rust symbols: functions, structs, enums, traits, impl methods, consts, statics, type aliases. Methods are resolved via `impl` blocks — `[[file.rs#Type#method]]` matches any `impl Type { fn method() }` or `impl Trait for Type { fn method() }`.
 

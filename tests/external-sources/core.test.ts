@@ -264,6 +264,17 @@ describe.sequential('external source core', () => {
     });
     expect(dartSource.content).toContain("return 'first';");
 
+    const javaSource = await fetchResolver.resolve(
+      'upstream:Widget.java#Widget#widget',
+    );
+    expect(javaSource).toMatchObject({
+      kind: 'source',
+      startLine: 2,
+      endLine: 4,
+      signature: 'String widget() {',
+    });
+    expect(javaSource.content).toContain('return "first";');
+
     const defaultRst = createExternalProject(fixture, {
       strategy: 'fetch',
       commit: fixture.commit1,
