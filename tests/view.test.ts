@@ -1459,7 +1459,19 @@ describe('lat ui', () => {
       'utf8',
     );
     expect(styles).toMatch(
-      /\.section-back-reference-toggle:hover \{\s*background: var\(--reference-control-hover\);/,
+      /--section-menu-control: color-mix\([\s\S]*?var\(--reference-control\) 70%,[\s\S]*?var\(--background\)[\s\S]*?\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle \{[^}]*background: var\(--section-menu-control\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle:hover \{\s*background: var\(--section-menu-control-hover\);/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle svg \{[^}]*opacity: 0\.7;/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-toggle:hover svg \{\s*opacity: 0\.82;/,
     );
     expect(styles).toMatch(
       /\.section-back-reference-actions \{\s*display: grid;/,
