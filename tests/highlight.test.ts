@@ -51,6 +51,13 @@ describe('source highlighting', () => {
     expect(treeClasses(lines[1])).toContain('hljs-comment');
     expect(treeClasses(lines[2])).toContain('hljs-comment');
 
+    const dart = highlightSource(
+      'lib/example.dart',
+      "class Greeter { String greet() => 'hello'; }",
+    );
+    expect(treeClasses(dart[0])).toContain('hljs-class');
+    expect(treeText(dart[0])).toContain('Greeter');
+
     expect(highlightSource('notes.txt', '<safe>\n& literal')).toEqual([
       {
         version: 1,

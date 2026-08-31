@@ -4,6 +4,7 @@ import { createLowlight } from 'lowlight';
 import bash from 'highlight.js/lib/languages/bash';
 import c from 'highlight.js/lib/languages/c';
 import css from 'highlight.js/lib/languages/css';
+import dart from 'highlight.js/lib/languages/dart';
 import diff from 'highlight.js/lib/languages/diff';
 import go from 'highlight.js/lib/languages/go';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -22,6 +23,7 @@ const lowlight = createLowlight({
   bash,
   c,
   css,
+  dart,
   diff,
   go,
   javascript,
@@ -39,6 +41,7 @@ const languageAliases: Record<string, string> = {
   bash: 'bash',
   c: 'c',
   css: 'css',
+  dart: 'dart',
   diff: 'diff',
   go: 'go',
   h: 'c',
@@ -68,6 +71,7 @@ const languageAliases: Record<string, string> = {
 
 const languageByExtension: Record<string, string> = {
   '.c': 'c',
+  '.dart': 'dart',
   '.go': 'go',
   '.h': 'c',
   '.js': 'javascript',

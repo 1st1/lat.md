@@ -1307,6 +1307,19 @@ describe('lat ui', () => {
       'a.wiki-link-code:not(.wiki-link-segmented) .code-link-leading',
     );
 
+    const dartLink = await renderMarkdown(
+      '[[lib/service.dart#Greeter#greet]]',
+      'lat.md',
+      async () => ({
+        href: '/code/lib/service.dart?symbol=Greeter%23greet',
+        referenceCount: 0,
+      }),
+    );
+    expect(dartLink.html).toContain(
+      'class="code-link-language code-language-dart"',
+    );
+    expect(dartLink.html).toContain('>DART</span>');
+
     for (const referenceCount of [0, 1]) {
       const sparseReferences = await renderMarkdown(
         '[[orphan]]',

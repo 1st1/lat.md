@@ -781,6 +781,43 @@ describe('python-code-ref', () => {
   });
 });
 
+// --- dart-code-ref ---
+
+describe('dart-code-ref', () => {
+  // @lat: [[tests/check-code-refs#Scans Dart references around annotations]]
+  it('scans Dart // references including between annotations', async () => {
+    const { refs } = await scanCodeRefs(caseDir('dart-code-ref'));
+    expect(refs).toHaveLength(3);
+
+    expect(refs[0]).toMatchObject({
+      target: 'Specs#Feature A',
+      file: 'app.dart',
+      line: 1,
+    });
+    expect(refs[1]).toMatchObject({
+      target: 'Specs#Feature B',
+      file: 'app.dart',
+      line: 5,
+    });
+    expect(refs[2]).toMatchObject({
+      target: 'Specs#Nonexistent',
+      file: 'app.dart',
+      line: 8,
+    });
+  });
+
+  it('reports a dangling reference from a Dart file', async () => {
+    const { errors, files } = await checkCodeRefs(latDir('dart-code-ref'));
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatchObject({
+      target: 'Specs#Nonexistent',
+      line: 8,
+    });
+    expect(errors[0].message).toContain('no matching section found');
+    expect(files).toEqual({ '.dart': 1 });
+  });
+});
+
 // --- gitignore-filtering ---
 
 describe('gitignore-filtering', () => {
@@ -1263,6 +1300,14 @@ describe('source-ref-go-valid', () => {
   });
 });
 
+describe('source-ref-dart-valid', () => {
+  // @lat: [[tests/check-md#Passes with valid links#Passes with Dart source symbol links]]
+  it('resolves Dart declarations and nested members without errors', async () => {
+    const { errors } = await checkMd(latDir('source-ref-dart-valid'));
+    expect(errors).toHaveLength(0);
+  });
+});
+
 describe('error-source-ref-rs-missing', () => {
   it('check md reports all missing Rust symbols', async () => {
     const { errors } = await checkMd(latDir('error-source-ref-rs-missing'));
@@ -1314,6 +1359,27 @@ describe('error-source-ref-go-missing', () => {
     expect(method.message).toContain(
       'symbol "Greeter#MissingMethod" not found',
     );
+  });
+});
+
+describe('error-source-ref-dart-missing', () => {
+  it('check md reports all missing Dart symbols', async () => {
+    const { errors } = await checkMd(latDir('error-source-ref-dart-missing'));
+    expect(errors).toHaveLength(4);
+
+    const byTarget = new Map(errors.map((error) => [error.target, error]));
+    expect(byTarget.get('src/app.dart#nonexistent')?.message).toContain(
+      'symbol "nonexistent" not found',
+    );
+    expect(byTarget.get('src/app.dart#MissingClass')?.message).toContain(
+      'symbol "MissingClass" not found',
+    );
+    expect(byTarget.get('src/app.dart#missingName')?.message).toContain(
+      'symbol "missingName" not found',
+    );
+    expect(
+      byTarget.get('src/app.dart#Greeter#missingMethod')?.message,
+    ).toContain('symbol "Greeter#missingMethod" not found');
   });
 });
 
@@ -1372,6 +1438,7 @@ describe('error-source-ref-unsupported-ext', () => {
     expect(errors[0].message).toContain('.ts');
     expect(errors[0].message).toContain('.rs');
     expect(errors[0].message).toContain('.go');
+    expect(errors[0].message).toContain('.dart');
   });
 });
 
@@ -1686,6 +1753,35 @@ describe('getSection', () => {
     });
     // interface: lines 21-23
     expect(ref('src/app.go#Greeting')).toMatchObject({ line: 21, endLine: 23 });
+  });
+
+  it('Dart: outgoingSourceRefs include complete annotated and member ranges', async () => {
+    const ctx = testCtx('source-ref-dart-valid');
+    const result = await getSection(ctx, 'lat.md/docs#Docs');
+    expect(result.kind).toBe('found');
+    if (result.kind !== 'found') return;
+    const ref = (target: string) =>
+      result.outgoingSourceRefs.find(
+        (reference) => reference.target === target,
+      );
+
+    expect(ref('src/app.dart#greet')).toMatchObject({ line: 7, endLine: 10 });
+    expect(ref('src/app.dart#Greeter')).toMatchObject({
+      line: 12,
+      endLine: 26,
+    });
+    expect(ref('src/app.dart#Greeter#greet')).toMatchObject({
+      line: 19,
+      endLine: 21,
+    });
+    expect(ref('src/app.dart#Greeting#wave')).toMatchObject({
+      line: 29,
+      endLine: 29,
+    });
+    expect(ref('src/app.dart#UserId#format')).toMatchObject({
+      line: 44,
+      endLine: 44,
+    });
   });
 
   // @lat: [[tests/section#formatSectionOutput renders source ref line ranges]]

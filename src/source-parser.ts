@@ -96,6 +96,7 @@ async function ensureParser(): Promise<Parser> {
 /** Every supported source extension must declare a tree-sitter grammar. */
 const grammarMap = {
   '.c': 'tree-sitter-c.wasm',
+  '.dart': 'tree-sitter-dart.wasm',
   '.go': 'tree-sitter-go.wasm',
   '.h': 'tree-sitter-c.wasm',
   '.js': 'tree-sitter-javascript.wasm',
@@ -332,6 +333,293 @@ function extractPySymbols(tree: Tree): SourceSymbol[] {
           signature: firstLine(node.text),
         });
       }
+    }
+  }
+
+  return symbols;
+}
+
+function dartDirectChild(node: SyntaxNode, type: string): SyntaxNode | null {
+  return node.namedChildren.find((child) => child.type === type) ?? null;
+}
+
+function dartDefinitionName(node: SyntaxNode): string | null {
+  const fieldName = extractName(node);
+  if (fieldName) return fieldName;
+
+  if (node.type === 'class_definition') {
+    const alias = dartDirectChild(node, 'mixin_application_class');
+    return alias ? (dartDirectChild(alias, 'identifier')?.text ?? null) : null;
+  }
+  if (node.type === 'type_alias') {
+    return dartDirectChild(node, 'type_identifier')?.text ?? null;
+  }
+  return dartDirectChild(node, 'identifier')?.text ?? null;
+}
+
+function dartCallableNode(node: SyntaxNode): SyntaxNode | null {
+  if (node.type !== 'method_signature' && node.type !== 'declaration') {
+    return node;
+  }
+  return (
+    node.namedChildren.find((child) =>
+      [
+        'constructor_signature',
+        'factory_constructor_signature',
+        'function_signature',
+        'getter_signature',
+        'operator_signature',
+        'redirecting_factory_constructor_signature',
+        'setter_signature',
+      ].includes(child.type),
+    ) ?? null
+  );
+}
+
+function dartCallableName(node: SyntaxNode, parent?: string): string | null {
+  const callable = dartCallableNode(node);
+  if (!callable) return null;
+
+  if (callable.type === 'operator_signature') {
+    const operator = callable.namedChildren.find((child) =>
+      child.type.endsWith('_operator'),
+    );
+    return operator ? `operator ${operator.text}` : null;
+  }
+
+  if (
+    callable.type === 'constructor_signature' ||
+    callable.type === 'factory_constructor_signature' ||
+    callable.type === 'redirecting_factory_constructor_signature'
+  ) {
+    const names = callable.namedChildren
+      .filter((child) => child.type === 'identifier')
+      .map((child) => child.text);
+    if (names.length === 0) return null;
+    if (names.length === 1) return names[0];
+    return names[0] === parent ? names[1] : names.at(-1)!;
+  }
+
+  return extractName(callable);
+}
+
+function dartAnnotatedStart(
+  siblings: readonly SyntaxNode[],
+  index: number,
+): SyntaxNode {
+  let start = siblings[index];
+  for (let i = index - 1; i >= 0 && siblings[i].type === 'annotation'; i--) {
+    start = siblings[i];
+  }
+  return start;
+}
+
+function dartDefinitionEnd(
+  siblings: readonly SyntaxNode[],
+  index: number,
+): SyntaxNode {
+  return siblings[index + 1]?.type === 'function_body'
+    ? siblings[index + 1]
+    : siblings[index];
+}
+
+function dartSignature(
+  sourceLines: readonly string[],
+  node: SyntaxNode,
+): string {
+  return sourceLines[node.startPosition.row]?.trim() ?? '';
+}
+
+function pushDartSymbol(
+  sourceLines: readonly string[],
+  symbols: SourceSymbol[],
+  name: string,
+  kind: SourceSymbol['kind'],
+  node: SyntaxNode,
+  options: {
+    parent?: string;
+    start?: SyntaxNode;
+    end?: SyntaxNode;
+  } = {},
+): void {
+  symbols.push({
+    name,
+    kind,
+    ...(options.parent ? { parent: options.parent } : {}),
+    startLine: (options.start ?? node).startPosition.row + 1,
+    endLine: (options.end ?? node).endPosition.row + 1,
+    signature: dartSignature(sourceLines, node),
+  });
+}
+
+function dartVariableKind(
+  siblings: readonly SyntaxNode[],
+  index: number,
+  container?: SyntaxNode,
+): SourceSymbol['kind'] {
+  if (
+    container?.namedChildren.some((child) => child.type === 'const_builtin')
+  ) {
+    return 'const';
+  }
+  const row = siblings[index].startPosition.row;
+  for (let i = index - 1; i >= 0 && siblings[i].endPosition.row === row; i--) {
+    if (siblings[i].type === 'const_builtin') return 'const';
+  }
+  return 'variable';
+}
+
+function extractDartVariables(
+  sourceLines: readonly string[],
+  symbols: SourceSymbol[],
+  node: SyntaxNode,
+  kind: SourceSymbol['kind'],
+  parent?: string,
+): void {
+  const lists =
+    node.type === 'initialized_identifier_list' ||
+    node.type === 'static_final_declaration_list'
+      ? [node]
+      : node.namedChildren.filter(
+          (child) =>
+            child.type === 'initialized_identifier_list' ||
+            child.type === 'static_final_declaration_list',
+        );
+
+  for (const list of lists) {
+    for (const declaration of list.namedChildren) {
+      if (
+        declaration.type !== 'initialized_identifier' &&
+        declaration.type !== 'static_final_declaration'
+      ) {
+        continue;
+      }
+      const name = dartDirectChild(declaration, 'identifier')?.text;
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, kind, node, { parent });
+      }
+    }
+  }
+}
+
+function extractDartMembers(
+  sourceLines: readonly string[],
+  body: SyntaxNode,
+  parent: string,
+  symbols: SourceSymbol[],
+): void {
+  const children = body.namedChildren;
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i];
+
+    if (node.type === 'method_signature') {
+      const name = dartCallableName(node, parent);
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, 'method', node, {
+          parent,
+          start: dartAnnotatedStart(children, i),
+          end: dartDefinitionEnd(children, i),
+        });
+      }
+    } else if (node.type === 'declaration') {
+      const name = dartCallableName(node, parent);
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, 'method', node, { parent });
+      }
+      extractDartVariables(
+        sourceLines,
+        symbols,
+        node,
+        dartVariableKind(children, i, node),
+        parent,
+      );
+    } else if (node.type === 'enum_constant') {
+      const name = extractName(node);
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, 'const', node, { parent });
+      }
+    }
+  }
+}
+
+function extractDartSymbols(tree: Tree): SourceSymbol[] {
+  const symbols: SourceSymbol[] = [];
+  const children = tree.rootNode.namedChildren;
+  const sourceLines = tree.rootNode.text.split('\n');
+
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i];
+    const start = dartAnnotatedStart(children, i);
+
+    if (
+      node.type === 'function_signature' ||
+      node.type === 'getter_signature' ||
+      node.type === 'setter_signature'
+    ) {
+      const name = dartCallableName(node);
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, 'function', node, {
+          start,
+          end: dartDefinitionEnd(children, i),
+        });
+      }
+    } else if (node.type === 'class_definition') {
+      const name = dartDefinitionName(node);
+      if (!name) continue;
+      pushDartSymbol(sourceLines, symbols, name, 'class', node, { start });
+      const body = node.childForFieldName('body');
+      if (body) extractDartMembers(sourceLines, body, name, symbols);
+    } else if (node.type === 'mixin_declaration') {
+      const name = dartDefinitionName(node);
+      if (!name) continue;
+      pushDartSymbol(sourceLines, symbols, name, 'interface', node, { start });
+      const body = dartDirectChild(node, 'class_body');
+      if (body) extractDartMembers(sourceLines, body, name, symbols);
+    } else if (node.type === 'extension_declaration') {
+      const name = extractName(node);
+      if (!name) continue;
+      pushDartSymbol(sourceLines, symbols, name, 'class', node, { start });
+      const body = node.childForFieldName('body');
+      if (body) extractDartMembers(sourceLines, body, name, symbols);
+    } else if (node.type === 'enum_declaration') {
+      const name = extractName(node);
+      if (!name) continue;
+      pushDartSymbol(sourceLines, symbols, name, 'class', node, { start });
+      const body = node.childForFieldName('body');
+      if (body) extractDartMembers(sourceLines, body, name, symbols);
+    } else if (node.type === 'extension_type_declaration') {
+      const name = extractName(node);
+      if (!name) continue;
+      pushDartSymbol(sourceLines, symbols, name, 'type', node, { start });
+      const representation = node.childForFieldName('representation');
+      const representationName = representation?.childForFieldName('name');
+      if (representation && representationName) {
+        pushDartSymbol(
+          sourceLines,
+          symbols,
+          representationName.text,
+          'variable',
+          representation,
+          { parent: name },
+        );
+      }
+      const body = node.childForFieldName('body');
+      if (body) extractDartMembers(sourceLines, body, name, symbols);
+    } else if (node.type === 'type_alias') {
+      const name = dartDefinitionName(node);
+      if (name) {
+        pushDartSymbol(sourceLines, symbols, name, 'type', node, { start });
+      }
+    } else if (
+      node.type === 'initialized_identifier_list' ||
+      node.type === 'static_final_declaration_list'
+    ) {
+      extractDartVariables(
+        sourceLines,
+        symbols,
+        node,
+        dartVariableKind(children, i),
+      );
     }
   }
 
@@ -877,6 +1165,7 @@ function firstLine(text: string): string {
 /** Every supported source extension must declare a symbol extractor. */
 const symbolExtractors = {
   '.c': extractCSymbols,
+  '.dart': extractDartSymbols,
   '.go': extractGoSymbols,
   '.h': extractCSymbols,
   '.js': extractTsSymbols,
@@ -1142,6 +1431,9 @@ export function sourceSymbolsToSections(
 ): Section[] {
   const sections: Section[] = [];
   const classMap = new Map<string, Section>();
+  const parentNames = new Set(
+    symbols.flatMap((symbol) => (symbol.parent ? [symbol.parent] : [])),
+  );
 
   for (const sym of symbols) {
     if (sym.parent) continue; // Handle methods after their class
@@ -1159,7 +1451,7 @@ export function sourceSymbolsToSections(
     };
     sections.push(section);
 
-    if (sym.kind === 'class') {
+    if (parentNames.has(sym.name)) {
       classMap.set(sym.name, section);
     }
   }

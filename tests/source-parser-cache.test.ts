@@ -18,6 +18,7 @@ import {
 
 const SOURCE_CACHE_FIXTURES = {
   '.c': { content: 'int cached(void) { return 1; }\n', symbol: 'cached' },
+  '.dart': { content: 'int cached() => 1;\n', symbol: 'cached' },
   '.go': { content: 'package cache\nfunc Cached() {}\n', symbol: 'Cached' },
   '.h': { content: 'int cached(void);\n', symbol: 'cached' },
   '.js': { content: 'export function cached() {}\n', symbol: 'cached' },
