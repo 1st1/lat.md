@@ -1015,6 +1015,7 @@ describe('lat ui', () => {
       'utf8',
     );
     expect(styles).toContain('.external-link-icon');
+    expect(styles).toContain('.external-source-link-unavailable');
     expect(styles).toContain('-webkit-mask:');
     expect(styles.match(/\.markdown a\s*\{([^}]*)\}/)?.[1]).toContain(
       'text-decoration-line: underline;',

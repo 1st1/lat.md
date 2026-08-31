@@ -148,6 +148,15 @@ describe.sequential('external source view', () => {
         expect(html(externalDocument.document)).toContain(
           'Second version navigation.',
         );
+        expect(html(externalDocument.document)).toContain(
+          'href="/external/upstream/guide.rst#navigation"',
+        );
+        expect(html(externalDocument.document)).toContain(
+          '<span class="external-source-link-unavailable" title="Linked file is not included in this Lat project">omitted appendix</span>',
+        );
+        expect(html(externalDocument.document)).not.toContain(
+          'href="appendix.md"',
+        );
         expect(externalDocument.document.backReferences).toHaveLength(2);
         expect(
           externalDocument.document.backReferences.find(
@@ -171,7 +180,19 @@ describe.sequential('external source view', () => {
         );
         expect(externalDocument.kind).toBe('markdown');
         if (externalDocument.kind === 'markdown') {
-          expect(html(externalDocument.document)).toContain(text);
+          const rendered = html(externalDocument.document);
+          expect(rendered).toContain(text);
+          expect(rendered).toContain('external-source-link-unavailable');
+          expect(rendered).not.toMatch(/href="appendix\.(?:rst|adoc)"/);
+          if (target.includes('.rst')) {
+            expect(rendered).toContain(
+              '<span class="external-source-link-unavailable" title="Linked file is not included in this Lat project">translation’s repository</span>',
+            );
+            expect(rendered).not.toContain('href="TRANSLATION_REPO_"');
+          }
+          expect(rendered).toMatch(
+            /href="\/external\/upstream\/guide(?:\.adoc)?#navigation"/,
+          );
           expect(externalDocument.document.tableOfContents).toContainEqual(
             expect.objectContaining({ id: 'navigation', title: 'Navigation' }),
           );
@@ -338,6 +359,13 @@ describe.sequential('external source view', () => {
       'upstream:widget.ts#gadget',
       'upstream:widget.ts#widget',
     ]);
+    expect(Object.keys(manifest.externals)).not.toEqual(
+      expect.arrayContaining([
+        'upstream:appendix.md',
+        'upstream:appendix.rst',
+        'upstream:appendix.adoc',
+      ]),
+    );
     expect(manifest.index.externalFiles).toEqual([
       {
         handle: 'upstream',
@@ -382,8 +410,11 @@ describe.sequential('external source view', () => {
       ) as ViewExternalDocument;
       expect(payload.kind).toBe('markdown');
       if (payload.kind === 'markdown') {
-        expect(html(payload.document)).toContain('First version navigation.');
-        expect(html(payload.document)).not.toContain('Live dirty navigation.');
+        const rendered = html(payload.document);
+        expect(rendered).toContain('First version navigation.');
+        expect(rendered).not.toContain('Live dirty navigation.');
+        expect(rendered).toContain('external-source-link-unavailable');
+        expect(rendered).not.toContain('href="appendix.md"');
       }
     }
     for (const [target, text] of [
@@ -398,8 +429,11 @@ describe.sequential('external source view', () => {
         ) as ViewExternalDocument;
         expect(payload.kind).toBe('markdown');
         if (payload.kind === 'markdown') {
-          expect(html(payload.document)).toContain(text);
-          expect(html(payload.document)).not.toContain('Second version');
+          const rendered = html(payload.document);
+          expect(rendered).toContain(text);
+          expect(rendered).not.toContain('Second version');
+          expect(rendered).toContain('external-source-link-unavailable');
+          expect(rendered).not.toMatch(/href="appendix\.(?:rst|adoc)"/);
         }
       }
     }

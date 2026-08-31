@@ -324,6 +324,8 @@ The `.json` suffix cannot collide with a source directory because dots are forbi
 }
 ```
 
+Generation updates use adjacent filesystem lock directories with recorded process owners. Concurrent live commands wait for the owner; interrupted owners are reclaimed immediately, and ownerless partial locks receive a short creation grace period before recovery.
+
 The metadata `ver` is [[src/external-sources.ts#EXTERNAL_SOURCES_SCHEMA_VER]], which covers both the JSON contract and strategy-specific on-disk layouts. `strategy` is `fetch`, `checkout`, or the internal value `local`. `source` is the effective fetch URL, configured checkout repository, or configured local path respectively. It is stored and compared exactly, without path or URL equivalence normalization. `commit` is always the effective commit, including a local override.
 
 ### Cache Invalidation
@@ -472,6 +474,8 @@ Agents may use the checkout suggestions from `lat external show` when they need 
 Lat retrieves exact files reached through configured external references rather than crawling or mirroring complete repositories.
 
 Fetch providers download referenced files individually. Managed checkouts use partial Git storage and lazy blob retrieval, keeping work proportional to the external content the project actually references.
+
+Repository-relative hyperlinks inside external documents become navigable only when their target file is already in that explicit reference set. Other destinations stay visible as unavailable, non-interactive text and never expand retrieval transitively.
 
 ### Stable Fragments
 

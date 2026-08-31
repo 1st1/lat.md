@@ -79,15 +79,27 @@ export async function createExternalGitFixture(): Promise<ExternalGitFixture> {
   mkdirSync(join(checkout, 'docs'), { recursive: true });
   writeFileSync(
     join(checkout, 'docs', 'guide.md'),
-    '# Guide\n\nPinned guide.\n\n## Navigation\n\nFirst version navigation.\n',
+    '# Guide\n\nPinned guide.\n\n## Navigation\n\nFirst version navigation.\n\nRead the [available reStructuredText guide](guide.rst#navigation) and the [omitted appendix](appendix.md).\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'guide.rst'),
-    'Guide\n=====\n\nPinned guide.\n\n.. _navigation:\n\nNavigation\n----------\n\nFirst version reStructuredText navigation.\n',
+    'Guide\n=====\n\nPinned guide.\n\n.. _navigation:\n\nNavigation\n----------\n\nFirst version reStructuredText navigation.\n\nRead the `available AsciiDoc guide <guide.adoc#navigation>`_, the `omitted appendix <appendix.rst>`_, and the `translation’s repository <TRANSLATION_REPO_>`_.\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'guide.adoc'),
-    '= Guide\n\nPinned guide.\n\n[#navigation]\n== Navigation\n\nFirst version AsciiDoc navigation.\n',
+    '= Guide\n\nPinned guide.\n\n[#navigation]\n== Navigation\n\nFirst version AsciiDoc navigation.\n\nRead the link:guide.md#navigation[available Markdown guide] and the link:appendix.adoc[omitted appendix].\n',
+  );
+  writeFileSync(
+    join(checkout, 'docs', 'appendix.md'),
+    '# Appendix\n\nThis file exists upstream but is not referenced by the Lat project.\n',
+  );
+  writeFileSync(
+    join(checkout, 'docs', 'appendix.rst'),
+    'Appendix\n========\n\nThis file exists upstream but is not referenced by the Lat project.\n',
+  );
+  writeFileSync(
+    join(checkout, 'docs', 'appendix.adoc'),
+    '= Appendix\n\nThis file exists upstream but is not referenced by the Lat project.\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'widget.ts'),
@@ -98,15 +110,15 @@ export async function createExternalGitFixture(): Promise<ExternalGitFixture> {
   const commit1 = await git(['rev-parse', 'HEAD'], checkout);
   writeFileSync(
     join(checkout, 'docs', 'guide.md'),
-    '# Guide\n\nPinned guide.\n\n## Navigation\n\nSecond version navigation.\n',
+    '# Guide\n\nPinned guide.\n\n## Navigation\n\nSecond version navigation.\n\nRead the [available reStructuredText guide](guide.rst#navigation) and the [omitted appendix](appendix.md).\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'guide.rst'),
-    'Guide\n=====\n\nPinned guide.\n\n.. _navigation:\n\nNavigation\n----------\n\nSecond version reStructuredText navigation.\n',
+    'Guide\n=====\n\nPinned guide.\n\n.. _navigation:\n\nNavigation\n----------\n\nSecond version reStructuredText navigation.\n\nRead the `available AsciiDoc guide <guide.adoc#navigation>`_, the `omitted appendix <appendix.rst>`_, and the `translation’s repository <TRANSLATION_REPO_>`_.\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'guide.adoc'),
-    '= Guide\n\nPinned guide.\n\n[#navigation]\n== Navigation\n\nSecond version AsciiDoc navigation.\n',
+    '= Guide\n\nPinned guide.\n\n[#navigation]\n== Navigation\n\nSecond version AsciiDoc navigation.\n\nRead the link:guide.md#navigation[available Markdown guide] and the link:appendix.adoc[omitted appendix].\n',
   );
   writeFileSync(
     join(checkout, 'docs', 'widget.ts'),

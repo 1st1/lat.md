@@ -1688,6 +1688,15 @@ a.wiki-link-code:not(.wiki-link-segmented) .code-link-leading {
     center / contain no-repeat;
 }
 
+.external-source-link-unavailable {
+  color: var(--muted);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: not-allowed;
+}
+
 .code-link-language {
   display: inline-flex;
   width: 1.55em;

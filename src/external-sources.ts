@@ -677,6 +677,55 @@ const sourceLocks = new Map<string, Promise<void>>();
 const LOCK_RETRY_MS = 25;
 const LOCK_TIMEOUT_MS = 30_000;
 const LOCK_STALE_MS = 10 * 60_000;
+const LOCK_OWNER_GRACE_MS = 1_000;
+
+type FilesystemLockOwner = {
+  owner: string;
+  pid: number;
+  startedAt: number;
+};
+
+async function filesystemLockOwner(
+  path: string,
+): Promise<FilesystemLockOwner | null> {
+  try {
+    const value = JSON.parse(
+      await readFile(join(path, 'owner.json'), 'utf8'),
+    ) as Partial<FilesystemLockOwner> | null;
+    if (
+      !value ||
+      typeof value.owner !== 'string' ||
+      !Number.isInteger(value.pid) ||
+      value.pid! <= 0 ||
+      !Number.isFinite(value.startedAt)
+    ) {
+      return null;
+    }
+    return value as FilesystemLockOwner;
+  } catch {
+    return null;
+  }
+}
+
+function processIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code !== 'ESRCH';
+  }
+}
+
+async function discardFilesystemLock(path: string): Promise<void> {
+  const discarded = `${path}.stale-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  try {
+    await rename(path, discarded);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
+    throw error;
+  }
+  await rm(discarded, { recursive: true, force: true });
+}
 
 async function acquireFilesystemLock(
   key: string,
@@ -708,8 +757,13 @@ async function acquireFilesystemLock(
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
       try {
         const age = Date.now() - statSync(path).mtimeMs;
-        if (age > LOCK_STALE_MS) {
-          await rm(path, { recursive: true, force: true });
+        const currentOwner = await filesystemLockOwner(path);
+        if (
+          age > LOCK_STALE_MS ||
+          (currentOwner && !processIsAlive(currentOwner.pid)) ||
+          (!currentOwner && age > LOCK_OWNER_GRACE_MS)
+        ) {
+          await discardFilesystemLock(path);
           continue;
         }
       } catch (statError) {

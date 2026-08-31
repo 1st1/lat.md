@@ -39,6 +39,10 @@ Cache tests verify schema-version, exact provider-source, commit, and strategy g
 
 Missing or mismatched schema-version metadata forces complete regeneration of that source's cached files before resolution continues.
 
+### Interrupted owner recovery
+
+Filesystem cache locks record their process owner. A later command immediately reclaims a lock whose owner exited, while incomplete owner metadata receives a short creation grace period and live owners retain mutual exclusion.
+
 ## Commands and MCP
 
 Functional tests cover add, show, list, section, expand, refs, check, initialization, and the read-only external MCP tools.
@@ -60,6 +64,8 @@ View tests verify external previews share the versioned document tree with local
 The live server renders each supported external document kind and exposes its backlinks and graph relationships without relying on browser-side repository access.
 
 External source-code previews persist their AST-free symbol tables under a handle-scoped parser-cache identity.
+
+Across Markdown, reStructuredText, and AsciiDoc, relative links to explicitly referenced sibling files use canonical Lat routes. Links to other upstream files render as unavailable text and do not add live or static retrieval work.
 
 ### Local watcher refresh
 
