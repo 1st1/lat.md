@@ -33,4 +33,4 @@ With more source files than the machine-derived fallback concurrency slots, the 
 
 ## Matches ripgrep discovery semantics
 
-The TypeScript and ripgrep paths return the same ordered files and references across nested ignore files, negations, dot paths, generated output, nested Lat projects, and scans outside Git checkouts.
+The source-discovery and code-reference APIs return matching ordered files and references through TypeScript and ripgrep across nested ignores, negations, dot paths, generated output, nested Lat projects, and non-Git directories.

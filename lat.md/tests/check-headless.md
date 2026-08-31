@@ -11,6 +11,10 @@ Functional tests cover validation of Markdown directories outside `lat.md/`.
 
 `lat check --profile` reports nested timings for every validator and its major operations, including parser-module imports, repeated-call counts, and the slowest file or target.
 
+## Reports concise completion timing
+
+A successful full check reports its total elapsed time without file-extension counts that would conflate Markdown analysis, source-reference scanning, and other validators.
+
 ## Keeps concurrent profile scopes separate
 
 Overlapping validation work remains attributed to its own profiler parent, so

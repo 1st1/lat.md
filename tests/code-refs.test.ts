@@ -2,7 +2,13 @@ import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { hasRipgrep, scanCodeRefs, type ScanResult } from '../src/code-refs.js';
+import {
+  createCodeReferenceDiscovery,
+  discoverSourceFiles,
+  hasRipgrep,
+  scanCodeRefs,
+  type ScanResult,
+} from '../src/code-refs.js';
 import {
   isSourceFilePath,
   SOURCE_FILE_EXTENSIONS,
@@ -36,22 +42,25 @@ async function createSourceProject(): Promise<string> {
   return root;
 }
 
-function expectRegisteredSourcesOnly(scan: ScanResult): void {
+function expectRegisteredSourcesOnly(
+  scan: ScanResult,
+  sourceFiles: string[],
+): void {
   expect(scan.refs.map((ref) => ref.file).sort()).toEqual(
     SOURCE_FILE_EXTENSIONS.map((extension) => `src/source${extension}`).sort(),
   );
   expect(scan.refs.some((ref) => ref.target === 'Specs#unsupported')).toBe(
     false,
   );
-  expect(scan.files.some((file) => file.endsWith('unsupported.txt'))).toBe(
+  expect(sourceFiles.some((file) => file.endsWith('unsupported.txt'))).toBe(
     false,
   );
-  expect(scan.files.every(isSourceFilePath)).toBe(true);
-  expect(scan.files).toHaveLength(SOURCE_FILE_EXTENSIONS.length);
+  expect(sourceFiles.every(isSourceFilePath)).toBe(true);
+  expect(sourceFiles).toHaveLength(SOURCE_FILE_EXTENSIONS.length);
 }
 
-function relativeFiles(root: string, scan: ScanResult): string[] {
-  return scan.files.map((file) => relative(root, file).replaceAll('\\', '/'));
+function relativeFiles(root: string, files: string[]): string[] {
+  return files.map((file) => relative(root, file).replaceAll('\\', '/'));
 }
 
 function comparableRefs(scan: ScanResult): string[] {
@@ -175,14 +184,31 @@ describe('supported source code-reference scanning', () => {
     try {
       delete process.env._LAT_DISABLE_RG;
       const rgAvailable = await hasRipgrep();
-      const preferred = await scanCodeRefs(root);
-      expect(preferred.usedRg).toBe(rgAvailable);
-      expectRegisteredSourcesOnly(preferred);
+      const scanOperations: string[] = [];
+      const [preferred, preferredFiles] = await Promise.all([
+        scanCodeRefs(root, {
+          async time<T>(
+            label: string,
+            work: () => Promise<T>,
+          ): Promise<T> {
+            scanOperations.push(label);
+            return work();
+          },
+        }),
+        discoverSourceFiles(root),
+      ]);
+      expectRegisteredSourcesOnly(preferred, preferredFiles);
+      if (rgAvailable) {
+        expect(scanOperations).toContain('scan @lat references with ripgrep');
+        expect(scanOperations).not.toContain('list source files with ripgrep');
+      }
 
       process.env._LAT_DISABLE_RG = '1';
-      const fallback = await scanCodeRefs(root);
-      expect(fallback.usedRg).toBe(false);
-      expectRegisteredSourcesOnly(fallback);
+      const [fallback, fallbackFiles] = await Promise.all([
+        scanCodeRefs(root),
+        discoverSourceFiles(root),
+      ]);
+      expectRegisteredSourcesOnly(fallback, fallbackFiles);
     } finally {
       if (original === undefined) delete process.env._LAT_DISABLE_RG;
       else process.env._LAT_DISABLE_RG = original;
@@ -204,8 +230,12 @@ describe('supported source code-reference scanning', () => {
 
     try {
       process.env._LAT_DISABLE_RG = '1';
-      const scan = await scanCodeRefs(root);
-      const sourceOrder = scan.files.map((file) =>
+      const discovery = createCodeReferenceDiscovery(root);
+      const [scan, sourceFiles] = await Promise.all([
+        discovery.scan(),
+        discovery.listSourceFiles(),
+      ]);
+      const sourceOrder = sourceFiles.map((file) =>
         relative(root, file).replaceAll('\\', '/'),
       );
       expect(scan.refs.map((ref) => ref.file)).toEqual(sourceOrder);
@@ -222,8 +252,12 @@ describe('supported source code-reference scanning', () => {
 
     try {
       process.env._LAT_DISABLE_RG = '1';
-      const fallback = await scanCodeRefs(root);
-      expect(relativeFiles(root, fallback)).toEqual([
+      const fallbackDiscovery = createCodeReferenceDiscovery(root);
+      const [fallback, fallbackFiles] = await Promise.all([
+        fallbackDiscovery.scan(),
+        fallbackDiscovery.listSourceFiles(),
+      ]);
+      expect(relativeFiles(root, fallbackFiles)).toEqual([
         'nested/kept.skip.ts',
         'nested/visible.ts',
         'pruned/reincluded/kept.ts',
@@ -233,10 +267,13 @@ describe('supported source code-reference scanning', () => {
 
       delete process.env._LAT_DISABLE_RG;
       if (!(await hasRipgrep())) return;
-      const preferred = await scanCodeRefs(root);
-      expect(preferred.usedRg).toBe(true);
-      expect(relativeFiles(root, preferred)).toEqual(
-        relativeFiles(root, fallback),
+      const preferredDiscovery = createCodeReferenceDiscovery(root);
+      const [preferred, preferredFiles] = await Promise.all([
+        preferredDiscovery.scan(),
+        preferredDiscovery.listSourceFiles(),
+      ]);
+      expect(relativeFiles(root, preferredFiles)).toEqual(
+        relativeFiles(root, fallbackFiles),
       );
       expect(comparableRefs(preferred)).toEqual(comparableRefs(fallback));
     } finally {

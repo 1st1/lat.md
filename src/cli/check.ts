@@ -55,12 +55,8 @@ export function ambiguousRefMessage(
   return lines.join('\n');
 }
 
-/** File counts grouped by extension (e.g. { ".ts": 5, ".py": 2 }). */
-export type FileStats = Record<string, number>;
-
 export type CheckResult = {
   errors: CheckError[];
-  files: FileStats;
 };
 
 async function profileTime<T>(
@@ -79,15 +75,6 @@ function profileTimeSync<T>(
   detail?: string,
 ): T {
   return profile ? profile.timeSync(label, work, detail) : work();
-}
-
-function countByExt(paths: string[]): FileStats {
-  const stats: FileStats = {};
-  for (const p of paths) {
-    const ext = extname(p) || '(no ext)';
-    stats[ext] = (stats[ext] || 0) + 1;
-  }
-  return stats;
 }
 
 function isSourcePath(target: string): boolean {
@@ -232,7 +219,7 @@ export async function checkMd(
     }
   }
 
-  return { errors, files: countByExt(files) };
+  return { errors };
 }
 
 // --- Relative link validation ---
@@ -413,7 +400,7 @@ export async function checkCodeRefs(
     }
   }
 
-  return { errors, files: countByExt(scan.files) };
+  return { errors };
 }
 
 /**
@@ -591,13 +578,6 @@ export async function checkSections(
 
 // --- Formatting helpers (shared by all check commands) ---
 
-function formatFileStats(files: FileStats, s: Styler): string {
-  const entries = Object.entries(files).sort(([a], [b]) => a.localeCompare(b));
-  return s.dim(
-    `Scanned ${entries.map(([ext, n]) => `${n} ${ext}`).join(', ')}`,
-  );
-}
-
 function formatCheckErrors(errors: CheckError[], s: Styler): string[] {
   const lines: string[] = [];
   for (const err of errors) {
@@ -670,35 +650,27 @@ export async function checkAllCommand(
       ]),
     ).values(),
   ];
-  const allFiles: FileStats = { ...md.files };
-  for (const [ext, n] of Object.entries(code.files)) {
-    allFiles[ext] = (allFiles[ext] || 0) + n;
-  }
-
   const s = ctx.styler;
   const elapsedStr =
     elapsed < 1000
       ? `${Math.round(elapsed)}ms`
       : `${(elapsed / 1000).toFixed(1)}s`;
-  const lines: string[] = [
-    formatFileStats(allFiles, s) + s.dim(` in ${elapsedStr}`),
-  ];
-  if (profile) lines.push('', ...profile.format(elapsed));
+  const lines: string[] = profile ? profile.format(elapsed) : [];
 
   // Init version warning first — user should fix setup before addressing errors
   if (!ctx.headless) {
     const storedVersion = readInitVersion(ctx.latDir);
     if (storedVersion === null) {
+      if (lines.length > 0) lines.push('');
       lines.push(
-        '',
         s.yellow('Warning:') +
           ' No init version recorded — run ' +
           s.cyan('lat init') +
           ' to set up agent hooks and configuration.',
       );
     } else if (storedVersion < INIT_VERSION) {
+      if (lines.length > 0) lines.push('');
       lines.push(
-        '',
         s.yellow('Warning:') +
           ' Your setup is outdated (v' +
           storedVersion +
@@ -722,7 +694,7 @@ export async function checkAllCommand(
     return { output: lines.join('\n'), isError: true };
   }
 
-  lines.push(s.green('All checks passed'));
+  lines.push(s.green(`All checks passed in ${elapsedStr}`));
 
   // Suggest ripgrep if check was slow (>1s) and rg is not available
   if (elapsed > 1000) {
@@ -742,9 +714,9 @@ export async function checkAllCommand(
 }
 
 export async function checkMdCommand(ctx: CmdContext): Promise<CmdResult> {
-  const { errors, files } = await checkMd(ctx.latDir, ctx.projectRoot);
+  const { errors } = await checkMd(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
-  const lines: string[] = [formatFileStats(files, s)];
+  const lines: string[] = [];
 
   lines.push(...formatCheckErrors(errors, s));
 
@@ -776,9 +748,9 @@ export async function checkLinksCommand(ctx: CmdContext): Promise<CmdResult> {
 export async function checkCodeRefsCommand(
   ctx: CmdContext,
 ): Promise<CmdResult> {
-  const { errors, files } = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
+  const { errors } = await checkCodeRefs(ctx.latDir, ctx.projectRoot);
   const s = ctx.styler;
-  const lines: string[] = [formatFileStats(files, s)];
+  const lines: string[] = [];
 
   lines.push(...formatCheckErrors(errors, s));
 

@@ -8,7 +8,11 @@ import {
   resolve,
   sep,
 } from 'node:path';
-import { LAT_REF_RE, scanCodeRefs, type CodeRef } from '../code-refs.js';
+import {
+  createCodeReferenceDiscovery,
+  LAT_REF_RE,
+  type CodeRef,
+} from '../code-refs.js';
 import {
   createExternalResolver,
   type ExternalResolver,
@@ -169,10 +173,14 @@ async function scanCodeState(
   files: Map<string, ViewCodeReferenceFile>;
   scope: Set<string>;
 }> {
-  const scan = await scanCodeRefs(projectRoot);
+  const discovery = createCodeReferenceDiscovery(projectRoot);
+  const [scan, sourceFiles] = await Promise.all([
+    discovery.scan(),
+    discovery.listSourceFiles(),
+  ]);
   const allowed = (path: string) =>
     !excludedCodePath(projectRoot, path, excludedPaths);
-  const files = scan.files.filter(allowed);
+  const files = sourceFiles.filter(allowed);
   const refs = scan.refs.filter((ref) => allowed(ref.file));
   const scope = new Set(files.map((path) => projectPath(projectRoot, path)));
   return {
