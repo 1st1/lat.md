@@ -1563,6 +1563,23 @@ describe('lat ui', () => {
       '<h2 id="unreferenced">Unreferenced</h2>',
     );
 
+    const referencedSectionOutputResponse = await fetch(
+      new URL(sectionOutputRequestUrl('lat.md/guide#Guide#Details'), view.url),
+    );
+    const referencedSectionOutput =
+      (await referencedSectionOutputResponse.json()) as ViewSectionCommandOutput;
+    expect(referencedSectionOutput.output).toContain(
+      '| `export function run(): string {`',
+    );
+    const referencedSectionHtml = documentTreeToHtml(
+      referencedSectionOutput.tree,
+    );
+    expect(referencedSectionHtml).toContain(
+      '<code>export function run(): string {</code>',
+    );
+    const codeReference = '// @' + 'lat: [[guide#Details]]';
+    expect(referencedSectionHtml).toContain(`<code>${codeReference}</code>`);
+
     const sourceResponse = await fetch(
       new URL('/api/source?path=src/app.ts&at=5', view.url),
     );

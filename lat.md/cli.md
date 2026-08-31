@@ -37,6 +37,8 @@ Output:
 
 Reference paragraphs rely on the 250-character section-summary invariant. As a fallback for documents that currently fail validation, output truncates them after 300 characters.
 
+Source snippet lines in outgoing-reference and code-backlink blocks use Markdown inline-code delimiters. Lines containing backticks receive a longer delimiter so template literals remain valid Markdown.
+
 Usage: `lat section <query>`
 
 Core logic in [[src/cli/section.ts#getSection]] (returns structured result), used by both the CLI command and [[cli#mcp]] `lat_section` tool.

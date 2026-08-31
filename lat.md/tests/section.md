@@ -55,6 +55,10 @@ Outgoing and incoming section lists render complete valid leading paragraphs rat
 
 `formatSectionOutput` renders source code references with `file:startLine-endLine` when the symbol spans multiple lines, showing the full extent of the definition.
 
+## formatSectionOutput marks source snippets as inline code
+
+Outgoing source and code-backlink snippet lines use Markdown inline-code delimiters, including valid longer delimiters around source that contains backticks.
+
 ## formatSectionOutput includes all parts
 
 `formatSectionOutput` produces styled output containing section id, location, raw content, "This section references" with outgoing refs, "Referenced by" with incoming refs, and "Referenced by code" with `@lat:` back-references.

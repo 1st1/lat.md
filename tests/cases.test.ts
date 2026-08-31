@@ -1652,6 +1652,31 @@ describe('getSection', () => {
     expect(output).toContain('src/app.ts:18-21');
   });
 
+  // @lat: [[tests/section#formatSectionOutput marks source snippets as inline code]]
+  it('formatSectionOutput marks source snippets as robust Markdown inline code', async () => {
+    const sourceCtx = testCtx('source-ref-ts-valid');
+    const sourceResult = await getSection(sourceCtx, 'lat.md/docs#Docs');
+    expect(sourceResult.kind).toBe('found');
+    if (sourceResult.kind !== 'found') return;
+    const sourceOutput = stripAnsi(
+      formatSectionOutput(sourceCtx, sourceResult),
+    );
+    expect(sourceOutput).toContain(
+      '| `export function greet(name: string): string {`',
+    );
+    expect(sourceOutput).toContain('| ``  return `Hello, ${name}!`;``');
+
+    const backlinkCtx = testCtx('section-nested');
+    const backlinkResult = await getSection(backlinkCtx, 'guide#Guide');
+    expect(backlinkResult.kind).toBe('found');
+    if (backlinkResult.kind !== 'found') return;
+    const backlinkOutput = stripAnsi(
+      formatSectionOutput(backlinkCtx, backlinkResult),
+    );
+    const backlinkAnnotation = '// @' + 'lat: [[guide#Guide#Child]]';
+    expect(backlinkOutput).toContain(`| \`${backlinkAnnotation}\``);
+  });
+
   // @lat: [[tests/section#formatSectionOutput includes all parts]]
   it('formatSectionOutput includes content and refs', async () => {
     const ctx = testCtx('basic-project');

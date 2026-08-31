@@ -258,6 +258,18 @@ function sectionSummary(section: Section): string {
   return truncate(section.firstParagraph, SECTION_SUMMARY_SAFETY_LIMIT);
 }
 
+function markdownInlineCode(value: string): string {
+  const content = value || ' ';
+  const longestBacktickRun = Math.max(
+    0,
+    ...(content.match(/`+/g) ?? []).map((run) => run.length),
+  );
+  const delimiter = '`'.repeat(longestBacktickRun + 1);
+  const padded =
+    content.startsWith('`') || content.endsWith('`') ? ` ${content} ` : content;
+  return `${delimiter}${padded}${delimiter}`;
+}
+
 /**
  * Format a successful section result with styling.
  */
@@ -316,7 +328,7 @@ export function formatSectionOutput(
       if (ref.snippet) {
         const snippetLines = ref.snippet.split('\n');
         for (const line of snippetLines) {
-          parts.push(`  ${s.dim('|')} ${line}`);
+          parts.push(`  ${s.dim('|')} ${markdownInlineCode(line)}`);
         }
       }
     }
@@ -325,7 +337,9 @@ export function formatSectionOutput(
         `${s.dim('*')} [[${s.cyan(ref.target.identity)}]]${s.dim(` (${ref.target.repositoryPath}:${ref.startLine}-${ref.endLine}, ${ref.provider})`)}`,
       );
       for (const line of ref.content.split('\n').slice(0, 5)) {
-        parts.push(`  ${s.dim('|')} ${line}`);
+        parts.push(
+          `  ${s.dim('|')} ${ref.kind === 'source' ? markdownInlineCode(line) : line}`,
+        );
       }
     }
   }
@@ -355,7 +369,7 @@ export function formatSectionOutput(
       if (ref.snippet) {
         const snippetLines = ref.snippet.split('\n');
         for (const line of snippetLines) {
-          parts.push(`  ${s.dim('|')} ${line}`);
+          parts.push(`  ${s.dim('|')} ${markdownInlineCode(line)}`);
         }
       }
     }
