@@ -5,13 +5,34 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { PARSER_CACHE_VERSION } from '../src/parser-cache.js';
 import {
-  SOURCE_EXTENSIONS,
   SourceParserRuntime,
   clearSymbolCache,
   resolveSourceSymbol,
   sourceAnalysisCachePath,
   type SourceFileAnalysis,
 } from '../src/source-parser.js';
+import {
+  SOURCE_FILE_EXTENSIONS,
+  type SourceFileExtension,
+} from '../src/source-formats.js';
+
+const SOURCE_CACHE_FIXTURES = {
+  '.c': { content: 'int cached(void) { return 1; }\n', symbol: 'cached' },
+  '.go': { content: 'package cache\nfunc Cached() {}\n', symbol: 'Cached' },
+  '.h': { content: 'int cached(void);\n', symbol: 'cached' },
+  '.js': { content: 'export function cached() {}\n', symbol: 'cached' },
+  '.jsx': {
+    content: 'export function cached() { return <div /> }\n',
+    symbol: 'cached',
+  },
+  '.py': { content: 'def cached():\n    return None\n', symbol: 'cached' },
+  '.rs': { content: 'pub fn cached() {}\n', symbol: 'cached' },
+  '.ts': { content: 'export function cached() {}\n', symbol: 'cached' },
+  '.tsx': {
+    content: 'export function cached() { return <div /> }\n',
+    symbol: 'cached',
+  },
+} satisfies Record<SourceFileExtension, { content: string; symbol: string }>;
 
 const roots: string[] = [];
 
@@ -34,40 +55,11 @@ describe('persistent source analysis cache', () => {
   // @lat: [[tests/analysis-tests#Caches every supported source language]]
   it('caches every supported source language without reparsing warm files', async () => {
     const { root, latDir } = await createProject();
-    const sources = new Map<string, { content: string; symbol: string }>([
-      ['.ts', { content: 'export function cached() {}\n', symbol: 'cached' }],
-      [
-        '.tsx',
-        {
-          content: 'export function cached() { return <div /> }\n',
-          symbol: 'cached',
-        },
-      ],
-      ['.js', { content: 'export function cached() {}\n', symbol: 'cached' }],
-      [
-        '.jsx',
-        {
-          content: 'export function cached() { return <div /> }\n',
-          symbol: 'cached',
-        },
-      ],
-      [
-        '.py',
-        { content: 'def cached():\n    return None\n', symbol: 'cached' },
-      ],
-      ['.rs', { content: 'pub fn cached() {}\n', symbol: 'cached' }],
-      [
-        '.go',
-        { content: 'package cache\nfunc Cached() {}\n', symbol: 'Cached' },
-      ],
-      ['.c', { content: 'int cached(void) { return 1; }\n', symbol: 'cached' }],
-      ['.h', { content: 'int cached(void);\n', symbol: 'cached' }],
-    ]);
-    expect(new Set(sources.keys())).toEqual(new Set(SOURCE_EXTENSIONS));
 
     const cold: SourceFileAnalysis[] = [];
     const coldRuntime = new SourceParserRuntime();
-    for (const [extension, source] of sources) {
+    for (const extension of SOURCE_FILE_EXTENSIONS) {
+      const source = SOURCE_CACHE_FIXTURES[extension];
       const filePath = `src/cached${extension}`;
       await mkdir(join(root, 'src'), { recursive: true });
       await writeFile(join(root, filePath), source.content);
@@ -83,14 +75,15 @@ describe('persistent source analysis cache', () => {
       );
       expect(resolved.found, extension).toBe(true);
     }
-    expect(cold).toHaveLength(sources.size);
+    expect(cold).toHaveLength(SOURCE_FILE_EXTENSIONS.length);
     expect(cold.every(({ timings }) => timings.cacheStatus === 'miss')).toBe(
       true,
     );
 
     const warm: SourceFileAnalysis[] = [];
     const warmRuntime = new SourceParserRuntime();
-    for (const [extension, source] of sources) {
+    for (const extension of SOURCE_FILE_EXTENSIONS) {
+      const source = SOURCE_CACHE_FIXTURES[extension];
       const resolved = await resolveSourceSymbol(
         `src/cached${extension}`,
         source.symbol,
@@ -103,7 +96,7 @@ describe('persistent source analysis cache', () => {
       );
       expect(resolved.found, extension).toBe(true);
     }
-    expect(warm).toHaveLength(sources.size);
+    expect(warm).toHaveLength(SOURCE_FILE_EXTENSIONS.length);
     expect(warm.every(({ timings }) => timings.cacheStatus === 'hit')).toBe(
       true,
     );
@@ -113,7 +106,7 @@ describe('persistent source analysis cache', () => {
     const cachePath = sourceAnalysisCachePath(latDir, root, tsPath);
     const [header, payload] = (await readFile(cachePath, 'utf8')).split('\n');
     const hash = createHash('sha1')
-      .update(sources.get('.ts')!.content)
+      .update(SOURCE_CACHE_FIXTURES['.ts'].content)
       .digest('hex');
     expect(header).toBe(`v${PARSER_CACHE_VERSION}:${hash}`);
     expect(JSON.parse(payload)).toMatchObject({

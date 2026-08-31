@@ -42,7 +42,7 @@ On the second pass, if `lat check` still fails, the hook prints a warning to std
 
 ## Ignores non-code files in diff
 
-Files that don't match `SOURCE_EXTENSIONS` (e.g. `.md`) are not counted toward code lines, so a large markdown-only diff does not trigger a sync reminder.
+Files that don't match `SOURCE_FILE_EXTENSIONS` (e.g. `.md`) are not counted toward code lines, so a large markdown-only diff does not trigger a sync reminder.
 
 ## Cursor stop hook returns follow-up work instead of a Claude block
 

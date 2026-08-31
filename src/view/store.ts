@@ -15,7 +15,7 @@ import {
 } from '../external-sources.js';
 import { listLatticeFiles, type Section } from '../lattice.js';
 import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
@@ -108,7 +108,7 @@ function excludedCodePath(
 }
 
 function sourcePath(path: string): boolean {
-  return SOURCE_EXTENSIONS.has(extname(path).toLowerCase());
+  return isSourceFileExtension(extname(path).toLowerCase());
 }
 
 function obviouslyIgnoredCodePath(path: string, latPath: string): boolean {

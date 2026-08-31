@@ -27,9 +27,9 @@ import {
 import {
   resolveSourceSymbol,
   SourceParserRuntime,
-  SOURCE_EXTENSIONS,
   type SourceSymbol,
 } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
@@ -330,7 +330,7 @@ async function readViewSource(
     !requestedPath ||
     requestedPath.includes('\\') ||
     isAbsolute(requestedPath) ||
-    !SOURCE_EXTENSIONS.has(extname(requestedPath))
+    !isSourceFileExtension(extname(requestedPath))
   ) {
     throw new ViewSourceNotFoundError('Source document not found');
   }

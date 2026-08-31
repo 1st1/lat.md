@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { join, posix, relative } from 'node:path';
+import { isSourceFilePath, SOURCE_FILE_EXTENSIONS } from './source-formats.js';
 import { toPosix, walkEntries } from './walk.js';
 import type { Profiler } from './profiler.js';
 
@@ -174,6 +175,14 @@ function rgExcludeArgs(
   return args;
 }
 
+/** Build positive rg globs from the shared supported-source registry. */
+function rgSourceIncludeArgs(): string[] {
+  return SOURCE_FILE_EXTENSIONS.flatMap((extension) => [
+    '--glob',
+    `*${extension}`,
+  ]);
+}
+
 /**
  * Try scanning with ripgrep. Returns parsed refs and scanned file list, or null
  * if rg is not available. rg respects .gitignore by default; we add glob
@@ -199,6 +208,7 @@ async function tryRipgrep(
     '--no-heading',
     '--line-number',
     '--with-filename',
+    ...rgSourceIncludeArgs(),
     ...excludes,
     '@lat:.*\\[\\[',
     '.',
@@ -270,7 +280,7 @@ function parseGrepOutput(
 }
 
 /**
- * TypeScript fallback: read every file and scan for @lat refs.
+ * TypeScript fallback: scan supported source files for @lat refs.
  */
 async function scanWithTs(
   files: string[],
@@ -279,6 +289,7 @@ async function scanWithTs(
   const refs: CodeRef[] = [];
 
   for (const file of files) {
+    if (!isSourceFilePath(file)) continue;
     let content: string;
     try {
       content = await readFile(file, 'utf-8');

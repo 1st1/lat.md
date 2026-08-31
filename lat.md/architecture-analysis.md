@@ -26,6 +26,8 @@ A source analysis is the serializable symbol table extracted from one supported 
 
 It records symbol names, kinds, parents, source ranges, and signatures. Tree-sitter syntax trees and grammar instances remain private parser state and are never serialized.
 
+[[src/source-formats.ts#SOURCE_FILE_EXTENSIONS]] is the authoritative source-format registry. Its derived union requires every registered extension to have a grammar, symbol extractor, and parser test fixture, and it also scopes code-mention discovery and external source-file validation.
+
 Source analysis stays lazy: only a file named by a source-code wiki link is read. Concurrent references to the same file share one promise-backed runtime result.
 
 ## Persistent cache

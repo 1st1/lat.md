@@ -37,7 +37,7 @@ The first two lowercased short-name characters select a readable shard, while a 
 
 ## Caches every supported source language
 
-Unchanged JavaScript, TypeScript, Python, Rust, Go, C, and header files reload complete symbol tables without constructing tree-sitter syntax trees or loading grammar WASM.
+Every extension in the typed source-format registry has an explicit parser fixture. Unchanged files reload complete symbol tables without constructing tree-sitter syntax trees or loading grammar WASM.
 
 ## Invalidates source content and cache schemas
 

@@ -39,11 +39,11 @@ import {
   type ExternalDocumentFileAnalysis,
 } from './external-documents.js';
 import {
-  SOURCE_EXTENSIONS,
   SourceParserRuntime,
   analyzeSourceSymbols,
   type SourceSymbol,
 } from './source-parser.js';
+import { SOURCE_FILE_EXTENSIONS } from './source-formats.js';
 
 const execFileAsync = promisify(execFile);
 const HANDLE_RE = /^[a-z0-9][a-z0-9_-]*$/;
@@ -58,7 +58,7 @@ export const EXTERNAL_SOURCES_SCHEMA_VER = 1;
 /** File types external sources can parse and resolve. */
 const EXTERNAL_FILE_EXTENSIONS: ReadonlySet<string> = new Set([
   ...DOCUMENT_FILE_EXTENSIONS,
-  ...SOURCE_EXTENSIONS,
+  ...SOURCE_FILE_EXTENSIONS,
 ]);
 
 export type ExternalStrategy = 'fetch' | 'checkout';

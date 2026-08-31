@@ -18,6 +18,10 @@ import {
   type Node as SyntaxNode,
   type Tree,
 } from 'web-tree-sitter';
+import {
+  sourceFileExtension,
+  type SourceFileExtension,
+} from './source-formats.js';
 
 export type SourceSymbol = {
   name: string;
@@ -89,28 +93,21 @@ async function ensureParser(): Promise<Parser> {
   return parserInstance;
 }
 
-/** Extension → tree-sitter WASM grammar mapping. This is the single source of
- *  truth for which source file extensions lat supports. */
-const grammarMap: Record<string, string> = {
-  '.ts': 'tree-sitter-typescript.wasm',
-  '.tsx': 'tree-sitter-tsx.wasm',
+/** Every supported source extension must declare a tree-sitter grammar. */
+const grammarMap = {
+  '.c': 'tree-sitter-c.wasm',
+  '.go': 'tree-sitter-go.wasm',
+  '.h': 'tree-sitter-c.wasm',
   '.js': 'tree-sitter-javascript.wasm',
   '.jsx': 'tree-sitter-javascript.wasm',
   '.py': 'tree-sitter-python.wasm',
   '.rs': 'tree-sitter-rust.wasm',
-  '.go': 'tree-sitter-go.wasm',
-  '.c': 'tree-sitter-c.wasm',
-  '.h': 'tree-sitter-c.wasm',
-};
+  '.ts': 'tree-sitter-typescript.wasm',
+  '.tsx': 'tree-sitter-tsx.wasm',
+} satisfies Record<SourceFileExtension, string>;
 
-/** All source file extensions that lat can parse (derived from grammarMap). */
-export const SOURCE_EXTENSIONS: ReadonlySet<string> = new Set(
-  Object.keys(grammarMap),
-);
-
-async function getLanguage(ext: string): Promise<Language | null> {
+async function getLanguage(ext: SourceFileExtension): Promise<Language> {
   const wasmFile = grammarMap[ext];
-  if (!wasmFile) return null;
 
   // Ensure WASM runtime is initialized before loading languages
   await ensureParser();
@@ -877,13 +874,26 @@ function firstLine(text: string): string {
   return nl === -1 ? text : text.slice(0, nl);
 }
 
+/** Every supported source extension must declare a symbol extractor. */
+const symbolExtractors = {
+  '.c': extractCSymbols,
+  '.go': extractGoSymbols,
+  '.h': extractCSymbols,
+  '.js': extractTsSymbols,
+  '.jsx': extractTsSymbols,
+  '.py': extractPySymbols,
+  '.rs': extractRustSymbols,
+  '.ts': extractTsSymbols,
+  '.tsx': extractTsSymbols,
+} satisfies Record<SourceFileExtension, (tree: Tree) => SourceSymbol[]>;
+
 export async function parseSourceSymbols(
   filePath: string,
   content: string,
 ): Promise<SourceSymbol[]> {
-  const ext = filePath.match(/\.[^.]+$/)?.[0] ?? '';
+  const ext = sourceFileExtension(filePath);
+  if (!ext) return [];
   const lang = await getLanguage(ext);
-  if (!lang) return [];
 
   const p = await ensureParser();
   p.setLanguage(lang);
@@ -891,19 +901,7 @@ export async function parseSourceSymbols(
   if (!tree) return [];
 
   try {
-    if (ext === '.py') {
-      return extractPySymbols(tree);
-    }
-    if (ext === '.rs') {
-      return extractRustSymbols(tree);
-    }
-    if (ext === '.go') {
-      return extractGoSymbols(tree);
-    }
-    if (ext === '.c' || ext === '.h') {
-      return extractCSymbols(tree);
-    }
-    return extractTsSymbols(tree);
+    return symbolExtractors[ext](tree);
   } finally {
     tree.delete();
   }

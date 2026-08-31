@@ -7,7 +7,7 @@ import { runSearch } from './search.js';
 import { getSection, formatSectionOutput } from './section.js';
 import { checkMd, checkCodeRefs, checkIndex, checkSections } from './check.js';
 import { CheckRunContext } from './check-context.js';
-import { SOURCE_EXTENSIONS } from '../source-parser.js';
+import { isSourceFileExtension } from '../source-formats.js';
 import { commandProjectAnalysis } from '../project-analysis.js';
 
 function outputPromptSubmit(context: string): void {
@@ -196,7 +196,7 @@ function analyzeDiff(projectRoot: string): {
     const changed = added + removed;
     if (file.startsWith('lat.md/')) {
       latMdLines += changed;
-    } else if (SOURCE_EXTENSIONS.has(extname(file))) {
+    } else if (isSourceFileExtension(extname(file))) {
       codeLines += changed;
     }
   }
