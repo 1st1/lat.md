@@ -93,7 +93,7 @@ Unknown and intentionally unchanged: :not-a-real-emoji:
 
 ## Syntax Highlighting
 
-Supported fenced-code labels produce escaped, server-side Highlight.js markup with theme-aware colors.
+Supported fenced-code labels produce safe Lowlight syntax trees from selected Highlight.js grammars, with theme-aware colors applied by the browser.
 
 ```ts
 type DemoState = {

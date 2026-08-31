@@ -10,9 +10,9 @@ The website's Lat wordmark is the default top-left brand in both clients. `--log
 
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
-The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
+The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Lowlight with only Lat's supported Highlight.js grammars, keeping the full language set out of production dependencies.
 
-Rich Markdown fences keep escaped source in document payloads. React-owned Mermaid, map, and 3D components lazily load browser-only renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
+Rich Markdown fences keep authored source as inert text nodes in document payloads. React-owned Mermaid, map, and 3D components lazily load browser-only renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
 
 Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style through MapLibre. The authored GeoJSON or converted TopoJSON remains interactive over a local fallback when the basemap cannot load.
 
@@ -30,9 +30,9 @@ reStructuredText and AsciiDoc use their native processors, then [[src/view/markd
 
 [[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus and rich fences as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
 
-Rich fences remain escaped `pre` and `code` nodes in the contract. [[view/src/MarkdownRichFence.tsx#MarkdownRichFence]] recognizes those nodes while reflecting the tree, owns every renderer resource through React effects, and restores the same source fallback on failure or unmount.
+Rich fences remain `pre` and `code` elements with inert text children in the contract. [[view/src/MarkdownRichFence.tsx#MarkdownRichFence]] recognizes those nodes while reflecting the tree, owns every renderer resource through React effects, and restores the same source fallback on failure or unmount.
 
-Source APIs likewise send each highlighted line as a document tree. Highlight.js markup and native reStructuredText or AsciiDoc HTML are controlled server-side adapter inputs that are sanitized and reduced to the same wire nodes before transmission.
+Source and fenced-code highlighting starts as Lowlight HAST and becomes document-tree nodes without HTML serialization. Multiline tokens are split structurally into independently renderable lines. Only native reStructuredText or AsciiDoc HTML remains a sanitized server-side adapter input.
 
 Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
 

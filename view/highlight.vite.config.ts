@@ -9,6 +9,10 @@ const highlightLicense = readFileSync(
   join(dirname(require.resolve('highlight.js/package.json')), 'LICENSE'),
   'utf8',
 ).trim();
+const lowlightLicense = readFileSync(
+  join(dirname(require.resolve('lowlight')), 'license'),
+  'utf8',
+).trim();
 
 export default defineConfig({
   plugins: [
@@ -17,7 +21,7 @@ export default defineConfig({
       generateBundle(_options, bundle) {
         for (const output of Object.values(bundle)) {
           if (output.type === 'chunk') {
-            output.code = `/*!\n${highlightLicense}\n*/\n${output.code}`;
+            output.code = `/*!\nHighlight.js:\n${highlightLicense}\n\nLowlight:\n${lowlightLicense}\n*/\n${output.code}`;
           }
         }
       },

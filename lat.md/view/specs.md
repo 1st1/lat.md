@@ -189,7 +189,7 @@ Focused source views place reference context before the highlighted definition, 
 
 ## Highlights source syntax safely
 
-Supported languages receive server-side token coloring as structured line trees while HTML-like source remains escaped and multiline tokens retain their styling.
+Supported languages become structured line trees without HTML serialization. HTML-like source remains inert text and multiline tokens retain their styling across every line.
 
 ## Builds a nested file tree
 

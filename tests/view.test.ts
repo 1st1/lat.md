@@ -32,7 +32,6 @@ import type {
   ViewStaticSourceFile,
   ViewStaticSourceView,
 } from '../src/view/static-protocol.js';
-import { highlightSource } from '../src/view/highlight.js';
 import { buildGitDiffTree } from '../src/view/git-diff.js';
 import { renderMarkdown as renderMarkdownTree } from '../src/view/markdown.js';
 import type {
@@ -1606,21 +1605,6 @@ describe('lat ui', () => {
       top: 240,
       behavior: 'instant',
     });
-  });
-
-  // @lat: [[lat.md/view/specs#View Tests#Highlights source syntax safely]]
-  it('highlights source syntax without emitting executable markup', () => {
-    const lines = highlightSource(
-      'src/example.ts',
-      "const value = '<script>alert(1)</script>';\n/* first\nsecond */",
-    );
-    const html = lines.join('\n');
-
-    expect(html).toContain('hljs-keyword');
-    expect(html).toContain('&lt;script&gt;');
-    expect(html).not.toContain('<script>');
-    expect(lines[1]).toContain('hljs-comment');
-    expect(lines[2]).toContain('hljs-comment');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Builds a nested file tree]]

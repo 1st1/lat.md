@@ -1,5 +1,6 @@
 import { extname } from 'node:path';
-import hljs from 'highlight.js/lib/core';
+import type { ElementContent } from 'hast';
+import { createLowlight } from 'lowlight';
 import bash from 'highlight.js/lib/languages/bash';
 import c from 'highlight.js/lib/languages/c';
 import css from 'highlight.js/lib/languages/css';
@@ -13,20 +14,24 @@ import rust from 'highlight.js/lib/languages/rust';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
+import { textDocumentTree, toViewDocumentTree } from './document-tree.js';
+import type { ViewDocumentTree } from './protocol.js';
 
-hljs.registerLanguage('bash', bash);
-hljs.registerLanguage('c', c);
-hljs.registerLanguage('css', css);
-hljs.registerLanguage('diff', diff);
-hljs.registerLanguage('go', go);
-hljs.registerLanguage('javascript', javascript);
-hljs.registerLanguage('json', json);
-hljs.registerLanguage('markdown', markdown);
-hljs.registerLanguage('python', python);
-hljs.registerLanguage('rust', rust);
-hljs.registerLanguage('typescript', typescript);
-hljs.registerLanguage('xml', xml);
-hljs.registerLanguage('yaml', yaml);
+const lowlight = createLowlight({
+  bash,
+  c,
+  css,
+  diff,
+  go,
+  javascript,
+  json,
+  markdown,
+  python,
+  rust,
+  typescript,
+  xml,
+  yaml,
+});
 
 const languageAliases: Record<string, string> = {
   bash: 'bash',
@@ -69,62 +74,60 @@ const languageByExtension: Record<string, string> = {
   '.tsx': 'typescript',
 };
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#x27;');
-}
+export type HighlightedCodeTree = {
+  type: 'root';
+  children: ElementContent[];
+};
 
-function splitHighlightedLines(html: string): string[] {
-  const lines: string[] = [];
-  const openSpans: string[] = [];
-  const token = /<span class="[^"]+">|<\/span>|\n/g;
-  let line = '';
-  let cursor = 0;
-
-  for (const match of html.matchAll(token)) {
-    line += html.slice(cursor, match.index);
-    const value = match[0];
-    if (value === '\n') {
-      line += '</span>'.repeat(openSpans.length);
-      lines.push(line);
-      line = openSpans.join('');
-    } else if (value === '</span>') {
-      openSpans.pop();
-      line += value;
-    } else {
-      openSpans.push(value);
-      line += value;
-    }
-    cursor = match.index + value.length;
-  }
-  line += html.slice(cursor);
-  lines.push(line);
-  return lines;
-}
-
-/** Highlight a supported fenced-code language into escaped HTML. */
+/** Highlight a supported fenced-code language into a safe HAST fragment. */
 export function highlightCode(
   language: string,
   content: string,
-): string | null {
+): HighlightedCodeTree | null {
   const registeredLanguage = languageAliases[language.toLowerCase()];
   if (!registeredLanguage) return null;
-  return hljs.highlight(content, {
-    language: registeredLanguage,
-    ignoreIllegals: true,
-  }).value;
+  const tree = lowlight.highlight(registeredLanguage, content);
+  return {
+    type: 'root',
+    children: tree.children.filter(
+      (node): node is ElementContent => node.type !== 'doctype',
+    ),
+  };
 }
 
-/** Highlight source into independently valid, escaped HTML lines. */
-export function highlightSource(path: string, content: string): string[] {
-  const language = languageByExtension[extname(path)];
-  if (!language) return content.split(/\r?\n/).map(escapeHtml);
+function splitHighlightedNode(node: ElementContent): ElementContent[][] {
+  if (node.type !== 'element') {
+    return node.value.split('\n').map((value) => [{ ...node, value }]);
+  }
+  return splitHighlightedNodes(node.children).map((children) => [
+    { ...node, properties: { ...node.properties }, children },
+  ]);
+}
+
+/** Split a HAST fragment at text newlines while cloning spanning elements. */
+function splitHighlightedNodes(
+  nodes: readonly ElementContent[],
+): ElementContent[][] {
+  const lines: ElementContent[][] = [[]];
+  for (const node of nodes) {
+    const fragments = splitHighlightedNode(node);
+    lines[lines.length - 1].push(...fragments[0]);
+    for (const fragment of fragments.slice(1)) lines.push(fragment);
+  }
+  return lines;
+}
+
+/** Highlight source directly into independently renderable document trees. */
+export function highlightSource(
+  path: string,
+  content: string,
+): ViewDocumentTree[] {
   const normalized = content.replaceAll('\r\n', '\n');
+  const language = languageByExtension[extname(path)];
+  if (!language) return normalized.split('\n').map(textDocumentTree);
   const highlighted = highlightCode(language, normalized);
-  if (highlighted === null) return normalized.split('\n').map(escapeHtml);
-  return splitHighlightedLines(highlighted);
+  if (!highlighted) return normalized.split('\n').map(textDocumentTree);
+  return splitHighlightedNodes(highlighted.children).map((children) =>
+    toViewDocumentTree({ type: 'root', children }),
+  );
 }

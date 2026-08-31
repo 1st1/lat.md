@@ -228,11 +228,15 @@ const highlightedCodeHandler: RemarkCodeHandler = (state, rawNode) => {
         ...(highlighted === null ? [] : [HIGHLIGHT_CLASS]),
       ],
     },
-    children: [
+    children:
       highlighted === null
-        ? { type: 'text' as const, value: node.value ? `${node.value}\n` : '' }
-        : { type: 'raw' as const, value: `${highlighted}\n` },
-    ],
+        ? [
+            {
+              type: 'text' as const,
+              value: node.value ? `${node.value}\n` : '',
+            },
+          ]
+        : [...highlighted.children, { type: 'text' as const, value: '\n' }],
     ...(node.meta ? { data: { meta: node.meta } } : {}),
   };
   state.patch(node, code);

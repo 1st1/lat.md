@@ -40,7 +40,7 @@ GitHub-style `:name:` emoji shortcodes render as accessible Unicode emoji or Git
 
 ## Fenced Code Highlighting
 
-Fenced code blocks use their language label for safe server-side syntax highlighting, with common source, shell, web, data, diff, and Markdown languages supported and unknown labels rendered as escaped plain code.
+Fenced code blocks use their language label for safe server-side Lowlight trees, with common source, shell, web, data, diff, and Markdown grammars supported and unknown labels retained as plain code.
 
 ## Math
 
