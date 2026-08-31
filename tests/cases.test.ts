@@ -119,6 +119,28 @@ describe('cli command surface', () => {
     expect(view.exitCode).toBe(1);
     expect(view.stderr).toContain("unknown command 'view'");
   });
+
+  it('exposes search score controls', () => {
+    const search = runCli('basic-project', ['search', '--help']);
+    expect(search.exitCode).toBe(0);
+    expect(search.stdout).toContain('--debug');
+    expect(search.stdout).toContain('show result similarity scores');
+    expect(search.stdout).toContain('--threshold <score>');
+    expect(search.stdout).toContain('default: 0.35');
+
+    for (const threshold of ['-0.1', '1.1']) {
+      const invalidThreshold = runCli('basic-project', [
+        'search',
+        'query',
+        '--threshold',
+        threshold,
+      ]);
+      expect(invalidThreshold.exitCode).toBe(1);
+      expect(invalidThreshold.stderr).toContain(
+        'threshold must be a number from 0 to 1',
+      );
+    }
+  });
 });
 
 // --- basic-project ---

@@ -28,6 +28,14 @@ function parsePort(value: string): number {
   return port;
 }
 
+function parseSimilarityThreshold(value: string): number {
+  const threshold = Number(value);
+  if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
+    throw new InvalidArgumentError('threshold must be a number from 0 to 1');
+  }
+  return threshold;
+}
+
 /** Reserve `-- <directory>` for an explicit check target. */
 function splitCheckTarget(args: string[]): CheckTargetArgs {
   let commandIndex = -1;
@@ -335,18 +343,33 @@ program
   .description('Semantic search across lat.md sections')
   .argument('[query]', 'search query in plain English')
   .option('--limit <n>', 'max results', '5')
-  .action(async (query: string | undefined, opts: { limit: string }) => {
-    const ctx = resolveContext(program.opts());
-    const { searchCommand, cliProgress } = await import('./search.js');
-    const progress = cliProgress(ctx.styler);
-    const result = await searchCommand(
-      ctx,
-      query,
-      { limit: parseInt(opts.limit) },
-      progress,
-    );
-    handleResult(result);
-  });
+  .option('--debug', 'show result similarity scores')
+  .option(
+    '--threshold <score>',
+    'minimum cosine similarity score (default: 0.35)',
+    parseSimilarityThreshold,
+  )
+  .action(
+    async (
+      query: string | undefined,
+      opts: { limit: string; debug?: boolean; threshold?: number },
+    ) => {
+      const ctx = resolveContext(program.opts());
+      const { searchCommand, cliProgress } = await import('./search.js');
+      const progress = cliProgress(ctx.styler);
+      const result = await searchCommand(
+        ctx,
+        query,
+        {
+          limit: parseInt(opts.limit),
+          debug: opts.debug,
+          threshold: opts.threshold,
+        },
+        progress,
+      );
+      handleResult(result);
+    },
+  );
 
 program
   .command('reindex')

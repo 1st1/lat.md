@@ -34,10 +34,25 @@ Index the RAG fixture (9 sections across 2 files), verify counts.
 Search for "how do we handle user login and security?" and verify the Authentication section ranks
 first.
 
+### Filters results below the similarity threshold
+
+Semantic search returns only candidates at or above the requested cosine-similarity threshold so
+callers can trade recall for less low-relevance noise.
+
+### Discards negative similarity scores
+
+Every semantic-search path applies a zero score floor even without an explicit relevance threshold,
+so results pointing away from the query in embedding space are never returned.
+
 ### Finds performance section for latency query
 
 Search for "what tools do we use to measure response times?" and verify the Performance Tests
 section ranks first.
+
+### Debug output includes similarity scores
+
+Search result formatting includes each cosine-similarity score when debug output is requested and
+keeps scores out of the normal output.
 
 ### Deterministic embeddings
 
