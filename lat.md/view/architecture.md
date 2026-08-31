@@ -12,7 +12,7 @@ The browser follows the lat website's monochrome visual system: pure black or wh
 
 The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
 
-Rich Markdown fences keep escaped source in document payloads. The shared Markdown component lazily loads browser-only Mermaid, map, and 3D renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
+Rich Markdown fences keep escaped source in document payloads. React-owned Mermaid, map, and 3D components lazily load browser-only renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
 
 Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style through MapLibre. The authored GeoJSON or converted TopoJSON remains interactive over a local fallback when the basemap cannot load.
 
@@ -28,9 +28,11 @@ Document APIs carry one versioned, parser-neutral presentation tree so the brows
 
 reStructuredText and AsciiDoc use their native processors, then [[src/view/markdown.ts#externalHtmlToDocumentTree]] reflects the sanitized format output into the same tree. The browser therefore receives one rendering contract for local Markdown, external documents, Git projections, section output, and reference excerpts.
 
-[[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
+[[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus and rich fences as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
 
-Rich fences remain escaped `pre` and `code` nodes in the contract. Browser-only renderers enhance those explicit fallbacks after React commits them and keep the source visible when an optional renderer fails.
+Rich fences remain escaped `pre` and `code` nodes in the contract. [[view/src/MarkdownRichFence.tsx#MarkdownRichFence]] recognizes those nodes while reflecting the tree, owns every renderer resource through React effects, and restores the same source fallback on failure or unmount.
+
+Source APIs likewise send each highlighted line as a document tree. Highlight.js markup and native reStructuredText or AsciiDoc HTML are controlled server-side adapter inputs that are sanitized and reduced to the same wire nodes before transmission.
 
 Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
 
@@ -66,7 +68,9 @@ Every update atomically replaces the snapshot. Section identity changes rebuild 
 
 Each snapshot also validates cached Markdown links, wiki targets, section structure, and required code mentions. It consumes the analyzer's local diagnostics and adds project-wide findings; source lines let the client mark files, list errors, and highlight authored content.
 
-Browser clients subscribe to snapshot generations over server-sent events. A new generation refreshes the sidebar and current route while preserving the active URL and viewport.
+Browser clients subscribe to snapshot generations over a heartbeated server-sent event stream. Ready and change events carry a server-lifetime identity, so reconnecting to a restarted process accepts its reset generation and invalidates old document and graph caches.
+
+Document requests have a bounded wait and expose an explicit retry after transport failures. Every successful event-stream reconnection refreshes the index and active route even when the server generation did not change.
 
 Markdown generations also dirty semantic search. The next query shares one incremental indexing pass across concurrent requests, then searches the updated index.
 

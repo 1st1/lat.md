@@ -22,6 +22,7 @@ import { MarkdownContent } from './MarkdownContent';
 import { DocumentToc } from './DocumentToc';
 import { fetchViewJson } from './data-source';
 import GraphView, { preloadViewGraph } from './GraphView';
+import { mergeProjectChange } from './live-updates';
 import {
   documentPath,
   documentUrl,
@@ -265,6 +266,14 @@ function currentLocation(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
+function isAbortError(reason: unknown): boolean {
+  return reason instanceof Error && reason.name === 'AbortError';
+}
+
+function errorMessage(reason: unknown): string {
+  return reason instanceof Error ? reason.message : String(reason);
+}
+
 export function App() {
   const staticView = isStaticView();
   const graphModeKey = graphModeStorageKey(staticViewBasePath());
@@ -272,10 +281,14 @@ export function App() {
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
   const [projectChange, setProjectChange] = useState<ViewProjectChange>({
+    instanceId: staticView ? 'static' : '',
     generation: 0,
     markdownGeneration: 0,
   });
   const [error, setError] = useState('');
+  const [indexError, setIndexError] = useState('');
+  const [connectionRevision, setConnectionRevision] = useState(0);
+  const [requestRevision, setRequestRevision] = useState(0);
   const [gitEnabled, setGitEnabled] = useState(true);
   const [graphMode, setGraphMode] = useState(() => {
     try {
@@ -295,6 +308,7 @@ export function App() {
   );
   const pageRef = useRef<ViewPage | null>(page);
   pageRef.current = page;
+  const pageRequestId = useRef(0);
   const positionedLocation = useRef<string | null>(null);
   const routeLocation = useMemo(() => viewRouteIdentity(location), [location]);
   const route = useMemo<ViewRoute | null>(() => {
@@ -406,6 +420,7 @@ export function App() {
     if (!target) return;
     setPersistedGraphMode(true);
     window.history.replaceState(window.history.state, '', target);
+    pageRequestId.current++;
     setPage(null);
     setLocation(currentLocation());
   }, [index, route]);
@@ -465,6 +480,7 @@ export function App() {
         viewPathname(window.location.pathname) !== '/graph' &&
         !preservesDocument
       ) {
+        pageRequestId.current++;
         setPage(null);
       }
       setLocation(currentLocation());
@@ -477,20 +493,25 @@ export function App() {
     if (staticView) return;
     const events = new EventSource('/api/events');
     const updateGeneration = (event: MessageEvent<string>) => {
-      const change = JSON.parse(event.data) as ViewProjectChange;
-      setProjectChange((current) => {
-        const generation = Math.max(current.generation, change.generation);
-        const markdownGeneration = Math.max(
-          current.markdownGeneration,
-          change.markdownGeneration,
-        );
-        return generation === current.generation &&
-          markdownGeneration === current.markdownGeneration
-          ? current
-          : { generation, markdownGeneration };
-      });
+      try {
+        const change = JSON.parse(event.data) as ViewProjectChange;
+        if (
+          typeof change.instanceId !== 'string' ||
+          !Number.isInteger(change.generation) ||
+          !Number.isInteger(change.markdownGeneration)
+        ) {
+          return;
+        }
+        setProjectChange((current) => mergeProjectChange(current, change));
+      } catch {
+        // Ignore a malformed event; EventSource remains connected.
+      }
     };
-    events.addEventListener('ready', updateGeneration);
+    const serverReady = (event: MessageEvent<string>) => {
+      updateGeneration(event);
+      setConnectionRevision((value) => value + 1);
+    };
+    events.addEventListener('ready', serverReady);
     events.addEventListener('change', updateGeneration);
     return () => events.close();
   }, [staticView]);
@@ -498,14 +519,21 @@ export function App() {
   useEffect(() => {
     const controller = new AbortController();
     fetchViewJson<ViewIndex>('/api/index', controller.signal)
-      .then(setIndex)
-      .catch((reason: Error) => setError(reason.message));
+      .then((nextIndex) => {
+        setIndex(nextIndex);
+        setIndexError('');
+      })
+      .catch((reason: unknown) => {
+        if (!isAbortError(reason)) setIndexError(errorMessage(reason));
+      });
     return () => controller.abort();
-  }, [projectChange.generation]);
+  }, [connectionRevision, projectChange.generation]);
 
   useEffect(() => {
+    const requestId = ++pageRequestId.current;
     if (!route) {
       setHistoryScroll(null);
+      setPage(null);
       setError('This is not a document URL.');
       return;
     }
@@ -518,35 +546,46 @@ export function App() {
 
     const controller = new AbortController();
     setError('');
-    const request =
+    const request: Promise<ViewPage> =
       route.kind === 'markdown'
         ? fetchViewJson<ViewDocument>(
             `/api/document?path=${encodeURIComponent(route.path)}`,
             controller.signal,
-          ).then((document) => setPage({ kind: 'markdown', document }))
+          ).then((document) => ({ kind: 'markdown', document }))
         : route.kind === 'external'
           ? fetchViewJson<ViewExternalDocument>(
               `/api/external?target=${encodeURIComponent(route.target)}`,
               controller.signal,
             ).then((external) =>
-              setPage(
-                external.kind === 'markdown'
-                  ? { kind: 'markdown', document: external.document }
-                  : { kind: 'source', source: external.source },
-              ),
+              external.kind === 'markdown'
+                ? ({
+                    kind: 'markdown',
+                    document: external.document,
+                  } satisfies ViewPage)
+                : ({
+                    kind: 'source',
+                    source: external.source,
+                  } satisfies ViewPage),
             )
           : fetchViewJson<ViewSourceDocument>(
               `/api/source?path=${encodeURIComponent(route.path)}&symbol=${encodeURIComponent(route.symbol)}&from=${encodeURIComponent(route.from)}&line=${route.line}&at=${route.at}`,
               controller.signal,
-            ).then((source) => setPage({ kind: 'source', source }));
-    request.catch((reason: Error) => {
-      if (reason.name !== 'AbortError') {
-        setHistoryScroll(null);
-        setError(reason.message);
-      }
-    });
+            ).then((source) => ({ kind: 'source', source }));
+    request
+      .then((nextPage) => {
+        if (requestId !== pageRequestId.current) return;
+        setPage(nextPage);
+        setError('');
+      })
+      .catch((reason: unknown) => {
+        if (requestId === pageRequestId.current && !isAbortError(reason)) {
+          setPage(null);
+          setHistoryScroll(null);
+          setError(errorMessage(reason));
+        }
+      });
     return () => controller.abort();
-  }, [projectChange.generation, route]);
+  }, [connectionRevision, projectChange.generation, requestRevision, route]);
 
   useEffect(() => {
     if (!page) return;
@@ -636,7 +675,10 @@ export function App() {
       isSameRenderedDocument(new URL(window.location.href), url);
     saveCurrentScroll();
     const nextLocation = `${url.pathname}${url.search}${url.hash}`;
-    if (nextLocation === currentLocation()) return;
+    if (nextLocation === currentLocation()) {
+      if (!page || error) retryPage();
+      return;
+    }
     positionedLocation.current = null;
     setHistoryScroll(null);
     const state =
@@ -644,8 +686,20 @@ export function App() {
         ? searchHistoryState(returnTo)
         : null;
     window.history.pushState(state, '', url);
-    if (!preservesDocument) setPage(null);
+    if (!preservesDocument) {
+      pageRequestId.current++;
+      setPage(null);
+    }
     setLocation(currentLocation());
+  }
+
+  function retryPage(): void {
+    positionedLocation.current = null;
+    pageRequestId.current++;
+    setHistoryScroll(null);
+    setError('');
+    setPage(null);
+    setRequestRevision((value) => value + 1);
   }
 
   function closeSearch(): void {
@@ -661,6 +715,7 @@ export function App() {
     positionedLocation.current = null;
     setHistoryScroll(null);
     window.history.replaceState(null, '', documentUrl(index.entry));
+    pageRequestId.current++;
     setPage(null);
     setLocation(currentLocation());
   }
@@ -767,6 +822,7 @@ export function App() {
           generation={projectChange.generation}
           gitEnabled={gitEnabled}
           header={header}
+          instanceId={projectChange.instanceId}
           markdownGeneration={projectChange.markdownGeneration}
           onNavigate={navigate}
           onShowSectionOutput={staticView ? undefined : setSectionOutputId}
@@ -825,6 +881,17 @@ export function App() {
               onNavigate={onNavigationClick}
             />
           )}
+          {!index && indexError && (
+            <div className="sidebar-index-error" role="alert">
+              <span>{indexError}</span>
+              <button
+                onClick={() => setConnectionRevision((value) => value + 1)}
+                type="button"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </nav>
       </aside>
 
@@ -835,6 +902,11 @@ export function App() {
           <div className="state error" role="alert">
             <strong>Could not open this document</strong>
             <span>{error}</span>
+            {route && route.kind !== 'search' && route.kind !== 'graph' && (
+              <button className="state-retry" onClick={retryPage} type="button">
+                Retry
+              </button>
+            )}
           </div>
         ) : page?.kind === 'search' ? (
           <SearchPage

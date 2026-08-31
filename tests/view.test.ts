@@ -45,6 +45,7 @@ import type {
   ViewSourceDocument,
 } from '../src/view/protocol.js';
 import { MarkdownContent } from '../view/src/MarkdownContent.js';
+import { SourceView } from '../view/src/SourceView.js';
 import { documentTreeToHtml } from './document-tree.js';
 import { createViewSearch } from '../src/view/search.js';
 import { buildViewTableOfContents } from '../src/view/table-of-contents.js';
@@ -319,7 +320,7 @@ describe('lat ui', () => {
       ) as ViewStaticSourceView;
       expect(sourceFile.path).toBe('src/app.ts');
       expect(sourceFile.content).toContain('export function run');
-      expect(sourceFile.highlightedHtmlLines.length).toBeGreaterThan(0);
+      expect(sourceFile.highlightedLines.length).toBeGreaterThan(0);
       expect(sourceView).toHaveProperty('focus');
       expect(sourceView).not.toHaveProperty('content');
       expect({ ...sourceFile, ...sourceView }).toHaveProperty(
@@ -1036,6 +1037,11 @@ describe('lat ui', () => {
     expect(styles).toContain('.markdown table.git-added');
     expect(styles).toContain('.markdown tr.git-removed');
     expect(styles).toContain('.markdown .markdown-stl-viewport');
+    const stlCanvasStyles = styles.match(
+      /\.markdown \.markdown-stl-viewport canvas\s*\{([^}]*)\}/,
+    )?.[1];
+    expect(stlCanvasStyles).toContain('width: 100%;');
+    expect(stlCanvasStyles).toContain('height: 100%;');
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
@@ -1311,7 +1317,18 @@ describe('lat ui', () => {
 
     expect(source.path).toBe('src/app.ts');
     expect(source.content).toContain("return 'running'");
-    expect(source.highlightedHtmlLines[0]).toContain('hljs-keyword');
+    expect(source).not.toHaveProperty('highlightedHtmlLines');
+    expect(documentTreeToHtml(source.highlightedLines[0])).toContain(
+      'class="hljs-keyword"',
+    );
+    const sourceMarkup = renderToStaticMarkup(
+      createElement(SourceView, {
+        onContentClick: () => {},
+        source,
+      }),
+    );
+    expect(sourceMarkup).toContain('class="hljs-keyword"');
+    expect(sourceMarkup).not.toContain('dangerouslySetInnerHTML');
     expect(source.focus).toMatchObject({
       symbol: 'run',
       kind: 'function',
@@ -2246,7 +2263,15 @@ describe('lat ui live project index', () => {
 
     try {
       const ready = await reader.read();
-      expect(decoder.decode(ready.value)).toContain('event: ready');
+      const readyMessage = decoder.decode(ready.value);
+      expect(readyMessage).toContain('event: ready');
+      const readyData = readyMessage.match(/data: (\{.*\})/)?.[1];
+      expect(readyData).toBeDefined();
+      expect(JSON.parse(readyData!)).toMatchObject({
+        instanceId: expect.any(String),
+        generation: 0,
+        markdownGeneration: 0,
+      });
 
       const initial = (await (
         await fetch(new URL('/api/document?path=target.md', live.url))

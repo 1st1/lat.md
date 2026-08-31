@@ -706,7 +706,7 @@ export async function buildStaticView(
         sectionPaths,
         documentPaths,
       );
-      const { path, content, highlightedHtmlLines, ...view } = rewritten;
+      const { path, content, highlightedLines, ...view } = rewritten;
       let fileDataPath = sourceFiles.get(path);
       if (!fileDataPath) {
         fileDataPath = dataFile('source-files', path);
@@ -714,7 +714,7 @@ export async function buildStaticView(
         await writeJson(join(payloadDir, fileDataPath), {
           path,
           content,
-          highlightedHtmlLines,
+          highlightedLines,
         });
       }
       const viewDataPath = dataFile('source-views', key);
@@ -754,7 +754,7 @@ export async function buildStaticView(
         sectionPaths,
         documentPaths,
       );
-      const { path, content, highlightedHtmlLines, ...sourceView } = rewritten;
+      const { path, content, highlightedLines, ...sourceView } = rewritten;
       let fileDataPath = externalSourceFiles.get(path);
       if (!fileDataPath) {
         fileDataPath = dataFile('external-source-files', path);
@@ -762,7 +762,7 @@ export async function buildStaticView(
         await writeJson(join(payloadDir, fileDataPath), {
           path,
           content,
-          highlightedHtmlLines,
+          highlightedLines,
         });
       }
       const viewDataPath = dataFile('external-source-views', target);

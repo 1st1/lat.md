@@ -48,7 +48,7 @@ GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences 
 
 ## Mermaid Diagrams
 
-GitHub-style `mermaid` fences render as SVG diagrams in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
+GitHub-style `mermaid` fences render as React-owned SVG trees in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
 
 ## GeoJSON and TopoJSON Maps
 
@@ -56,11 +56,11 @@ GitHub-style `geojson` and `topojson` fences render supplied geometry over an Op
 
 The browser loads the hosted vector style and tiles only when a map fence is present. If that service is unavailable, MapLibre keeps the geometry interactive over a local grid fallback; attribution remains visible whenever OpenFreeMap data is used.
 
-Before first client paint, the source fallback becomes a fixed-height loading shell. Renderer failures restore the escaped source with a visible retry action; module-load failures offer a reload action because browsers cache failed ES module records.
+Before first client paint, the source fallback becomes a fixed-height loading shell. Renderer and module-load failures restore escaped source with a retry action; rejected lazy imports are evicted so Retry performs a fresh load.
 
 ## ASCII STL Models
 
-GitHub-style `stl` fences parse ASCII STL into responsive, automatically framed 3D models that can be rotated and zoomed in the browser without external services.
+GitHub-style `stl` fences parse ASCII STL into responsive, centered, automatically framed 3D models that can be rotated and zoomed in the browser without external services.
 
 ## GitHub Surface Boundaries
 

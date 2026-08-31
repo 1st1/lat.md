@@ -37,7 +37,7 @@ Website deployments compile the current Lat UI against pinned npm releases of th
 
 ## Renders canonical document trees
 
-Document, Git, section-output, and reference APIs expose a versioned JSON tree of safe root, element, and text nodes without legacy HTML fields.
+Document, Git, section-output, reference, and highlighted-source APIs expose versioned JSON trees of safe root, element, and text nodes without legacy HTML fields.
 
 Markdown, reStructuredText, and AsciiDoc normalize into the same protocol. The client recursively reflects it into React elements, rejects executable properties and unsafe URL protocols, and owns interactive section menus without `innerHTML`.
 
@@ -61,11 +61,11 @@ Fenced code blocks with supported language labels render escaped, server-side sy
 
 Inline and display math render as accessible KaTeX after authored HTML has been sanitized, including display math written with dollar blocks or `math` code fences.
 
-`mermaid` fences retain escaped source in server and static payloads, then lazily become SVG diagrams in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
+`mermaid` fences retain escaped source in server and static payloads, then lazily become React-owned SVG element trees in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
 
-`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data or renderer failures restore escaped source with a safe inline error and retry action; module-load failures offer a reload action that resets the browser's failed ES module record.
+`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data, renderer failures, and rejected lazy imports restore escaped source with a safe inline error and retry action.
 
-ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, and automatic framing. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
+ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, automatic framing, centered geometry, and a canvas constrained to its viewport at every pixel ratio. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
 
 GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
 
@@ -147,6 +147,14 @@ Changing, adding, or deleting project files updates cached documents, navigation
 
 Browser clients receive a change event and refresh the current route while keeping its URL and viewport stable.
 
+### Accepts restarted server generations
+
+Each event stream identifies its server lifetime, so reconnecting after a restart accepts reset generations and invalidates document and graph data from the prior process.
+
+### Times out stalled document requests
+
+A document request that never settles becomes a visible error with a retry action instead of leaving the route on an indefinite loading state.
+
 ## Refreshes search after Markdown changes
 
 The first search indexes lazily, while a later Markdown generation triggers exactly one shared incremental indexing pass before new queries run.
@@ -181,7 +189,7 @@ Focused source views place reference context before the highlighted definition, 
 
 ## Highlights source syntax safely
 
-Supported languages receive server-side token coloring while HTML-like source remains escaped and multiline tokens retain their styling.
+Supported languages receive server-side token coloring as structured line trees while HTML-like source remains escaped and multiline tokens retain their styling.
 
 ## Builds a nested file tree
 
@@ -199,7 +207,7 @@ Selecting the H1 entry in the page TOC keeps its canonical fragment while positi
 
 ### Preserves rich renderers
 
-Fragment-only rerenders leave the enhanced Markdown DOM intact, so Mermaid, map, and STL renderers remain mounted instead of reverting to their authored source fallbacks.
+Fragment-only rerenders preserve the keyed React fence components, while a changed document tree updates or unmounts Mermaid, map, and STL resources through normal component lifecycle.
 
 ## Restores history scroll positions
 

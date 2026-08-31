@@ -14,7 +14,7 @@ export type ViewStaticSourceRequest = {
 
 export type ViewStaticSourceFile = Pick<
   ViewSourceDocument,
-  'path' | 'content' | 'highlightedHtmlLines'
+  'path' | 'content' | 'highlightedLines'
 >;
 
 export type ViewStaticSourceView = Omit<

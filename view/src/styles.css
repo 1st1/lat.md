@@ -135,6 +135,32 @@ a {
   display: none;
 }
 
+.sidebar-index-error {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 7px;
+}
+
+.sidebar-index-error button {
+  justify-self: start;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.sidebar-index-error button:hover {
+  color: var(--text);
+}
+
 .brand {
   display: inline-flex;
   min-width: 0;
@@ -1895,6 +1921,8 @@ a.wiki-link-active {
 
 .markdown .markdown-stl-viewport canvas {
   display: block;
+  width: 100%;
+  height: 100%;
   cursor: grab;
 }
 
@@ -2121,6 +2149,21 @@ a.wiki-link-active {
 
 .state.error strong {
   color: var(--text);
+}
+
+.state-retry {
+  padding: 5px 10px;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.state-retry:hover {
+  color: var(--text);
+  background: var(--hover);
 }
 
 .graph-shell {

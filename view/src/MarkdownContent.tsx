@@ -1,8 +1,5 @@
 import {
-  Fragment,
   createElement,
-  useLayoutEffect,
-  useRef,
   useState,
   type CSSProperties,
   type MouseEvent,
@@ -17,7 +14,10 @@ import type {
   ViewMarkdownBackReference,
   ViewSectionBackReferences,
 } from '../../src/view/protocol';
-import { renderMarkdownRichFences } from './markdown-rich-fences';
+import {
+  MarkdownRichFence,
+  type MarkdownRichFenceKind,
+} from './MarkdownRichFence';
 import { copySectionId } from './section-back-references';
 
 const VOID_ELEMENTS = new Set([
@@ -97,6 +97,28 @@ function elementProperties(
     if (normalized !== undefined) properties[name] = normalized;
   }
   return properties;
+}
+
+function documentNodeText(node: ViewDocumentNode): string {
+  if (node.type === 'text') return node.value;
+  return node.children.map(documentNodeText).join('');
+}
+
+function richFenceKind(
+  node: ViewDocumentElement,
+): MarkdownRichFenceKind | null {
+  if (node.tagName !== 'pre') return null;
+  const value = node.properties.className;
+  const classNames = Array.isArray(value)
+    ? value.map(String)
+    : typeof value === 'string'
+      ? value.split(/\s+/)
+      : [];
+  if (classNames.includes('markdown-mermaid-source')) return 'mermaid';
+  if (classNames.includes('markdown-geojson-source')) return 'geojson';
+  if (classNames.includes('markdown-topojson-source')) return 'topojson';
+  if (classNames.includes('markdown-stl-source')) return 'stl';
+  return null;
 }
 
 function CodeReference({ reference }: { reference: ViewCodeBackReference }) {
@@ -293,6 +315,17 @@ function DocumentElement({
     : node.children.map((child, index) =>
         documentNode(child, `${path}.${index}`, context),
       );
+  const fenceKind = richFenceKind(node);
+  if (fenceKind) {
+    return (
+      <MarkdownRichFence
+        fallback={createElement(node.tagName, properties, children)}
+        key={path}
+        kind={fenceKind}
+        source={node.children.map(documentNodeText).join('')}
+      />
+    );
+  }
   const headingId =
     /^h[1-6]$/.test(node.tagName) && typeof node.properties.id === 'string'
       ? node.properties.id
@@ -348,7 +381,6 @@ export function MarkdownContent({
   sectionOutputEnabled?: boolean;
   tree: ViewDocumentTree;
 }) {
-  const content = useRef<HTMLElement>(null);
   const context: RenderContext = {
     sections: new Map(
       backReferences.map((section, index) => [
@@ -361,27 +393,8 @@ export function MarkdownContent({
     onShowSectionOutput,
   };
 
-  useLayoutEffect(() => {
-    let active = true;
-    const cleanups: Array<() => void> = [];
-    if (content.current) {
-      void renderMarkdownRichFences(
-        content.current,
-        () => active,
-        (cleanup) => {
-          if (active) cleanups.push(cleanup);
-          else cleanup();
-        },
-      );
-    }
-    return () => {
-      active = false;
-      for (const cleanup of cleanups) cleanup();
-    };
-  }, [tree]);
-
   return (
-    <article className="markdown" onClick={onClick} ref={content}>
+    <article className="markdown" onClick={onClick}>
       {tree.children.map((node, index) =>
         documentNode(node, String(index), context),
       )}

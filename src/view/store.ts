@@ -36,7 +36,7 @@ import type {
   ViewExternalFile,
   ViewGraph,
   ViewIndex,
-  ViewProjectChange,
+  ViewProjectGeneration,
   ViewDocumentTree,
   ViewSourceDocument,
 } from './protocol.js';
@@ -83,7 +83,7 @@ export type ViewStoreOptions = {
   externalCa?: string | Buffer;
 };
 
-type ViewStoreListener = (change: ViewProjectChange) => void;
+type ViewStoreListener = (change: ViewProjectGeneration) => void;
 
 function isInside(root: string, candidate: string): boolean {
   const rel = relative(root, candidate);

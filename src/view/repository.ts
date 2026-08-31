@@ -59,6 +59,10 @@ function documentUrl(path: string): string {
   return `/docs/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
+function highlightedSourceLines(path: string, content: string) {
+  return highlightSource(path, content).map(externalHtmlToDocumentTree);
+}
+
 function sourceUrl(
   path: string,
   symbol: string,
@@ -297,7 +301,7 @@ export async function getViewExternal(
     source: {
       path: `${resolved.target.handle}:${resolved.target.authoredPath}`,
       content: resolved.fullContent,
-      highlightedHtmlLines: highlightSource(
+      highlightedLines: highlightedSourceLines(
         resolved.target.resolvedPath,
         resolved.fullContent,
       ),
@@ -322,10 +326,7 @@ async function readViewSource(
   requestedSymbol = '',
   requestedLine = 0,
 ): Promise<
-  Omit<
-    ViewSourceDocument,
-    'highlightedHtmlLines' | 'context' | 'otherReferences'
-  >
+  Omit<ViewSourceDocument, 'highlightedLines' | 'context' | 'otherReferences'>
 > {
   if (
     !requestedPath ||
@@ -431,7 +432,7 @@ export async function getViewSource(
     : { context: null, otherReferences: [] };
   return {
     ...source,
-    highlightedHtmlLines: highlightSource(source.path, source.content),
+    highlightedLines: highlightedSourceLines(source.path, source.content),
     ...references,
   };
 }

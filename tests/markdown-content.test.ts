@@ -5,12 +5,22 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const richRenderer = vi.hoisted(() =>
-  vi.fn<(root: ParentNode) => Promise<void>>(),
+  vi.fn<(props: { kind: string; source: string }) => void>(),
 );
 
-vi.mock('../view/src/markdown-rich-fences.js', () => ({
-  renderMarkdownRichFences: richRenderer,
-}));
+vi.mock('../view/src/MarkdownRichFence.js', async () => {
+  const { createElement } = await import('react');
+  return {
+    MarkdownRichFence: (props: { kind: string; source: string }) => {
+      richRenderer(props);
+      return createElement(
+        'figure',
+        { className: 'rendered-rich-fence', 'data-kind': props.kind },
+        props.source,
+      );
+    },
+  };
+});
 
 import { MarkdownContent } from '../view/src/MarkdownContent.js';
 import type { ViewDocumentTree } from '../src/view/protocol.js';
@@ -26,15 +36,6 @@ describe('MarkdownContent', () => {
     document.body.append(container);
     root = createRoot(container);
     richRenderer.mockReset();
-    richRenderer.mockImplementation(async (markdown) => {
-      for (const source of markdown.querySelectorAll(
-        '.markdown-diagram-source',
-      )) {
-        const diagram = document.createElement('figure');
-        diagram.className = 'rendered-rich-fence';
-        source.replaceWith(diagram);
-      }
-    });
   });
 
   afterEach(async () => {
@@ -43,7 +44,7 @@ describe('MarkdownContent', () => {
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers]]
-  it('preserves enhanced DOM when only navigation state rerenders', async () => {
+  it('keeps rich fences React-owned across navigation and tree updates', async () => {
     const tree: ViewDocumentTree = {
       version: 1,
       type: 'root',
@@ -75,6 +76,7 @@ describe('MarkdownContent', () => {
     );
     expect(rendered).toHaveLength(2);
     expect(container.querySelector('.markdown-diagram-source')).toBeNull();
+    expect(rendered.map((node) => node.textContent)).toEqual(['graph', 'map']);
 
     await act(async () => {
       root.render(createElement(MarkdownContent, { tree, onClick: vi.fn() }));
@@ -83,7 +85,30 @@ describe('MarkdownContent', () => {
       Array.from(container.querySelectorAll('.rendered-rich-fence')),
     ).toEqual(rendered);
     expect(container.querySelector('.markdown-diagram-source')).toBeNull();
-    expect(richRenderer).toHaveBeenCalledTimes(1);
+
+    const changedTree: ViewDocumentTree = {
+      ...tree,
+      children: [
+        {
+          ...tree.children[0],
+          children: [{ type: 'text', value: 'graph TD' }],
+        } as ViewDocumentTree['children'][number],
+        tree.children[1],
+      ],
+    };
+    await act(async () => {
+      root.render(
+        createElement(MarkdownContent, {
+          tree: changedTree,
+          onClick: vi.fn(),
+        }),
+      );
+    });
+    expect(container.querySelector('.rendered-rich-fence')).toBe(rendered[0]);
+    expect(rendered[0].textContent).toBe('graph TD');
+    expect(richRenderer).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'mermaid', source: 'graph TD' }),
+    );
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Renders canonical document trees]]

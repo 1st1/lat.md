@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +8,7 @@ import { sectionCommand } from '../cli/section.js';
 import {
   DEFAULT_VIEW_LOGO_TEXT,
   type ViewError,
-  type ViewProjectChange,
+  type ViewProjectGeneration,
   type ViewSectionCommandOutput,
 } from './protocol.js';
 import {
@@ -168,11 +169,16 @@ export async function startViewServer(
     options.search ??
     createViewSearch(ctx.latDir, undefined, () => store.markdownGeneration);
   const eventClients = new Set<ServerResponse>();
-  const broadcastChange = (change: ViewProjectChange) => {
-    const message = `event: change\ndata: ${JSON.stringify(change)}\n\n`;
+  const instanceId = randomUUID();
+  const broadcastChange = (change: ViewProjectGeneration) => {
+    const message = `event: change\ndata: ${JSON.stringify({ ...change, instanceId })}\n\n`;
     for (const client of eventClients) client.write(message);
   };
   const unsubscribeStore = store.subscribe(broadcastChange);
+  const heartbeat = setInterval(() => {
+    for (const client of eventClients) client.write(': heartbeat\n\n');
+  }, 15_000);
+  heartbeat.unref();
 
   const server = createServer((req, res) => {
     void (async () => {
@@ -225,7 +231,7 @@ export async function startViewServer(
         }
         eventClients.add(res);
         res.write(
-          `event: ready\ndata: ${JSON.stringify({ generation: store.snapshot.generation, markdownGeneration: store.markdownGeneration })}\n\n`,
+          `retry: 1000\nevent: ready\ndata: ${JSON.stringify({ instanceId, generation: store.snapshot.generation, markdownGeneration: store.markdownGeneration })}\n\n`,
         );
         req.once('close', () => eventClients.delete(res));
         return;
@@ -409,6 +415,7 @@ export async function startViewServer(
       }
     }
   } catch (error) {
+    clearInterval(heartbeat);
     unsubscribeStore();
     await store.close();
     throw error;
@@ -419,6 +426,7 @@ export async function startViewServer(
     await new Promise<void>((resolveClose) =>
       server.close(() => resolveClose()),
     );
+    clearInterval(heartbeat);
     unsubscribeStore();
     await store.close();
     throw new Error('Could not determine lat ui server address');
@@ -429,6 +437,7 @@ export async function startViewServer(
     store,
     url: `http://${host}:${address.port}/`,
     close: async () => {
+      clearInterval(heartbeat);
       unsubscribeStore();
       for (const client of eventClients) client.end();
       eventClients.clear();

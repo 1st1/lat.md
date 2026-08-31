@@ -68,6 +68,7 @@ let cameraCache: { x: number; y: number; angle: number; ratio: number } | null =
   null;
 let cachedViewGraph: ViewGraph | null = null;
 let viewGraphRequest: Promise<ViewGraph> | null = null;
+let viewGraphInstanceId = '';
 const GRAPH_SEARCH_DEBOUNCE_MS = 220;
 
 function nodeCategory(kind: ViewGraphNodeKind): GraphCategory {
@@ -382,7 +383,15 @@ function GraphCanvas({
 }
 
 /** Warm the immutable graph projection so switching views does not wait on I/O. */
-export function preloadViewGraph(minimumGeneration = 0): Promise<ViewGraph> {
+export function preloadViewGraph(
+  minimumGeneration = 0,
+  instanceId = '',
+): Promise<ViewGraph> {
+  if (viewGraphInstanceId !== instanceId) {
+    viewGraphInstanceId = instanceId;
+    cachedViewGraph = null;
+    viewGraphRequest = null;
+  }
   if (cachedViewGraph && cachedViewGraph.generation >= minimumGeneration) {
     return Promise.resolve(cachedViewGraph);
   }
@@ -390,11 +399,11 @@ export function preloadViewGraph(minimumGeneration = 0): Promise<ViewGraph> {
     return viewGraphRequest.then((graph) =>
       graph.generation >= minimumGeneration
         ? graph
-        : preloadViewGraph(minimumGeneration),
+        : preloadViewGraph(minimumGeneration, instanceId),
     );
   }
   const request = fetchViewJson<ViewGraph>('/api/graph').then((graph) => {
-    cachedViewGraph = graph;
+    if (viewGraphInstanceId === instanceId) cachedViewGraph = graph;
     return graph;
   });
   viewGraphRequest = request;
@@ -627,6 +636,7 @@ export default function GraphView({
   generation,
   gitEnabled,
   header,
+  instanceId,
   markdownGeneration,
   onNavigate,
   onShowSectionOutput,
@@ -640,6 +650,7 @@ export default function GraphView({
     selectedNode: ViewGraphNode | null,
     selectedTarget: string,
   ) => ReactNode;
+  instanceId: string;
   markdownGeneration: number;
   onNavigate: (url: URL) => void;
   onShowSectionOutput?: (sectionId: string) => void;
@@ -664,7 +675,7 @@ export default function GraphView({
   useEffect(() => {
     let cancelled = false;
     setError('');
-    void preloadViewGraph(generation)
+    void preloadViewGraph(generation, instanceId)
       .then((nextGraph) => {
         if (!cancelled) setGraph(nextGraph);
       })
@@ -674,7 +685,7 @@ export default function GraphView({
     return () => {
       cancelled = true;
     };
-  }, [generation]);
+  }, [generation, instanceId]);
 
   const normalizedQuery = searchEnabled ? query.trim() : '';
   useEffect(() => {

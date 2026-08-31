@@ -78,9 +78,13 @@ export type ViewSectionCommandOutput = {
   isError: boolean;
 };
 
-export type ViewProjectChange = {
+export type ViewProjectGeneration = {
   generation: number;
   markdownGeneration: number;
+};
+
+export type ViewProjectChange = ViewProjectGeneration & {
+  instanceId: string;
 };
 
 export type ViewGraphNodeKind = 'document' | 'source' | 'code-reference';
@@ -180,7 +184,7 @@ export type ViewSourceReference = {
 export type ViewSourceDocument = {
   path: string;
   content: string;
-  highlightedHtmlLines: string[];
+  highlightedLines: ViewDocumentTree[];
   focus: {
     symbol: string;
     kind: string;

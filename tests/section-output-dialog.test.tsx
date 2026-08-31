@@ -5,12 +5,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchViewJson = vi.hoisted(() => vi.fn());
-const richRenderer = vi.hoisted(() => vi.fn(async () => {}));
 
 vi.mock('../view/src/data-source.js', () => ({ fetchViewJson }));
-vi.mock('../view/src/markdown-rich-fences.js', () => ({
-  renderMarkdownRichFences: richRenderer,
-}));
 
 import { SectionOutputDialog } from '../view/src/SectionOutputDialog.js';
 
@@ -25,7 +21,6 @@ describe('SectionOutputDialog', () => {
     document.body.append(container);
     root = createRoot(container);
     fetchViewJson.mockReset();
-    richRenderer.mockClear();
   });
 
   afterEach(async () => {
