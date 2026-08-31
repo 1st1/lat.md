@@ -4,6 +4,7 @@ import {
   extname,
   isAbsolute,
   join,
+  posix,
   relative,
   resolve,
   sep,
@@ -22,8 +23,8 @@ import {
 import {
   addExternalDocumentAliasAnchors,
   externalDocumentSections,
-  renderExternalDocument,
 } from '../external-documents.js';
+import type { ExternalTarget } from '../external-sources.js';
 import {
   resolveSourceSymbol,
   SourceParserRuntime,
@@ -31,9 +32,11 @@ import {
 } from '../source-parser.js';
 import { isSourceFileExtension } from '../source-formats.js';
 import { toPosix } from '../walk.js';
+import { renderExternalDocumentTree } from './external-document-tree.js';
+import { visitDocumentElements } from './document-tree.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
-import { externalHtmlToDocumentTree, renderMarkdown } from './markdown.js';
+import { renderMarkdown } from './markdown.js';
 import {
   renderExternalSectionBackReferences,
   renderExternalSourceReferences,
@@ -85,6 +88,145 @@ export function externalUrl(target: string): string {
   const fragment = hash === -1 ? '' : target.slice(hash + 1);
   const encodedPath = path.split('/').map(encodeURIComponent).join('/');
   return `/external/${encodeURIComponent(handle)}/${encodedPath}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
+}
+
+function baseExternalTarget(identity: string): string {
+  const hash = identity.indexOf('#');
+  return hash === -1 ? identity : identity.slice(0, hash);
+}
+
+function externalFileKey(handle: string, path: string): string {
+  return `${handle}\0${path}`;
+}
+
+function availableExternalFiles(
+  external: ExternalResolver,
+  referenceIndex: ViewReferenceIndex,
+  current: ExternalTarget,
+): Map<string, string> {
+  const files = new Map<string, string>();
+  for (const target of referenceIndex.externalByTarget.keys()) {
+    try {
+      const parsed = external.parse(target);
+      if (!parsed) continue;
+      files.set(
+        externalFileKey(parsed.handle, parsed.resolvedPath),
+        baseExternalTarget(parsed.identity),
+      );
+    } catch {
+      // Invalid external references remain diagnostics and are not navigable.
+    }
+  }
+  files.set(
+    externalFileKey(current.handle, current.resolvedPath),
+    baseExternalTarget(current.identity),
+  );
+  return files;
+}
+
+function externalDocumentLink(
+  href: string,
+  current: ExternalTarget,
+  external: ExternalResolver,
+  available: ReadonlyMap<string, string>,
+): string | null | undefined {
+  if (
+    href.startsWith('#') ||
+    href.startsWith('?') ||
+    href.startsWith('//') ||
+    /^[a-z][a-z\d+.-]*:/i.test(href) ||
+    /^\/(?:code|docs|external)(?:\/|$)/.test(href)
+  ) {
+    return undefined;
+  }
+
+  let destination: URL;
+  try {
+    const encodedPath = current.resolvedPath
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/');
+    destination = new URL(href, `http://lat.external/${encodedPath}`);
+  } catch {
+    return null;
+  }
+  if (destination.origin !== 'http://lat.external') return undefined;
+
+  let path: string;
+  let fragment: string;
+  try {
+    path = destination.pathname
+      .slice(1)
+      .split('/')
+      .map(decodeURIComponent)
+      .join('/');
+    fragment = decodeURIComponent(destination.hash.slice(1));
+  } catch {
+    return null;
+  }
+  path = posix.normalize(path);
+  if (!path || path === '.' || path === '..' || path.startsWith('../')) {
+    return null;
+  }
+
+  let parsed: ExternalTarget | null;
+  try {
+    parsed = external.parse(
+      `${current.handle}:${path}${fragment ? `#${fragment}` : ''}`,
+    );
+  } catch {
+    return null;
+  }
+  if (!parsed) return null;
+  const availableTarget = available.get(
+    externalFileKey(parsed.handle, parsed.resolvedPath),
+  );
+  if (!availableTarget) return null;
+
+  const route = externalUrl(
+    `${availableTarget}${fragment ? `#${fragment}` : ''}`,
+  );
+  if (!destination.search) return route;
+  const hash = route.indexOf('#');
+  return hash === -1
+    ? `${route}${destination.search}`
+    : `${route.slice(0, hash)}${destination.search}${route.slice(hash)}`;
+}
+
+/** Make repository-relative external-document links reflect pulled files. */
+export function resolveExternalDocumentLinks(
+  tree: Awaited<ReturnType<typeof renderExternalDocumentTree>>,
+  current: ExternalTarget,
+  external: ExternalResolver,
+  referenceIndex: ViewReferenceIndex,
+): typeof tree {
+  const available = availableExternalFiles(external, referenceIndex, current);
+  visitDocumentElements(tree, (element) => {
+    if (element.tagName !== 'a') return;
+    const href = element.properties.href;
+    if (typeof href !== 'string') return;
+    const resolved = externalDocumentLink(href, current, external, available);
+    if (resolved === undefined) return;
+    if (resolved !== null) {
+      element.properties.href = resolved;
+      return;
+    }
+
+    const currentClasses = element.properties.className;
+    const classes = Array.isArray(currentClasses)
+      ? currentClasses.map(String)
+      : typeof currentClasses === 'string'
+        ? currentClasses.split(/\s+/).filter(Boolean)
+        : [];
+    element.tagName = 'span';
+    element.properties = {
+      ...element.properties,
+      className: [...classes, 'external-source-link-unavailable'],
+      title: 'Linked file is not included in this Lat project',
+    };
+    delete element.properties.href;
+  });
+  return tree;
 }
 
 function matchingSymbol(
@@ -233,13 +375,17 @@ export async function getViewExternal(
           )
         : {
             title: analysis.title,
-            tree: externalHtmlToDocumentTree(
-              await renderExternalDocument(
-                analysis.format,
-                resolved.fullContent,
-              ),
+            tree: await renderExternalDocumentTree(
+              analysis.format,
+              resolved.fullContent,
             ),
           };
+    resolveExternalDocumentLinks(
+      rendered.tree,
+      resolved.target,
+      external,
+      referenceIndex,
+    );
     const fragmentIndex = resolved.target.identity.indexOf('#');
     const baseTarget =
       fragmentIndex === -1

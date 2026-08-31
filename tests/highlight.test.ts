@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { toViewDocumentTree } from '../src/view/document-tree.js';
 import { highlightCode, highlightSource } from '../src/view/highlight.js';
 import type {
   ViewDocumentNode,
@@ -63,5 +64,9 @@ describe('source highlighting', () => {
       },
     ]);
     expect(highlightCode('unknown-language', '<safe>')).toBeNull();
+
+    const ruby = highlightCode('ruby', 'puts "hello"');
+    expect(ruby).not.toBeNull();
+    expect(treeClasses(toViewDocumentTree(ruby!))).toContain('hljs-string');
   });
 });

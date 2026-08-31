@@ -177,7 +177,7 @@ async function restructuredTextAnalysis(
 }
 
 /** Accept legacy AsciiDoc source listings whose delimiter lengths do not match. */
-function asciidocCompatibleContent(content: string): string {
+export function asciidocCompatibleContent(content: string): string {
   const lines = content.split('\n');
   for (let index = 0; index + 1 < lines.length; index++) {
     if (!/^\[(?:source|listing)(?:,|\])/i.test(lines[index].trim())) continue;
@@ -496,30 +496,4 @@ export function addExternalDocumentAliasAnchors(
     insert(tree.children);
   }
   return tree;
-}
-
-/** Render a non-Markdown external document with its native processor. */
-export async function renderExternalDocument(
-  format: Exclude<DocumentFormat, 'markdown'>,
-  content: string,
-): Promise<string> {
-  if (format === 'restructuredtext') {
-    const { RstToHtmlCompiler } = await import('rst-compiler');
-    const compiler = new RstToHtmlCompiler();
-    return compiler.compile(
-      content,
-      { disableErrors: true, disableWarnings: true },
-      { disableErrors: true, disableWarnings: true },
-    ).body;
-  }
-  const { load } = await import('@asciidoctor/core');
-  const document = await load(asciidocCompatibleContent(content), {
-    safe: 'secure',
-    attributes: { showtitle: true },
-  });
-  const html = await document.convert({ standalone: false });
-  if (typeof html !== 'string') {
-    throw new Error('AsciiDoc renderer did not return HTML');
-  }
-  return html;
 }

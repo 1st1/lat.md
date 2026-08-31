@@ -25,6 +25,10 @@ Format tests verify Markdown, reStructuredText, and AsciiDoc expose complete tit
 
 AsciiDoc coverage includes explicit document-title IDs and sections after legacy source blocks whose opening and closing delimiter lengths differ.
 
+### Native document tree projection
+
+reStructuredText and AsciiDoc parse nodes project directly into safe canonical trees. External links share document icons, labeled supported source blocks highlight, unlabeled literals stay plain, and raw pass-through markup remains inert.
+
 ## Persistent document analysis cache
 
 External Markdown, reStructuredText, and AsciiDoc analyses use validated versioned cache entries, invalidate changed content, recover from malformed payloads, and share one provider load and parse across every fragment of a file.
@@ -34,6 +38,10 @@ External Markdown, reStructuredText, and AsciiDoc analyses use validated version
 Cache tests verify schema-version, exact provider-source, commit, and strategy generations, atomic publication, concurrency, removal, local transitions, and failure without stale fallback.
 
 Missing or mismatched schema-version metadata forces complete regeneration of that source's cached files before resolution continues.
+
+### Interrupted owner recovery
+
+Filesystem cache locks record their process owner. A later command immediately reclaims a lock whose owner exited, while incomplete owner metadata receives a short creation grace period and live owners retain mutual exclusion.
 
 ## Commands and MCP
 
@@ -56,6 +64,8 @@ View tests verify external previews share the versioned document tree with local
 The live server renders each supported external document kind and exposes its backlinks and graph relationships without relying on browser-side repository access.
 
 External source-code previews persist their AST-free symbol tables under a handle-scoped parser-cache identity.
+
+Across Markdown, reStructuredText, and AsciiDoc, relative links to explicitly referenced sibling files use canonical Lat routes. Links to other upstream files render as unavailable text and do not add live or static retrieval work.
 
 ### Local watcher refresh
 

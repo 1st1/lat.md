@@ -10,6 +10,7 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
 import markdown from 'highlight.js/lib/languages/markdown';
 import python from 'highlight.js/lib/languages/python';
+import ruby from 'highlight.js/lib/languages/ruby';
 import rust from 'highlight.js/lib/languages/rust';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
@@ -27,6 +28,7 @@ const lowlight = createLowlight({
   json,
   markdown,
   python,
+  ruby,
   rust,
   typescript,
   xml,
@@ -49,6 +51,8 @@ const languageAliases: Record<string, string> = {
   md: 'markdown',
   py: 'python',
   python: 'python',
+  rb: 'ruby',
+  ruby: 'ruby',
   rs: 'rust',
   rust: 'rust',
   sh: 'bash',

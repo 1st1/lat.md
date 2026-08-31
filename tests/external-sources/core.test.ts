@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -445,6 +445,7 @@ describe.sequential('external source core', () => {
       strategy: 'fetch',
       commit: fixture.commit1,
     });
+
     projects.push(project.root);
     const target = 'upstream:guide.md#Navigation';
     await (
@@ -585,4 +586,36 @@ describe.sequential('external source core', () => {
     expect(existsSync(paths.directory)).toBe(false);
     expect(existsSync(paths.metadata)).toBe(false);
   }, 30_000);
+
+  // @lat: [[tests/external-tests#External Sources#Cache reconciliation#Interrupted owner recovery]]
+  it('reclaims an external cache lock after its owner exits', async () => {
+    const project = createExternalProject(fixture, {
+      strategy: 'fetch',
+      commit: fixture.commit1,
+    });
+    projects.push(project.root);
+    const paths = externalCachePaths(project.latDir, 'upstream');
+    const lockPath = `${paths.metadata}.lock`;
+    const exited = spawnSync(process.execPath, ['-e', '']);
+    expect(exited.status).toBe(0);
+    expect(exited.pid).toBeTypeOf('number');
+    mkdirSync(lockPath, { recursive: true });
+    writeFileSync(
+      join(lockPath, 'owner.json'),
+      `${JSON.stringify({
+        owner: 'interrupted-test-owner',
+        pid: exited.pid,
+        startedAt: Date.now(),
+      })}\n`,
+    );
+
+    const resolved = await (
+      await createExternalResolver(project.latDir, project.root, {
+        ca: fixture.ca,
+      })
+    ).resolve('upstream:guide.md#Navigation');
+
+    expect(resolved.content).toContain('First version navigation.');
+    expect(existsSync(lockPath)).toBe(false);
+  });
 });

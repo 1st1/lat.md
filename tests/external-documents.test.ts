@@ -9,9 +9,8 @@ import {
   analyzeExternalDocumentCached,
   externalDocumentAnalysisCachePath,
   findExternalDocumentSection,
-  renderExternalDocument,
 } from '../src/external-documents.js';
-import { externalHtmlToDocumentTree } from '../src/view/markdown.js';
+import { renderExternalDocumentTree } from '../src/view/external-document-tree.js';
 import { documentTreeToHtml } from './document-tree.js';
 import { PARSER_CACHE_VERSION } from '../src/parser-cache.js';
 import { rmDirBestEffort } from './util.js';
@@ -169,16 +168,12 @@ describe('external document formats', () => {
 
     const rstHtml = documentTreeToHtml(
       addExternalDocumentAliasAnchors(
-        externalHtmlToDocumentTree(
-          await renderExternalDocument('restructuredtext', rst),
-        ),
+        await renderExternalDocumentTree('restructuredtext', rst),
         rstAnalysis,
       ),
     );
     const asciidocHtml = documentTreeToHtml(
-      externalHtmlToDocumentTree(
-        await renderExternalDocument('asciidoc', asciidoc),
-      ),
+      await renderExternalDocumentTree('asciidoc', asciidoc),
     );
     expect(rstHtml).toContain('<h2 id="installation">');
     expect(rstHtml).toContain('<span id="install" aria-hidden="true"></span>');
@@ -187,14 +182,114 @@ describe('external document formats', () => {
     expect(asciidocHtml).toContain('<h2 id="install">Installation</h2>');
     expect(asciidocHtml).toContain('Nested details.');
     expect(asciidocHtml).toContain('<h2 id="Late_Section">Late Section</h2>');
+  });
 
-    const unsafe = documentTreeToHtml(
-      externalHtmlToDocumentTree(
-        '<h1 id="safe">Safe</h1><script>alert(1)</script>',
-      ),
+  // @lat: [[tests/external-tests#External Sources#Document formats#Native document tree projection]]
+  it('reflects native external-document ASTs without an HTML round trip', async () => {
+    const rst = [
+      'Guide',
+      '=====',
+      '',
+      'Use *emphasis*, **strength**, ``code``, `a link <https://example.com>`_, and named_.',
+      '',
+      '- first',
+      '- second',
+      '',
+      '.. note:: Structured warning.',
+      '',
+      '.. code-block:: python',
+      '',
+      '   enabled = True',
+      '',
+      'Plain literal::',
+      '',
+      '   command --without-language',
+      '',
+      '.. raw:: html',
+      '',
+      '   <script>alert("rst")</script>',
+      '',
+      '.. _named: https://example.org',
+    ].join('\n');
+    const asciidoc = [
+      '= Guide',
+      '',
+      ':source-language: ruby',
+      '',
+      'Use _emphasis_, *strength*, `code`, https://example.com[a link], <<target,jump>>, and link:javascript:alert(1)[bad].',
+      '',
+      'image:https://example.com/image.png[Example]',
+      '',
+      '* first',
+      '* second',
+      '',
+      'NOTE: Structured warning.',
+      '',
+      '[source]',
+      '----',
+      'puts "hello"',
+      '----',
+      '',
+      ' command --without-language',
+      '',
+      '[[target]]',
+      '== Target',
+      '',
+      '|===',
+      '|A |B',
+      '|C |D',
+      '|===',
+      '',
+      '++++',
+      '<script>alert("asciidoc")</script>',
+      '++++',
+    ].join('\n');
+
+    const rstTree = await renderExternalDocumentTree('restructuredtext', rst);
+    const asciidocTree = await renderExternalDocumentTree('asciidoc', asciidoc);
+    const rstHtml = documentTreeToHtml(rstTree);
+    const asciidocHtml = documentTreeToHtml(asciidocTree);
+
+    expect(rstTree).toMatchObject({ version: 1, type: 'root' });
+    expect(asciidocTree).toMatchObject({ version: 1, type: 'root' });
+    expect(rstHtml).toContain('<em>emphasis</em>');
+    expect(rstHtml).toContain('<strong>strength</strong>');
+    expect(rstHtml).toContain('<code>code</code>');
+    expect(rstHtml).toContain('<ul><li><p>first</p></li>');
+    expect(rstHtml).toContain(
+      'href="https://example.com" class="external-link"',
     );
-    expect(unsafe).toContain('<h1 id="safe">Safe</h1>');
-    expect(unsafe).not.toContain('<script');
+    expect(rstHtml).toContain(
+      'href="https://example.org" class="external-link"',
+    );
+    expect(rstHtml.match(/class="external-link-icon"/g)).toHaveLength(2);
+    expect(rstHtml).toContain('class="language-python hljs"');
+    expect(rstHtml).toContain('command --without-language');
+    expect(rstHtml).not.toContain('language-command');
+    expect(rstHtml).toContain('&#x3C;script>alert("rst")&#x3C;/script>');
+    expect(rstHtml).not.toContain('<script');
+
+    expect(asciidocHtml).toContain('<em>emphasis</em>');
+    expect(asciidocHtml).toContain('<strong>strength</strong>');
+    expect(asciidocHtml).toContain('<code>code</code>');
+    expect(asciidocHtml).toContain('<ul><li>first</li><li>second</li></ul>');
+    expect(asciidocHtml).toContain('<table>');
+    expect(asciidocHtml).toContain(
+      'href="https://example.com" class="external-link"',
+    );
+    expect(asciidocHtml.match(/class="external-link-icon"/g)).toHaveLength(1);
+    expect(asciidocHtml).toContain('href="#target"');
+    expect(asciidocHtml).toContain('class="language-ruby hljs"');
+    expect(asciidocHtml).toContain('command --without-language');
+    expect(asciidocHtml).not.toContain('language-command');
+    expect(asciidocHtml).toContain(
+      '<img src="https://example.com/image.png" alt="Example">',
+    );
+    expect(asciidocHtml).not.toContain('href="javascript:');
+    expect(asciidocHtml).toContain(
+      '&#x3C;script>alert("asciidoc")&#x3C;/script>',
+    );
+    expect(asciidocHtml).not.toContain('<script');
   });
 
   // @lat: [[tests/external-tests#External Sources#Persistent document analysis cache]]
