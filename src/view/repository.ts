@@ -32,7 +32,7 @@ import {
 import { toPosix } from '../walk.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';
 import { highlightSource } from './highlight.js';
-import { renderMarkdown, sanitizeExternalDocumentHtml } from './markdown.js';
+import { externalHtmlToDocumentTree, renderMarkdown } from './markdown.js';
 import {
   renderExternalSectionBackReferences,
   renderExternalSourceReferences,
@@ -232,7 +232,7 @@ export async function getViewExternal(
           )
         : {
             title: analysis.title,
-            html: sanitizeExternalDocumentHtml(
+            tree: externalHtmlToDocumentTree(
               await renderExternalDocument(
                 analysis.format,
                 resolved.fullContent,
@@ -260,8 +260,8 @@ export async function getViewExternal(
       document: {
         path: baseTarget,
         ...rendered,
-        html: addExternalDocumentAliasAnchors(rendered.html, analysis),
-        gitHtml: null,
+        tree: addExternalDocumentAliasAnchors(rendered.tree, analysis),
+        gitTree: null,
         graphNodeIds: {},
         tableOfContents: buildViewTableOfContents(
           sections,
@@ -297,7 +297,7 @@ export async function getViewExternal(
     source: {
       path: `${resolved.target.handle}:${resolved.target.authoredPath}`,
       content: resolved.fullContent,
-      highlightedHtmlLines: highlightSource(
+      highlightedLines: highlightSource(
         resolved.target.resolvedPath,
         resolved.fullContent,
       ),
@@ -322,10 +322,7 @@ async function readViewSource(
   requestedSymbol = '',
   requestedLine = 0,
 ): Promise<
-  Omit<
-    ViewSourceDocument,
-    'highlightedHtmlLines' | 'context' | 'otherReferences'
-  >
+  Omit<ViewSourceDocument, 'highlightedLines' | 'context' | 'otherReferences'>
 > {
   if (
     !requestedPath ||
@@ -431,7 +428,7 @@ export async function getViewSource(
     : { context: null, otherReferences: [] };
   return {
     ...source,
-    highlightedHtmlLines: highlightSource(source.path, source.content),
+    highlightedLines: highlightSource(source.path, source.content),
     ...references,
   };
 }

@@ -15,17 +15,21 @@ By default the header renders the same Lat wordmark as the website. `lat ui --lo
 
 The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
 
+The server anchors Vite's relative entry assets at `/assets/`, so every live document, source, search, and graph route loads the same production shell.
+
 ## Builds a static deployment
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
-The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git or search, perform live API requests, or subscribe to project changes.
+The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git, search, or the runtime-only section command, perform live API requests, or subscribe to project changes.
 
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
 
 `lat ui build --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the website wordmark.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
+
+Entry assets use that base, while lazy JavaScript, CSS, fonts, and renderer chunks resolve relative to their owning production asset. Rich fences therefore work at both root and nested deployments.
 
 Any existing output path is rejected before snapshot work begins, including an empty directory or prior generated export. Callers must remove it explicitly or choose a new destination.
 
@@ -35,9 +39,17 @@ The generated marker excludes the entire artifact from both ripgrep and fallback
 
 Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
 
+## Renders canonical document trees
+
+Document, Git, section-output, reference, and highlighted-source APIs expose versioned JSON trees of safe root, element, and text nodes without legacy HTML fields.
+
+Markdown, reStructuredText, and AsciiDoc normalize into the same protocol. The client recursively reflects it into React elements, rejects executable properties and unsafe URL protocols, and owns interactive section menus without `innerHTML`.
+
+Static export discovers and rewrites links by traversing node properties while retaining the same document-tree payload as the live server.
+
 ## Renders Markdown with navigable local links
 
-Markdown becomes safe HTML with GitHub-style heading ids while ordinary relative links retain their destinations and fragments. HTTP(S) and protocol-relative links append a decorative external-site icon in documents and rendered reference contexts.
+Markdown normalizes into a safe tree with GitHub-style heading ids and intact relative destinations. HTTP(S) and protocol-relative links gain decorative external-site icons in documents and reference contexts.
 
 GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
 
@@ -53,11 +65,11 @@ Fenced code blocks with supported language labels render escaped, server-side sy
 
 Inline and display math render as accessible KaTeX after authored HTML has been sanitized, including display math written with dollar blocks or `math` code fences.
 
-`mermaid` fences retain escaped source in server and static payloads, then lazily become SVG diagrams in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
+`mermaid` fences retain escaped source in server and static payloads, then lazily become React-owned SVG element trees in the browser. Invalid syntax leaves the source visible with a safe inline error instead of removing the block.
 
-`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data or renderer failures restore escaped source with a safe inline error and retry action; module-load failures offer a reload action that resets the browser's failed ES module record.
+`geojson` and `topojson` fences replace source with a fixed-height loading shell before first paint, then lazily render their data over OpenFreeMap's hosted OpenStreetMap basemap. They retain visible attribution and fall back to an interactive local geometry view when tiles cannot load. Malformed data, renderer failures, and rejected lazy imports restore escaped source with a safe inline error and retry action.
 
-ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, and automatic framing. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
+ASCII `stl` fences lazily render as responsive 3D models with rotation, zoom, automatic framing, centered geometry, and a canvas constrained to its viewport at every pixel ratio. Invalid models or unavailable WebGL leave escaped source visible with a safe inline error.
 
 GitHub `NOTE`, `TIP`, `IMPORTANT`, `WARNING`, and `CAUTION` alert blockquotes render as labeled callouts with type-specific color, while non-alert blockquotes retain their ordinary presentation.
 
@@ -79,7 +91,7 @@ Sections containing rendered Git changes carry an orange disc when Git is enable
 
 Below 64rem, files remain reachable through a sticky two-row header and a scrollable full-viewport navigation overlay instead of a compressed or hidden desktop sidebar.
 
-The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally, and the graph stacks above its inspector.
+The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally without browser text inflation, and the graph stacks above its inspector.
 
 When the desktop TOC rail no longer fits, a compact `On this page` control shares an aligned metadata row and expands its links in a bounded overlay without moving content. On mobile it becomes a full-width row below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
 
@@ -107,7 +119,7 @@ The URL preserves the latest query; Back restores it, and Escape clears the quer
 
 ## Exposes code-mention frontmatter as metadata
 
-Documents expose [[markdown#Frontmatter#require-code-mention]] separately from rendered HTML so the browser can badge files that require code references.
+Documents expose [[markdown#Frontmatter#require-code-mention]] separately from the rendered document tree so the browser can badge files that require code references.
 
 ## Resolves Markdown and source wiki links
 
@@ -129,13 +141,23 @@ Source links preserve their originating section and line so the code view can re
 
 ## Shows section back-references
 
-Referenced sections expose distinct linking Markdown paragraphs, wiki references, and `@lat:` code locations with navigable context.
+Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
+
+Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally
 
 Changing, adding, or deleting project files updates cached documents, navigation, source references, and backlinks without rereading unchanged Markdown files.
 
 Browser clients receive a change event and refresh the current route while keeping its URL and viewport stable.
+
+### Accepts restarted server generations
+
+Each event stream identifies its server lifetime, so reconnecting after a restart accepts reset generations and invalidates document and graph data from the prior process.
+
+### Times out stalled document requests
+
+A document request that never settles becomes a visible error with a retry action instead of leaving the route on an indefinite loading state.
 
 ## Refreshes search after Markdown changes
 
@@ -171,7 +193,7 @@ Focused source views place reference context before the highlighted definition, 
 
 ## Highlights source syntax safely
 
-Supported languages receive server-side token coloring while HTML-like source remains escaped and multiline tokens retain their styling.
+Supported languages become structured line trees without HTML serialization. HTML-like source remains inert text and multiline tokens retain their styling across every line.
 
 ## Builds a nested file tree
 
@@ -189,7 +211,7 @@ Selecting the H1 entry in the page TOC keeps its canonical fragment while positi
 
 ### Preserves rich renderers
 
-Fragment-only rerenders leave the enhanced Markdown DOM intact, so Mermaid, map, and STL renderers remain mounted instead of reverting to their authored source fallbacks.
+Fragment-only rerenders preserve the keyed React fence components, while a changed document tree updates or unmounts Mermaid, map, and STL resources through normal component lifecycle.
 
 ## Restores history scroll positions
 

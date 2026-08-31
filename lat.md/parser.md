@@ -1,6 +1,6 @@
 # Parser
 
-Markdown syntax parsing is built on unified/remark v11. Syntax trees stay inside parsing, [[architecture-analysis|analysis]], and presentation operations; semantic commands consume the shared AST-free analysis model. Parse → render fidelity is verified by [[tests/roundtrip]].
+Markdown parsing uses unified/remark v11. Parser-native trees stay inside parsing, [[architecture-analysis|analysis]], and presentation; browsers receive the stable view tree, while commands use the AST-free analysis model. Fidelity is verified by [[tests/roundtrip]].
 
 ## Tables
 
@@ -20,7 +20,7 @@ The shared AST recognizes [[markdown#Bare Autolinks|GitHub bare autolinks]] thro
 
 ## Safe HTML
 
-CommonMark preserves authored HTML nodes for exact serialization; `lat ui` reparses them into HAST and applies the [[markdown#Safe HTML|GitHub-compatible sanitization boundary]] before stringifying.
+CommonMark preserves authored HTML nodes for exact serialization; `lat ui` reparses them into HAST, applies the [[markdown#Safe HTML|GitHub-compatible sanitization boundary]], and strips the result to its versioned document-tree protocol.
 
 ## Footnotes
 

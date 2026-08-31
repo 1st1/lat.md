@@ -16,17 +16,44 @@ import { staticViewBasePath } from './static-mode';
 
 let manifestRequest: Promise<ViewStaticManifest> | null = null;
 
+export const VIEW_REQUEST_TIMEOUT_MS = 15_000;
+
+export class ViewRequestTimeoutError extends Error {
+  override name = 'TimeoutError';
+}
+
 async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(url, { signal });
-  const value = (await response.json()) as T | ViewError;
-  if (!response.ok) {
-    throw new Error(
-      value && typeof value === 'object' && 'error' in value
-        ? value.error
-        : 'Request failed',
-    );
+  const controller = new AbortController();
+  let timedOut = false;
+  const abort = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener('abort', abort, { once: true });
+  const timeout = globalThis.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, VIEW_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    const value = (await response.json()) as T | ViewError;
+    if (!response.ok) {
+      throw new Error(
+        value && typeof value === 'object' && 'error' in value
+          ? value.error
+          : 'Request failed',
+      );
+    }
+    return value as T;
+  } catch (reason) {
+    if (timedOut) {
+      throw new ViewRequestTimeoutError(
+        'The server did not respond in time. Try again.',
+      );
+    }
+    throw reason;
+  } finally {
+    globalThis.clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
   }
-  return value as T;
 }
 
 function staticDataUrl(path: string): string {

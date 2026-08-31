@@ -3,6 +3,7 @@ import type {
   ViewSourceDocument,
   ViewSourceReference,
 } from '../../src/view/protocol';
+import { DocumentNodes } from './MarkdownContent';
 import {
   captureScrollAnchor,
   restoreScrollAnchor,
@@ -57,10 +58,9 @@ function SourceContext({
           <a href={source.context.url}>
             <Breadcrumbs reference={source.context} />
           </a>
-          <div
-            className="source-context-paragraph"
-            dangerouslySetInnerHTML={{ __html: source.context.paragraphHtml }}
-          />
+          <div className="source-context-paragraph">
+            <DocumentNodes nodes={source.context.paragraphTree.children} />
+          </div>
         </div>
       )}
       {hasReferences && (
@@ -83,10 +83,9 @@ function SourceContext({
               <a href={reference.url}>
                 <Breadcrumbs reference={reference} />
               </a>
-              <div
-                className="source-reference-paragraph"
-                dangerouslySetInnerHTML={{ __html: reference.paragraphHtml }}
-              />
+              <div className="source-reference-paragraph">
+                <DocumentNodes nodes={reference.paragraphTree.children} />
+              </div>
             </div>
           ))}
         </div>
@@ -128,7 +127,7 @@ export function SourceView({
   const hasReferences = source.otherReferences.length > 0;
   const hasContext = Boolean(source.context || hasReferences);
   const rows = getSourceWindowRows(
-    source.highlightedHtmlLines.length,
+    source.highlightedLines.length,
     source.focus,
     hasContext,
     expandedAbove,
@@ -200,7 +199,7 @@ export function SourceView({
             );
           }
 
-          const line = source.highlightedHtmlLines[row.lineNumber - 1];
+          const line = source.highlightedLines[row.lineNumber - 1];
           return (
             <div
               className={row.focused ? 'source-line focused' : 'source-line'}
@@ -210,10 +209,9 @@ export function SourceView({
               <span className="source-line-number" aria-hidden="true">
                 {row.lineNumber}
               </span>
-              <code
-                className="source-line-content"
-                dangerouslySetInnerHTML={{ __html: line || ' ' }}
-              />
+              <code className="source-line-content">
+                {line ? <DocumentNodes nodes={line.children} /> : ' '}
+              </code>
             </div>
           );
         })}

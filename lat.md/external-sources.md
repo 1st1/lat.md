@@ -422,7 +422,7 @@ The sidebar adds an `External sources` label only when configured sources are re
 
 The loopback server retrieves remote files so browsers never require cross-origin access.
 
-Markdown, reStructuredText, AsciiDoc, and supported code receive format-aware renderers. Native document HTML is sanitized before publication. Configuration and referenced local-file changes refresh active previews without restarting the server or discarding navigation state.
+Markdown, reStructuredText, and AsciiDoc use format-aware adapters into the shared versioned document tree. Native processor output is sanitized during normalization, and no document HTML is published by the API. Configuration and referenced local-file changes refresh active previews without restarting the server or discarding navigation state.
 
 ### Static Export
 
@@ -442,7 +442,7 @@ External input crosses network and filesystem boundaries, so validation occurs b
 - Explicit and inferred `fetch-url` templates must be credential-free HTTPS URLs containing `{commit}` and `{path}` at least once each, with no unknown placeholders or malformed braces.
 - `strategy: checkout` forbids `fetch-url`; `strategy: fetch` requires either a recognized GitHub/GitLab repository or an explicit template.
 - Response size and timeout limits bound remote reads.
-- Downloaded content is treated as untrusted; source output is escaped and native document HTML is sanitized by Lat before publication.
+- Downloaded content is treated as untrusted; source output is escaped, document nodes are sanitized before publication, and the React renderer rejects executable properties and unsafe URL protocols.
 - Filesystem access remains beneath the configured checkout and repository prefix.
 - Suggested shell commands are never executed.
 - Git always runs with argument arrays.

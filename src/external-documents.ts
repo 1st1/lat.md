@@ -2,6 +2,11 @@ import { posix } from 'node:path';
 import { flattenSections, type Section } from './lattice.js';
 import { analyzeMarkdownFile } from './markdown-analysis.js';
 import { documentFormat, type DocumentFormat } from './document-formats.js';
+import type {
+  ViewDocumentElement,
+  ViewDocumentNode,
+  ViewDocumentTree,
+} from './view/protocol.js';
 
 export type ExternalDocumentSection = {
   title: string;
@@ -275,19 +280,12 @@ export function externalDocumentSections(
   return roots;
 }
 
-function htmlAttribute(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('"', '&quot;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;');
-}
-
-/** Add safe zero-size anchors for accepted aliases that differ from rendered IDs. */
+/** Add zero-size alias anchors to the normalized external document tree. */
 export function addExternalDocumentAliasAnchors(
-  html: string,
+  source: ViewDocumentTree,
   analysis: ExternalDocumentAnalysis,
-): string {
+): ViewDocumentTree {
+  const tree = structuredClone(source);
   const canonical = new Set(
     analysis.sections.map((section) => section.anchor).filter(Boolean),
   );
@@ -297,18 +295,30 @@ export function addExternalDocumentAliasAnchors(
       (alias) => alias !== section.anchor && !canonical.has(alias),
     );
     if (aliases.length === 0) continue;
-    const marker = `id="${htmlAttribute(section.anchor)}"`;
-    const heading = html.lastIndexOf('<h', html.indexOf(marker));
-    if (heading < 0) continue;
-    const anchors = aliases
-      .map(
-        (alias) =>
-          `<span id="${htmlAttribute(alias)}" aria-hidden="true"></span>`,
-      )
-      .join('');
-    html = `${html.slice(0, heading)}${anchors}${html.slice(heading)}`;
+    const insert = (children: ViewDocumentNode[]): boolean => {
+      for (let index = 0; index < children.length; index++) {
+        const node = children[index];
+        if (node.type !== 'element') continue;
+        if (
+          /^h[1-6]$/.test(node.tagName) &&
+          node.properties.id === section.anchor
+        ) {
+          const anchors: ViewDocumentElement[] = aliases.map((alias) => ({
+            type: 'element',
+            tagName: 'span',
+            properties: { id: alias, ariaHidden: 'true' },
+            children: [],
+          }));
+          children.splice(index, 0, ...anchors);
+          return true;
+        }
+        if (insert(node.children)) return true;
+      }
+      return false;
+    };
+    insert(tree.children);
   }
-  return html;
+  return tree;
 }
 
 /** Render a non-Markdown external document with its native processor. */

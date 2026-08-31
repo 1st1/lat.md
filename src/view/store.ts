@@ -36,7 +36,8 @@ import type {
   ViewExternalFile,
   ViewGraph,
   ViewIndex,
-  ViewProjectChange,
+  ViewProjectGeneration,
+  ViewDocumentTree,
   ViewSourceDocument,
 } from './protocol.js';
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
@@ -82,7 +83,7 @@ export type ViewStoreOptions = {
   externalCa?: string | Buffer;
 };
 
-type ViewStoreListener = (change: ViewProjectChange) => void;
+type ViewStoreListener = (change: ViewProjectGeneration) => void;
 
 function isInside(root: string, candidate: string): boolean {
   const rel = relative(root, candidate);
@@ -396,6 +397,29 @@ export class ViewStore {
     return this.snapshotValue.graph;
   }
 
+  async renderSectionOutput(
+    markdown: string,
+    sectionId: string,
+  ): Promise<ViewDocumentTree> {
+    const snapshot = this.snapshotValue;
+    const section = snapshot.allSections.find(
+      (candidate) => candidate.id.toLowerCase() === sectionId.toLowerCase(),
+    );
+    const requestedPath = section
+      ? toPosix(
+          relative(this.latDir, resolve(this.projectRoot, section.filePath)),
+        )
+      : 'section-output.md';
+    const resolver = await createMarkdownWikiLinkResolver(
+      this.latDir,
+      requestedPath,
+      snapshot.allSections,
+      snapshot.references,
+      snapshot.external,
+    );
+    return (await renderMarkdown(markdown, requestedPath, resolver)).tree;
+  }
+
   async getDocument(requestedPath: string): Promise<ViewDocument> {
     if (
       !requestedPath ||
@@ -440,7 +464,7 @@ export class ViewStore {
     return {
       path: requestedPath,
       ...rendered,
-      gitHtml: gitRendered?.html ?? null,
+      gitTree: gitRendered?.tree ?? null,
       tableOfContents: buildViewTableOfContents(
         file.sections,
         file.headingTitles,

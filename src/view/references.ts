@@ -363,14 +363,6 @@ export function buildViewReferenceIndex(
   };
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-}
-
 async function renderExternalReference(
   reference: IndexedBackReference,
   latDir: string,
@@ -397,15 +389,36 @@ export async function renderExternalSectionBackReferences(
   projectRoot: string,
   createWikiLinkResolver?: (requestedPath: string) => Promise<WikiLinkResolver>,
 ): Promise<ViewSectionBackReferences[]> {
-  const result: ViewSectionBackReferences[] = [];
+  const sections = new Map<
+    string,
+    {
+      sectionId: string;
+      references: Map<string, IndexedBackReference>;
+    }
+  >();
   for (const [target, headingId] of targets) {
+    let section = sections.get(headingId);
+    if (!section) {
+      section = { sectionId: target, references: new Map() };
+      sections.set(headingId, section);
+    }
     const lowerTarget = target.toLowerCase();
     const indexed = [...index.externalByTarget]
       .filter(([candidate]) => candidate.toLowerCase() === lowerTarget)
       .flatMap(([, references]) => references);
-    if (indexed.length === 0) continue;
+    for (const reference of indexed) {
+      const key =
+        reference.kind === 'markdown'
+          ? `markdown:${reference.sourcePath}:${reference.paragraph.startLine}`
+          : `code:${reference.path}:${reference.line}`;
+      if (!section.references.has(key)) section.references.set(key, reference);
+    }
+  }
+
+  const result: ViewSectionBackReferences[] = [];
+  for (const [headingId, section] of sections) {
     const references = await Promise.all(
-      indexed.map((reference) =>
+      [...section.references.values()].map((reference) =>
         renderExternalReference(
           reference,
           latDir,
@@ -414,7 +427,7 @@ export async function renderExternalSectionBackReferences(
         ),
       ),
     );
-    result.push({ sectionId: target, headingId, references });
+    result.push({ sectionId: section.sectionId, headingId, references });
   }
   return result;
 }
@@ -441,7 +454,7 @@ export async function renderExternalSourceReferences(
         sectionId: rendered.sectionId,
         breadcrumbs: rendered.breadcrumbs,
         paragraph: rendered.paragraph,
-        paragraphHtml: rendered.paragraphHtml,
+        paragraphTree: rendered.paragraphTree,
         url: rendered.url,
       });
     } else {
@@ -449,7 +462,18 @@ export async function renderExternalSourceReferences(
         sectionId: `code:${rendered.path}:${rendered.line}`,
         breadcrumbs: [...rendered.path.split('/'), `line ${rendered.line}`],
         paragraph: rendered.snippet,
-        paragraphHtml: `<code>${escapeHtml(rendered.snippet)}</code>`,
+        paragraphTree: {
+          version: 1,
+          type: 'root',
+          children: [
+            {
+              type: 'element',
+              tagName: 'code',
+              properties: {},
+              children: [{ type: 'text', value: rendered.snippet }],
+            },
+          ],
+        },
         url: rendered.url,
       });
     }
@@ -463,7 +487,7 @@ async function renderIndexedMarkdownReference(
   projectRoot: string,
   resolveWikiLink?: WikiLinkResolver,
 ): Promise<ViewMarkdownBackReference> {
-  const paragraphHtml = (
+  const paragraphTree = (
     await renderMarkdown(
       reference.paragraph.markdown,
       reference.sourcePath,
@@ -476,13 +500,13 @@ async function renderIndexedMarkdownReference(
           contextMarkdownLink(reference.sourcePath, url),
       },
     )
-  ).html;
+  ).tree;
   return {
     kind: 'markdown',
     sectionId: reference.section.id,
     breadcrumbs: breadcrumbs(latDir, projectRoot, reference.section),
     paragraph: reference.paragraph.text,
-    paragraphHtml,
+    paragraphTree,
     url: documentUrl(latDir, projectRoot, reference.section),
   };
 }
@@ -510,7 +534,6 @@ export async function renderSectionBackReferences(
   const result: ViewSectionBackReferences[] = [];
   for (const section of flattenSections(visibleSections)) {
     const indexed = index.incomingBySection.get(section.id.toLowerCase()) ?? [];
-    if (indexed.length === 0) continue;
     const references: ViewSectionBackReference[] = [];
     for (const reference of indexed) {
       references.push(
@@ -570,7 +593,7 @@ export async function renderSourceReferenceContext(
         sectionId: rendered.sectionId,
         breadcrumbs: rendered.breadcrumbs,
         paragraph: rendered.paragraph,
-        paragraphHtml: rendered.paragraphHtml,
+        paragraphTree: rendered.paragraphTree,
         url: rendered.url,
       },
     });

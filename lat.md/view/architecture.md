@@ -10,15 +10,31 @@ The website's Lat wordmark is the default top-left brand in both clients. `--log
 
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
-The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Highlight.js core with only Lat's supported languages, keeping the full package out of production dependencies.
+The installed runtime uses Node HTTP and prebuilt Vite assets. Its server highlighter bundles Lowlight with only Lat's supported Highlight.js grammars, keeping the full language set out of production dependencies.
 
-Rich Markdown fences keep escaped source in document payloads. The shared Markdown component lazily loads browser-only Mermaid, map, and 3D renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
+Rich Markdown fences keep authored source as inert text nodes in document payloads. React-owned Mermaid, map, and 3D components lazily load browser-only renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
 
 Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style through MapLibre. The authored GeoJSON or converted TopoJSON remains interactive over a local fallback when the basemap cannot load.
 
 The live server's default-self Content Security Policy explicitly permits only OpenFreeMap tile connections, GitHub custom emoji images, and bundled data fonts needed by those supported renderers.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
+
+## Document tree protocol
+
+Document APIs carry one versioned, parser-neutral presentation tree so the browser can compose content as React elements instead of installing server-rendered HTML.
+
+[[src/view/markdown.ts#renderMarkdown]] resolves Markdown semantics and converts mdast through the sanitizer, KaTeX, slug, and highlighting pipeline, then [[src/view/document-tree.ts#toViewDocumentTree]] retains only JSON-safe `root`, `element`, and `text` nodes. Parser positions, plugin objects, and executable properties never cross the boundary.
+
+reStructuredText and AsciiDoc use their native processors, then [[src/view/markdown.ts#externalHtmlToDocumentTree]] reflects the sanitized format output into the same tree. The browser therefore receives one rendering contract for local Markdown, external documents, Git projections, section output, and reference excerpts.
+
+[[view/src/MarkdownContent.tsx#MarkdownContent]] recursively creates the React element tree, filters executable properties and unsafe URL protocols again, and mounts section menus and rich fences as stateful React components. It never uses `innerHTML` or `dangerouslySetInnerHTML`.
+
+Rich fences remain `pre` and `code` elements with inert text children in the contract. [[view/src/MarkdownRichFence.tsx#MarkdownRichFence]] recognizes those nodes while reflecting the tree, owns every renderer resource through React effects, and restores the same source fallback on failure or unmount.
+
+Source and fenced-code highlighting starts as Lowlight HAST and becomes document-tree nodes without HTML serialization. Multiline tokens are split structurally into independently renderable lines. Only native reStructuredText or AsciiDoc HTML remains a sanitized server-side adapter input.
+
+Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
 
 ## Static export
 
@@ -30,9 +46,11 @@ Each unique source file has one shared raw-text and highlighted-line payload. Ma
 
 The manifest stores the selected logo text with the document index so the static client renders the default wordmark or the same plain-text override as the live server.
 
-The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git and search controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
+The browser reads an immutable manifest instead of `/api/*`, never opens an event stream, and hides Git, search, and runtime command controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
 
 `--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path, so deploying the output directory at a host's root serves the UI from that subpath. `/` is the default.
+
+Vite emits lazy chunks, imported CSS, fonts, and renderer dependencies relative to their owning JavaScript or stylesheet. Generated route shells anchor only the entry assets at the configured base, so nested deployments do not leak requests to root `/assets/`.
 
 Relative Markdown links are rewritten against their source document so the extra static route directory does not change their target. Both the deployment root and a non-root base directory redirect to the exported entry document.
 
@@ -52,7 +70,9 @@ Every update atomically replaces the snapshot. Section identity changes rebuild 
 
 Each snapshot also validates cached Markdown links, wiki targets, section structure, and required code mentions. It consumes the analyzer's local diagnostics and adds project-wide findings; source lines let the client mark files, list errors, and highlight authored content.
 
-Browser clients subscribe to snapshot generations over server-sent events. A new generation refreshes the sidebar and current route while preserving the active URL and viewport.
+Browser clients subscribe to snapshot generations over a heartbeated server-sent event stream. Ready and change events carry a server-lifetime identity, so reconnecting to a restarted process accepts its reset generation and invalidates old document and graph caches.
+
+Document requests have a bounded wait and expose an explicit retry after transport failures. Every successful event-stream reconnection refreshes the index and active route even when the server generation did not change.
 
 Markdown generations also dirty semantic search. The next query shares one incremental indexing pass across concurrent requests, then searches the updated index.
 
@@ -72,7 +92,7 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 
 ## Markdown navigation
 
-[[src/view/markdown.ts#renderMarkdown]] produces safe HTML with ordinary Markdown links, resolved wiki links, heading fragments, and `require-code-mention` metadata.
+[[src/view/markdown.ts#renderMarkdown]] produces the safe document tree with ordinary Markdown links, resolved wiki links, heading fragments, and Git or diagnostic presentation metadata.
 
 Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
 
@@ -92,7 +112,9 @@ A moving end-of-page activation line makes short final sections reachable.
 
 The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
 
-Referenced sections expose incoming Markdown, wiki, and `@lat:` locations as navigable context.
+Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
+
+In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 
 ## Responsive layout
 
@@ -120,7 +142,7 @@ The wiki-link resolver returns the target URL and count together, letting [[src/
 
 Validated [[markdown#Wiki Links#Source Code Links]] open highlighted source definitions with the originating lat paragraph rendered as context.
 
-The source view keeps five surrounding lines, collapses distant code, preserves the viewport when expanding upward, and links to other lat sections that reference the same symbol.
+The source view keeps five surrounding lines, collapses distant code, preserves the viewport when expanding upward, and links to other lat sections that reference the same symbol. Its source container fixes mobile text adjustment at the authored scale so line numbers and highlighted tokens stay uniform.
 
 ## Search and history
 

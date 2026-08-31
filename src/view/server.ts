@@ -1,12 +1,15 @@
 import { readFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
 import { createServer, type Server, type ServerResponse } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { CmdContext } from '../context.js';
+import { plainStyler, type CmdContext } from '../context.js';
+import { sectionCommand } from '../cli/section.js';
 import {
   DEFAULT_VIEW_LOGO_TEXT,
   type ViewError,
-  type ViewProjectChange,
+  type ViewProjectGeneration,
+  type ViewSectionCommandOutput,
 } from './protocol.js';
 import {
   ViewExternalNotFoundError,
@@ -15,6 +18,7 @@ import {
 } from './repository.js';
 import { createViewSearch, type ViewSearch } from './search.js';
 import { createViewStore, type ViewStore } from './store.js';
+import { rewriteClientAssetUrls } from './client-shell.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_VIEW_PORT = 4242;
@@ -132,6 +136,21 @@ async function sendClientFile(
   }
 }
 
+async function sendClientShell(
+  res: ServerResponse,
+  path: string,
+  headOnly: boolean,
+): Promise<void> {
+  try {
+    const body = rewriteClientAssetUrls(await readFile(path, 'utf8'), '/');
+    res.setHeader('Cache-Control', 'no-cache');
+    send(res, 200, 'text/html; charset=utf-8', body, headOnly);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    send(res, 404, 'text/plain; charset=utf-8', 'Not found', headOnly);
+  }
+}
+
 function listen(server: Server, host: string, port: number): Promise<void> {
   return new Promise((resolveListen, reject) => {
     const onError = (error: Error) => {
@@ -166,11 +185,16 @@ export async function startViewServer(
     options.search ??
     createViewSearch(ctx.latDir, undefined, () => store.markdownGeneration);
   const eventClients = new Set<ServerResponse>();
-  const broadcastChange = (change: ViewProjectChange) => {
-    const message = `event: change\ndata: ${JSON.stringify(change)}\n\n`;
+  const instanceId = randomUUID();
+  const broadcastChange = (change: ViewProjectGeneration) => {
+    const message = `event: change\ndata: ${JSON.stringify({ ...change, instanceId })}\n\n`;
     for (const client of eventClients) client.write(message);
   };
   const unsubscribeStore = store.subscribe(broadcastChange);
+  const heartbeat = setInterval(() => {
+    for (const client of eventClients) client.write(': heartbeat\n\n');
+  }, 15_000);
+  heartbeat.unref();
 
   const server = createServer((req, res) => {
     void (async () => {
@@ -223,7 +247,7 @@ export async function startViewServer(
         }
         eventClients.add(res);
         res.write(
-          `event: ready\ndata: ${JSON.stringify({ generation: store.snapshot.generation, markdownGeneration: store.markdownGeneration })}\n\n`,
+          `retry: 1000\nevent: ready\ndata: ${JSON.stringify({ instanceId, generation: store.snapshot.generation, markdownGeneration: store.markdownGeneration })}\n\n`,
         );
         req.once('close', () => eventClients.delete(res));
         return;
@@ -257,6 +281,49 @@ export async function startViewServer(
           return;
         }
         sendJson(res, 200, await search(query), headOnly);
+        return;
+      }
+
+      if (url.pathname === '/api/section') {
+        const query = (url.searchParams.get('query') ?? '').trim();
+        if (!query) {
+          sendJson(
+            res,
+            400,
+            { error: 'Section ID is required' } satisfies ViewError,
+            headOnly,
+          );
+          return;
+        }
+        if (query.length > 1_000) {
+          sendJson(
+            res,
+            400,
+            { error: 'Section ID is too long' } satisfies ViewError,
+            headOnly,
+          );
+          return;
+        }
+        const result = await sectionCommand(
+          {
+            latDir: ctx.latDir,
+            projectRoot: ctx.projectRoot,
+            styler: plainStyler,
+            mode: 'cli',
+          },
+          query,
+        );
+        const tree = await store.renderSectionOutput(result.output, query);
+        sendJson(
+          res,
+          200,
+          {
+            output: result.output,
+            tree,
+            isError: result.isError === true,
+          } satisfies ViewSectionCommandOutput,
+          headOnly,
+        );
         return;
       }
 
@@ -326,7 +393,7 @@ export async function startViewServer(
         url.pathname.startsWith('/code/') ||
         url.pathname.startsWith('/external/')
       ) {
-        await sendClientFile(res, join(clientDir, 'index.html'), headOnly);
+        await sendClientShell(res, join(clientDir, 'index.html'), headOnly);
         return;
       }
 
@@ -364,6 +431,7 @@ export async function startViewServer(
       }
     }
   } catch (error) {
+    clearInterval(heartbeat);
     unsubscribeStore();
     await store.close();
     throw error;
@@ -374,6 +442,7 @@ export async function startViewServer(
     await new Promise<void>((resolveClose) =>
       server.close(() => resolveClose()),
     );
+    clearInterval(heartbeat);
     unsubscribeStore();
     await store.close();
     throw new Error('Could not determine lat ui server address');
@@ -384,6 +453,7 @@ export async function startViewServer(
     store,
     url: `http://${host}:${address.port}/`,
     close: async () => {
+      clearInterval(heartbeat);
       unsubscribeStore();
       for (const client of eventClients) client.end();
       eventClients.clear();

@@ -35,6 +35,7 @@
   --context-surface: #f7f7f7;
   --inline-code: #ededed;
   --reference-control: #e5e5e5;
+  --reference-control-hover: #ededed;
   --graph-document: #0070f3;
   --graph-code: #d97706;
   --map-control-filter: none;
@@ -72,6 +73,7 @@
     --context-surface: #111;
     --inline-code: #1f1f1f;
     --reference-control: #262626;
+    --reference-control-hover: #303030;
     --graph-document: rgb(82, 168, 255);
     --graph-code: #f5a623;
     --map-control-filter: invert(1);
@@ -131,6 +133,32 @@ a {
 
 .mobile-navigation-trigger {
   display: none;
+}
+
+.sidebar-index-error {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 7px;
+}
+
+.sidebar-index-error button {
+  justify-self: start;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+
+.sidebar-index-error button:hover {
+  color: var(--text);
 }
 
 .brand {
@@ -819,6 +847,8 @@ a {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background: var(--code);
   border: 1px solid var(--panel-border);
   border-radius: 10px;
@@ -994,9 +1024,12 @@ a {
 
 .section-back-reference-toggle {
   display: inline-flex;
-  padding: 3px 5px 3px 7px;
+  min-width: 24px;
+  min-height: 22px;
+  padding: 3px 5px;
   margin-left: 10px;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   color: var(--accent);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -1011,9 +1044,17 @@ a {
   border-radius: 5px;
 }
 
-.section-back-reference-toggle:hover,
-.section-back-reference-toggle[aria-expanded='true'] {
-  color: var(--text);
+.section-back-reference-toggle svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.section-back-reference-toggle:hover {
+  background: var(--reference-control-hover);
 }
 
 .section-back-reference-count {
@@ -1054,6 +1095,202 @@ a {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.section-back-reference-empty {
+  padding: 12px 13px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.section-back-reference-actions {
+  display: grid;
+  gap: 7px;
+  padding: 9px 13px;
+  border-top: 1px solid var(--panel-border);
+}
+
+.section-back-reference-action {
+  width: fit-content;
+  padding: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.section-back-reference-action:hover {
+  color: color-mix(in srgb, var(--muted) 82%, white);
+}
+
+.section-back-reference-action code {
+  color: inherit;
+  font: inherit;
+}
+
+.section-output-backdrop {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  padding: 28px;
+  background: rgb(0 0 0 / 42%);
+  inset: 0;
+  place-items: center;
+}
+
+.section-output-dialog {
+  display: flex;
+  width: min(900px, 100%);
+  max-height: min(82vh, 900px);
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--background);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--text) 22%, transparent);
+}
+
+.section-output-header {
+  display: flex;
+  gap: 24px;
+  padding: 17px 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.section-output-header h2 {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.section-output-heading {
+  min-width: 0;
+}
+
+.section-output-title-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.section-output-presentation {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.section-output-presentation button {
+  padding: 3px 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.2;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.section-output-presentation button + button {
+  border-left: 1px solid var(--panel-border);
+}
+
+.section-output-presentation button:hover {
+  color: var(--text);
+  background: var(--reference-control-hover);
+}
+
+.section-output-presentation button[aria-pressed='true'] {
+  color: var(--text);
+  background: var(--reference-control);
+}
+
+.section-output-id {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.section-output-close {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex: 0 0 auto;
+  color: var(--muted);
+  font: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+}
+
+.section-output-close:hover {
+  color: var(--text);
+  background: var(--reference-control-hover);
+}
+
+.section-output-raw {
+  min-height: 0;
+  margin: 0;
+  padding: 18px;
+  overflow: auto;
+  color: var(--text);
+  background: var(--background);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.section-output-raw[data-error='true'] {
+  color: var(--danger);
+}
+
+.section-output-formatted {
+  min-height: 0;
+  padding: 18px;
+  overflow: auto;
+}
+
+.section-output-formatted > .markdown {
+  max-width: 760px;
+}
+
+.section-output-formatted[data-error='true'] > .markdown {
+  color: var(--danger);
+}
+
+.section-output-state {
+  padding: 32px 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.section-output-state.error {
+  color: var(--danger);
+}
+
+@media (max-width: 40rem) {
+  .section-output-backdrop {
+    padding: 12px;
+  }
+
+  .section-output-dialog {
+    max-height: 90vh;
+  }
 }
 
 .section-back-reference-item {
@@ -1686,6 +1923,8 @@ a.wiki-link-active {
 
 .markdown .markdown-stl-viewport canvas {
   display: block;
+  width: 100%;
+  height: 100%;
   cursor: grab;
 }
 
@@ -1912,6 +2151,21 @@ a.wiki-link-active {
 
 .state.error strong {
   color: var(--text);
+}
+
+.state-retry {
+  padding: 5px 10px;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.state-retry:hover {
+  color: var(--text);
+  background: var(--hover);
 }
 
 .graph-shell {

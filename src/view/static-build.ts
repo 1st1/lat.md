@@ -24,6 +24,7 @@ import type {
   ViewSourceReference,
 } from './protocol.js';
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
+import { documentTreeUrls, rewriteDocumentTreeUrls } from './document-tree.js';
 import {
   viewStaticSourceKey,
   type ViewStaticExternalSourceView,
@@ -31,6 +32,7 @@ import {
   type ViewStaticSourceRequest,
 } from './static-protocol.js';
 import { createViewStore } from './store.js';
+import { rewriteClientAssetUrls } from './client-shell.js';
 
 const BUILD_MARKER = '.lat-ui-build';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
@@ -175,22 +177,15 @@ function rewriteHtmlLink(
   );
 }
 
-function rewriteHtmlLinks(
-  html: string,
+function rewriteDocumentLinks(
+  tree: ViewDocument['tree'],
   basePath: string,
   sourcePath: string | null,
   documentPaths: ReadonlySet<string>,
-): string {
-  return html.replace(/href="([^"]*)"/g, (attribute, value: string) => {
-    const rewritten = rewriteHtmlLink(
-      value,
-      basePath,
-      sourcePath,
-      documentPaths,
-    );
-    if (rewritten === value) return attribute;
-    return `href="${rewritten.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}"`;
-  });
+): ViewDocument['tree'] {
+  return rewriteDocumentTreeUrls(tree, (value) =>
+    rewriteHtmlLink(value, basePath, sourcePath, documentPaths),
+  );
 }
 
 function rewriteMarkdownReference(
@@ -201,8 +196,8 @@ function rewriteMarkdownReference(
 ): ViewMarkdownBackReference {
   return {
     ...reference,
-    paragraphHtml: rewriteHtmlLinks(
-      reference.paragraphHtml,
+    paragraphTree: rewriteDocumentLinks(
+      reference.paragraphTree,
       basePath,
       sourcePath,
       documentPaths,
@@ -235,13 +230,13 @@ function rewriteDocument(
 ): ViewDocument {
   return {
     ...document,
-    html: rewriteHtmlLinks(
-      document.html,
+    tree: rewriteDocumentLinks(
+      document.tree,
       basePath,
       document.path,
       documentPaths,
     ),
-    gitHtml: null,
+    gitTree: null,
     backReferences: document.backReferences.map((section) => ({
       ...section,
       references: section.references.map((reference) =>
@@ -260,8 +255,8 @@ function rewriteSourceReference(
   const sectionPath = reference.sectionId.split('#', 1)[0];
   return {
     ...reference,
-    paragraphHtml: rewriteHtmlLinks(
-      reference.paragraphHtml,
+    paragraphTree: rewriteDocumentLinks(
+      reference.paragraphTree,
       basePath,
       sectionPaths.get(sectionPath) ?? null,
       documentPaths,
@@ -396,16 +391,13 @@ function externalRequestsFromDocument(
     const request = externalRequest(candidate, external);
     if (request) requests.add(request);
   };
-  for (const match of document.html.matchAll(/href="([^"]*)"/g)) add(match[1]);
+  for (const value of documentTreeUrls(document.tree)) add(value);
   for (const section of document.backReferences) {
     for (const reference of section.references) {
       add(reference.url);
       if (reference.kind === 'markdown') {
-        for (const match of reference.paragraphHtml.matchAll(
-          /href="([^"]*)"/g,
-        )) {
-          add(match[1]);
-        }
+        for (const value of documentTreeUrls(reference.paragraphTree))
+          add(value);
       }
     }
   }
@@ -420,8 +412,8 @@ function externalRequestsFromSource(
     ...(source.context ? [source.context] : []),
     ...source.otherReferences,
   ]) {
-    for (const match of reference.paragraphHtml.matchAll(/href="([^"]*)"/g)) {
-      const request = externalRequest(match[1], external);
+    for (const value of documentTreeUrls(reference.paragraphTree)) {
+      const request = externalRequest(value, external);
       if (request) requests.add(request);
     }
   }
@@ -435,16 +427,13 @@ function sourceRequestsFromDocument(
     const request = sourceRequest(value);
     if (request) requests.set(viewStaticSourceKey(request), request);
   };
-  for (const match of document.html.matchAll(/href="([^"]*)"/g)) add(match[1]);
+  for (const value of documentTreeUrls(document.tree)) add(value);
   for (const section of document.backReferences) {
     for (const reference of section.references) {
       add(reference.url);
       if (reference.kind === 'markdown') {
-        for (const match of reference.paragraphHtml.matchAll(
-          /href="([^"]*)"/g,
-        )) {
-          add(match[1]);
-        }
+        for (const value of documentTreeUrls(reference.paragraphTree))
+          add(value);
       }
     }
   }
@@ -459,8 +448,8 @@ function sourceRequestsFromSource(
     ...source.otherReferences,
   ];
   for (const reference of references) {
-    for (const match of reference.paragraphHtml.matchAll(/href="([^"]*)"/g)) {
-      const request = sourceRequest(match[1]);
+    for (const value of documentTreeUrls(reference.paragraphTree)) {
+      const request = sourceRequest(value);
       if (request) requests.set(viewStaticSourceKey(request), request);
     }
   }
@@ -519,10 +508,7 @@ function sectionDocumentPaths(
 }
 
 function clientShell(html: string, basePath: string): string {
-  const assets = html.replace(
-    /(["'])\/assets\//g,
-    (_match, quote: string) => `${quote}${basePath}assets/`,
-  );
+  const assets = rewriteClientAssetUrls(html, basePath);
   const configValue = JSON.stringify({ basePath }).replaceAll('<', '\\u003c');
   const config = `<script>globalThis.__LAT_STATIC_VIEW__=${configValue}</script>`;
   return assets.includes('</head>')
@@ -718,7 +704,7 @@ export async function buildStaticView(
         sectionPaths,
         documentPaths,
       );
-      const { path, content, highlightedHtmlLines, ...view } = rewritten;
+      const { path, content, highlightedLines, ...view } = rewritten;
       let fileDataPath = sourceFiles.get(path);
       if (!fileDataPath) {
         fileDataPath = dataFile('source-files', path);
@@ -726,7 +712,7 @@ export async function buildStaticView(
         await writeJson(join(payloadDir, fileDataPath), {
           path,
           content,
-          highlightedHtmlLines,
+          highlightedLines,
         });
       }
       const viewDataPath = dataFile('source-views', key);
@@ -766,7 +752,7 @@ export async function buildStaticView(
         sectionPaths,
         documentPaths,
       );
-      const { path, content, highlightedHtmlLines, ...sourceView } = rewritten;
+      const { path, content, highlightedLines, ...sourceView } = rewritten;
       let fileDataPath = externalSourceFiles.get(path);
       if (!fileDataPath) {
         fileDataPath = dataFile('external-source-files', path);
@@ -774,7 +760,7 @@ export async function buildStaticView(
         await writeJson(join(payloadDir, fileDataPath), {
           path,
           content,
-          highlightedHtmlLines,
+          highlightedLines,
         });
       }
       const viewDataPath = dataFile('external-source-views', target);
