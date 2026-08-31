@@ -103,8 +103,9 @@ describe.sequential('external source commands', () => {
     expect(refs.output).toContain('lat.md/lat#Project');
     expect(refs.output).toContain('app.ts:1');
 
-    const checked = await checkAllCommand(ctx);
+    const checked = await checkAllCommand(ctx, { profile: true });
     expect(checked.isError, checked.output).not.toBe(true);
+    expect(checked.output).toContain('parsed external document cache hit');
 
     await ensureLatLocalConfigIgnored(project.latDir);
     expect(readFileSync(join(project.latDir, '.gitignore'), 'utf8')).toBe(

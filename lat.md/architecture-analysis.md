@@ -1,6 +1,6 @@
 # Parsed Analysis
 
-Lat turns Markdown and referenced source files into serializable semantic facts so commands can share parser results without retaining syntax trees.
+Lat turns local Markdown, external documents, and referenced source files into serializable semantic facts so commands can share parser results without retaining syntax trees.
 
 ## File analysis
 
@@ -12,6 +12,14 @@ The syntax tree is private working state. It is created, visited, and discarded 
 
 HTML and Git-diff rendering may parse Markdown through dedicated presentation APIs, but presentation syntax trees do not provide semantic project facts.
 
+## External document analysis
+
+An external document analysis is the format-neutral section index extracted from one pinned Markdown, reStructuredText, or AsciiDoc file.
+
+It records the document title plus ordered section titles, hierarchy, anchors, aliases, and source ranges. Native parser trees are discarded, and the result remains separate from the local project graph and semantic search index.
+
+Each resolver loads provider content and analyzes a complete external file once per request. Every fragment in that file selects its range from the shared analysis instead of retrieving or parsing the document again.
+
 ## Source analysis
 
 A source analysis is the serializable symbol table extracted from one supported JavaScript, TypeScript, Python, Rust, Go, or C file.
@@ -22,21 +30,21 @@ Source analysis stays lazy: only a file named by a source-code wiki link is read
 
 ## Persistent cache
 
-Successful Markdown and source analyses persist below `lat.md/.cache/parsed/` so later commands can reuse unchanged semantic facts without loading their parsers.
+Successful local Markdown, external document, and source analyses persist below `lat.md/.cache/parsed/` so later commands can reuse unchanged semantic facts without loading their parsers.
 
-Each local cache identity is the normalized project-relative full path. External source code uses `@external/<handle>/<path>` so different providers cannot collide. The first two lowercased characters of the short name supply a predictable shard directory, while a full-identity SHA-1 digest prevents collisions and a bounded readable suffix makes entries inspectable. Non-ASCII or punctuation shard characters become `_`.
+Each local cache identity is the normalized project-relative full path. External documents and source code use `@external/<handle>/<path>` so different providers cannot collide. The first two lowercased characters of the short name supply a predictable shard directory, while a full-identity SHA-1 digest prevents collisions and a bounded readable suffix makes entries inspectable. Non-ASCII or punctuation shard characters become `_`.
 
 ```text
 lat.md/.cache/parsed/se/abcdef0123456789abcdef0123456789abcdef01_lat_md_guide_setup_md
 ```
 
-The first line is `v<N>:<sha1>`, where `N` is [[src/parser-cache.ts#PARSER_CACHE_VERSION]] and the hash covers the complete input content. The remaining bytes are the compact JSON serialization of either the Markdown analysis or source symbol table.
+The first line is `v<N>:<sha1>`, where `N` is [[src/parser-cache.ts#PARSER_CACHE_VERSION]] and the hash covers the complete input content. The remaining bytes are the compact JSON serialization of a local Markdown analysis, external document index, or source symbol table.
 
 A hit requires both the current parser-cache version and content hash, plus matching path identity and a structurally valid payload for that parser. Changed content, parser semantics, truncated writes, malformed JSON, or unexpected shapes become ordinary misses.
 
-Markdown cache lookup happens before executor selection, so only misses reach inline analysis or the worker pool. Source lookup happens after a referenced file is read and before tree-sitter initialization, so a hit never loads the runtime or grammar WASM. Newly parsed entries use atomic replacement; cache read or write failures never prevent analysis because the directory is disposable and may be read-only.
+Local Markdown cache lookup happens before executor selection, so only misses reach inline analysis or the worker pool. External document lookup happens after pinned content retrieval and before the format parser. Source lookup happens after a referenced file is read and before tree-sitter initialization, so a hit never loads the runtime or grammar WASM. Newly parsed entries use atomic replacement; cache read or write failures never prevent analysis because the directory is disposable and may be read-only.
 
-Cached Markdown analyses retain source content; source entries retain only their symbol table. Neither reuses old performance measurements: a hit records current read, hash, and cache-load timings with zero parse work. Orphaned entries from deleted or renamed files are harmless and may remain until `.cache` is removed.
+Cached local Markdown analyses retain source content; external document and source entries retain only their semantic facts. None reuse old performance measurements: a hit records current read, hash, and cache-load timings with zero parse work. Orphaned entries from deleted or renamed files are harmless and may remain until `.cache` is removed.
 
 ## Project snapshot
 

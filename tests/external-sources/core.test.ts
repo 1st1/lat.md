@@ -192,19 +192,27 @@ describe.sequential('external source core', () => {
       defaultFileExtension: 'md',
     });
     projects.push(fetched.root);
+    const documentCacheStatuses: string[] = [];
     const fetchResolver = await createExternalResolver(
       fetched.latDir,
       fetched.root,
-      { ca: fixture.ca },
+      {
+        ca: fixture.ca,
+        onDocumentAnalyzed: (analysis) =>
+          documentCacheStatuses.push(analysis.timings.cacheStatus),
+      },
     );
-    const [first, second] = await Promise.all([
+    const [first, second, rootSection] = await Promise.all([
       fetchResolver.resolve('upstream:guide#Navigation'),
       fetchResolver.resolve('upstream:guide.md#Navigation'),
+      fetchResolver.resolve('upstream:guide.md#Guide'),
     ]);
     expect(first.content).toContain('First version navigation.');
     expect(second.provider).toBe('fetch');
+    expect(rootSection.content).toContain('Pinned guide.');
     expect(first.target.identity).toBe('upstream:guide#Navigation');
     expect(second.target.identity).toBe(first.target.identity);
+    expect(documentCacheStatuses).toEqual(['miss']);
     expect(fixture.rawRequests.get(`${fixture.commit1}:docs/guide.md`)).toBe(1);
     expect(readExternalCacheMetadata(fetched.latDir, 'upstream')).toEqual({
       ver: EXTERNAL_SOURCES_SCHEMA_VER,
@@ -212,6 +220,23 @@ describe.sequential('external source core', () => {
       commit: fixture.commit1,
       strategy: 'fetch',
     });
+
+    const warmDocumentCacheStatuses: string[] = [];
+    const warmFetchResolver = await createExternalResolver(
+      fetched.latDir,
+      fetched.root,
+      {
+        ca: fixture.ca,
+        onDocumentAnalyzed: (analysis) =>
+          warmDocumentCacheStatuses.push(analysis.timings.cacheStatus),
+      },
+    );
+    await Promise.all([
+      warmFetchResolver.resolve('upstream:guide.md#Guide'),
+      warmFetchResolver.resolve('upstream:guide.md#Navigation'),
+    ]);
+    expect(warmDocumentCacheStatuses).toEqual(['hit']);
+    expect(fixture.rawRequests.get(`${fixture.commit1}:docs/guide.md`)).toBe(1);
 
     const [rst, asciidoc] = await Promise.all([
       fetchResolver.resolve('upstream:guide.rst#navigation'),

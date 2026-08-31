@@ -362,6 +362,8 @@ External-aware commands share one synchronization path that reconciles valid con
 
 `lat check` scans Markdown links and `@lat:` mentions, groups external targets by complete repository-relative file path, invalidates changed or removed sources, and materializes every referenced file through its selected provider. Multiple fragments in one file cause one retrieval.
 
+Each resolver also shares one in-flight content load and format-neutral document analysis per external file. Successful document analyses persist in the versioned parsed cache under `@external/<handle>/<path>` identities, so warm commands hash pinned bytes but do not reconstruct parser trees.
+
 After a commit change, this repopulates the fresh source cache from the project's current reference set. Adding a link to a previously unseen file fetches that file on the next check. Retrieval failures and missing files or named fragments are validation errors.
 
 Other content-resolving commands run the same configuration and generation reconciliation before doing external work, then retrieve cache misses needed for their output. `lat refs` reconciles state but scans only local backlinks; `lat external show` and `list` never touch cache state.

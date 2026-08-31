@@ -26,6 +26,7 @@ import {
 import type { MarkdownFileAnalysis } from '../markdown-analysis.js';
 import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import type { LocalMarkdownDiagnostic } from '../markdown-validation.js';
+import type { ExternalDocumentFileAnalysis } from '../external-documents.js';
 
 export type CheckSectionIndex = {
   sectionIds: Set<string>;
@@ -146,6 +147,35 @@ export class CheckRunContext {
     if (timings.cacheStatus === 'miss') {
       this.profile.record(
         'write parsed source cache',
+        timings.cacheWriteMs,
+        detail,
+      );
+    }
+  }
+
+  private recordExternalDocumentAnalysis(
+    analysis: ExternalDocumentFileAnalysis,
+  ): void {
+    if (!this.profile) return;
+    const detail = analysis.path;
+    const timings = analysis.timings;
+    this.profile.record('hash external document', timings.hashMs, detail);
+    if (timings.cacheStatus !== 'disabled') {
+      this.profile.record(
+        'read parsed external document cache',
+        timings.cacheReadMs,
+        detail,
+      );
+      this.profile.record(
+        `parsed external document cache ${timings.cacheStatus}`,
+        0,
+      );
+    }
+    if (timings.cacheStatus === 'hit') return;
+    this.profile.record('parse external document', timings.parseMs, detail);
+    if (timings.cacheStatus === 'miss') {
+      this.profile.record(
+        'write parsed external document cache',
         timings.cacheWriteMs,
         detail,
       );
@@ -273,7 +303,11 @@ export class CheckRunContext {
   private loadExternalResolver(): Promise<ExternalResolver> {
     this.externalResolverPromise ??= this.time(
       'load external-source configuration',
-      () => createExternalResolver(this.latticeDir, this.projectRoot),
+      () =>
+        createExternalResolver(this.latticeDir, this.projectRoot, {
+          onDocumentAnalyzed: (analysis) =>
+            this.recordExternalDocumentAnalysis(analysis),
+        }),
     );
     return this.externalResolverPromise;
   }

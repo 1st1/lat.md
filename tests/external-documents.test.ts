@@ -1,14 +1,28 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
+  ExternalDocumentParserRuntime,
   addExternalDocumentAliasAnchors,
   analyzeExternalDocument,
+  analyzeExternalDocumentCached,
+  externalDocumentAnalysisCachePath,
   findExternalDocumentSection,
   renderExternalDocument,
 } from '../src/external-documents.js';
 import { externalHtmlToDocumentTree } from '../src/view/markdown.js';
 import { documentTreeToHtml } from './document-tree.js';
+import { PARSER_CACHE_VERSION } from '../src/parser-cache.js';
+import { rmDirBestEffort } from './util.js';
 
 describe('external document formats', () => {
+  const projects: string[] = [];
+
+  afterEach(() => {
+    for (const project of projects.splice(0)) rmDirBestEffort(project);
+  });
+
   // @lat: [[tests/external-tests#External Sources#Document formats]]
   it('preserves section identities and safely renders document formats', async () => {
     const markdown = [
@@ -181,5 +195,94 @@ describe('external document formats', () => {
     );
     expect(unsafe).toContain('<h1 id="safe">Safe</h1>');
     expect(unsafe).not.toContain('<script');
+  });
+
+  // @lat: [[tests/external-tests#External Sources#Persistent document analysis cache]]
+  it('persists validated analysis for every external document format', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'lat-external-doc-cache-'));
+    projects.push(root);
+    const latDir = join(root, 'lat.md');
+    mkdirSync(latDir);
+    const documents = [
+      {
+        path: 'guide.md',
+        content: '# Guide\n\nPinned guide.\n\n## Navigation\n\nNavigate.\n',
+        format: 'markdown',
+      },
+      {
+        path: 'guide.rst',
+        content: 'Guide\n=====\n\nPinned guide.\n',
+        format: 'restructuredtext',
+      },
+      {
+        path: 'guide.adoc',
+        content: '= Guide\n\nPinned guide.\n',
+        format: 'asciidoc',
+      },
+    ] as const;
+
+    for (const document of documents) {
+      const identity = `@external/upstream/${document.path}`;
+      const cold = await analyzeExternalDocumentCached(
+        document.path,
+        document.content,
+        latDir,
+        { identity, runtime: new ExternalDocumentParserRuntime() },
+      );
+      expect(cold.document.format).toBe(document.format);
+      expect(cold.timings.cacheStatus).toBe('miss');
+
+      const cachePath = externalDocumentAnalysisCachePath(latDir, identity);
+      expect(readFileSync(cachePath, 'utf8')).toMatch(
+        new RegExp(`^v${PARSER_CACHE_VERSION}:[a-f0-9]{40}\\n`),
+      );
+
+      const warm = await analyzeExternalDocumentCached(
+        document.path,
+        document.content,
+        latDir,
+        { identity, runtime: new ExternalDocumentParserRuntime() },
+      );
+      expect(warm.document).toEqual(cold.document);
+      expect(warm.timings).toMatchObject({ cacheStatus: 'hit', parseMs: 0 });
+    }
+
+    const markdown = documents[0];
+    const identity = `@external/upstream/${markdown.path}`;
+    const cachePath = externalDocumentAnalysisCachePath(latDir, identity);
+    writeFileSync(
+      cachePath,
+      readFileSync(cachePath, 'utf8').replace(
+        /^v\d+:/,
+        `v${PARSER_CACHE_VERSION + 1}:`,
+      ),
+    );
+    const invalidVersion = await analyzeExternalDocumentCached(
+      markdown.path,
+      markdown.content,
+      latDir,
+      { identity, runtime: new ExternalDocumentParserRuntime() },
+    );
+    expect(invalidVersion.timings.cacheStatus).toBe('miss');
+
+    const changed = await analyzeExternalDocumentCached(
+      markdown.path,
+      `${markdown.content}\n## Changed\n\nChanged content.\n`,
+      latDir,
+      { identity, runtime: new ExternalDocumentParserRuntime() },
+    );
+    expect(changed.timings.cacheStatus).toBe('miss');
+    expect(changed.document.sections.at(-1)?.title).toBe('Changed');
+
+    const header = readFileSync(cachePath, 'utf8').split('\n', 1)[0];
+    writeFileSync(cachePath, `${header}\n{"path":"wrong"}\n`);
+    const recovered = await analyzeExternalDocumentCached(
+      markdown.path,
+      `${markdown.content}\n## Changed\n\nChanged content.\n`,
+      latDir,
+      { identity, runtime: new ExternalDocumentParserRuntime() },
+    );
+    expect(recovered.timings.cacheStatus).toBe('miss');
+    expect(recovered.document.sections.at(-1)?.title).toBe('Changed');
   });
 });
