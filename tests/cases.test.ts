@@ -21,7 +21,7 @@ import {
   checkIndex,
   checkSections,
 } from '../src/cli/check.js';
-import { scanCodeRefs } from '../src/code-refs.js';
+import { discoverSourceFiles, scanCodeRefs } from '../src/code-refs.js';
 import { findRefs } from '../src/cli/refs.js';
 import { getSection, formatSectionOutput } from '../src/cli/section.js';
 
@@ -351,9 +351,8 @@ describe('basic-project', () => {
 
   // @lat: [[check-md#Passes with valid links]]
   it('check md passes with valid links', async () => {
-    const { errors, files } = await checkMd(lat);
+    const { errors } = await checkMd(lat);
     expect(errors).toHaveLength(0);
-    expect(files).toEqual({ '.md': 2 });
   });
 });
 
@@ -616,6 +615,18 @@ describe('headless-check', () => {
     expect(profiled.stdout).toContain('All checks passed');
   });
 
+  // @lat: [[tests/check-headless#Reports concise completion timing]]
+  it('reports total time without misleading file-extension counts', () => {
+    const result = runCli('headless-check', ['check', '--', 'links']);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toMatch(
+      /^All checks passed in (?:\d+ms|\d+\.\ds)\n$/,
+    );
+    expect(result.stdout).not.toContain('Scanned');
+  });
+
   // @lat: [[tests/check-headless#Reuses check data across validators]]
   it('parses each Markdown file once across the full check', () => {
     clearParsedCache('headless-check', 'links');
@@ -743,13 +754,10 @@ describe('error-headless-check', () => {
 describe('error-dangling-code-ref', () => {
   // @lat: [[check-code-refs#Detects dangling code ref]]
   it('check code-refs detects @lat pointing to nonexistent section', async () => {
-    const { errors, files } = await checkCodeRefs(
-      latDir('error-dangling-code-ref'),
-    );
+    const { errors } = await checkCodeRefs(latDir('error-dangling-code-ref'));
     const dangling = errors.filter((e) => e.target === 'Alpha#Nonexistent');
     expect(dangling).toHaveLength(1);
     expect(dangling[0].message).toContain('no matching section found');
-    expect(files).toEqual({ '.ts': 1 });
   });
 });
 
@@ -773,11 +781,10 @@ describe('python-code-ref', () => {
   });
 
   it('detects dangling @lat ref in Python file', async () => {
-    const { errors, files } = await checkCodeRefs(latDir('python-code-ref'));
+    const { errors } = await checkCodeRefs(latDir('python-code-ref'));
     expect(errors).toHaveLength(1);
     expect(errors[0].target).toBe('Specs#Nonexistent');
     expect(errors[0].message).toContain('no matching section found');
-    expect(files).toEqual({ '.py': 1 });
   });
 });
 
@@ -807,14 +814,13 @@ describe('dart-code-ref', () => {
   });
 
   it('reports a dangling reference from a Dart file', async () => {
-    const { errors, files } = await checkCodeRefs(latDir('dart-code-ref'));
+    const { errors } = await checkCodeRefs(latDir('dart-code-ref'));
     expect(errors).toHaveLength(1);
     expect(errors[0]).toMatchObject({
       target: 'Specs#Nonexistent',
       line: 8,
     });
     expect(errors[0].message).toContain('no matching section found');
-    expect(files).toEqual({ '.dart': 1 });
   });
 });
 
@@ -822,7 +828,11 @@ describe('dart-code-ref', () => {
 
 describe('gitignore-filtering', () => {
   it('skips .gitignore-d dirs and .git/', async () => {
-    const { refs, files } = await scanCodeRefs(caseDir('gitignore-filtering'));
+    const root = caseDir('gitignore-filtering');
+    const [{ refs }, files] = await Promise.all([
+      scanCodeRefs(root),
+      discoverSourceFiles(root),
+    ]);
     // build/ and vendor/ are gitignored; .git/ is always excluded
     expect(refs).toHaveLength(1);
     expect(refs[0].file).toContain('src/app.ts');
@@ -1997,7 +2007,11 @@ describe('scanCodeRefs TS fallback (_LAT_DISABLE_RG)', () => {
 
   // @lat: [[tests/ts-fallback#gitignore filtering works without rg]]
   it('gitignore filtering works without rg', async () => {
-    const { refs, files } = await scanCodeRefs(caseDir('gitignore-filtering'));
+    const root = caseDir('gitignore-filtering');
+    const [{ refs }, files] = await Promise.all([
+      scanCodeRefs(root),
+      discoverSourceFiles(root),
+    ]);
     expect(refs).toHaveLength(1);
     expect(refs[0].file).toContain('src/app.ts');
     expect(files).toHaveLength(1);

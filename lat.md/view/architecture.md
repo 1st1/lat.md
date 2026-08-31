@@ -64,7 +64,7 @@ The generated marker makes later project-wide scans ignore the artifact instead 
 
 A server-lifetime [[src/view/store.ts#createViewStore|ViewStore]] keeps document navigation and reverse references current without rescanning the project for every request.
 
-At startup the store reads each Markdown file once through the shared [[architecture-analysis#File analysis|file analyzer]], scans code references once, then resolves the cached AST-free facts into an immutable reverse-reference snapshot.
+At startup the store reads each Markdown file once through the shared [[architecture-analysis#File analysis|file analyzer]], scans code references once, and obtains the explicit supported-source inventory from [[src/code-refs.ts#createCodeReferenceDiscovery]] for its watch scope. It then resolves the cached AST-free facts into an immutable reverse-reference snapshot.
 
 The store watches the project with a short debounce and serializes updates. Existing Markdown and code files are reread individually; file additions trigger a lightweight scope refresh, and deletions remove their cached contributions.
 
