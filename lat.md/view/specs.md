@@ -157,6 +157,8 @@ Changing, adding, or deleting project files updates cached documents, navigation
 
 Browser clients receive a change event and refresh the current route while keeping its URL and viewport stable.
 
+Internal parser, search, and external-source cache writes do not publish project generations or restart in-flight document requests.
+
 ### Accepts restarted server generations
 
 Each event stream identifies its server lifetime, so reconnecting after a restart accepts reset generations and invalidates document and graph data from the prior process.
