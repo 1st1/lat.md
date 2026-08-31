@@ -6,6 +6,7 @@ export const SOURCE_FILE_EXTENSIONS = [
   '.dart',
   '.go',
   '.h',
+  '.java',
   '.js',
   '.jsx',
   '.py',

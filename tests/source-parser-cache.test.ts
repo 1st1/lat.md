@@ -21,6 +21,7 @@ const SOURCE_CACHE_FIXTURES = {
   '.dart': { content: 'int cached() => 1;\n', symbol: 'cached' },
   '.go': { content: 'package cache\nfunc Cached() {}\n', symbol: 'Cached' },
   '.h': { content: 'int cached(void);\n', symbol: 'cached' },
+  '.java': { content: 'class Cached {}\n', symbol: 'Cached' },
   '.js': { content: 'export function cached() {}\n', symbol: 'cached' },
   '.jsx': {
     content: 'export function cached() { return <div /> }\n',

@@ -109,6 +109,10 @@ export async function createExternalGitFixture(): Promise<ExternalGitFixture> {
     join(checkout, 'docs', 'widget.dart'),
     "String widget() {\n  return 'first';\n}\n",
   );
+  writeFileSync(
+    join(checkout, 'docs', 'Widget.java'),
+    'class Widget {\n  String widget() {\n    return "first";\n  }\n}\n',
+  );
   await git(['add', '.'], checkout);
   await git(['commit', '-m', 'first'], checkout);
   const commit1 = await git(['rev-parse', 'HEAD'], checkout);
@@ -131,6 +135,10 @@ export async function createExternalGitFixture(): Promise<ExternalGitFixture> {
   writeFileSync(
     join(checkout, 'docs', 'widget.dart'),
     "String widget() {\n  return 'second';\n}\n",
+  );
+  writeFileSync(
+    join(checkout, 'docs', 'Widget.java'),
+    'class Widget {\n  String widget() {\n    return "second";\n  }\n}\n',
   );
   await git(['add', '.'], checkout);
   await git(['commit', '-m', 'second'], checkout);

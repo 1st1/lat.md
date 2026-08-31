@@ -1320,6 +1320,19 @@ describe('lat ui', () => {
     );
     expect(dartLink.html).toContain('>DART</span>');
 
+    const javaLink = await renderMarkdown(
+      '[[src/Greeter.java#Greeter#greet]]',
+      'lat.md',
+      async () => ({
+        href: '/code/src/Greeter.java?symbol=Greeter%23greet',
+        referenceCount: 0,
+      }),
+    );
+    expect(javaLink.html).toContain(
+      'class="code-link-language code-language-java"',
+    );
+    expect(javaLink.html).toContain('>JAVA</span>');
+
     for (const referenceCount of [0, 1]) {
       const sparseReferences = await renderMarkdown(
         '[[orphan]]',

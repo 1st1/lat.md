@@ -133,6 +133,8 @@ function CodeReference({ reference }: { reference: ViewCodeBackReference }) {
     ['.go', ['code-language-go', 'GO']],
     ['.c', ['code-language-c', 'C']],
     ['.h', ['code-language-c', 'C']],
+    ['.dart', ['code-language-dart', 'DART']],
+    ['.java', ['code-language-java', 'JAVA']],
   ]).get(extension.toLowerCase()) ?? ['', '</>'];
   return (
     <div className="section-back-reference-item section-back-reference-code">

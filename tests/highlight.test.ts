@@ -58,6 +58,13 @@ describe('source highlighting', () => {
     expect(treeClasses(dart[0])).toContain('hljs-class');
     expect(treeText(dart[0])).toContain('Greeter');
 
+    const java = highlightSource(
+      'src/Greeter.java',
+      'class Greeter { String greet() { return "hello"; } }',
+    );
+    expect(treeClasses(java[0])).toContain('hljs-title');
+    expect(treeText(java[0])).toContain('Greeter');
+
     expect(highlightSource('notes.txt', '<safe>\n& literal')).toEqual([
       {
         version: 1,
