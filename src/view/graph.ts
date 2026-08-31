@@ -5,7 +5,7 @@ import {
   flattenSections,
   resolveRef,
   type Section,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import type {
   ViewDocumentError,
   ViewGraph,

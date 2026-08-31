@@ -1,7 +1,7 @@
 import { statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { styleText } from 'node:util';
-import { findLatticeDir } from '../lattice.js';
+import { findLatticeDir } from '../project-discovery.js';
 import type { CmdContext, Styler } from '../context.js';
 
 export type { CmdContext };

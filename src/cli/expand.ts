@@ -1,5 +1,9 @@
 import { join, relative } from 'node:path';
-import { findSections, type Section, type SectionMatch } from '../lattice.js';
+import {
+  findSections,
+  type Section,
+  type SectionMatch,
+} from '../lattice-model.js';
 import type { CmdContext, CmdResult } from '../context.js';
 import type { ResolvedExternalContent } from '../external-sources.js';
 import {

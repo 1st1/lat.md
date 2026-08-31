@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
 import { performance } from 'node:perf_hooks';
-import type { Section } from './lattice.js';
+import type { Section } from './lattice-model.js';
 import {
   PARSER_CACHE_VERSION,
   hashParserContent,

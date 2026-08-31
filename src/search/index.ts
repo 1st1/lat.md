@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import type { Client } from '@libsql/client';
-import type { Section } from '../lattice.js';
+import type { Section } from '../lattice-model.js';
 import {
   analyzeMarkdownProject,
   type MarkdownProjectAnalysis,

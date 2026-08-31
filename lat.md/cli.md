@@ -18,7 +18,7 @@ Outputs a [[cli#Section Preview]] for each match.
 
 Usage: `lat locate <query>`
 
-Implementation: [[src/cli/locate.ts]], matching logic in [[src/lattice.ts#findSections]]
+Implementation: [[src/cli/locate.ts]], matching logic in [[src/lattice-model.ts#findSections]]
 
 ## section
 
@@ -85,7 +85,7 @@ directory is not required to have lat setup metadata.
 
 Emits a stale-init warning before any errors so the user sees setup issues first. The init version check compares `INIT_VERSION` in [[src/init-version.ts]] against the version in `lat.md/.cache/lat_init.json` written by [[cli#init]]. If the total check took longer than one second and ripgrep is not installed, shows a tip suggesting the user install it for faster scanning. The first output line ("Scanned ...") includes the total elapsed time (e.g. "in 250ms" or "in 1.2s").
 
-`--profile` adds a nested timing report for every validator and its major operations. Markdown and source timing distinguish file reads, hashing, persistent parser-cache hits or misses, cache publication, and actual parser work; a fully warm run reports neither Markdown AST nor tree-sitter symbol parsing. Repeated work is aggregated with call counts, average and maximum duration, and the slowest file or target so large-repository bottlenecks remain visible without one output line per file. Concurrent timings remain attributed to their initiating validator and may overlap within the total wall time.
+`--profile` adds a nested timing report for every validator and its major operations. Markdown and external-document timing explicitly report parser-module import durations on misses and zero-duration skipped-import events on hits; worker runs report one Markdown analyzer import per worker. Markdown and source timing also distinguish file reads, hashing, persistent parser-cache hits or misses, cache publication, and actual parser work. Repeated work is aggregated with call counts, average and maximum duration, and the slowest file or target so large-repository bottlenecks remain visible without one output line per file. Concurrent timings remain attributed to their initiating validator and may overlap within the total wall time.
 
 The full check runs its validators concurrently through one lazy command-scoped context backed by [[architecture-analysis#Project snapshot]]. Markdown files are read and parsed once; their AST-free facts and indexes are shared while syntax trees are discarded. Promise-backed code scanning, external resolution, and source-symbol checks coalesce in-flight work. Runtime state ends with the atomic command, while versioned AST-free parser entries remain as disposable input-hash caches.
 

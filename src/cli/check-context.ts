@@ -5,7 +5,7 @@ import {
   type Ref,
   type Section,
   type SectionSlugIndex,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import { scanCodeRefs, type ScanResult } from '../code-refs.js';
 import {
   SourceParserRuntime,
@@ -27,6 +27,7 @@ import type { MarkdownFileAnalysis } from '../markdown-analysis.js';
 import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import type { LocalMarkdownDiagnostic } from '../markdown-validation.js';
 import type { ExternalDocumentFileAnalysis } from '../external-documents.js';
+import type { ParserImportEvent } from '../parser-import.js';
 
 export type CheckSectionIndex = {
   sectionIds: Set<string>;
@@ -128,6 +129,15 @@ export class CheckRunContext {
     }
   }
 
+  private recordParserImport(event: ParserImportEvent): void {
+    if (!this.profile) return;
+    this.profile.record(
+      event.imported ? `import ${event.parser}` : `skip ${event.parser} import`,
+      event.durationMs,
+      event.detail,
+    );
+  }
+
   private recordSourceAnalysis(analysis: SourceFileAnalysis): void {
     if (!this.profile) return;
     const detail = analysis.path;
@@ -203,6 +213,7 @@ export class CheckRunContext {
       analyzeMarkdownProject(this.latticeDir, this.projectRoot, {
         executor: this.executor,
         onFileAnalyzed: (analysis) => this.recordAnalysis(analysis),
+        onParserImport: (event) => this.recordParserImport(event),
       }),
     );
     return this.projectPromise;
@@ -227,6 +238,8 @@ export class CheckRunContext {
           file,
           this.latticeDir,
           this.projectRoot,
+          true,
+          (event) => this.recordParserImport(event),
         );
         this.recordAnalysis(result);
         return result;
@@ -307,6 +320,7 @@ export class CheckRunContext {
         createExternalResolver(this.latticeDir, this.projectRoot, {
           onDocumentAnalyzed: (analysis) =>
             this.recordExternalDocumentAnalysis(analysis),
+          onParserImport: (event) => this.recordParserImport(event),
         }),
     );
     return this.externalResolverPromise;

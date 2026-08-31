@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, extname, join, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { flattenSections, resolveRef } from '../lattice.js';
+import { flattenSections, resolveRef } from '../lattice-model.js';
 import type { ResolveSourceSymbolOptions } from '../source-parser.js';
 import {
   isSourceFileExtension,
   SOURCE_FILE_EXTENSIONS,
 } from '../source-formats.js';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import { TimingProfiler, type Profiler } from '../profiler.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import { INIT_VERSION, readInitVersion } from '../init-version.js';

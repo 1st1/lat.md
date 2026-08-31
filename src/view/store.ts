@@ -13,10 +13,11 @@ import {
   createExternalResolver,
   type ExternalResolver,
 } from '../external-sources.js';
-import { listLatticeFiles, type Section } from '../lattice.js';
+import type { Section } from '../lattice-model.js';
+import { listLatticeFiles } from '../project-discovery.js';
 import { analyzeMarkdownPath } from '../markdown-analysis-cache.js';
 import { isSourceFileExtension } from '../source-formats.js';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import { renderMarkdown } from './markdown.js';
 import { buildViewDiagnostics } from './diagnostics.js';
 import { buildGitDiffTree } from './git-diff.js';

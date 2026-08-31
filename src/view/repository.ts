@@ -15,7 +15,7 @@ import {
   flattenSections,
   resolveRef,
   type Section,
-} from '../lattice.js';
+} from '../lattice-model.js';
 import {
   createExternalResolver,
   type ExternalResolver,
@@ -31,7 +31,7 @@ import {
   type SourceSymbol,
 } from '../source-parser.js';
 import { isSourceFileExtension } from '../source-formats.js';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import { renderExternalDocumentTree } from './external-document-tree.js';
 import { visitDocumentElements } from './document-tree.js';
 import type { ViewExternalDocument, ViewSourceDocument } from './protocol.js';

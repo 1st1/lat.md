@@ -170,6 +170,3 @@ export function walkEntries(dir: string): Promise<string[]> {
  * a single invariant — stored paths are always POSIX — so downstream lookups
  * (e.g. `buildFileIndex`, ref resolution) work identically on every platform.
  */
-export function toPosix(p: string): string {
-  return p.replace(/\\/g, '/');
-}

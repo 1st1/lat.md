@@ -44,6 +44,7 @@ import {
   type SourceSymbol,
 } from './source-parser.js';
 import { SOURCE_FILE_EXTENSIONS } from './source-formats.js';
+import type { ParserImportObserver } from './parser-import.js';
 
 const execFileAsync = promisify(execFile);
 const HANDLE_RE = /^[a-z0-9][a-z0-9_-]*$/;
@@ -1152,6 +1153,7 @@ async function selectFragment(
   externalDocumentParserRuntime: ExternalDocumentParserRuntime,
   sourceParserRuntime: SourceParserRuntime,
   onDocumentAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void,
+  onParserImport?: ParserImportObserver,
 ): Promise<
   | {
       content: string;
@@ -1178,6 +1180,7 @@ async function selectFragment(
         identity: `@external/${target.handle}/${target.resolvedPath}`,
         runtime: externalDocumentParserRuntime,
         onFileAnalyzed: onDocumentAnalyzed,
+        onParserImport,
       },
     );
     if (!target.fragment)
@@ -1250,6 +1253,7 @@ export class ExternalResolver {
     private readonly onDocumentAnalyzed?: (
       analysis: ExternalDocumentFileAnalysis,
     ) => void,
+    private readonly onParserImport?: ParserImportObserver,
   ) {}
 
   parse(target: string): ExternalTarget | null {
@@ -1302,6 +1306,7 @@ export class ExternalResolver {
         this.externalDocumentParserRuntime,
         this.sourceParserRuntime,
         this.onDocumentAnalyzed,
+        this.onParserImport,
       );
       return {
         target,
@@ -1326,6 +1331,7 @@ export async function createExternalResolver(
     ignoreLocal?: boolean;
     ca?: string | Buffer;
     onDocumentAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void;
+    onParserImport?: ParserImportObserver;
   } = {},
 ): Promise<ExternalResolver> {
   return new ExternalResolver(
@@ -1335,6 +1341,7 @@ export async function createExternalResolver(
     options.ca,
     options.ignoreLocal,
     options.onDocumentAnalyzed,
+    options.onParserImport,
   );
 }
 

@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { realpath } from 'node:fs/promises';
 import { isAbsolute, relative, sep } from 'node:path';
-import { toPosix } from '../walk.js';
+import { toPosix } from '../path.js';
 import type { ViewGitFileStatus } from './protocol.js';
 
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';

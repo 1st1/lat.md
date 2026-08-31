@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { dirname } from 'node:path';
-import { findLatticeDir } from '../lattice.js';
+import { findLatticeDir } from '../project-discovery.js';
 import { plainStyler, type CmdContext, type CmdResult } from '../context.js';
 import { locateCommand } from '../cli/locate.js';
 import { sectionCommand } from '../cli/section.js';

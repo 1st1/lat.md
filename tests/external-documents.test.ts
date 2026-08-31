@@ -13,6 +13,7 @@ import {
 import { renderExternalDocumentTree } from '../src/view/external-document-tree.js';
 import { documentTreeToHtml } from './document-tree.js';
 import { PARSER_CACHE_VERSION } from '../src/parser-cache.js';
+import type { ParserImportEvent } from '../src/parser-import.js';
 import { rmDirBestEffort } from './util.js';
 
 describe('external document formats', () => {
@@ -318,28 +319,48 @@ describe('external document formats', () => {
 
     for (const document of documents) {
       const identity = `@external/upstream/${document.path}`;
+      const coldImports: ParserImportEvent[] = [];
       const cold = await analyzeExternalDocumentCached(
         document.path,
         document.content,
         latDir,
-        { identity, runtime: new ExternalDocumentParserRuntime() },
+        {
+          identity,
+          runtime: new ExternalDocumentParserRuntime(),
+          onParserImport: (event) => coldImports.push(event),
+        },
       );
       expect(cold.document.format).toBe(document.format);
       expect(cold.timings.cacheStatus).toBe('miss');
+      expect(coldImports).toEqual([
+        expect.objectContaining({ imported: true, detail: identity }),
+      ]);
 
       const cachePath = externalDocumentAnalysisCachePath(latDir, identity);
       expect(readFileSync(cachePath, 'utf8')).toMatch(
         new RegExp(`^v${PARSER_CACHE_VERSION}:[a-f0-9]{40}\\n`),
       );
 
+      const warmImports: ParserImportEvent[] = [];
       const warm = await analyzeExternalDocumentCached(
         document.path,
         document.content,
         latDir,
-        { identity, runtime: new ExternalDocumentParserRuntime() },
+        {
+          identity,
+          runtime: new ExternalDocumentParserRuntime(),
+          onParserImport: (event) => warmImports.push(event),
+        },
       );
       expect(warm.document).toEqual(cold.document);
       expect(warm.timings).toMatchObject({ cacheStatus: 'hit', parseMs: 0 });
+      expect(warmImports).toEqual([
+        expect.objectContaining({
+          imported: false,
+          durationMs: 0,
+          detail: identity,
+        }),
+      ]);
     }
 
     const markdown = documents[0];

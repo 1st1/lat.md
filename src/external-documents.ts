@@ -1,8 +1,12 @@
 import { posix } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { flattenSections, type Section } from './lattice.js';
-import { analyzeMarkdownFile } from './markdown-analysis.js';
+import { flattenSections, type Section } from './lattice-model.js';
 import { documentFormat, type DocumentFormat } from './document-formats.js';
+import { loadMarkdownAnalyzer } from './markdown-analyzer-loader.js';
+import type {
+  ParserImportEvent,
+  ParserImportObserver,
+} from './parser-import.js';
 import type {
   ViewDocumentElement,
   ViewDocumentNode,
@@ -55,6 +59,7 @@ export type AnalyzeExternalDocumentOptions = {
   cache?: boolean;
   runtime?: ExternalDocumentParserRuntime;
   onFileAnalyzed?: (analysis: ExternalDocumentFileAnalysis) => void;
+  onParserImport?: ParserImportObserver;
 };
 
 type OpenSection = Omit<ExternalDocumentSection, 'endLine'>;
@@ -88,10 +93,16 @@ function closeSections(
   });
 }
 
-function markdownAnalysis(
+async function markdownAnalysis(
   path: string,
   content: string,
-): ExternalDocumentAnalysis {
+  onParserImport?: ParserImportObserver,
+  detail = path,
+): Promise<ExternalDocumentAnalysis> {
+  const analyzeMarkdownFile = await loadMarkdownAnalyzer(
+    onParserImport,
+    detail,
+  );
   const virtual = `/external/${path}`;
   const analysis = analyzeMarkdownFile(virtual, content, '/', '/');
   const parents: Array<{ depth: number; title: string }> = [];
@@ -131,8 +142,17 @@ function markdownAnalysis(
 async function restructuredTextAnalysis(
   path: string,
   content: string,
+  onParserImport?: ParserImportObserver,
+  detail = path,
 ): Promise<ExternalDocumentAnalysis> {
+  const importStarted = performance.now();
   const { RstSection, RstToHtmlCompiler } = await import('rst-compiler');
+  onParserImport?.({
+    parser: 'reStructuredText parser',
+    imported: true,
+    durationMs: performance.now() - importStarted,
+    detail,
+  });
   const compiler = new RstToHtmlCompiler();
   const parsed = compiler.parse(content, {
     disableErrors: true,
@@ -198,8 +218,17 @@ export function asciidocCompatibleContent(content: string): string {
 async function asciidocAnalysis(
   path: string,
   content: string,
+  onParserImport?: ParserImportObserver,
+  detail = path,
 ): Promise<ExternalDocumentAnalysis> {
+  const importStarted = performance.now();
   const { load } = await import('@asciidoctor/core');
+  onParserImport?.({
+    parser: 'AsciiDoc parser',
+    imported: true,
+    durationMs: performance.now() - importStarted,
+    detail,
+  });
   const document = await load(asciidocCompatibleContent(content), {
     safe: 'secure',
     sourcemap: true,
@@ -255,17 +284,43 @@ async function asciidocAnalysis(
 export async function analyzeExternalDocument(
   path: string,
   content: string,
+  onParserImport?: ParserImportObserver,
+  importDetail = path,
 ): Promise<ExternalDocumentAnalysis> {
   switch (documentFormat(path)) {
     case 'markdown':
-      return markdownAnalysis(path, content);
+      return markdownAnalysis(path, content, onParserImport, importDetail);
     case 'restructuredtext':
-      return restructuredTextAnalysis(path, content);
+      return restructuredTextAnalysis(
+        path,
+        content,
+        onParserImport,
+        importDetail,
+      );
     case 'asciidoc':
-      return asciidocAnalysis(path, content);
+      return asciidocAnalysis(path, content, onParserImport, importDetail);
     default:
       throw new Error(`unsupported external document format for "${path}"`);
   }
+}
+
+function parserImportEvent(
+  format: DocumentFormat,
+  imported: boolean,
+  durationMs: number,
+  detail: string,
+): ParserImportEvent {
+  return {
+    parser:
+      format === 'markdown'
+        ? 'Markdown analyzer'
+        : format === 'restructuredtext'
+          ? 'reStructuredText parser'
+          : 'AsciiDoc parser',
+    imported,
+    durationMs,
+    detail,
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -357,6 +412,7 @@ export async function analyzeExternalDocumentCached(
   latDir: string,
   options: AnalyzeExternalDocumentOptions = {},
 ): Promise<ExternalDocumentFileAnalysis> {
+  const format = documentFormat(path);
   const identity = (options.identity ?? path)
     .replaceAll('\\', '/')
     .normalize('NFC');
@@ -382,10 +438,22 @@ export async function analyzeExternalDocumentCached(
       const cached = cache
         ? cachedExternalDocumentAnalysis(entry, contentHash, identity, timings)
         : null;
-      if (cached) return cached;
+      if (cached) {
+        if (format) {
+          options.onParserImport?.(
+            parserImportEvent(format, false, 0, identity),
+          );
+        }
+        return cached;
+      }
 
       const parseStarted = performance.now();
-      const document = await analyzeExternalDocument(path, content);
+      const document = await analyzeExternalDocument(
+        path,
+        content,
+        options.onParserImport,
+        identity,
+      );
       const result: ExternalDocumentFileAnalysis = {
         path: identity,
         document,

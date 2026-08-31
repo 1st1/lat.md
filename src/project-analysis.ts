@@ -9,11 +9,8 @@ import {
   type Ref,
   type Section,
   type SectionSlugIndex,
-} from './lattice.js';
-import {
-  analyzeMarkdownFile,
-  type MarkdownFileAnalysis,
-} from './markdown-analysis.js';
+} from './lattice-model.js';
+import type { MarkdownFileAnalysis } from './markdown-analysis.js';
 import {
   prepareMarkdownAnalysis,
   publishMarkdownAnalysis,
@@ -33,6 +30,8 @@ import {
   createExternalResolver,
   type ExternalResolver,
 } from './external-sources.js';
+import { loadMarkdownAnalyzer } from './markdown-analyzer-loader.js';
+import type { ParserImportObserver } from './parser-import.js';
 
 export type MarkdownAnalysisExecutor = 'inline' | 'workers' | 'auto';
 
@@ -60,13 +59,20 @@ export type AnalyzeMarkdownProjectOptions = {
   maxWorkers?: number;
   cache?: boolean;
   onFileAnalyzed?: (analysis: MarkdownFileAnalysis) => void;
+  onParserImport?: ParserImportObserver;
 };
 
 async function analyzeInline(
   files: PreparedMarkdownAnalysis[],
   latDir: string,
   projectRoot: string,
+  onParserImport?: ParserImportObserver,
 ): Promise<MarkdownFileAnalysis[]> {
+  if (files.length === 0) return [];
+  const analyzeMarkdownFile = await loadMarkdownAnalyzer(
+    onParserImport,
+    'main thread',
+  );
   return Promise.all(
     files.map((file) =>
       publishMarkdownAnalysis(
@@ -85,7 +91,7 @@ async function analyzeInline(
 function runWorkerTask(
   worker: Worker,
   task: MarkdownWorkerTask,
-): Promise<MarkdownFileAnalysis> {
+): Promise<{ analysis: MarkdownFileAnalysis; importMs?: number }> {
   return new Promise((resolve, reject) => {
     const onMessage = (response: MarkdownWorkerResponse) => {
       cleanup();
@@ -96,7 +102,7 @@ function runWorkerTask(
           ),
         );
       } else {
-        resolve(response.analysis);
+        resolve(response);
       }
     };
     const onError = (error: Error) => {
@@ -128,6 +134,7 @@ async function analyzeWithWorkers(
   latDir: string,
   projectRoot: string,
   maxWorkers: number | undefined,
+  onParserImport?: ParserImportObserver,
 ): Promise<MarkdownFileAnalysis[]> {
   const workerCount = Math.max(
     1,
@@ -159,18 +166,27 @@ async function analyzeWithWorkers(
   let next = 0;
   try {
     await Promise.all(
-      workers.map(async (worker) => {
+      workers.map(async (worker, workerIndex) => {
         while (true) {
           const id = next++;
           if (id >= files.length) return;
           const file = files[id];
-          analyses[id] = await runWorkerTask(worker, {
+          const response = await runWorkerTask(worker, {
             id,
             absolutePath: file.absolutePath,
             content: file.content,
             latDir,
             projectRoot,
           });
+          analyses[id] = response.analysis;
+          if (response.importMs !== undefined) {
+            onParserImport?.({
+              parser: 'Markdown analyzer',
+              imported: true,
+              durationMs: response.importMs,
+              detail: `worker ${workerIndex + 1}`,
+            });
+          }
         }
       }),
     );
@@ -215,6 +231,17 @@ export async function analyzeMarkdownProject(
       missIndexes.push(index);
     }
   }
+  if (misses.length === 0) {
+    options.onParserImport?.({
+      parser: 'Markdown analyzer',
+      imported: false,
+      durationMs: 0,
+      detail:
+        prepared.length === 0
+          ? 'no Markdown files'
+          : `all ${prepared.length} Markdown files cached`,
+    });
+  }
   const executor =
     options.executor === 'auto' || options.executor === undefined
       ? misses.length >= 8
@@ -228,8 +255,14 @@ export async function analyzeMarkdownProject(
           latDir,
           projectRoot,
           options.maxWorkers,
+          options.onParserImport,
         )
-      : await analyzeInline(misses, latDir, projectRoot);
+      : await analyzeInline(
+          misses,
+          latDir,
+          projectRoot,
+          options.onParserImport,
+        );
   for (const [index, analysis] of parsed.entries()) {
     analyses[missIndexes[index]] = analysis;
   }

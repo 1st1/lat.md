@@ -9,8 +9,7 @@ Functional tests cover validation of Markdown directories outside `lat.md/`.
 
 ## Profiles validation work
 
-`lat check --profile` reports nested timings for every validator and its major
-operations, including repeated-call counts and the slowest file or target.
+`lat check --profile` reports nested timings for every validator and its major operations, including parser-module imports, repeated-call counts, and the slowest file or target.
 
 ## Keeps concurrent profile scopes separate
 
@@ -23,7 +22,7 @@ A cold full `lat check` parses each Markdown file once, then shares the resultin
 
 ## Profiles persistent parser cache hits
 
-A warm profiled check reports one persistent-cache hit per Markdown file and no parser work, proving lookup completes before worker or AST construction.
+A warm profiled check reports one persistent-cache hit per Markdown file, an explicit skipped Markdown-analyzer import, and no parser work, proving lookup completes before worker or AST construction.
 
 ## Profiles persistent source cache hits
 

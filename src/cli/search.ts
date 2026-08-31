@@ -19,7 +19,7 @@ import {
 } from '../search/embedder.js';
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
-import type { SectionMatch } from '../lattice.js';
+import type { SectionMatch } from '../lattice-model.js';
 import {
   analyzeMarkdownProject,
   commandProjectAnalysis,

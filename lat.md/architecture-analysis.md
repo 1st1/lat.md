@@ -52,7 +52,9 @@ Cached local Markdown analyses retain source content; external document and sour
 
 A project snapshot reduces file analyses into immutable lookup structures shared by every operation in one command or request.
 
-The snapshot owns files by normalized path, ordered sections, canonical section ids, file-suffix and heading-slug indexes, and outgoing and incoming reference indexes. Consumers use these indexes instead of rereading or reparsing files.
+The parser-free [[src/lattice-model.ts]] module owns serializable graph types plus section flattening, indexing, lookup, and reference resolution. The snapshot uses those helpers to own files by normalized path, ordered sections, canonical section ids, file-suffix and heading-slug indexes, and outgoing and incoming reference indexes.
+
+Consumers use snapshot indexes without importing Markdown syntax machinery. [[src/lattice.ts]] retains parsing and extraction functions and re-exports the graph API for compatibility, but internal graph consumers import the lightweight model directly.
 
 Source code scanning and external-source reconciliation are separate project inputs because they are not facts that a Markdown worker can derive from one file.
 
@@ -69,6 +71,10 @@ Diagnostics retain their rule, location, target, and presentation metadata so co
 Analysis semantics are independent of scheduling so the same analyzer supports direct calls, parallel commands, incremental browser updates, and tests.
 
 The inline executor is the deterministic fallback for small jobs and focused tests. The worker executor uses a bounded dynamic queue, initializes one parser per worker, and returns only serializable file analyses.
+
+Cache preparation and graph reduction do not import the Markdown analyzer. Inline Markdown analysis dynamically loads it only after at least one local cache miss; external Markdown and native format parsers are likewise loaded only after the complete external-document cache misses. A fully warm command therefore avoids unified/remark, reStructuredText, and AsciiDoc parser initialization.
+
+Profiled checks record each parser-module import and its duration, including one event per Markdown worker. Cache hits emit explicit zero-duration skip events, making the absence of parser imports visible rather than inferred from missing parse work.
 
 CLI project operations, including `lat check` and indexing, use workers above the small-project threshold. Browser startup builds the same file analyses into its incremental store; a refresh analyzes one changed file inline and replaces its contribution before rebuilding indexes.
 

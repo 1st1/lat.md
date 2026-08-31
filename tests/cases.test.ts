@@ -599,6 +599,7 @@ describe('headless-check', () => {
     for (const operation of [
       'check Markdown wiki links',
       'parse Markdown AST',
+      'import Markdown analyzer',
       'hash Markdown file',
       'parsed Markdown cache miss',
       'extract wiki links',
@@ -645,6 +646,8 @@ describe('headless-check', () => {
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
     expect(stdout).toMatch(/parsed Markdown cache hit: .* across 2 calls/);
+    expect(stdout).toContain('skip Markdown analyzer import');
+    expect(stdout).not.toContain('import Markdown analyzer');
     expect(stdout).not.toContain('parse Markdown AST');
   });
 
