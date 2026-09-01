@@ -7,6 +7,10 @@ import {
   isSourceFileExtension,
   SOURCE_FILE_EXTENSIONS,
 } from '../source-formats.js';
+import {
+  inspectRepositoryPath,
+  normalizeRepositoryPath,
+} from '../repository-path.js';
 import { toPosix } from '../path.js';
 import { TimingProfiler, type Profiler } from '../profiler.js';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
@@ -77,45 +81,66 @@ function profileTimeSync<T>(
   return profile ? profile.timeSync(label, work, detail) : work();
 }
 
-function isSourcePath(target: string): boolean {
-  const hashIdx = target.indexOf('#');
-  const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
-  const ext = extname(filePart);
-  return isSourceFileExtension(ext);
-}
-
 /**
- * Try resolving a wiki link target as a source code reference.
- * Returns null if the reference is valid, or an error message string.
+ * Validate an unresolved wiki link as a repository path or source symbol.
+ * Returns null when valid, otherwise a user-facing error message.
  */
-export async function sourceRefError(
+export async function repositoryRefError(
   target: string,
   projectRoot: string,
   sourceOptions: ResolveSourceSymbolOptions = {},
 ): Promise<string | null> {
-  if (!isSourcePath(target)) {
-    // Check if it looks like a file path with an unsupported extension
-    const hashIdx = target.indexOf('#');
-    const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
-    const ext = extname(filePart);
-    if (ext && hashIdx !== -1) {
+  const hashIdx = target.indexOf('#');
+  const authoredPath = hashIdx === -1 ? target : target.slice(0, hashIdx);
+  if (!authoredPath) {
+    return `broken link [[${target}]] — no matching section found`;
+  }
+  const filePart = normalizeRepositoryPath(authoredPath);
+  if (!filePart) {
+    return `broken link [[${target}]] — repository path "${authoredPath}" must stay within the project root`;
+  }
+
+  const symbolPart = hashIdx === -1 ? '' : target.slice(hashIdx + 1);
+  const ext = extname(filePart);
+  const sourcePath = isSourceFileExtension(ext);
+  const inspected = await inspectRepositoryPath(projectRoot, filePart);
+
+  if (inspected.kind === 'outside') {
+    return `broken link [[${target}]] — repository path "${filePart}" resolves outside the project root`;
+  }
+
+  if (hashIdx === -1) {
+    if (inspected.kind === 'missing') {
+      return `broken link [[${target}]] — repository file or directory "${filePart}" not found`;
+    }
+    if (inspected.kind === 'other') {
+      return `broken link [[${target}]] — repository path "${filePart}" is not a regular file or directory`;
+    }
+    return null;
+  }
+
+  if (inspected.kind === 'directory') {
+    return `broken link [[${target}]] — directory "${filePart}" cannot have a fragment`;
+  }
+  if (inspected.kind === 'other') {
+    return `broken link [[${target}]] — repository path "${filePart}" is not a regular file or directory`;
+  }
+
+  if (!sourcePath) {
+    if (ext || inspected.kind === 'file') {
+      const shownExtension = ext || '(none)';
       const supported = SOURCE_FILE_EXTENSIONS.join(', ');
-      return `broken link [[${target}]] — unsupported file extension "${ext}". Supported: ${supported}`;
+      return `broken link [[${target}]] — unsupported file extension "${shownExtension}" for fragment reference. Supported: ${supported}`;
     }
     return `broken link [[${target}]] — no matching section found`;
   }
 
-  const hashIdx = target.indexOf('#');
-  const filePart = hashIdx === -1 ? target : target.slice(0, hashIdx);
-  const symbolPart = hashIdx === -1 ? '' : target.slice(hashIdx + 1);
-
-  const absPath = join(projectRoot, filePart);
-  if (!existsSync(absPath)) {
+  if (inspected.kind === 'missing') {
     return `broken link [[${target}]] — file "${filePart}" not found`;
   }
 
   if (!symbolPart) {
-    // File-only link with no symbol — valid as long as file exists
+    // Preserve the existing file-level behavior for an empty fragment.
     return null;
   }
 
@@ -203,9 +228,13 @@ export async function checkMd(
           message: ambiguousRefMessage(ref.target, ambiguous, suggested),
         });
       } else if (!sectionIds.has(resolved.toLowerCase())) {
-        // Try resolving as a source code reference (e.g. [[src/foo.ts#bar]])
-        const sourceErr = await run.resolveSourceLink(ref.target, () =>
-          sourceRefError(ref.target, projectRoot, run.sourceSymbolOptions()),
+        // Try resolving as a repository path or source symbol.
+        const sourceErr = await run.resolveRepositoryLink(ref.target, () =>
+          repositoryRefError(
+            ref.target,
+            projectRoot,
+            run.sourceSymbolOptions(),
+          ),
         );
         if (sourceErr !== null) {
           errors.push({

@@ -1144,7 +1144,7 @@ describe('error-bare-heading-ref', () => {
     const { errors } = await checkMd(lat);
     const bare = errors.find((e) => e.target === 'Installation');
     expect(bare).toBeDefined();
-    expect(bare!.message).toContain('no matching section found');
+    expect(bare!.message).toContain('not found');
   });
 
   // @lat: [[ref-resolution#Local section syntax in md is error]]
@@ -1500,6 +1500,58 @@ describe('error-source-ref-unsupported-ext', () => {
     expect(errors[0].message).toContain('.rs');
     expect(errors[0].message).toContain('.go');
     expect(errors[0].message).toContain('.dart');
+  });
+});
+
+describe('repository-path-refs', () => {
+  const lat = latDir('repository-path-refs');
+
+  // @lat: [[check-md#Passes with valid links#Accepts repository path links]]
+  it('accepts existing repository files and directories without fragments', async () => {
+    const { errors } = await checkMd(lat);
+    const invalid = new Set(errors.map((error) => error.target));
+    for (const target of [
+      'schema.sql',
+      'CHANGELOG',
+      'README.md',
+      'assets',
+      'assets/',
+      'generated.ts',
+      '.',
+      'src/app.ts',
+      String.raw`src\app.ts`,
+      'src/app.ts#run',
+    ]) {
+      expect(invalid).not.toContain(target);
+    }
+  });
+
+  // @lat: [[check-md#Detects broken links#Rejects invalid repository path links]]
+  it('rejects missing, escaping, and unsupported-fragment path targets', async () => {
+    const { errors } = await checkMd(lat);
+    expect(errors).toHaveLength(8);
+    const byTarget = new Map(errors.map((error) => [error.target, error]));
+
+    expect(byTarget.get('missing.sql')?.message).toContain('not found');
+    expect(byTarget.get('missing-dir/')?.message).toContain('not found');
+    expect(byTarget.get('schema.sql#users')?.message).toContain(
+      'unsupported file extension ".sql"',
+    );
+    expect(byTarget.get('CHANGELOG#entry')?.message).toContain(
+      'unsupported file extension "(none)"',
+    );
+    expect(byTarget.get('assets#entry')?.message).toContain(
+      'directory "assets" cannot have a fragment',
+    );
+    expect(byTarget.get('assets.v1#entry')?.message).toContain(
+      'directory "assets.v1" cannot have a fragment',
+    );
+    expect(byTarget.get('generated.ts#entry')?.message).toContain(
+      'directory "generated.ts" cannot have a fragment',
+    );
+    expect(byTarget.get('../source-ref-ts-valid')?.message).toContain(
+      'must stay within the project root',
+    );
   });
 });
 

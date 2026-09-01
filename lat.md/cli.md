@@ -93,7 +93,7 @@ Implementation: [[src/cli/check.ts]], with check-specific inputs in [[src/cli/ch
 
 ### md
 
-Validate that all [[parser#Wiki Links]] in the checked markdown files point to existing sections.
+Validate that every [[parser#Wiki Links|wiki link]] points to an existing section, an in-project file or directory, or a symbol in a supported source file.
 
 ### links
 

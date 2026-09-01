@@ -72,7 +72,7 @@ Those enrichments depend on live GitHub repository, account, permission, or issu
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.
 
-Targets are section ids — hierarchical paths like `lat.md/dev-process#Testing#Running Tests`. The vault root is the project directory (the parent of `lat.md/`), so all markdown section ids include the `lat.md/` prefix. Wiki links can also reference source code symbols — see [[markdown#Wiki Links#Source Code Links]].
+Targets are section ids — hierarchical paths like `lat.md/dev-process#Testing#Running Tests`. The vault root is the project directory (the parent of `lat.md/`), so all markdown section ids include the `lat.md/` prefix. Wiki links can also reference [[markdown#Wiki Links#Repository Path Links|repository paths]] and [[markdown#Wiki Links#Source Code Links|source symbols]].
 
 Validated by [[cli#check#md]].
 
@@ -99,6 +99,21 @@ When multiple files share the same stem (e.g. `alpha/notes.md` and `beta/notes.m
 Source code references (e.g. `[[src/config.ts#getConfigDir]]`) always require the full path — no short refs for source files.
 
 Resolution is handled by [[src/lattice-model.ts#resolveRef]]. See [[parser#Short Ref Resolution]] for implementation details.
+
+### Repository Path Links
+
+Wiki links without a fragment may target any existing file or directory beneath the project root, even when Lat cannot parse or render its format.
+
+- **`[[schema.sql]]`** — a file with an otherwise unsupported extension
+- **`[[CHANGELOG]]`** — an extensionless file
+- **`[[src/components]]`** — a directory
+- **`[[src/config.ts]]`** — a supported source file without selecting a symbol
+
+Repository paths are project-root-relative. Lat normalizes wiki-link path separators, rejects absolute paths and `..` escapes, and follows symlinks only when their resolved target remains within the project root.
+
+[[src/repository-path.ts#normalizeRepositoryPath]] owns lexical normalization, while [[src/repository-path.ts#inspectRepositoryPath]] resolves the filesystem target and enforces the real-path boundary.
+
+Existence does not imply navigation support: unsupported files and directories validate as references but Lat cannot open them in its UI. A `#fragment` requires either a `lat.md/` section target or a supported source file; directories, extensionless files, and unsupported file formats cannot have fragments.
 
 ### Source Code Links
 
