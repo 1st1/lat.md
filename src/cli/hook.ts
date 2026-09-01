@@ -197,6 +197,9 @@ function countUntrackedFileLines(projectRoot: string, file: string): number {
  * what makes a freshly scaffolded, never-committed `lat.md/` register as
  * updated — otherwise its edits are invisible to `git diff HEAD` and the sync
  * reminder fires on every turn until `lat.md/` is committed (issue #61).
+ * Both scans are scoped and made relative to `projectRoot`, so a Lat project
+ * nested in a larger worktree neither misses its own `lat.md/` paths nor counts
+ * changes from sibling projects.
  * Outside a Git worktree both scans contribute zero churn by design: Git is
  * optional, so the hook still validates the project but skips the sync ratio.
  */
@@ -218,7 +221,7 @@ export function analyzeDiff(projectRoot: string): {
   // Tracked changes vs HEAD. Throws when there is no HEAD yet (a repo with no
   // commits) or no repo at all; the untracked scan below still runs.
   try {
-    const output = execSync('git diff HEAD --numstat', {
+    const output = execSync('git diff HEAD --numstat --relative -- .', {
       cwd: projectRoot,
       encoding: 'utf-8',
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -239,11 +242,14 @@ export function analyzeDiff(projectRoot: string): {
   // NUL-delimited output preserves spaces, non-ASCII names, and newlines.
   // Classify paths before reading so unrelated untracked files are never read.
   try {
-    const output = execSync('git ls-files --others --exclude-standard -z', {
-      cwd: projectRoot,
-      encoding: 'utf-8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
+    const output = execSync(
+      'git ls-files --others --exclude-standard -z -- .',
+      {
+        cwd: projectRoot,
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
     for (const file of output.split('\0')) {
       if (!file) continue;
       const kind = diffFileKind(file);

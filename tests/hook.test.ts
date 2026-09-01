@@ -407,33 +407,36 @@ describe('Codex hook integration', () => {
 
 describe('analyzeDiff', () => {
   // @lat: [[tests/hook#Counts tracked and untracked files together]]
-  it('counts relevant untracked files and respects nested gitignores', () => {
-    const proj = mkdtempSync(join(tmpdir(), 'lat-untracked-'));
+  it('scopes tracked and untracked files to a nested project', () => {
+    const worktree = mkdtempSync(join(tmpdir(), 'lat-untracked-'));
+    const proj = join(worktree, 'packages', 'app');
+    const sibling = join(worktree, 'packages', 'sibling');
     try {
       mkdirSync(join(proj, 'lat.md'), { recursive: true });
       mkdirSync(join(proj, 'lat.md', '.cache'), { recursive: true });
       mkdirSync(join(proj, 'src'), { recursive: true });
       mkdirSync(join(proj, 'src', 'generated'), { recursive: true });
+      mkdirSync(sibling, { recursive: true });
       writeFileSync(join(proj, 'lat.md', '.gitignore'), '.cache/\n');
       writeFileSync(join(proj, 'src', '.gitignore'), 'generated/\n');
+      writeFileSync(join(proj, 'lat.md', 'tracked.md'), 'before\n');
       writeFileSync(join(proj, 'src', 'tracked.ts'), 'before\n');
+      writeFileSync(join(sibling, 'tracked.ts'), 'before\n');
 
-      runGit(proj, ['init', '--quiet']);
-      runGit(proj, ['config', 'user.email', 'lat@example.com']);
-      runGit(proj, ['config', 'user.name', 'Lat Tests']);
-      runGit(proj, [
-        'add',
-        'lat.md/.gitignore',
-        'src/.gitignore',
-        'src/tracked.ts',
-      ]);
-      runGit(proj, ['commit', '--quiet', '-m', 'initial']);
+      runGit(worktree, ['init', '--quiet']);
+      runGit(worktree, ['config', 'user.email', 'lat@example.com']);
+      runGit(worktree, ['config', 'user.name', 'Lat Tests']);
+      runGit(worktree, ['add', '.']);
+      runGit(worktree, ['commit', '--quiet', '-m', 'initial']);
 
       writeFileSync(join(proj, 'src', 'tracked.ts'), 'changed\n'.repeat(110));
+      writeFileSync(join(proj, 'lat.md', 'tracked.md'), 'doc\n'.repeat(10));
       writeFileSync(join(proj, 'lat.md', 'feature.md'), 'x\n'.repeat(60));
       writeFileSync(join(proj, 'src', 'brand-new.ts'), 'y\n'.repeat(20));
       writeFileSync(join(proj, 'src', 'with space.ts'), 's\n'.repeat(3));
       writeFileSync(join(proj, 'src', 'café.ts'), 'u\n'.repeat(7));
+      writeFileSync(join(sibling, 'tracked.ts'), 'outside\n'.repeat(500));
+      writeFileSync(join(sibling, 'new.ts'), 'outside\n'.repeat(500));
       writeFileSync(
         join(proj, 'lat.md', '.cache', 'ignored.md'),
         'ignored\n'.repeat(500),
@@ -446,10 +449,10 @@ describe('analyzeDiff', () => {
 
       expect(analyzeDiff(proj)).toEqual({
         codeLines: 141,
-        latMdLines: 60,
+        latMdLines: 71,
       });
     } finally {
-      rmDirBestEffort(proj);
+      rmDirBestEffort(worktree);
     }
   });
 

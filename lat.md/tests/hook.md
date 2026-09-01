@@ -73,7 +73,7 @@ When init runs from a local compiled JavaScript entry point, generated hook comm
 
 Diff analysis combines tracked churn with relevant untracked `lat.md/` and supported source files while respecting nested `.gitignore` rules and safely skipping unrelated paths.
 
-The integration fixture also covers spaces and non-ASCII characters in untracked source paths, exercising the NUL-delimited Git output contract.
+The integration fixture nests the Lat project inside a larger worktree, verifies sibling changes are excluded, and covers spaces and non-ASCII characters in untracked paths.
 
 ## Counts untracked files before the first commit
 
