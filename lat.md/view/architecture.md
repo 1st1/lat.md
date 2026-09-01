@@ -128,7 +128,7 @@ Wide layouts give the sticky TOC a fixed 286px column and the available viewport
 
 A moving end-of-page activation line makes short final sections reachable.
 
-The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
+The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. Expanded directories remain open while navigating and are restored from deployment-scoped local storage after reload. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
 
 Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
 

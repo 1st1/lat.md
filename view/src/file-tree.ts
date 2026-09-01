@@ -27,6 +27,12 @@ type MutableDirectory = {
 
 type MutableNode = MutableDirectory | Extract<FileTreeNode, { kind: 'file' }>;
 
+type FileTreeStorage = {
+  getItem: (key: string) => string | null;
+  removeItem: (key: string) => void;
+  setItem: (key: string, value: string) => void;
+};
+
 const finderCollator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: 'base',
@@ -76,6 +82,42 @@ export function directoryIndex(
 /** Ensure an indexed directory is visibly expanded before navigating into it. */
 export function expandDirectory(directory: { open: boolean } | null): void {
   if (directory) directory.open = true;
+}
+
+/** Scope persisted sidebar expansion to one live or static deployment. */
+export function fileTreeStorageKey(basePath: string | null): string {
+  return `lat.ui.open-directories:${basePath ?? '/'}`;
+}
+
+/** Read the valid directory paths saved by a previous browser session. */
+export function readOpenDirectories(
+  storage: FileTreeStorage,
+  key: string,
+): Set<string> {
+  const value = storage.getItem(key);
+  if (!value) return new Set();
+  try {
+    const paths: unknown = JSON.parse(value);
+    if (!Array.isArray(paths)) return new Set();
+    return new Set(
+      paths.filter((path): path is string => typeof path === 'string'),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+/** Persist expanded directory paths, removing empty state from storage. */
+export function writeOpenDirectories(
+  storage: FileTreeStorage,
+  key: string,
+  paths: ReadonlySet<string>,
+): void {
+  if (paths.size === 0) {
+    storage.removeItem(key);
+    return;
+  }
+  storage.setItem(key, JSON.stringify([...paths].sort()));
 }
 
 /** Sum validation errors below a file or directory for propagated markers. */

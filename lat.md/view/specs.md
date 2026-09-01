@@ -229,6 +229,10 @@ Vault paths form a natural-order hierarchy with root and directory index files p
 
 Selecting a directory opens its `name/name.md` index and keeps the directory expanded.
 
+## Preserves expanded directories
+
+Directories stay independently expanded while navigation moves between files and folders. The open paths persist in deployment-scoped local storage and are restored after reload; unavailable storage only limits persistence to the current page.
+
 ## Stabilizes fragment navigation immediately
 
 Fragment links position rendered documents without smooth scrolling so content is immediately interactive.

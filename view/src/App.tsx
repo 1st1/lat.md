@@ -20,6 +20,7 @@ import type {
 import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
 import latLogoUrl from '../../website/public/logo.svg?url';
 import { FileTree } from './FileTree';
+import { fileTreeStorageKey } from './file-tree';
 import { MarkdownContent } from './MarkdownContent';
 import { DocumentModeSwitch, type DocumentMode } from './DocumentModeSwitch';
 import { DocumentToc } from './DocumentToc';
@@ -282,6 +283,7 @@ function errorMessage(reason: unknown): string {
 export function App() {
   const staticView = isStaticView();
   const graphModeKey = graphModeStorageKey(staticViewBasePath());
+  const fileTreeKey = fileTreeStorageKey(staticViewBasePath());
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
   const [page, setPage] = useState<ViewPage | null>(null);
@@ -951,6 +953,7 @@ export function App() {
                 gitEnabled ? (index.git?.files ?? NO_GIT_FILES) : NO_GIT_FILES
               }
               onNavigate={onNavigationClick}
+              storageKey={fileTreeKey}
             />
           )}
           {!index && indexError && (
