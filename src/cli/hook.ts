@@ -197,6 +197,8 @@ function countUntrackedFileLines(projectRoot: string, file: string): number {
  * what makes a freshly scaffolded, never-committed `lat.md/` register as
  * updated — otherwise its edits are invisible to `git diff HEAD` and the sync
  * reminder fires on every turn until `lat.md/` is committed (issue #61).
+ * Outside a Git worktree both scans contribute zero churn by design: Git is
+ * optional, so the hook still validates the project but skips the sync ratio.
  */
 export function analyzeDiff(projectRoot: string): {
   codeLines: number;
@@ -249,7 +251,7 @@ export function analyzeDiff(projectRoot: string): {
       tally(kind, countUntrackedFileLines(projectRoot, file));
     }
   } catch {
-    // Not a git repo — nothing to add.
+    // Not a Git repo — diff-based sync analysis is intentionally disabled.
   }
 
   return { codeLines, latMdLines };

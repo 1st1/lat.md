@@ -13,6 +13,10 @@ The fake `git` dispatches on the subcommand, so one helper controls both the tra
 
 When `lat check` passes and there is no git diff output, the hook produces no stdout and no stderr — the agent stops cleanly.
 
+## Supports projects outside Git
+
+Git version control is optional. Outside a Git worktree, the Stop hook skips diff-based sync analysis but still runs `lat check`; valid projects exit silently, while validation errors still block.
+
 ## Blocks when lat check fails
 
 When `lat check` finds errors, the hook outputs a block decision with a reason mentioning `lat check` and the error count.

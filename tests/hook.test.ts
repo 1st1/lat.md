@@ -147,6 +147,29 @@ describe('hook stop', () => {
     }
   });
 
+  // @lat: [[tests/hook#Supports projects outside Git]]
+  it('supports projects outside Git while keeping validation active', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'lat-no-git-'));
+    const cleanProject = join(dir, 'clean');
+    const brokenProject = join(dir, 'broken');
+    cpSync(clean, cleanProject, { recursive: true });
+    cpSync(broken, brokenProject, { recursive: true });
+
+    try {
+      const cleanResult = runStopHook('claude', cleanProject);
+      expect(cleanResult).toEqual({ stdout: '', stderr: '', exitCode: 0 });
+
+      const brokenResult = runStopHook('claude', brokenProject);
+      expect(brokenResult.exitCode).toBe(0);
+      expect(brokenResult.stderr).toBe('');
+      const parsed = JSON.parse(brokenResult.stdout);
+      expect(parsed.decision).toBe('block');
+      expect(parsed.reason).toContain('lat check');
+    } finally {
+      rmDirBestEffort(dir);
+    }
+  });
+
   // @lat: [[tests/hook#Blocks when lat check fails]]
   it('blocks when lat check fails', () => {
     const { stdout } = runStopHook('claude', broken);
