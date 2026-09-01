@@ -103,6 +103,11 @@ function projectPath(projectRoot: string, path: string): string {
   return toPosix(normalized).replace(/^\.\//, '');
 }
 
+function isInternalLatCachePath(path: string, latPath: string): boolean {
+  const cachePath = latPath ? `${latPath}/.cache` : '.cache';
+  return path === cachePath || path.startsWith(`${cachePath}/`);
+}
+
 function excludedCodePath(
   projectRoot: string,
   path: string,
@@ -551,9 +556,13 @@ export class ViewStore {
 
   refresh(paths: string[]): Promise<void> {
     if (this.closed) return Promise.resolve();
-    const normalized = paths.map((path) =>
-      path ? projectPath(this.projectRoot, path) : '',
-    );
+    const latPath = projectPath(this.projectRoot, this.latDir);
+    const normalized = paths
+      .map((path) => (path ? projectPath(this.projectRoot, path) : ''))
+      .filter((path) => !isInternalLatCachePath(path, latPath));
+    if (paths.length > 0 && normalized.length === 0) {
+      return Promise.resolve();
+    }
     return this.queueRefresh(normalized, false);
   }
 
@@ -581,13 +590,15 @@ export class ViewStore {
 
   private scheduleRefresh(path: string): void {
     if (this.closed) return;
-    this.pendingPaths.add(
+    const normalizedPath =
       path === EXTERNAL_REFRESH_PATH
         ? path
         : path
           ? projectPath(this.projectRoot, path)
-          : '',
-    );
+          : '';
+    const latPath = projectPath(this.projectRoot, this.latDir);
+    if (isInternalLatCachePath(normalizedPath, latPath)) return;
+    this.pendingPaths.add(normalizedPath);
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = null;

@@ -157,6 +157,8 @@ Changing, adding, or deleting project files updates cached documents, navigation
 
 Browser clients receive a change event and refresh the current route while keeping its URL and viewport stable.
 
+Internal parser, search, and external-source cache writes do not publish project generations or restart in-flight document requests.
+
 ### Accepts restarted server generations
 
 Each event stream identifies its server lifetime, so reconnecting after a restart accepts reset generations and invalidates document and graph data from the prior process.
@@ -164,6 +166,10 @@ Each event stream identifies its server lifetime, so reconnecting after a restar
 ### Times out stalled document requests
 
 A document request that never settles becomes a visible error with a retry action instead of leaving the route on an indefinite loading state.
+
+### Recovers interrupted document requests
+
+A transport-interrupted document request retries once. A repeated interruption becomes a visible retryable error, while navigation cancellations remain silent and never overwrite the next route.
 
 ## Refreshes search after Markdown changes
 

@@ -264,6 +264,9 @@ describe.sequential('external source view', () => {
       externalCa: fixture.ca,
     });
     try {
+      // Give the recursive watcher a turn to become observable before the
+      // fixture writes immediately after server startup under parallel load.
+      await new Promise((resolveReady) => setTimeout(resolveReady, 100));
       const generation = server.store.snapshot.generation;
 
       const changed = new Promise<void>((resolveChange, reject) => {
@@ -293,6 +296,34 @@ describe.sequential('external source view', () => {
     } finally {
       await server.close();
       writeFileSync(guidePath, originalGuide);
+    }
+  });
+
+  // @lat: [[tests/external-tests#External Sources#Browser and static export#Cache writes stay internal]]
+  it('does not publish project changes for external cache activity', async () => {
+    const project = createExternalProject(fixture, {
+      strategy: 'fetch',
+      commit: fixture.commit1,
+      defaultFileExtension: 'md',
+      body: 'Read [[upstream:guide#Navigation]].',
+    });
+    roots.push(project.root);
+    const server = await startViewServer(commandContext(project), {
+      git: false,
+      port: 0,
+      externalCa: fixture.ca,
+    });
+    try {
+      const generation = server.store.snapshot.generation;
+      const external = await json<ViewExternalDocument>(
+        `${server.url}api/external?target=${encodeURIComponent('upstream:guide')}`,
+      );
+      expect(external.kind).toBe('markdown');
+
+      await new Promise((resolveWait) => setTimeout(resolveWait, 200));
+      expect(server.store.snapshot.generation).toBe(generation);
+    } finally {
+      await server.close();
     }
   });
 

@@ -504,7 +504,7 @@ function GraphInspector({
             controller.signal,
           ).then((source) => setContent({ kind: 'source', source }));
     request.catch((reason: Error) => {
-      if (reason.name !== 'AbortError') setError(reason.message);
+      if (!controller.signal.aborted) setError(reason.message);
     });
     return () => controller.abort();
   }, [contentTarget, graph.generation, node]);
@@ -716,7 +716,7 @@ export default function GraphView({
           });
         })
         .catch((reason: Error) => {
-          if (reason.name !== 'AbortError') setSearchError(reason.message);
+          if (!controller.signal.aborted) setSearchError(reason.message);
         })
         .finally(() => {
           if (!controller.signal.aborted) setSearching(false);

@@ -115,7 +115,7 @@ export function SearchPage({
           setSearched(true);
         })
         .catch((reason: Error) => {
-          if (reason.name !== 'AbortError') setError(reason.message);
+          if (!controller.signal.aborted) setError(reason.message);
         })
         .finally(() => {
           if (!controller.signal.aborted) setLoading(false);

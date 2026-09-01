@@ -73,6 +73,10 @@ Across Markdown, reStructuredText, and AsciiDoc, relative links to explicitly re
 
 A watched local checkout rebuilds the view generation after a referenced file changes, and the next external document request returns the dirty working-tree content.
 
+### Cache writes stay internal
+
+Fetching and parsing an external file may update disposable caches, but those writes never publish a project generation or restart the browser's in-flight preview request.
+
 ### Unused source omission
 
 Configured external sources with no references remain absent from the browser index so navigation reflects only content the project actually uses.
