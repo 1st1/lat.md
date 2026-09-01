@@ -22,13 +22,10 @@ import { viewSourceTarget } from './source-target.js';
 import type { ViewGitSnapshot } from './git.js';
 import type { ExternalResolver, ExternalTarget } from '../external-sources.js';
 import { isDocumentPath, stripDocumentExtension } from '../document-formats.js';
+import { documentUrl } from './document-route.js';
 
 function encodedPath(path: string): string {
   return path.split('/').map(encodeURIComponent).join('/');
-}
-
-function documentUrl(path: string, fragment = ''): string {
-  return `/docs/${encodedPath(path)}${fragment ? `#${encodeURIComponent(fragment)}` : ''}`;
 }
 
 function sourceUrl(path: string, symbol = '', line = 0): string {

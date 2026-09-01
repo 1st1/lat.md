@@ -1,8 +1,11 @@
 import type { ViewGraph, ViewGraphNode } from '../../src/view/protocol';
 import { isDocumentPath } from '../../src/document-formats';
 import { staticViewRoute, viewPathname } from './static-mode';
+import {
+  documentPath as routeDocumentPath,
+  documentUrl as routeDocumentUrl,
+} from '../../src/view/document-route';
 
-const DOCUMENT_PREFIX = '/docs/';
 const SOURCE_PREFIX = '/code/';
 const EXTERNAL_PREFIX = '/external/';
 
@@ -14,22 +17,12 @@ type DocumentScroller = {
 };
 
 export function documentUrl(path: string): string {
-  const encoded = path.split('/').map(encodeURIComponent).join('/');
-  return staticViewRoute(`docs/${encoded}/`) ?? `${DOCUMENT_PREFIX}${encoded}`;
+  const route = routeDocumentUrl(path);
+  return staticViewRoute(route.slice(1)) ?? route;
 }
 
 export function documentPath(pathname: string): string | null {
-  pathname = viewPathname(pathname);
-  if (!pathname.startsWith(DOCUMENT_PREFIX)) return null;
-  try {
-    return pathname
-      .slice(DOCUMENT_PREFIX.length)
-      .split('/')
-      .map(decodeURIComponent)
-      .join('/');
-  } catch {
-    return null;
-  }
+  return routeDocumentPath(viewPathname(pathname));
 }
 
 /** Build the browser route for one canonical external target. */

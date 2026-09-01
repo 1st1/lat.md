@@ -22,6 +22,10 @@ import type {
   ViewSourceReference,
 } from './protocol.js';
 import { viewSourceTarget } from './source-target.js';
+import {
+  documentUrl as routeDocumentUrl,
+  rewriteDocumentLink,
+} from './document-route.js';
 
 export type SourceReferenceOrigin = {
   sectionId: string;
@@ -68,19 +72,7 @@ export function parseViewMarkdownFile(
 }
 
 function contextMarkdownLink(requestedPath: string, url: string): string {
-  if (
-    url.startsWith('/') ||
-    url.startsWith('//') ||
-    /^[a-z][a-z\d+.-]*:/i.test(url)
-  ) {
-    return url;
-  }
-  const encodedPath = requestedPath
-    .split('/')
-    .map(encodeURIComponent)
-    .join('/');
-  const resolved = new URL(url, `http://lat.local/docs/${encodedPath}`);
-  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+  return rewriteDocumentLink(url, requestedPath);
 }
 
 function documentUrl(
@@ -91,11 +83,8 @@ function documentUrl(
   const path = toPosix(
     relative(latDir, resolve(projectRoot, section.filePath)),
   );
-  const encoded = path.split('/').map(encodeURIComponent).join('/');
-  const fragment = section.githubSlug
-    ? `#${encodeURIComponent(section.githubSlug)}`
-    : '';
-  return `/docs/${encoded}${fragment}`;
+  const fragment = section.githubSlug ? section.githubSlug : '';
+  return routeDocumentUrl(path, fragment);
 }
 
 function breadcrumbs(

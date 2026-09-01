@@ -66,6 +66,8 @@ import {
   type FileTreeNode,
 } from '../view/src/file-tree.js';
 import {
+  documentPath,
+  documentUrl,
   graphInspectorLinkUrl,
   graphModeStorageKey,
   graphNode,
@@ -212,9 +214,9 @@ describe('lat ui', () => {
 
     const rootResponse = await fetch(view.url, { redirect: 'manual' });
     expect(rootResponse.status).toBe(302);
-    expect(rootResponse.headers.get('location')).toBe('/docs/lat.md');
+    expect(rootResponse.headers.get('location')).toBe('/docs/lat');
 
-    const shellResponse = await fetch(new URL('/docs/guide.md', view.url));
+    const shellResponse = await fetch(new URL('/docs/guide', view.url));
     expect(shellResponse.status).toBe(200);
     const shell = await shellResponse.text();
     expect(shell).toContain('lat ui shell');
@@ -231,6 +233,33 @@ describe('lat ui', () => {
     expect(contentSecurityPolicy).toContain(
       "img-src 'self' data: https://github.githubassets.com",
     );
+
+    const rawResponse = await fetch(new URL('/docs/guide.md', view.url));
+    expect(rawResponse.status).toBe(200);
+    expect(rawResponse.headers.get('content-type')).toBe(
+      'text/markdown; charset=utf-8',
+    );
+    expect(await rawResponse.text()).toBe(
+      readFileSync(join(latDir, 'guide.md'), 'utf8'),
+    );
+
+    const rawHeadResponse = await fetch(new URL('/docs/guide.md', view.url), {
+      method: 'HEAD',
+    });
+    expect(rawHeadResponse.status).toBe(200);
+    expect(rawHeadResponse.headers.get('content-type')).toBe(
+      'text/markdown; charset=utf-8',
+    );
+    expect(await rawHeadResponse.text()).toBe('');
+
+    const missingRawResponse = await fetch(
+      new URL('/docs/missing.md', view.url),
+    );
+    expect(missingRawResponse.status).toBe(404);
+    const escapingRawResponse = await fetch(
+      new URL('/docs/..%2F..%2FREADME.md', view.url),
+    );
+    expect(escapingRawResponse.status).toBe(404);
 
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);
@@ -259,6 +288,12 @@ describe('lat ui', () => {
   it('builds a static deployment without live Git or search services', async () => {
     expect(viewViteConfig).toMatchObject({ base: './' });
     expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
+    expect(staticViewUrl('/docs/guide', '/project/')).toBe(
+      '/project/docs/guide',
+    );
+    expect(staticViewUrl('/docs/guide.md', '/project/')).toBe(
+      '/project/docs/guide.md',
+    );
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
     );
@@ -340,7 +375,7 @@ describe('lat ui', () => {
       ) as ViewDocument;
       expect(viewDocumentGitHtml(document)).toBeNull();
       expect(viewDocumentHtml(document)).toContain(
-        'href="/project/docs/guide.md/#details"',
+        'href="/project/docs/guide#details"',
       );
       expect(viewDocumentHtml(document)).toContain(
         'href="/project/code/src/app.ts/?from=',
@@ -353,12 +388,15 @@ describe('lat ui', () => {
         true,
       );
       expect(graph.nodes.map((node) => node.url)).toContain(
-        '/project/docs/lat.md/',
+        '/project/docs/lat',
       );
       expect(graph.nodes.some((node) => node.kind === 'source')).toBe(true);
 
-      expect(existsSync(join(payloadDir, 'docs', 'lat.md', 'index.html'))).toBe(
+      expect(existsSync(join(payloadDir, 'docs', 'lat', 'index.html'))).toBe(
         true,
+      );
+      expect(readFileSync(join(payloadDir, 'docs', 'lat.md'), 'utf8')).toBe(
+        readFileSync(join(staticContext.latDir, 'lat.md'), 'utf8'),
       );
       expect(
         existsSync(join(payloadDir, 'code', 'src', 'app.ts', 'index.html')),
@@ -372,7 +410,7 @@ describe('lat ui', () => {
       expect(existsSync(join(outputDir, 'data'))).toBe(false);
 
       const shell = readFileSync(
-        join(payloadDir, 'docs', 'lat.md', 'index.html'),
+        join(payloadDir, 'docs', 'lat', 'index.html'),
         'utf8',
       );
       expect(shell).toContain('/project/assets/app.js');
@@ -382,10 +420,10 @@ describe('lat ui', () => {
         'globalThis.__LAT_STATIC_VIEW__={"basePath":"/project/"}',
       );
       expect(readFileSync(join(outputDir, 'index.html'), 'utf8')).toContain(
-        '/project/docs/lat.md/',
+        '/project/docs/lat',
       );
       expect(readFileSync(join(payloadDir, 'index.html'), 'utf8')).toContain(
-        '/project/docs/lat.md/',
+        '/project/docs/lat',
       );
 
       const discovery = createCodeReferenceDiscovery(staticProjectRoot);
@@ -396,9 +434,9 @@ describe('lat ui', () => {
       expect(
         scanned.refs.some((reference) => reference.file.startsWith('site/')),
       ).toBe(false);
-      expect(
-        sourceFiles.some((path) => path.startsWith(`${outputDir}/`)),
-      ).toBe(false);
+      expect(sourceFiles.some((path) => path.startsWith(`${outputDir}/`))).toBe(
+        false,
+      );
       const disableRipgrep = process.env._LAT_DISABLE_RG;
       process.env._LAT_DISABLE_RG = '1';
       try {
@@ -410,9 +448,7 @@ describe('lat ui', () => {
         ]);
         expect(fallbackScan.refs).toEqual(scanned.refs);
         expect(
-          fallbackSourceFiles.some((path) =>
-            path.startsWith(`${outputDir}/`),
-          ),
+          fallbackSourceFiles.some((path) => path.startsWith(`${outputDir}/`)),
         ).toBe(false);
       } finally {
         if (disableRipgrep === undefined) delete process.env._LAT_DISABLE_RG;
@@ -557,10 +593,10 @@ describe('lat ui', () => {
       '/graph?node=document%3Aguide.md',
     );
     expect(graphNode('?node=document%3Aguide.md')).toBe('document:guide.md');
-    const sectionTarget = '/docs/guide.md#details';
+    const sectionTarget = '/docs/guide#details';
     const targetedGraphUrl = graphUrl('document:guide.md', sectionTarget);
     expect(targetedGraphUrl).toBe(
-      '/graph?node=document%3Aguide.md&target=%2Fdocs%2Fguide.md%23details',
+      '/graph?node=document%3Aguide.md&target=%2Fdocs%2Fguide%23details',
     );
     expect(graphTarget(new URL(targetedGraphUrl, view.url).search)).toBe(
       sectionTarget,
@@ -608,11 +644,11 @@ describe('lat ui', () => {
       graphTargetForNode(graph, documentNode!, sectionTarget, view.url),
     ).toBe(sectionTarget);
     expect(
-      graphTargetForNode(graph, documentNode!, '/docs/lat.md', view.url),
+      graphTargetForNode(graph, documentNode!, '/docs/lat', view.url),
     ).toBe(documentNode!.url);
     const sameDocumentLink = graphInspectorLinkUrl(
       '#details',
-      '/docs/guide.md',
+      '/docs/guide',
       view.url,
     );
     expect(`${sameDocumentLink?.pathname}${sameDocumentLink?.hash}`).toBe(
@@ -700,13 +736,13 @@ describe('lat ui', () => {
     expect(searchUrl('runner details')).toBe('/search?q=runner+details');
     expect(searchQuery('?q=runner+details')).toBe('runner details');
     expect(searchUrl('')).toBe('/search');
-    expect(searchReturnTo(searchHistoryState('/docs/guide.md#details'))).toBe(
-      '/docs/guide.md#details',
+    expect(searchReturnTo(searchHistoryState('/docs/guide#details'))).toBe(
+      '/docs/guide#details',
     );
     expect(searchReturnTo(null)).toBeNull();
     expect(searchEscapeAction('runner details')).toBe('clear');
     expect(searchEscapeAction('')).toBe('close');
-    expect(searchButtonAction('/docs/guide.md')).toBe('open');
+    expect(searchButtonAction('/docs/guide')).toBe('open');
     expect(searchButtonAction('/search')).toBe('close');
 
     const emptyResponse = await fetch(new URL('/api/search?query=', view.url));
@@ -729,7 +765,7 @@ describe('lat ui', () => {
           path: 'guide.md',
           breadcrumbs: ['guide', 'Guide', 'Details'],
           description: 'Relative Markdown links preserve heading fragments.',
-          url: '/docs/guide.md#details',
+          url: '/docs/guide#details',
           score: 0.82,
         },
       ],
@@ -783,7 +819,7 @@ describe('lat ui', () => {
     expect(viewDocumentHtml(document)).toContain(
       '<h1 id="view-project">View Project</h1>',
     );
-    expect(viewDocumentHtml(document)).toContain('href="guide.md#details"');
+    expect(viewDocumentHtml(document)).toContain('href="/docs/guide#details"');
     expect(viewDocumentHtml(document)).not.toContain('require-code-mention');
 
     const links = await renderMarkdown(
@@ -1301,16 +1337,16 @@ describe('lat ui', () => {
     const document = (await response.json()) as ViewDocument;
 
     expect(viewDocumentHtml(document)).toContain(
-      '<a href="/docs/guide.md">wiki navigation<span class="wiki-link-ref-count" aria-label="2 references">2</span></a>',
+      '<a href="/docs/guide">wiki navigation<span class="wiki-link-ref-count" aria-label="2 references">2</span></a>',
     );
     expect(viewDocumentHtml(document)).toContain(
-      '<a href="/docs/guide.md#details">wiki heading links<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
+      '<a href="/docs/guide#details">wiki heading links<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(viewDocumentHtml(document)).toContain(
-      '<a href="/docs/guide.md#details">the same heading again<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
+      '<a href="/docs/guide#details">the same heading again<span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(viewDocumentHtml(document)).toContain(
-      '<a href="/docs/guide.md#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span><span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
+      '<a href="/docs/guide#details" class="wiki-link-segmented"><span class="wiki-link-context">guide#</span><span class="wiki-link-leaf">Details</span><span class="wiki-link-ref-count" aria-label="5 references">5</span></a>',
     );
     expect(viewDocumentHtml(document)).toContain(
       'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
@@ -1381,10 +1417,10 @@ describe('lat ui', () => {
       const sparseReferences = await renderMarkdown(
         '[[orphan]]',
         'lat.md',
-        async () => ({ href: '/docs/orphan.md', referenceCount }),
+        async () => ({ href: '/docs/orphan', referenceCount }),
       );
       expect(sparseReferences.html).toBe(
-        '<p><a href="/docs/orphan.md">orphan</a></p>',
+        '<p><a href="/docs/orphan">orphan</a></p>',
       );
     }
   });
@@ -1443,7 +1479,7 @@ describe('lat ui', () => {
       paragraph:
         'Source targets such as src/app.ts#run open their definitions; the guide explains them.',
       paragraphTree: expect.objectContaining({ version: 1, type: 'root' }),
-      url: '/docs/lat.md#view-project',
+      url: '/docs/lat#view-project',
     });
     expect(source.otherReferences).toEqual([
       {
@@ -1451,7 +1487,7 @@ describe('lat ui', () => {
         breadcrumbs: ['guide', 'Guide', 'Details'],
         paragraph: 'The guide also references the same runner.',
         paragraphTree: expect.objectContaining({ version: 1, type: 'root' }),
-        url: '/docs/guide.md#details',
+        url: '/docs/guide#details',
       },
     ]);
     expect(paragraphTreeHtml(source.context)).toContain(
@@ -1461,7 +1497,7 @@ describe('lat ui', () => {
       'code-link-language code-language-ts',
     );
     expect(paragraphTreeHtml(source.context)).toContain(
-      'href="/docs/guide.md#details"',
+      'href="/docs/guide#details"',
     );
     expect(paragraphTreeHtml(source.otherReferences[0])).toContain(
       'wiki-link-code wiki-link-active',
@@ -1492,7 +1528,7 @@ describe('lat ui', () => {
       kind: 'markdown',
       sectionId: 'lat.md/lat#View Project',
       breadcrumbs: ['lat', 'View Project'],
-      url: '/docs/lat.md#view-project',
+      url: '/docs/lat#view-project',
     });
     expect(details?.references[1]).toMatchObject({
       kind: 'markdown',
@@ -1592,13 +1628,13 @@ describe('lat ui', () => {
     const navigate = vi.fn();
     const clipboard = { writeText: vi.fn(async () => {}) };
     const sectionUrl = navigateAndCopySectionLink(
-      new URL('/docs/lat.md#view-project', view.url).href,
+      new URL('/docs/lat#view-project', view.url).href,
       'unreferenced',
       navigate,
       clipboard,
     );
     expect(sectionUrl.href).toBe(
-      new URL('/docs/lat.md#unreferenced', view.url).href,
+      new URL('/docs/lat#unreferenced', view.url).href,
     );
     expect(navigate).toHaveBeenCalledWith(sectionUrl);
     expect(clipboard.writeText).toHaveBeenCalledWith(sectionUrl.href);
@@ -1627,7 +1663,7 @@ describe('lat ui', () => {
     expect(sectionOutput.output).toContain('> ## Unreferenced');
     expect(sectionOutput.output).toContain('`lat section "section#id"`');
     expect(documentTreeToHtml(sectionOutput.tree)).toContain(
-      'href="/docs/lat.md#unreferenced"',
+      'href="/docs/lat#unreferenced"',
     );
     expect(documentTreeToHtml(sectionOutput.tree)).toContain('<blockquote>');
     expect(documentTreeToHtml(sectionOutput.tree)).toContain(
@@ -1853,23 +1889,25 @@ describe('lat ui', () => {
     expect(getElementById).not.toHaveBeenCalled();
     expect(scrollIntoView).not.toHaveBeenCalled();
 
-    expect(viewRouteIdentity('/docs/guide.md#features')).toBe('/docs/guide.md');
-    expect(viewRouteIdentity('/docs/guide.md#installation')).toBe(
-      '/docs/guide.md',
-    );
+    expect(documentUrl('nested/my guide.md')).toBe('/docs/nested/my%20guide');
+    expect(documentPath('/docs/nested/my%20guide')).toBe('nested/my guide.md');
+    expect(documentPath('/docs/nested/my%20guide.md')).toBeNull();
+
+    expect(viewRouteIdentity('/docs/guide#features')).toBe('/docs/guide');
+    expect(viewRouteIdentity('/docs/guide#installation')).toBe('/docs/guide');
     expect(viewRouteIdentity('/code/parser.ts#parse')).toBe(
       '/code/parser.ts#parse',
     );
     expect(
       isSameRenderedDocument(
-        new URL('http://lat.local/docs/guide.md#features'),
-        new URL('http://lat.local/docs/guide.md#installation'),
+        new URL('http://lat.local/docs/guide#features'),
+        new URL('http://lat.local/docs/guide#installation'),
       ),
     ).toBe(true);
     expect(
       isSameRenderedDocument(
-        new URL('http://lat.local/docs/guide.md'),
-        new URL('http://lat.local/docs/other.md'),
+        new URL('http://lat.local/docs/guide'),
+        new URL('http://lat.local/docs/other'),
       ),
     ).toBe(false);
     expect(
@@ -1883,11 +1921,11 @@ describe('lat ui', () => {
   // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]
   it('preserves scroll positions in navigation history state', () => {
     const state = historyStateWithScroll(
-      searchHistoryState('/docs/guide.md#details'),
+      searchHistoryState('/docs/guide#details'),
       { left: 12, top: 480 },
     );
 
-    expect(searchReturnTo(state)).toBe('/docs/guide.md#details');
+    expect(searchReturnTo(state)).toBe('/docs/guide#details');
     expect(historyScrollPosition(state)).toEqual({ left: 12, top: 480 });
     expect(historyScrollPosition({ latScrollPosition: { top: '480' } })).toBe(
       null,

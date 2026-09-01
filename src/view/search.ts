@@ -2,6 +2,7 @@ import { dirname, relative, resolve } from 'node:path';
 import type { SectionMatch } from '../lattice-model.js';
 import { toPosix } from '../path.js';
 import type { ViewSearchResponse, ViewSearchResult } from './protocol.js';
+import { documentUrl } from './document-route.js';
 
 const VIEW_SEARCH_LIMIT = 10;
 
@@ -28,12 +29,6 @@ const defaultDependencies: ViewSearchDependencies = {
   },
 };
 
-function documentUrl(path: string, headingId?: string): string {
-  const encodedPath = path.split('/').map(encodeURIComponent).join('/');
-  const fragment = headingId ? `#${encodeURIComponent(headingId)}` : '';
-  return `/docs/${encodedPath}${fragment}`;
-}
-
 function viewSearchResult(
   latDir: string,
   match: SectionMatch,
@@ -50,7 +45,7 @@ function viewSearchResult(
     path,
     breadcrumbs: [...fileBreadcrumbs, ...section.id.split('#').slice(1)],
     description: section.firstParagraph,
-    url: documentUrl(path, section.githubSlug),
+    url: documentUrl(path, section.githubSlug ?? ''),
     score: match.score ?? 0,
   };
 }

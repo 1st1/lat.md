@@ -74,6 +74,7 @@ import {
   type ViewParsedMarkdownFile,
   type ViewReferenceIndex,
 } from './references.js';
+import { rewriteDocumentLink } from './document-route.js';
 
 const DEFAULT_DEBOUNCE_MS = 75;
 const DEFAULT_GIT_POLL_MS = 2_000;
@@ -477,7 +478,10 @@ export class ViewStore {
       file.content,
       requestedPath,
       resolver,
-      { errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])] },
+      {
+        errors: [...(snapshot.diagnostics.get(requestedPath) ?? [])],
+        rewriteMarkdownLink: (url) => rewriteDocumentLink(url, requestedPath),
+      },
     );
     const errors = [...(snapshot.diagnostics.get(requestedPath) ?? [])];
     const gitFile = snapshot.git.files.get(requestedPath);
@@ -489,7 +493,11 @@ export class ViewStore {
           file.content,
           requestedPath,
           resolver,
-          { errors },
+          {
+            errors,
+            rewriteMarkdownLink: (url) =>
+              rewriteDocumentLink(url, requestedPath),
+          },
           gitTree,
         )
       : null;
