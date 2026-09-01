@@ -8,6 +8,8 @@
 
 The default top-left brand in both clients uses `website/public/logo-small.svg`, a navigation-sized variant of the website wordmark that omits its dithered cells and retains only solid cells. `--logo-text` replaces it with safely rendered plain text for the live server or static export.
 
+The shared brand link and sibling action cluster opt out of browser selection in both normal and graph headers without changing their interaction semantics.
+
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
 The installed runtime uses Node HTTP and prebuilt Vite assets. Browser renderer inputs remain development dependencies because Vite emits their code, styles, and fonts into the published lazy assets instead of making npm consumers install redundant source packages.

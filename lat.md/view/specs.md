@@ -15,6 +15,8 @@ Requesting the same route with `.md` returns the exact known vault file as `text
 
 By default the header renders a compact Lat wordmark derived from the website logo with only solid cells, so it stays crisp at navigation size. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
+The brand and its adjacent Git, Search, and Graph controls do not participate in text selection while retaining their normal keyboard, pointer, and accessibility behavior.
+
 The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
 
 The server anchors Vite's relative entry assets at `/assets/`, so every live document, source, search, and graph route loads the same production shell.
