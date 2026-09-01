@@ -798,6 +798,18 @@ describe('lat ui', () => {
     expect(links.html).toContain('<a href="guide.md#details">local</a>');
     expect(links.html).toContain('<a href="mailto:hi@example.com">email</a>');
 
+    const linkedImage = await renderMarkdown(
+      '[![CI](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/vercel-labs/lat.md/actions)',
+      'lat.md',
+    );
+    expect(linkedImage.html).toContain(
+      'href="https://github.com/vercel-labs/lat.md/actions" class="external-link"',
+    );
+    expect(linkedImage.html).toContain(
+      '<img src="https://img.shields.io/badge/build-passing-brightgreen" alt="CI">',
+    );
+    expect(linkedImage.html).not.toContain('external-link-icon');
+
     const table = await renderMarkdown(
       '| Mitigation | What Nub does |\n| --- | --- |\n| Native | Nothing. The version already ships it. |\n| Polyfill | Installs a JavaScript polyfill, guarded by a `typeof` feature detect. |',
       'guide.md',
