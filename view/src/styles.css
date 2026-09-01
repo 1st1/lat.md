@@ -204,6 +204,12 @@ a {
   gap: 3px;
 }
 
+.brand,
+.sidebar-actions {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .sidebar-search,
 .sidebar-graph,
 .sidebar-git {

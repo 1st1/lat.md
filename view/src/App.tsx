@@ -18,7 +18,7 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
-import latLogoUrl from '../../website/public/logo.svg?url';
+import latLogoUrl from '../../website/public/logo-small.svg?url';
 import { FileTree } from './FileTree';
 import { MarkdownContent } from './MarkdownContent';
 import { DocumentModeSwitch, type DocumentMode } from './DocumentModeSwitch';
