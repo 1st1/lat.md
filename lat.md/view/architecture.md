@@ -120,7 +120,7 @@ Markdown and source metadata rows align with the sidebar header, while source me
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
 
-Rendered link text is always underlined. A [[src/view/document-tree.ts#decorateExternalSiteLinks|parser-neutral tree pass]] adds external-link icons across Markdown, reStructuredText, and AsciiDoc; language badges, reference counts, and those icons remain undecorated.
+Rendered link text is always underlined. A [[src/view/document-tree.ts#decorateExternalSiteLinks|parser-neutral tree pass]] adds external-link icons across Markdown, reStructuredText, and AsciiDoc, except when a link wraps an image; language badges, reference counts, and those icons remain undecorated.
 
 Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
 

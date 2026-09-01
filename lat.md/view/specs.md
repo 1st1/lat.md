@@ -61,6 +61,8 @@ Static export discovers and rewrites links by traversing node properties while r
 
 Markdown normalizes into a safe tree with GitHub-style heading ids and intact relative destinations. HTTP(S) and protocol-relative links gain decorative external-site icons in documents and reference contexts.
 
+Links wrapping images omit the external-site icon so badges and other linked embeds remain visually intact.
+
 GitHub-flavored pipe tables render as semantic HTML tables. Wide tables stay within the document column and scroll horizontally instead of flattening into pipe-delimited text or widening the page.
 
 Single- and double-tilde GitHub strikethrough syntax renders semantic deleted text rather than literal delimiters.

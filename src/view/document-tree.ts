@@ -103,6 +103,17 @@ function isExternalSiteUrl(value: string): boolean {
   return /^(?:https?:)?\/\//i.test(value);
 }
 
+function containsElementTag(
+  element: ViewDocumentElement,
+  tagName: string,
+): boolean {
+  return element.children.some(
+    (child) =>
+      child.type === 'element' &&
+      (child.tagName === tagName || containsElementTag(child, tagName)),
+  );
+}
+
 /** Apply parser-neutral presentation to links that leave the current site. */
 export function decorateExternalSiteLinks(
   tree: ViewDocumentTree,
@@ -120,6 +131,8 @@ export function decorateExternalSiteLinks(
     const classes = classNames(element.properties.className);
     if (!classes.includes('external-link')) classes.push('external-link');
     element.properties.className = classes;
+    if (containsElementTag(element, 'img')) return;
+
     const alreadyDecorated = element.children.some(
       (child) =>
         child.type === 'element' &&
