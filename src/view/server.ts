@@ -26,6 +26,7 @@ import {
 import { createViewSearch, type ViewSearch } from './search.js';
 import { createViewStore, type ViewStore } from './store.js';
 import { rewriteClientAssetUrls } from './client-shell.js';
+import { documentUrl, rawDocumentPath } from './document-route.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_VIEW_PORT = 4242;
@@ -51,10 +52,6 @@ export type ViewServerOptions = {
   watch?: boolean;
   externalCa?: string | Buffer;
 };
-
-function documentUrl(path: string): string {
-  return `/docs/${path.split('/').map(encodeURIComponent).join('/')}`;
-}
 
 function setSecurityHeaders(res: ServerResponse): void {
   res.setHeader(
@@ -499,6 +496,25 @@ export async function startViewServer(
           return;
         }
         await sendClientFile(res, path, headOnly, true);
+        return;
+      }
+
+      const rawMarkdownPath = rawDocumentPath(url.pathname);
+      if (rawMarkdownPath) {
+        try {
+          const source = await store.getDocumentSource(rawMarkdownPath);
+          res.setHeader('Cache-Control', 'no-cache');
+          send(
+            res,
+            200,
+            'text/markdown; charset=utf-8',
+            source.content,
+            headOnly,
+          );
+        } catch (error) {
+          if (!(error instanceof ViewDocumentNotFoundError)) throw error;
+          send(res, 404, 'text/plain; charset=utf-8', error.message, headOnly);
+        }
         return;
       }
 

@@ -22,6 +22,8 @@ The live server's default-self Content Security Policy explicitly permits only O
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
+Local Markdown documents use extensionless `/docs/...` browser routes. Appending `.md` addresses the exact Markdown source instead, with `text/markdown` from the live server and a physical `.md` file in static exports so agents can read the vault without the React protocol.
+
 ## Document tree protocol
 
 Document APIs carry one versioned, parser-neutral presentation tree so the browser can compose content as React elements instead of installing server-rendered HTML.
@@ -42,7 +44,7 @@ Static export traverses tree properties to discover linked source and external t
 
 [[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
 
-The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each document and source path gets a physical `index.html` shell; a compatibility shell migrates old graph URLs.
+The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each extensionless document and source path gets a physical `index.html` shell; every local document also has an exact `.md` source sibling. A compatibility shell migrates old graph URLs.
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
 
@@ -54,7 +56,7 @@ The browser reads an immutable manifest instead of `/api/*`, never opens an even
 
 Vite emits lazy chunks, imported CSS, fonts, and renderer dependencies relative to their owning JavaScript or stylesheet. Generated route shells anchor only the entry assets at the configured base, so nested deployments do not leak requests to root `/assets/`.
 
-Relative Markdown links are rewritten against their source document so the extra static route directory does not change their target. Both the deployment root and a non-root base directory redirect to the exported entry document.
+Relative Markdown links are rewritten against their source document and then to extensionless UI routes, so the extra static route directory does not change their target or accidentally request raw Markdown. Both deployment entrypoints redirect to the exported index document.
 
 Builds reject any existing destination, including an empty directory or prior export. For a new path, the builder stages the complete artifact beside the destination and renames it into place only after generation succeeds.
 
@@ -111,6 +113,8 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 ## Markdown navigation
 
 [[src/view/markdown.ts#renderMarkdown]] produces the safe document tree with ordinary Markdown links, resolved wiki links, heading fragments, and Git or diagnostic presentation metadata.
+
+Generated document links omit `.md`; the same route with `.md` is deliberately left to the browser as raw source. Relative links authored with `.md` are normalized to the extensionless UI route before rendering.
 
 Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
 

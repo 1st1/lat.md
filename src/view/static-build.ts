@@ -33,6 +33,11 @@ import {
 } from './static-protocol.js';
 import { createViewStore } from './store.js';
 import { rewriteClientAssetUrls } from './client-shell.js';
+import {
+  documentPath,
+  documentUrl,
+  rawDocumentPath,
+} from './document-route.js';
 
 const BUILD_MARKER = '.lat-ui-build';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
@@ -105,7 +110,12 @@ export function staticViewUrl(value: string, basePath: string): string {
   }
   if (url.origin !== 'http://lat.local') return value;
 
-  for (const prefix of ['/docs/', '/code/', '/external/'] as const) {
+  if (url.pathname.startsWith('/docs/')) {
+    const route = url.pathname.slice(1).replace(/\/+$/, '');
+    const suffix = `${url.search}${url.hash}`;
+    return `${basePath}${route}${suffix}`;
+  }
+  for (const prefix of ['/code/', '/external/'] as const) {
     if (!url.pathname.startsWith(prefix)) continue;
     const route = url.pathname.slice(1).replace(/\/+$/, '');
     return `${basePath}${route}/${url.search}${url.hash}`;
@@ -117,16 +127,7 @@ export function staticViewUrl(value: string, basePath: string): string {
 }
 
 function documentPathFromUrl(value: URL): string | null {
-  if (!value.pathname.startsWith('/docs/')) return null;
-  try {
-    return value.pathname
-      .slice('/docs/'.length)
-      .split('/')
-      .map(decodeURIComponent)
-      .join('/');
-  } catch {
-    return null;
-  }
+  return documentPath(value.pathname) ?? rawDocumentPath(value.pathname);
 }
 
 function rewriteHtmlLink(
@@ -141,7 +142,6 @@ function rewriteHtmlLink(
   let resolved: URL;
   try {
     const externalAt = sourcePath.indexOf(':');
-    const currentPath = sourcePath.split('/').map(encodeURIComponent).join('/');
     const currentRoute =
       externalAt > 0 && !documentPaths.has(sourcePath)
         ? `/external/${encodeURIComponent(sourcePath.slice(0, externalAt))}/${sourcePath
@@ -149,7 +149,7 @@ function rewriteHtmlLink(
             .split('/')
             .map(encodeURIComponent)
             .join('/')}`
-        : `/docs/${currentPath}`;
+        : documentUrl(sourcePath);
     resolved = new URL(
       decodeHtmlUrlAttribute(value),
       `http://lat.local${currentRoute}`,
@@ -172,7 +172,7 @@ function rewriteHtmlLink(
     return value;
   }
   return staticViewUrl(
-    `${resolved.pathname}${resolved.search}${resolved.hash}`,
+    `${documentUrl(documentPath)}${resolved.search}${resolved.hash}`,
     basePath,
   );
 }
@@ -692,7 +692,11 @@ export async function buildStaticView(
         join(payloadDir, dataPath),
         rewriteDocument(document, basePath, sectionPaths, documentPaths),
       );
-      const route = `docs/${path}`;
+      const source = await store.getDocumentSource(path);
+      const rawPath = join(payloadDir, 'docs', ...path.split('/'));
+      await mkdir(dirname(rawPath), { recursive: true });
+      await writeFile(rawPath, source.content);
+      const route = `docs/${path.slice(0, -'.md'.length)}`;
       await writeRouteShell(payloadDir, route, shell);
     }
 
@@ -786,7 +790,7 @@ export async function buildStaticView(
     await writeRouteShell(payloadDir, 'graph', shell);
     await writeJson(join(payloadDir, 'data/manifest.json'), manifest);
     const entryRedirect = redirectShell(
-      staticViewUrl(`/docs/${index.entry}`, basePath),
+      staticViewUrl(documentUrl(index.entry), basePath),
     );
     await writeFile(join(payloadDir, 'index.html'), entryRedirect);
     if (payloadDir !== stagingDir) {

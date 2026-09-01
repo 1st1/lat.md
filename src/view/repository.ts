@@ -46,6 +46,7 @@ import {
 } from './references.js';
 import { buildViewTableOfContents } from './table-of-contents.js';
 import { viewSourceTarget } from './source-target.js';
+import { documentUrl } from './document-route.js';
 
 export class ViewDocumentNotFoundError extends Error {}
 export class ViewSourceNotFoundError extends Error {}
@@ -57,10 +58,6 @@ function isInside(root: string, candidate: string): boolean {
     rel === '' ||
     (!isAbsolute(rel) && rel !== '..' && !rel.startsWith(`..${sep}`))
   );
-}
-
-function documentUrl(path: string): string {
-  return `/docs/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
 
 function sourceUrl(
