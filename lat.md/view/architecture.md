@@ -6,9 +6,7 @@
 
 [[src/cli/ui.ts#uiCommand]] starts [[src/view/server.ts#startViewServer]] on loopback port 4242 and launches the browser without a shell. An occupied default advances to the next available port; an explicit `--port` is strict and reports the conflict.
 
-The default top-left brand in both clients uses `website/public/logo-small.svg`, a navigation-sized variant of the website wordmark that omits its dithered cells and retains only solid cells. `--logo-text` replaces it with safely rendered plain text for the live server or static export.
-
-The shared brand link and sibling action cluster opt out of browser selection in both normal and graph headers without changing their interaction semantics.
+The website's Lat wordmark is the default top-left brand in both clients. `--logo-text` replaces it with safely rendered plain text for the live server or static export.
 
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
