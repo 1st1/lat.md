@@ -277,10 +277,17 @@ describe('lat ui', () => {
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
     );
-    expect(app).toContain('../../website/public/logo.svg?url');
+    const compactLogo = readFileSync(
+      join(import.meta.dirname, '..', 'website', 'public', 'logo-small.svg'),
+      'utf8',
+    );
+    expect(app).toContain('../../website/public/logo-small.svg?url');
     expect(app).toContain('brandText === DEFAULT_VIEW_LOGO_TEXT');
     expect(app).toContain('<BrandText text={brandText} />');
     expect(app).toContain('src={staticViewAssetUrl(latLogoUrl)}');
+    expect(compactLogo).toContain('id="solid-square"');
+    expect(compactLogo.match(/<use /g)).toHaveLength(130);
+    expect(compactLogo).not.toContain('g2591');
     expect(styles).toContain('.brand-logo');
   });
 
