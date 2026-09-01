@@ -1,16 +1,23 @@
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { createServer, type Server, type ServerResponse } from 'node:http';
+import {
+  createServer,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { plainStyler, type CmdContext } from '../context.js';
 import { sectionCommand } from '../cli/section.js';
 import {
   DEFAULT_VIEW_LOGO_TEXT,
+  type ViewDocumentEditRequest,
   type ViewError,
   type ViewProjectGeneration,
   type ViewSectionCommandOutput,
 } from './protocol.js';
+import { ViewDocumentConflictError } from './document-edit.js';
 import {
   ViewExternalNotFoundError,
   ViewDocumentNotFoundError,
@@ -22,6 +29,8 @@ import { rewriteClientAssetUrls } from './client-shell.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_VIEW_PORT = 4242;
+const MAX_DOCUMENT_EDIT_BODY_BYTES = 16 * 1024 * 1024;
+const MAX_DOCUMENT_CONTENT_LENGTH = 8 * 1024 * 1024;
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
 
 export type ViewServer = {
@@ -83,6 +92,24 @@ function sendJson(
     JSON.stringify(value),
     headOnly,
   );
+}
+
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const value of req) {
+    const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
+    size += chunk.byteLength;
+    if (size > MAX_DOCUMENT_EDIT_BODY_BYTES) {
+      throw new RangeError('Document edit is too large');
+    }
+    chunks.push(chunk);
+  }
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown;
+  } catch {
+    throw new SyntaxError('Document edit must be valid JSON');
+  }
 }
 
 function contentType(path: string): string {
@@ -167,7 +194,7 @@ function listen(server: Server, host: string, port: number): Promise<void> {
   });
 }
 
-/** Start the read-only loopback server used by `lat ui`. */
+/** Start the loopback server used by `lat ui`. */
 export async function startViewServer(
   ctx: CmdContext,
   options: ViewServerOptions = {},
@@ -201,13 +228,15 @@ export async function startViewServer(
       setSecurityHeaders(res);
       const method = req.method ?? 'GET';
       const headOnly = method === 'HEAD';
-      if (method !== 'GET' && !headOnly) {
+      const url = new URL(req.url ?? '/', `http://${host}`);
+      const documentEdit =
+        method === 'PATCH' && url.pathname === '/api/document';
+      if (method !== 'GET' && !headOnly && !documentEdit) {
         res.setHeader('Allow', 'GET, HEAD');
         send(res, 405, 'text/plain; charset=utf-8', 'Method not allowed');
         return;
       }
 
-      const url = new URL(req.url ?? '/', `http://${host}`);
       if (url.pathname === '/') {
         const entry = store.getIndex().entry;
         if (!entry) {
@@ -255,8 +284,95 @@ export async function startViewServer(
 
       if (url.pathname === '/api/document') {
         const path = url.searchParams.get('path') ?? '';
+        if (documentEdit) {
+          let body: unknown;
+          try {
+            body = await readJsonBody(req);
+          } catch (error) {
+            sendJson(
+              res,
+              error instanceof RangeError ? 413 : 400,
+              { error: (error as Error).message } satisfies ViewError,
+              false,
+            );
+            return;
+          }
+          if (
+            !body ||
+            typeof body !== 'object' ||
+            typeof (body as Partial<ViewDocumentEditRequest>).baseContent !==
+              'string' ||
+            typeof (body as Partial<ViewDocumentEditRequest>).content !==
+              'string'
+          ) {
+            sendJson(
+              res,
+              400,
+              {
+                error: 'Document edit content is required',
+              } satisfies ViewError,
+              false,
+            );
+            return;
+          }
+          const edit = body as ViewDocumentEditRequest;
+          if (
+            edit.baseContent.length > MAX_DOCUMENT_CONTENT_LENGTH ||
+            edit.content.length > MAX_DOCUMENT_CONTENT_LENGTH
+          ) {
+            sendJson(
+              res,
+              413,
+              { error: 'Document edit is too large' } satisfies ViewError,
+              false,
+            );
+            return;
+          }
+          try {
+            sendJson(
+              res,
+              200,
+              await store.editDocument(path, edit.baseContent, edit.content),
+              false,
+            );
+          } catch (error) {
+            if (error instanceof ViewDocumentConflictError) {
+              sendJson(
+                res,
+                409,
+                { error: error.message } satisfies ViewError,
+                false,
+              );
+              return;
+            }
+            if (!(error instanceof ViewDocumentNotFoundError)) throw error;
+            sendJson(
+              res,
+              404,
+              { error: error.message } satisfies ViewError,
+              false,
+            );
+          }
+          return;
+        }
         try {
           sendJson(res, 200, await store.getDocument(path), headOnly);
+        } catch (error) {
+          if (!(error instanceof ViewDocumentNotFoundError)) throw error;
+          sendJson(
+            res,
+            404,
+            { error: error.message } satisfies ViewError,
+            headOnly,
+          );
+        }
+        return;
+      }
+
+      if (url.pathname === '/api/document-source') {
+        const path = url.searchParams.get('path') ?? '';
+        try {
+          sendJson(res, 200, await store.getDocumentSource(path), headOnly);
         } catch (error) {
           if (!(error instanceof ViewDocumentNotFoundError)) throw error;
           sendJson(

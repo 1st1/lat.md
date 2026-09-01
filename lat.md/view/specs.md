@@ -127,6 +127,22 @@ The URL preserves the latest query; Back restores it, and Escape clears the quer
 
 Documents expose [[markdown#Frontmatter#require-code-mention]] separately from the rendered document tree so the browser can badge files that require code references.
 
+## Edits local Markdown safely
+
+Live local documents expose a View/Edit split control that swaps rendered Markdown for a soft-wrapped, syntax-highlighted CodeMirror surface without exposing editing in static exports or external documents.
+
+The editor loads raw source on demand and writes only from its Save button or the platform save shortcut. Saving, saved, unsaved, and conflict states remain visible without blocking further typing.
+
+Added, modified, and deleted lines receive subdued gutter markers against the last loaded or saved source. Markers clear when edits are reverted or saved and reset when clean content reloads from disk.
+
+Leaving Edit, navigating away, or entering Graph requires confirmation while a draft is dirty. Reloading or closing the page requests the browser's native unsaved-changes confirmation, while canceled transitions keep the draft mounted.
+
+Each save applies the user's delta from the last loaded or acknowledged text to the latest file content on disk. Unrelated concurrent changes survive, overlapping changes fail visibly while retaining the draft, and successful writes immediately refresh the live project snapshot.
+
+### Does not replay uncertain writes
+
+An interrupted editor PATCH becomes a visible error without automatic replay because the first request may already have reached disk; safe read requests retain their one retry.
+
 ## Resolves Markdown and source wiki links
 
 Resolved Markdown sections and validated source definitions become client-side links, while unresolved wiki targets remain authored text.
