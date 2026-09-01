@@ -49,7 +49,7 @@ export class CheckRunContext {
     string,
     Promise<ResolvedExternalContent>
   >();
-  private readonly sourceLinkErrorPromises = new Map<
+  private readonly repositoryLinkErrorPromises = new Map<
     string,
     Promise<string | null>
   >();
@@ -349,14 +349,14 @@ export class CheckRunContext {
     return content;
   }
 
-  resolveSourceLink(
+  resolveRepositoryLink(
     target: string,
     resolveLink: () => Promise<string | null>,
   ): Promise<string | null> {
-    let error = this.sourceLinkErrorPromises.get(target);
+    let error = this.repositoryLinkErrorPromises.get(target);
     if (!error) {
-      error = this.time('resolve source-code wiki link', resolveLink, target);
-      this.sourceLinkErrorPromises.set(target, error);
+      error = this.time('resolve repository wiki link', resolveLink, target);
+      this.repositoryLinkErrorPromises.set(target, error);
     }
     return error;
   }

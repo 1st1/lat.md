@@ -11,9 +11,17 @@ Tests for validating wiki links in `lat.md/` markdown files.
 
 Given a file with a wiki link pointing to a nonexistent section, [[cli#check#md]] should report it as a broken link.
 
+### Rejects invalid repository path links
+
+Repository path links fail clearly when the target is missing, escapes the project root, names a non-file/non-directory, or adds a fragment to a directory or unsupported file format.
+
 ## Passes with valid links
 
 Given files where all wiki links resolve to existing sections, [[cli#check#md]] should report no errors.
+
+### Accepts repository path links
+
+Wiki links without fragments accept existing project-root-relative regular files and directories, including unsupported or absent extensions, while supported source symbols still resolve normally.
 
 ### Passes with C enum value links
 

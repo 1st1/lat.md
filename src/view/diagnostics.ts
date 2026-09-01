@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { extname, relative, resolve, dirname } from 'node:path';
-import { ambiguousRefMessage, sourceRefError } from '../cli/check.js';
+import { ambiguousRefMessage, repositoryRefError } from '../cli/check.js';
 import {
   buildFileIndex,
   buildSectionSlugIndex,
@@ -192,7 +192,7 @@ export async function buildViewDiagnostics(
           resolved.suggested,
         );
       } else if (!sectionIds.has(resolved.resolved.toLowerCase())) {
-        message = await sourceRefError(ref.target, projectRoot, {
+        message = await repositoryRefError(ref.target, projectRoot, {
           latDir,
           runtime: sourceParserRuntime,
         });

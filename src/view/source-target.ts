@@ -1,4 +1,5 @@
-import { extname, posix } from 'node:path';
+import { extname } from 'node:path';
+import { normalizeRepositoryPath } from '../repository-path.js';
 import { isSourceFileExtension } from '../source-formats.js';
 
 export type ViewSourceTarget = {
@@ -12,16 +13,9 @@ export type ViewSourceTarget = {
 export function viewSourceTarget(target: string): ViewSourceTarget | null {
   const hash = target.indexOf('#');
   const authoredPath = hash === -1 ? target : target.slice(0, hash);
-  if (
-    !authoredPath ||
-    authoredPath.includes('\\') ||
-    posix.isAbsolute(authoredPath) ||
-    !isSourceFileExtension(extname(authoredPath))
-  ) {
-    return null;
-  }
+  const path = normalizeRepositoryPath(authoredPath);
+  if (!path || !isSourceFileExtension(extname(path))) return null;
 
-  const path = posix.normalize(authoredPath).replace(/^\.\//, '');
   const symbol = hash === -1 ? '' : target.slice(hash + 1);
   const fileKey = path.toLowerCase();
   return {

@@ -87,6 +87,18 @@ See [[cli#init]] for setup details.
 The parser validates [[parser#Wiki Links|wiki link syntax]].
 ```
 
+### Repository path links
+
+Reference any existing file or directory beneath the project root without a fragment:
+
+```markdown
+[[schema.sql]]
+[[CHANGELOG]]
+[[src/components]]
+```
+
+Unsupported formats validate as references but cannot be opened by Lat. A `#fragment` requires a `lat.md/` section or a supported source file.
+
 ### Source code links
 
 Reference functions, classes, constants, and methods in source files:
@@ -176,7 +188,7 @@ Currently the only supported field is `require-code-mention` for test spec enfor
 ## Validation
 
 Always run `lat check` after editing `lat.md/` files. It validates:
-- All wiki links point to existing sections or source code symbols
+- All wiki links point to existing sections, repository paths, or source code symbols
 - All relative markdown links point to existing files
 - Full and collapsed reference-style links have definitions
 - All `@lat:` code refs point to existing sections
