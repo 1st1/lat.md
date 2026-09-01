@@ -167,6 +167,10 @@ Each event stream identifies its server lifetime, so reconnecting after a restar
 
 A document request that never settles becomes a visible error with a retry action instead of leaving the route on an indefinite loading state.
 
+### Recovers interrupted document requests
+
+A transport-interrupted document request retries once. A repeated interruption becomes a visible retryable error, while navigation cancellations remain silent and never overwrite the next route.
+
 ## Refreshes search after Markdown changes
 
 The first search indexes lazily, while a later Markdown generation triggers exactly one shared incremental indexing pass before new queries run.

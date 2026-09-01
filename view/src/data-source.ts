@@ -22,6 +22,20 @@ export class ViewRequestTimeoutError extends Error {
   override name = 'TimeoutError';
 }
 
+export class ViewRequestConnectionError extends Error {
+  override name = 'NetworkError';
+}
+
+function isTransientRequestError(reason: unknown): boolean {
+  return (
+    reason instanceof TypeError ||
+    (typeof reason === 'object' &&
+      reason !== null &&
+      'name' in reason &&
+      reason.name === 'AbortError')
+  );
+}
+
 async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
   const controller = new AbortController();
   let timedOut = false;
@@ -33,23 +47,35 @@ async function fetchJsonFile<T>(url: string, signal?: AbortSignal): Promise<T> {
     controller.abort();
   }, VIEW_REQUEST_TIMEOUT_MS);
   try {
-    const response = await fetch(url, { signal: controller.signal });
-    const value = (await response.json()) as T | ViewError;
-    if (!response.ok) {
-      throw new Error(
-        value && typeof value === 'object' && 'error' in value
-          ? value.error
-          : 'Request failed',
-      );
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        const value = (await response.json()) as T | ViewError;
+        if (!response.ok) {
+          throw new Error(
+            value && typeof value === 'object' && 'error' in value
+              ? value.error
+              : 'Request failed',
+          );
+        }
+        return value as T;
+      } catch (reason) {
+        if (timedOut) {
+          throw new ViewRequestTimeoutError(
+            'The server did not respond in time. Try again.',
+          );
+        }
+        if (controller.signal.aborted) throw reason;
+        if (!isTransientRequestError(reason)) throw reason;
+        if (attempt === 0) continue;
+        throw new ViewRequestConnectionError(
+          'The server connection was interrupted. Try again.',
+        );
+      }
     }
-    return value as T;
-  } catch (reason) {
-    if (timedOut) {
-      throw new ViewRequestTimeoutError(
-        'The server did not respond in time. Try again.',
-      );
-    }
-    throw reason;
+    throw new ViewRequestConnectionError(
+      'The server connection was interrupted. Try again.',
+    );
   } finally {
     globalThis.clearTimeout(timeout);
     signal?.removeEventListener('abort', abort);

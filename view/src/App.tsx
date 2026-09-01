@@ -266,10 +266,6 @@ function currentLocation(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-function isAbortError(reason: unknown): boolean {
-  return reason instanceof Error && reason.name === 'AbortError';
-}
-
 function errorMessage(reason: unknown): string {
   return reason instanceof Error ? reason.message : String(reason);
 }
@@ -524,7 +520,7 @@ export function App() {
         setIndexError('');
       })
       .catch((reason: unknown) => {
-        if (!isAbortError(reason)) setIndexError(errorMessage(reason));
+        if (!controller.signal.aborted) setIndexError(errorMessage(reason));
       });
     return () => controller.abort();
   }, [connectionRevision, projectChange.generation]);
@@ -578,7 +574,7 @@ export function App() {
         setError('');
       })
       .catch((reason: unknown) => {
-        if (requestId === pageRequestId.current && !isAbortError(reason)) {
+        if (requestId === pageRequestId.current && !controller.signal.aborted) {
           setPage(null);
           setHistoryScroll(null);
           setError(errorMessage(reason));
