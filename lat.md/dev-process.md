@@ -71,6 +71,7 @@ The root scripts provide focused checks and builds as well as the complete CI-eq
 - `pnpm format` — format `src/**/*.ts`
 - `pnpm format:check` — check source formatting
 - `pnpm build` — compile the root TypeScript package only
+- `pnpm build:site` — export this repository's vault as a portable UI server
 - `pnpm setup:rust` — prepare the Rust target and project-local build tools
 - `pnpm build:wasm` — rebuild the Rust/WASM engine only
 - `pnpm build:weights` — rebuild or reuse the MiniLM model package
@@ -108,17 +109,22 @@ The separate graph-validation workflow installs and builds the workspace, then r
 
 Cross-platform correctness relies on two conventions: stored paths are always POSIX ([[src/path.ts#toPosix]]), and a repo-root `.gitattributes` (`eol=lf`) keeps Windows checkouts from rewriting line endings and breaking the markdown roundtrip. Functional init tests run the built CLI and database seeding in child processes so native libsql handles close before temp cleanup. Lower-level tests that retain handles or spawn a fake `git` use [[tests/util.ts#rmDirBestEffort]].
 
-## Website Development
+## Site Development
 
-The [[website]] is a root pnpm workspace package because its build compiles Lat and exports the repository vault before Next.js runs.
+The repository's site project exports the root vault through `lat ui build server`, exercising the same portable artifact users deploy.
 
-Website builds resolve the embedding engine and model from pinned npm releases through a dedicated TypeScript config. They compile the current CLI and UI without running the workspace Rust, WASM, or model builders.
+`pnpm build:site` compiles the shared server, downloads the exact published WASM and model artifacts matching this checkout, builds Lat, and writes the server artifact to `.lat-build/server/`.
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm --filter lat-md-website dev
-pnpm --filter lat-md-website build
+pnpm build:site
 ```
+
+The separate Vercel site project uses `pnpm build:site:vercel` as its only build command. It vendors the current workspace packages, installs the generated artifact, and emits Vercel Build Output API v3 in `.vercel/output`; Vercel's Git integration owns preview deployments without a duplicate GitHub Actions build.
+
+Hosted previews intentionally hydrate the published embedding engine and model matching the checkout's package versions. Changes to those packages require local validation with `pnpm build:site:source` and appear in hosted previews only after publication.
+
+The legacy production project and domain remain outside this deployment path until the generated site is ready to replace them. The legacy `website/` workspace remains in the checkout but is not built by the new project.
 
 ## File Walking
 

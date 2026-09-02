@@ -36,6 +36,9 @@
   "scripts": {
     "build": "tsc && pnpm build:view",
     "build:view": "vite build --config view/vite.config.ts && vite build --config view/highlight.vite.config.ts",
+    "build:site": "pnpm --filter @lat.md/server build && node scripts/prepare-site-packages.mjs && pnpm build && node dist/src/cli/index.js ui build server --force",
+    "build:site:vercel": "pnpm build:site && node scripts/vendor-site-packages.mjs && npm install --prefix .lat-build/server --ignore-scripts --no-package-lock && node scripts/build-vercel-output.mjs",
+    "build:site:source": "pnpm buildall && node dist/src/cli/index.js ui build server --force",
     "buildall": "pnpm build:packages && pnpm build",
     "setup:rust": "pnpm --filter @lat.md/embed setup:rust",
     "build:wasm": "pnpm --filter @lat.md/embed build:wasm",
