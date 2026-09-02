@@ -60,7 +60,7 @@ Relative Markdown links are rewritten against their source document and then to 
 
 Builds reject any existing destination, including an empty directory or prior export. For a new path, the builder stages the complete artifact beside the destination and renames it into place only after generation succeeds.
 
-The generated marker makes later project-wide scans ignore the artifact instead of indexing rendered JSON or bundles as source. Any destination that could contain the project root is also rejected.
+Git-backed projects naturally exclude generated artifacts from later project-wide scans because source discovery reads the tracked-file set. Any destination that could contain the project root is also rejected.
 
 ## Live Markdown editing
 

@@ -14,7 +14,6 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { plainStyler, type CmdContext } from '../src/context.js';
-import { createCodeReferenceDiscovery } from '../src/code-refs.js';
 import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
 import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
@@ -450,34 +449,7 @@ describe('lat ui', () => {
         '/project/docs/lat',
       );
 
-      const discovery = createCodeReferenceDiscovery(staticProjectRoot);
-      const [scanned, sourceFiles] = await Promise.all([
-        discovery.scan(),
-        discovery.listSourceFiles(),
-      ]);
-      expect(
-        scanned.refs.some((reference) => reference.file.startsWith('site/')),
-      ).toBe(false);
-      expect(sourceFiles.some((path) => path.startsWith(`${outputDir}/`))).toBe(
-        false,
-      );
-      const disableRipgrep = process.env._LAT_DISABLE_RG;
-      process.env._LAT_DISABLE_RG = '1';
-      try {
-        const fallbackDiscovery =
-          createCodeReferenceDiscovery(staticProjectRoot);
-        const [fallbackScan, fallbackSourceFiles] = await Promise.all([
-          fallbackDiscovery.scan(),
-          fallbackDiscovery.listSourceFiles(),
-        ]);
-        expect(fallbackScan.refs).toEqual(scanned.refs);
-        expect(
-          fallbackSourceFiles.some((path) => path.startsWith(`${outputDir}/`)),
-        ).toBe(false);
-      } finally {
-        if (disableRipgrep === undefined) delete process.env._LAT_DISABLE_RG;
-        else process.env._LAT_DISABLE_RG = disableRipgrep;
-      }
+      expect(existsSync(join(outputDir, '.lat-ui-build'))).toBe(false);
 
       await expect(
         uiBuildCommand(staticContext, outputDir, {

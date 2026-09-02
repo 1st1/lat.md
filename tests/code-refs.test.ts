@@ -1,4 +1,5 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { availableParallelism, tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -80,6 +81,8 @@ async function createDiscoveryParityProject(): Promise<string> {
     'pruned/reincluded',
     '.hidden',
     'generated',
+    'node_modules/highlight.js',
+    'packages/example/node_modules/highlight.js',
     'subproject/lat.md',
     'subproject/src',
   ];
@@ -154,10 +157,24 @@ async function createDiscoveryParityProject(): Promise<string> {
       join(root, '.hidden', 'ignored.ts'),
       codeReference('//', 'Specs#hidden'),
     ),
-    writeFile(join(root, 'generated', '.lat-ui-build'), ''),
     writeFile(
-      join(root, 'generated', 'ignored.ts'),
+      join(root, 'generated', 'visible.ts'),
       codeReference('//', 'Specs#generated'),
+    ),
+    writeFile(
+      join(root, 'node_modules', 'highlight.js', 'ignored.ts'),
+      codeReference('//', 'Specs#root dependency'),
+    ),
+    writeFile(
+      join(
+        root,
+        'packages',
+        'example',
+        'node_modules',
+        'highlight.js',
+        'ignored.ts',
+      ),
+      codeReference('//', 'Specs#nested dependency'),
     ),
     writeFile(join(root, 'subproject', 'lat.md', 'specs.md'), '# Specs\n'),
     writeFile(
@@ -165,6 +182,10 @@ async function createDiscoveryParityProject(): Promise<string> {
       codeReference('//', 'Specs#subproject'),
     ),
   ]);
+
+  if (process.platform !== 'win32') {
+    await symlink('src/visible.ts', join(root, 'linked.ts'));
+  }
 
   return root;
 }
@@ -187,10 +208,7 @@ describe('supported source code-reference scanning', () => {
       const scanOperations: string[] = [];
       const [preferred, preferredFiles] = await Promise.all([
         scanCodeRefs(root, {
-          async time<T>(
-            label: string,
-            work: () => Promise<T>,
-          ): Promise<T> {
+          async time<T>(label: string, work: () => Promise<T>): Promise<T> {
             scanOperations.push(label);
             return work();
           },
@@ -258,6 +276,7 @@ describe('supported source code-reference scanning', () => {
         fallbackDiscovery.listSourceFiles(),
       ]);
       expect(relativeFiles(root, fallbackFiles)).toEqual([
+        'generated/visible.ts',
         'nested/kept.skip.ts',
         'nested/visible.ts',
         'pruned/reincluded/kept.ts',
@@ -267,6 +286,64 @@ describe('supported source code-reference scanning', () => {
 
       delete process.env._LAT_DISABLE_RG;
       if (!(await hasRipgrep())) return;
+      const preferredDiscovery = createCodeReferenceDiscovery(root);
+      const [preferred, preferredFiles] = await Promise.all([
+        preferredDiscovery.scan(),
+        preferredDiscovery.listSourceFiles(),
+      ]);
+      expect(relativeFiles(root, preferredFiles)).toEqual(
+        relativeFiles(root, fallbackFiles),
+      );
+      expect(comparableRefs(preferred)).toEqual(comparableRefs(fallback));
+    } finally {
+      if (original === undefined) delete process.env._LAT_DISABLE_RG;
+      else process.env._LAT_DISABLE_RG = original;
+    }
+  });
+
+  // @lat: [[tests/ts-fallback#Git repositories scan tracked sources]]
+  it('uses the same tracked source scope with ripgrep and TypeScript', async () => {
+    const root = await createDiscoveryParityProject();
+    execFileSync('git', ['init', '--quiet'], { cwd: root });
+    execFileSync(
+      'git',
+      [
+        'add',
+        '.gitignore',
+        'nested/.gitignore',
+        '.hidden/ignored.ts',
+        'nested/visible.ts',
+        'src/visible.ts',
+        'subproject/lat.md/specs.md',
+        'subproject/src/ignored.ts',
+      ],
+      { cwd: root },
+    );
+    const symlinkBlob = execFileSync('git', ['hash-object', '-w', '--stdin'], {
+      cwd: root,
+      encoding: 'utf8',
+      input: 'src/visible.ts\n',
+    }).trim();
+    execFileSync(
+      'git',
+      ['update-index', '--add', '--cacheinfo', `120000,${symlinkBlob},linked.ts`],
+      { cwd: root },
+    );
+    const original = process.env._LAT_DISABLE_RG;
+
+    try {
+      process.env._LAT_DISABLE_RG = '1';
+      const fallbackDiscovery = createCodeReferenceDiscovery(root);
+      const [fallback, fallbackFiles] = await Promise.all([
+        fallbackDiscovery.scan(),
+        fallbackDiscovery.listSourceFiles(),
+      ]);
+      expect(relativeFiles(root, fallbackFiles)).toEqual([
+        'nested/visible.ts',
+        'src/visible.ts',
+      ]);
+
+      delete process.env._LAT_DISABLE_RG;
       const preferredDiscovery = createCodeReferenceDiscovery(root);
       const [preferred, preferredFiles] = await Promise.all([
         preferredDiscovery.scan(),
