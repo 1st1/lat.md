@@ -40,7 +40,6 @@ import {
   rawDocumentPath,
 } from './document-route.js';
 
-const BUILD_MARKER = '.lat-ui-build';
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
 
 export type StaticViewBuildOptions = {
@@ -827,11 +826,6 @@ export async function buildStaticView(
     if (payloadDir !== stagingDir) {
       await writeFile(join(stagingDir, 'index.html'), entryRedirect);
     }
-    await writeFile(
-      join(stagingDir, BUILD_MARKER),
-      `${JSON.stringify({ version: 1 })}\n`,
-    );
-
     await rename(stagingDir, outputDir);
     return {
       documents: documents.size,

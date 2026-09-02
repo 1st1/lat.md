@@ -1,28 +1,24 @@
+import { lstatSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { availableParallelism } from 'node:os';
-import { join, posix, relative } from 'node:path';
+import { join, relative } from 'node:path';
 import { isSourceFilePath, SOURCE_FILE_EXTENSIONS } from './source-formats.js';
 import { toPosix } from './path.js';
-import { walkEntries } from './walk.js';
+import { ALWAYS_IGNORED_DIRECTORIES, walkEntries } from './walk.js';
 import type { Profiler } from './profiler.js';
 
 /** Glob patterns used to exclude directories/files from code-ref scanning.
  *  Shared between rg args and the TS fallback's walkFiles filter. */
-const EXCLUDE_DIRS = ['lat.md', '.claude'];
+const EXCLUDE_DIRS = ['lat.md', '.claude', ...ALWAYS_IGNORED_DIRECTORIES];
 const EXCLUDE_GLOBS = ['*.md', '.*', '**/.*'];
 const RG_IGNORE_ARGS = ['--no-require-git', '--ignore-file-case-insensitive'];
 
 /** Walk supported source files for code-ref scanning. Uses walkEntries for
- *  .gitignore support, then additionally skips lat.md/, .claude/, generated
- *  output, and sub-projects. */
+ *  .gitignore support, then additionally skips lat.md/, .claude/, and
+ *  sub-projects. */
 export async function walkFiles(dir: string): Promise<string[]> {
   const entries = (await walkEntries(dir)).map(toPosix);
-  const generatedOutputs = new Set(
-    entries
-      .filter((entry) => entry.endsWith('/.lat-ui-build'))
-      .map((entry) => `${posix.dirname(entry)}/`),
-  );
 
   // Collect directories that contain their own lat.md/ (sub-projects)
   const subProjects = new Set<string>();
@@ -37,7 +33,6 @@ export async function walkFiles(dir: string): Promise<string[]> {
         isSourceFilePath(e) &&
         !e.startsWith('lat.md/') &&
         !e.startsWith('.claude/') &&
-        ![...generatedOutputs].some((prefix) => e.startsWith(prefix)) &&
         ![...subProjects].some((prefix) => e.startsWith(prefix)),
     )
     .map((e) => join(dir, e));
@@ -148,44 +143,71 @@ async function findSubProjects(projectRoot: string): Promise<string[]> {
   return [...subProjects];
 }
 
-/** Find static UI exports so generated JSON and bundles never become code refs. */
-async function findGeneratedOutputs(projectRoot: string): Promise<string[]> {
+function nestedLatProjects(paths: readonly string[]): string[] {
+  const projects = new Set<string>();
+  for (const path of paths) {
+    const index = path.indexOf('/lat.md/');
+    if (index !== -1) projects.add(path.slice(0, index));
+  }
+  return [...projects];
+}
+
+function hasDotDirectory(path: string): boolean {
+  const parts = path.split('/');
+  return parts.slice(0, -1).some((part) => part.startsWith('.'));
+}
+
+/** List readable regular source files tracked by the enclosing Git repository. */
+async function findGitTrackedSourceFiles(
+  projectRoot: string,
+): Promise<string[] | null> {
   const out = await tryExec(
-    'rg',
-    [
-      '--files',
-      ...RG_IGNORE_ARGS,
-      '--hidden',
-      '--glob',
-      '**/.lat-ui-build',
-      '.',
-    ],
+    'git',
+    ['ls-files', '--stage', '-z', '--', '.'],
     projectRoot,
   );
-  if (!out) return [];
+  if (out === null) return null;
 
-  return [
-    ...new Set(
-      out
-        .split('\n')
-        .filter(Boolean)
-        .map((line) => toPosix(line).replace(/^\.\//, ''))
-        .filter((line) => line.endsWith('/.lat-ui-build'))
-        .map((line) => posix.dirname(line)),
-    ),
-  ];
+  const entries = out
+    .split('\0')
+    .filter(Boolean)
+    .flatMap((entry) => {
+      const tab = entry.indexOf('\t');
+      if (tab === -1) return [];
+      const mode = entry.slice(0, entry.indexOf(' '));
+      if (mode !== '100644' && mode !== '100755') return [];
+      return [toPosix(entry.slice(tab + 1))];
+    });
+  const subProjects = nestedLatProjects(entries);
+  const candidates = entries.filter(
+    (path) =>
+      isSourceFilePath(path) &&
+      !hasDotDirectory(path) &&
+      !path.startsWith('lat.md/') &&
+      !subProjects.some(
+        (project) => path === project || path.startsWith(`${project}/`),
+      ),
+  );
+
+  return candidates
+    .flatMap((path) => {
+      const absolute = join(projectRoot, path);
+      try {
+        return lstatSync(absolute).isFile() ? [absolute] : [];
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+        throw error;
+      }
+    })
+    .sort((a, b) => a.localeCompare(b, 'en'));
 }
 
 /** Build rg glob exclusion args. */
-function rgExcludeArgs(
-  subProjects: string[],
-  generatedOutputs: string[],
-): string[] {
+function rgExcludeArgs(subProjects: string[]): string[] {
   const args: string[] = [];
   for (const dir of EXCLUDE_DIRS) args.push('--glob', `!${dir}/`);
   for (const glob of EXCLUDE_GLOBS) args.push('--glob', `!${glob}`);
   for (const sp of subProjects) args.push('--glob', `!${sp}/`);
-  for (const output of generatedOutputs) args.push('--glob', `!${output}/`);
   return args;
 }
 
@@ -205,15 +227,59 @@ async function discoverRipgrepExcludes(
   projectRoot: string,
   profile?: Pick<Profiler, 'time'>,
 ): Promise<string[]> {
-  const [subProjects, generatedOutputs] = await Promise.all([
-    profileScan(profile, 'find nested lat.md projects with ripgrep', () =>
-      findSubProjects(projectRoot),
-    ),
-    profileScan(profile, 'find generated UI outputs with ripgrep', () =>
-      findGeneratedOutputs(projectRoot),
-    ),
-  ]);
-  return rgExcludeArgs(subProjects, generatedOutputs);
+  const subProjects = await profileScan(
+    profile,
+    'find nested lat.md projects with ripgrep',
+    () => findSubProjects(projectRoot),
+  );
+  return rgExcludeArgs(subProjects);
+}
+
+function ripgrepPathBatches(paths: string[]): string[][] {
+  const batches: string[][] = [];
+  let batch: string[] = [];
+  let length = 0;
+  for (const path of paths) {
+    if (batch.length > 0 && length + path.length + 1 > 16_000) {
+      batches.push(batch);
+      batch = [];
+      length = 0;
+    }
+    batch.push(path);
+    length += path.length + 1;
+  }
+  if (batch.length > 0) batches.push(batch);
+  return batches;
+}
+
+async function runRipgrepBatches(
+  projectRoot: string,
+  args: string[],
+  paths: string[],
+): Promise<string[] | null> {
+  const batches = ripgrepPathBatches(paths);
+  if (batches.length === 0) return [];
+  const results = new Array<string | null>(batches.length);
+  let nextIndex = 0;
+  const workerCount = Math.min(availableParallelism(), batches.length);
+
+  await Promise.all(
+    Array.from({ length: workerCount }, async () => {
+      while (true) {
+        const index = nextIndex++;
+        if (index >= batches.length) return;
+        results[index] = await tryExec(
+          'rg',
+          [...args, '--', ...batches[index]],
+          projectRoot,
+        );
+      }
+    }),
+  );
+
+  return results.some((result) => result === null)
+    ? null
+    : (results as string[]);
 }
 
 /** Search supported source files for code references with ripgrep. */
@@ -221,6 +287,7 @@ async function tryRipgrepCodeRefs(
   projectRoot: string,
   excludes: string[],
   profile?: Pick<Profiler, 'time'>,
+  files?: string[],
 ): Promise<CodeRef[] | null> {
   const searchArgs = [
     '--no-heading',
@@ -230,16 +297,26 @@ async function tryRipgrepCodeRefs(
     ...rgSourceIncludeArgs(),
     ...excludes,
     '@lat:.*\\[\\[',
-    '.',
   ];
-  const out = await profileScan(
+  const outputs = await profileScan(
     profile,
     'scan @lat references with ripgrep',
-    () => tryExec('rg', searchArgs, projectRoot),
+    () =>
+      files
+        ? runRipgrepBatches(
+            projectRoot,
+            searchArgs,
+            files.map((file) => toPosix(relative(projectRoot, file))),
+          )
+        : tryExec('rg', [...searchArgs, '.'], projectRoot).then((output) =>
+            output === null ? null : [output],
+          ),
   );
-  if (out === null) return null;
+  if (outputs === null) return null;
 
-  const { refs } = parseGrepOutput(out, projectRoot);
+  const refs = outputs.flatMap(
+    (output) => parseGrepOutput(output, projectRoot).refs,
+  );
   refs.sort((a, b) => a.file.localeCompare(b.file, 'en') || a.line - b.line);
   return refs;
 }
@@ -398,14 +475,25 @@ export function createCodeReferenceDiscovery(
   profile?: Pick<Profiler, 'time'>,
 ): CodeReferenceDiscovery {
   let excludesPromise: Promise<string[]> | undefined;
+  let trackedFilesPromise: Promise<string[] | null> | undefined;
   let sourceFilesPromise: Promise<string[]> | undefined;
   let scanPromise: Promise<ScanResult> | undefined;
 
   const ripgrepExcludes = () =>
     (excludesPromise ??= discoverRipgrepExcludes(projectRoot, profile));
 
+  const trackedFiles = () =>
+    (trackedFilesPromise ??= profileScan(
+      profile,
+      'list tracked source files with git',
+      () => findGitTrackedSourceFiles(projectRoot),
+    ));
+
   const listSourceFiles = () =>
     (sourceFilesPromise ??= (async () => {
+      const tracked = await trackedFiles();
+      if (tracked !== null) return tracked;
+
       if (process.env._LAT_DISABLE_RG !== '1') {
         const files = await tryRipgrepSourceFiles(
           projectRoot,
@@ -422,11 +510,13 @@ export function createCodeReferenceDiscovery(
 
   const scan = () =>
     (scanPromise ??= (async () => {
+      const tracked = await trackedFiles();
       if (process.env._LAT_DISABLE_RG !== '1') {
         const refs = await tryRipgrepCodeRefs(
           projectRoot,
-          await ripgrepExcludes(),
+          tracked === null ? await ripgrepExcludes() : [],
           profile,
+          tracked ?? undefined,
         );
         if (refs !== null) return { refs };
       }

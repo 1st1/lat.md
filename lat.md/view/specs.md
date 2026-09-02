@@ -39,8 +39,6 @@ Entry assets use that base, while lazy JavaScript, CSS, fonts, and renderer chun
 
 Any existing output path is rejected before snapshot work begins, including an empty directory or prior generated export. Callers must remove it explicitly or choose a new destination.
 
-The generated marker excludes the entire artifact from both ripgrep and fallback code-reference scans, preventing exported JSON and bundles from polluting project checks or search.
-
 ## Builds the website wiki from published embedding packages
 
 Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.

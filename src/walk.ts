@@ -27,6 +27,9 @@ type IgnoreWalkerConstructor = new (
 const IgnoreWalker = (walk as unknown as { Walker: IgnoreWalkerConstructor })
   .Walker;
 
+/** Dependency trees are never project source, even without ignore metadata. */
+export const ALWAYS_IGNORED_DIRECTORIES = ['node_modules'] as const;
+
 class IgnoreContext extends IgnoreWalker {
   filterEntry(
     entry: string,
@@ -39,10 +42,10 @@ class IgnoreContext extends IgnoreWalker {
         .split(/[\\/]/)
         .some(
           (part) =>
-            part.startsWith('.') &&
-            part !== '.' &&
-            part !== '..' &&
-            part !== '.lat-ui-build',
+            ALWAYS_IGNORED_DIRECTORIES.includes(
+              part as (typeof ALWAYS_IGNORED_DIRECTORIES)[number],
+            ) ||
+            (part.startsWith('.') && part !== '.' && part !== '..'),
         )
     ) {
       return false;
@@ -72,6 +75,8 @@ async function readDirectory(job: DirectoryJob): Promise<DirectoryResult> {
   const directories: DirectoryJob[] = [];
   const files: string[] = [];
   for (const entry of entries) {
+    if (entry.isSymbolicLink()) continue;
+
     if (entry.isDirectory()) {
       const passDirectory = job.ignoreContext.filterEntry(entry.name, true);
       if (!passDirectory) continue;
