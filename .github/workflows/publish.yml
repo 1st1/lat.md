@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
 
-# Publishes any of the three packages whose version was bumped, in dependency
+# Publishes any workspace package whose version was bumped, in dependency
 # order. Uses `pnpm publish` (not `npm publish`) so `workspace:*` deps in lat.md
 # are rewritten to the real published versions.
 jobs:
@@ -31,7 +31,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # buildall = packages (WASM engine + fp16 weights + tsc) then top-level lat.
+      # buildall = shared server + WASM engine + fp16 weights, then top-level lat.
       - run: pnpm buildall
       - run: pnpm vitest run --reporter=verbose
 
@@ -52,6 +52,7 @@ jobs:
           }
           publish_if_new packages/embed-minilm-fp16
           publish_if_new packages/embed
+          publish_if_new packages/server
           publish_if_new .
 
       - name: Create GitHub Release for lat.md

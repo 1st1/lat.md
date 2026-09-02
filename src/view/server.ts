@@ -1,13 +1,18 @@
 import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import {
-  createServer,
   type IncomingMessage,
   type Server,
   type ServerResponse,
 } from 'node:http';
 import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  createLatServerApp,
+  listenLatServer,
+  type LatServerApp,
+  type LatServerRequestHandler,
+} from '@lat.md/server';
 import { plainStyler, type CmdContext } from '../context.js';
 import { sectionCommand } from '../cli/section.js';
 import {
@@ -45,6 +50,12 @@ export type ViewServer = {
   close: () => Promise<void>;
 };
 
+export type ViewApp = {
+  app: LatServerApp;
+  store: ViewStore;
+  close: () => Promise<void>;
+};
+
 export type ViewServerOptions = {
   clientDir?: string;
   git?: boolean;
@@ -56,15 +67,6 @@ export type ViewServerOptions = {
   watch?: boolean;
   externalCa?: string | Buffer;
 };
-
-function setSecurityHeaders(res: ServerResponse): void {
-  res.setHeader(
-    'Content-Security-Policy',
-    "default-src 'self'; connect-src 'self' https://tiles.openfreemap.org; font-src 'self' data:; img-src 'self' data: https://github.githubassets.com; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
-  );
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-}
 
 function send(
   res: ServerResponse,
@@ -188,27 +190,11 @@ async function sendClientShell(
   }
 }
 
-function listen(server: Server, host: string, port: number): Promise<void> {
-  return new Promise((resolveListen, reject) => {
-    const onError = (error: Error) => {
-      server.off('listening', onListening);
-      reject(error);
-    };
-    const onListening = () => {
-      server.off('error', onError);
-      resolveListen();
-    };
-    server.once('error', onError);
-    server.once('listening', onListening);
-    server.listen(port, host);
-  });
-}
-
-/** Start the loopback server used by `lat ui`. */
-export async function startViewServer(
+/** Create the portable Express application used by live Lat UI servers. */
+export async function createViewApp(
   ctx: CmdContext,
   options: ViewServerOptions = {},
-): Promise<ViewServer> {
+): Promise<ViewApp> {
   const host = options.host ?? DEFAULT_HOST;
   const clientDir = options.clientDir ?? defaultClientDir;
   const logoText = options.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
@@ -233,9 +219,8 @@ export async function startViewServer(
   }, 15_000);
   heartbeat.unref();
 
-  const server = createServer((req, res) => {
+  const handleRequest: LatServerRequestHandler = (req, res) => {
     void (async () => {
-      setSecurityHeaders(res);
       const method = req.method ?? 'GET';
       const headOnly = method === 'HEAD';
       const url = new URL(req.url ?? '/', `http://${host}`);
@@ -568,57 +553,48 @@ export async function startViewServer(
         false,
       );
     });
-  });
-
-  try {
-    const requestedPort = options.port;
-    let port = requestedPort ?? DEFAULT_VIEW_PORT;
-    while (true) {
-      try {
-        await listen(server, host, port);
-        break;
-      } catch (error) {
-        if (
-          requestedPort !== undefined ||
-          (error as NodeJS.ErrnoException).code !== 'EADDRINUSE' ||
-          port === 65_535
-        ) {
-          throw error;
-        }
-        port++;
-      }
-    }
-  } catch (error) {
-    clearInterval(heartbeat);
-    unsubscribeStore();
-    await store.close();
-    throw error;
-  }
-
-  const address = server.address();
-  if (!address || typeof address === 'string') {
-    await new Promise<void>((resolveClose) =>
-      server.close(() => resolveClose()),
-    );
-    clearInterval(heartbeat);
-    unsubscribeStore();
-    await store.close();
-    throw new Error('Could not determine lat ui server address');
-  }
+  };
+  const app = createLatServerApp({ handle: handleRequest });
 
   return {
-    server,
+    app,
     store,
-    url: `http://${host}:${address.port}/`,
     close: async () => {
       clearInterval(heartbeat);
       unsubscribeStore();
       for (const client of eventClients) client.end();
       eventClients.clear();
       await store.close();
-      await new Promise<void>((resolveClose, reject) => {
-        server.close((error) => (error ? reject(error) : resolveClose()));
-      });
+    },
+  };
+}
+
+/** Start the loopback server used by `lat ui`. */
+export async function startViewServer(
+  ctx: CmdContext,
+  options: ViewServerOptions = {},
+): Promise<ViewServer> {
+  const host = options.host ?? DEFAULT_HOST;
+  const view = await createViewApp(ctx, options);
+  let running;
+  try {
+    const requestedPort = options.port;
+    running = await listenLatServer(view.app, {
+      host,
+      port: requestedPort ?? DEFAULT_VIEW_PORT,
+      findAvailablePort: requestedPort === undefined,
+    });
+  } catch (error) {
+    await view.close();
+    throw error;
+  }
+
+  return {
+    server: running.server,
+    store: view.store,
+    url: running.url,
+    close: async () => {
+      await Promise.all([running.close(), view.close()]);
     },
   };
 }

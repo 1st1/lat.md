@@ -10,7 +10,7 @@ The website's Lat wordmark is the default top-left brand in both clients. `--log
 
 The browser follows the lat website's monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained Vercel-style controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
-The installed runtime uses Node HTTP and prebuilt Vite assets. Browser renderer inputs remain development dependencies because Vite emits their code, styles, and fonts into the published lazy assets instead of making npm consumers install redundant source packages.
+The installed runtime composes its live request handler with the shared Express stack in `@lat.md/server`, which owns security headers, listening, shutdown, and static hosting behavior for both local and deployed servers. Browser renderer inputs remain development dependencies because Vite emits their code, styles, and fonts into the published lazy assets instead of making npm consumers install redundant source packages.
 
 The server highlighter similarly bundles Lowlight with only Lat's supported Highlight.js grammars, keeping the full language set out of production dependencies.
 
