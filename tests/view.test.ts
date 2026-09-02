@@ -261,6 +261,21 @@ describe('lat ui', () => {
     );
     expect(escapingRawResponse.status).toBe(404);
 
+    const resourceResponse = await fetch(
+      new URL('/resources/media/project.svg', view.url),
+    );
+    expect(resourceResponse.status).toBe(200);
+    expect(resourceResponse.headers.get('content-type')).toBe('image/svg+xml');
+    expect(await resourceResponse.text()).toContain('<circle');
+    const missingResourceResponse = await fetch(
+      new URL('/resources/media/missing.svg', view.url),
+    );
+    expect(missingResourceResponse.status).toBe(404);
+    const escapingResourceResponse = await fetch(
+      new URL('/resources/..%2F..%2Fpackage.json', view.url),
+    );
+    expect(escapingResourceResponse.status).toBe(404);
+
     const sourceShell = await fetch(new URL('/code/src/app.ts', view.url));
     expect(sourceShell.status).toBe(200);
     expect(await sourceShell.text()).toContain('lat ui shell');
@@ -296,6 +311,9 @@ describe('lat ui', () => {
     );
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
+    );
+    expect(staticViewUrl('/resources/media/project.svg', '/project/')).toBe(
+      '/project/resources/media/project.svg',
     );
     expect(staticViewAssetUrl('/assets/logo.svg', '/project/')).toBe(
       '/project/assets/logo.svg',
@@ -406,6 +424,12 @@ describe('lat ui', () => {
       expect(existsSync(join(payloadDir, 'graph', 'index.html'))).toBe(true);
       expect(existsSync(join(payloadDir, 'search', 'index.html'))).toBe(false);
       expect(existsSync(join(payloadDir, 'assets', 'app.js'))).toBe(true);
+      expect(
+        readFileSync(
+          join(payloadDir, 'resources', 'media', 'project.svg'),
+          'utf8',
+        ),
+      ).toContain('<circle');
       expect(existsSync(join(outputDir, 'assets'))).toBe(false);
       expect(existsSync(join(outputDir, 'data'))).toBe(false);
 
@@ -658,13 +682,13 @@ describe('lat ui', () => {
       graphSelectionForUrl(
         graph,
         new URL(
-          '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+          '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=18#run',
           view.url,
         ),
       ),
     ).toEqual({
       nodeId: 'source:src/app.ts#run',
-      target: '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=16#run',
+      target: '/code/src/app.ts?from=lat.md%2Flat%23View+Project&line=18#run',
     });
     expect(
       graphSelectionForUrl(graph, new URL('/code/src/app.ts?at=5', view.url)),
@@ -1363,7 +1387,10 @@ describe('lat ui', () => {
     expect(viewDocumentHtml(document)).toContain(
       'href="/code/src/app.ts?from=lat.md%2Flat%23View+Project',
     );
-    expect(viewDocumentHtml(document)).toContain('line=16#run');
+    expect(viewDocumentHtml(document)).toContain('line=18#run');
+    expect(viewDocumentHtml(document)).toContain(
+      'src="/resources/media/project.svg"',
+    );
     expect(viewDocumentHtml(document)).toContain(
       'class="wiki-link-segmented wiki-link-code"',
     );
@@ -1481,7 +1508,7 @@ describe('lat ui', () => {
     url.searchParams.set('path', 'src/app.ts');
     url.searchParams.set('symbol', 'run');
     url.searchParams.set('from', 'lat.md/lat#View Project');
-    url.searchParams.set('line', '16');
+    url.searchParams.set('line', '18');
     const response = await fetch(url);
     const source = (await response.json()) as ViewSourceDocument;
 

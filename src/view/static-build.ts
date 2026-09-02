@@ -34,6 +34,7 @@ import {
 import { createViewStore } from './store.js';
 import { rewriteClientAssetUrls } from './client-shell.js';
 import {
+  documentResourcePath,
   documentPath,
   documentUrl,
   rawDocumentPath,
@@ -114,6 +115,10 @@ export function staticViewUrl(value: string, basePath: string): string {
     const route = url.pathname.slice(1).replace(/\/+$/, '');
     const suffix = `${url.search}${url.hash}`;
     return `${basePath}${route}${suffix}`;
+  }
+  if (url.pathname.startsWith('/resources/')) {
+    const route = url.pathname.slice(1);
+    return `${basePath}${route}${url.search}${url.hash}`;
   }
   for (const prefix of ['/code/', '/external/'] as const) {
     if (!url.pathname.startsWith(prefix)) continue;
@@ -571,6 +576,7 @@ export async function buildStaticView(
     const shell = clientShell(clientHtml, basePath);
     const index = { ...store.getIndex(), git: null, logoText };
     const documents = new Map<string, ViewDocument>();
+    const documentResources = new Set<string>();
     const sourceRequests = new Map<string, ViewStaticSourceRequest>();
     const externalRequests = new Set<string>();
 
@@ -581,6 +587,17 @@ export async function buildStaticView(
     for (const path of index.files) {
       const document = await store.getDocument(path);
       documents.set(path, document);
+      for (const url of documentTreeUrls(document.tree)) {
+        let parsed: URL;
+        try {
+          parsed = new URL(url, 'http://lat.local');
+        } catch {
+          continue;
+        }
+        if (parsed.origin !== 'http://lat.local') continue;
+        const resourcePath = documentResourcePath(parsed.pathname);
+        if (resourcePath) documentResources.add(resourcePath);
+      }
       sourceRequestsFromDocument(document, sourceRequests);
       externalRequestsFromDocument(
         document,
@@ -698,6 +715,20 @@ export async function buildStaticView(
       await writeFile(rawPath, source.content);
       const route = `docs/${path.slice(0, -'.md'.length)}`;
       await writeRouteShell(payloadDir, route, shell);
+    }
+
+    for (const path of [...documentResources].sort()) {
+      let content: Buffer;
+      try {
+        content = await store.getDocumentResource(path);
+      } catch (error) {
+        throw new Error(
+          `Could not export document resource ${path}: ${(error as Error).message}`,
+        );
+      }
+      const outputPath = join(payloadDir, 'resources', ...path.split('/'));
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, content);
     }
 
     const sourceFiles = new Map<string, string>();

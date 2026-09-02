@@ -584,6 +584,11 @@ export async function renderMarkdown(
       node.url = options.rewriteMarkdownLink(authoredUrl);
     }
   });
+  visit(tree, 'image', (node) => {
+    if (options.rewriteMarkdownLink) {
+      node.url = options.rewriteMarkdownLink(node.url);
+    }
+  });
 
   const firstHeading = tree.children.find((node) => node.type === 'heading');
   const title = firstHeading

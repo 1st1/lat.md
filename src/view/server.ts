@@ -26,7 +26,11 @@ import {
 import { createViewSearch, type ViewSearch } from './search.js';
 import { createViewStore, type ViewStore } from './store.js';
 import { rewriteClientAssetUrls } from './client-shell.js';
-import { documentUrl, rawDocumentPath } from './document-route.js';
+import {
+  documentResourcePath,
+  documentUrl,
+  rawDocumentPath,
+} from './document-route.js';
 
 const DEFAULT_HOST = '127.0.0.1';
 export const DEFAULT_VIEW_PORT = 4242;
@@ -119,8 +123,17 @@ function contentType(path: string): string {
       return 'text/javascript; charset=utf-8';
     case '.json':
       return 'application/json; charset=utf-8';
+    case '.gif':
+      return 'image/gif';
+    case '.jpeg':
+    case '.jpg':
+      return 'image/jpeg';
+    case '.png':
+      return 'image/png';
     case '.svg':
       return 'image/svg+xml';
+    case '.webp':
+      return 'image/webp';
     case '.woff2':
       return 'font/woff2';
     default:
@@ -511,6 +524,19 @@ export async function startViewServer(
             source.content,
             headOnly,
           );
+        } catch (error) {
+          if (!(error instanceof ViewDocumentNotFoundError)) throw error;
+          send(res, 404, 'text/plain; charset=utf-8', error.message, headOnly);
+        }
+        return;
+      }
+
+      const resourcePath = documentResourcePath(url.pathname);
+      if (resourcePath) {
+        try {
+          const body = await store.getDocumentResource(resourcePath);
+          res.setHeader('Cache-Control', 'no-cache');
+          send(res, 200, contentType(resourcePath), body, headOnly);
         } catch (error) {
           if (!(error instanceof ViewDocumentNotFoundError)) throw error;
           send(res, 404, 'text/plain; charset=utf-8', error.message, headOnly);

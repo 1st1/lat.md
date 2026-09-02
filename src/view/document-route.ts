@@ -1,4 +1,5 @@
 const DOCUMENT_PREFIX = '/docs/';
+const RESOURCE_PREFIX = '/resources/';
 const MARKDOWN_EXTENSION = '.md';
 
 function encodePath(path: string): string {
@@ -40,6 +41,37 @@ export function rawDocumentPath(pathname: string): string | null {
   return path?.toLowerCase().endsWith(MARKDOWN_EXTENSION) ? path : null;
 }
 
+/** Build the browser route for a non-Markdown file stored in the vault. */
+export function documentResourceUrl(path: string): string {
+  return `${RESOURCE_PREFIX}${encodePath(path)}`;
+}
+
+/** Resolve a browser resource route to a safe vault-relative file path. */
+export function documentResourcePath(pathname: string): string | null {
+  if (!pathname.startsWith(RESOURCE_PREFIX)) return null;
+  try {
+    const segments = pathname
+      .slice(RESOURCE_PREFIX.length)
+      .split('/')
+      .map(decodeURIComponent);
+    if (
+      segments.length === 0 ||
+      segments.some(
+        (segment) =>
+          !segment ||
+          segment === '.' ||
+          segment === '..' ||
+          segment.includes('\\'),
+      )
+    ) {
+      return null;
+    }
+    return segments.join('/');
+  } catch {
+    return null;
+  }
+}
+
 /** Keep relative Markdown-to-Markdown links inside the rendered document UI. */
 export function rewriteDocumentLink(value: string, sourcePath: string): string {
   if (
@@ -63,6 +95,10 @@ export function rewriteDocumentLink(value: string, sourcePath: string): string {
   }
   if (resolved.origin !== 'http://lat.local') return value;
   const path = rawDocumentPath(resolved.pathname);
-  if (!path) return value;
-  return `${documentUrl(path)}${resolved.search}${resolved.hash}`;
+  if (path) {
+    return `${documentUrl(path)}${resolved.search}${resolved.hash}`;
+  }
+  const resourcePath = decodeDocumentPath(resolved.pathname);
+  if (!resourcePath) return value;
+  return `${documentResourceUrl(resourcePath)}${resolved.search}${resolved.hash}`;
 }

@@ -20,7 +20,7 @@ Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style throug
 
 The live server's default-self Content Security Policy explicitly permits only OpenFreeMap tile connections, GitHub custom emoji images, and bundled data fonts needed by those supported renderers.
 
-Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
+Read APIs accept only walked vault files, contained document resources, or supported project source paths and reject traversal and escaping symlinks.
 
 Local Markdown documents use extensionless `/docs/...` browser routes. Appending `.md` addresses the exact Markdown source instead, with `text/markdown` from the live server and a physical `.md` file in static exports so agents can read the vault without the React protocol.
 
@@ -44,7 +44,7 @@ Static export traverses tree properties to discover linked source and external t
 
 [[src/cli/ui-build.ts#uiBuildCommand]] snapshots the current vault into a directory of HTML, JavaScript, CSS, and lazy JSON data that any ordinary static host can serve.
 
-The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each extensionless document and source path gets a physical `index.html` shell; every local document also has an exact `.md` source sibling. A compatibility shell migrates old graph URLs.
+The export preserves the file tree, rendered Markdown, wiki and ordinary Markdown navigation, validation state, backlinks, source views, local TOCs, and the graph workspace. Each extensionless document and source path gets a physical `index.html` shell; every local document also has an exact `.md` source sibling, and referenced vault resources are copied under `resources/`. A compatibility shell migrates old graph URLs.
 
 Each unique source file has one shared raw-text and highlighted-line payload. Manifest entries combine it with small request-specific payloads for focus, context, and references, avoiding code duplication across links into the same file.
 

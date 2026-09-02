@@ -483,15 +483,41 @@ export async function checkIndex(
   const errors: IndexError[] = [];
   const allPaths = await run.entries();
 
-  // Flag non-.md files. The machine-local external override is the one
-  // intentional non-Markdown configuration file in the vault.
+  const referencedResources = new Set<string>();
+  for (const file of await run.markdownFiles()) {
+    for (const link of await run.links(file)) {
+      if ('identifier' in link) continue;
+      const target = parseLocalMarkdownTarget(link.url);
+      if (!target || target.kind === 'invalid-backslash' || !target.path) {
+        continue;
+      }
+      const absolutePath = resolve(dirname(file), target.path);
+      const resourcePath = toPosix(relative(latticeDir, absolutePath));
+      if (
+        resourcePath &&
+        resourcePath !== '..' &&
+        !resourcePath.startsWith('../') &&
+        !resourcePath.toLowerCase().endsWith('.md')
+      ) {
+        referencedResources.add(resourcePath);
+      }
+    }
+  }
+
+  // Flag non-.md files unless Markdown reaches them as local resources. The
+  // machine-local external override is the other intentional non-Markdown
+  // configuration file in the vault.
   for (const p of allPaths) {
     const name = p.includes('/') ? p.slice(p.lastIndexOf('/') + 1) : p;
-    if (!name.endsWith('.md') && p !== 'config.local.yaml') {
+    if (
+      !name.endsWith('.md') &&
+      p !== 'config.local.yaml' &&
+      !referencedResources.has(p)
+    ) {
       const relDir = basename(latticeDir) + '/';
       errors.push({
         dir: relDir,
-        message: `"${p}" is not a .md file — only markdown files belong in the checked directory`,
+        message: `"${p}" is not a .md file or a referenced local resource — remove it or link to it from Markdown`,
       });
     }
   }

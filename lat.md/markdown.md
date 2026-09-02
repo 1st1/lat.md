@@ -157,6 +157,8 @@ Ordinary markdown links (`[text](path)`) to local files are validated for existe
 
 Targets resolve against the containing file's directory. A link that leaves `lat.md/` (`../../AGENTS.md`) is checked like any other. Inline links, images, and reference definitions (`[id]: ./path.md`) all participate; code samples and bracket-like text in raw HTML do not.
 
+Non-Markdown files stored inside `lat.md/` are valid only when ordinary Markdown links or images reference them. The live browser serves these contained resources and static exports copy only those the rendered documents use.
+
 Fragments targeting Markdown files must match a GitHub-style heading id. GitHub lowercases headings, removes punctuation, replaces spaces with hyphens, and suffixes duplicate ids with `-1`, `-2`, and so on. Bare fragments target the containing file and are validated the same way.
 
 Full (`[text][id]`), collapsed (`[id][]`), and shortcut (`[id]`) references without a matching definition are errors. Literal bracketed prose must escape its opening bracket (`\[id]`), keeping link intent explicit in Lat's strict Markdown dialect.
