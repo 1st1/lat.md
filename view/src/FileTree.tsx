@@ -1,4 +1,4 @@
-import { useMemo, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import {
   buildExternalFileTree,
   buildFileTree,
@@ -6,7 +6,9 @@ import {
   expandDirectory,
   fileTreeErrorCount,
   fileTreeGitStatus,
+  readOpenDirectories,
   type FileTreeNode,
+  writeOpenDirectories,
 } from './file-tree';
 import type {
   ViewExternalFile,
@@ -22,6 +24,7 @@ type FileTreeProps = {
   files: string[];
   gitFiles: Record<string, ViewGitFileStatus>;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
+  storageKey: string;
 };
 
 function isActiveFile(
@@ -61,14 +64,18 @@ function TreeNode({
   errorCounts,
   gitFiles,
   node,
+  onDirectoryToggle,
   onNavigate,
+  openDirectories,
 }: {
   activePath: string | null;
   activeExternalTarget: string | null;
   errorCounts: FileTreeProps['errorCounts'];
   gitFiles: FileTreeProps['gitFiles'];
   node: FileTreeNode;
+  onDirectoryToggle: (path: string, open: boolean) => void;
   onNavigate: FileTreeProps['onNavigate'];
+  openDirectories: ReadonlySet<string>;
 }) {
   if (node.kind === 'directory') {
     const index = directoryIndex(node);
@@ -78,8 +85,12 @@ function TreeNode({
       <details
         className="tree-directory"
         open={
+          openDirectories.has(node.path) ||
           containsActiveFile(node, activePath, activeExternalTarget) ||
           undefined
+        }
+        onToggle={(event) =>
+          onDirectoryToggle(node.path, event.currentTarget.open)
         }
       >
         <summary>
@@ -88,6 +99,7 @@ function TreeNode({
               href={fileUrl(index)}
               onClick={(event) => {
                 expandDirectory(event.currentTarget.closest('details'));
+                onDirectoryToggle(node.path, true);
                 onNavigate(event);
               }}
             >
@@ -114,7 +126,9 @@ function TreeNode({
               gitFiles={gitFiles}
               key={child.path}
               node={child}
+              onDirectoryToggle={onDirectoryToggle}
               onNavigate={onNavigate}
+              openDirectories={openDirectories}
             />
           ))}
         </div>
@@ -177,17 +191,69 @@ export function FileTree({
   files,
   gitFiles,
   onNavigate,
+  storageKey,
 }: FileTreeProps) {
   const tree = useMemo(() => buildFileTree(files), [files]);
   const externalTree = useMemo(
     () => buildExternalFileTree(externalFiles),
     [externalFiles],
   );
+  const [openDirectories, setOpenDirectories] = useState<Set<string>>(() => {
+    try {
+      return readOpenDirectories(window.localStorage, storageKey);
+    } catch {
+      return new Set();
+    }
+  });
+  const activeDirectories = useMemo(() => {
+    const paths = new Set<string>();
+    const collect = (nodes: FileTreeNode[]): void => {
+      for (const node of nodes) {
+        if (
+          node.kind === 'directory' &&
+          containsActiveFile(node, activePath, activeExternalTarget)
+        ) {
+          paths.add(node.path);
+          collect(node.children);
+        }
+      }
+    };
+    collect(tree);
+    collect(externalTree);
+    return paths;
+  }, [activeExternalTarget, activePath, externalTree, tree]);
+
+  useEffect(() => {
+    if ([...activeDirectories].every((path) => openDirectories.has(path))) {
+      return;
+    }
+    setOpenDirectories((current) => {
+      const next = new Set(current);
+      for (const path of activeDirectories) next.add(path);
+      return next;
+    });
+  }, [activeDirectories, openDirectories]);
+
+  useEffect(() => {
+    try {
+      writeOpenDirectories(window.localStorage, storageKey, openDirectories);
+    } catch {
+      // Storage can be unavailable; expansion still lasts for this page load.
+    }
+  }, [openDirectories, storageKey]);
+
+  const onDirectoryToggle = (path: string, open: boolean): void => {
+    setOpenDirectories((current) => {
+      if (current.has(path) === open) return current;
+      const next = new Set(current);
+      if (open) next.add(path);
+      else next.delete(path);
+      return next;
+    });
+  };
+
   return (
-    <div
-      className="file-tree"
-      key={activePath ?? activeExternalTarget ?? undefined}
-    >
+    <div className="file-tree">
       {tree.map((node) => (
         <TreeNode
           activePath={activePath}
@@ -196,7 +262,9 @@ export function FileTree({
           gitFiles={gitFiles}
           key={node.path}
           node={node}
+          onDirectoryToggle={onDirectoryToggle}
           onNavigate={onNavigate}
+          openDirectories={openDirectories}
         />
       ))}
       {externalTree.length > 0 && (
@@ -216,7 +284,9 @@ export function FileTree({
           gitFiles={gitFiles}
           key={node.path}
           node={node}
+          onDirectoryToggle={onDirectoryToggle}
           onNavigate={onNavigate}
+          openDirectories={openDirectories}
         />
       ))}
     </div>
