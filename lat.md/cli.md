@@ -346,7 +346,7 @@ Query is optional — `lat search` with no query just builds the index on first 
 
 `--debug` appends each result's cosine-similarity score, rounded to six decimal places. Scores stay hidden by default, including in the MCP `lat_search` output.
 
-Search returns only results whose cosine-similarity score is at least `--threshold` (`0.35` by default). The accepted range is `0` to `1`; lower the threshold to favor recall or raise it to favor precision. MCP `lat_search` uses the same default and accepts the same optional threshold. All search paths discard negative similarities, including UI and prompt-hook retrieval, because they indicate semantic opposition rather than relevance.
+Search returns at most `--limit` results (`5` by default) whose cosine-similarity score is at least `--threshold` (`0.35` by default). The accepted threshold range is `0` to `1`; lower it to favor recall or raise it to favor precision. The vector-search core owns both defaults: CLI, MCP, and prompt-hook retrieval share them unless their interfaces supply an explicit override, while the UI deliberately requests its own named limit.
 
 Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
 

@@ -18,7 +18,7 @@ import {
   type Embedder,
 } from '../search/embedder.js';
 import { indexSections, type IndexStats } from '../search/index.js';
-import { DEFAULT_SEARCH_THRESHOLD, searchSections } from '../search/search.js';
+import { searchSections } from '../search/search.js';
 import type { SectionMatch } from '../lattice-model.js';
 import {
   analyzeMarkdownProject,
@@ -256,7 +256,7 @@ export async function searchCommand(
     const project = await commandProjectAnalysis(ctx);
     const result = await runSearch(ctx.latDir, query, opts.limit, progress, {
       project,
-      threshold: opts.threshold ?? DEFAULT_SEARCH_THRESHOLD,
+      threshold: opts.threshold,
     });
 
     if (result.matches.length === 0) {
