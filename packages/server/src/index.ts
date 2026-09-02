@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net';
 import express, { type Express, type Response } from 'express';
 
 export const LAT_UI_CONTENT_SECURITY_POLICY =
-  "default-src 'self'; connect-src 'self' https://tiles.openfreemap.org; font-src 'self' data:; img-src 'self' data: https://github.githubassets.com; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+  "default-src 'self'; connect-src 'self' https://tiles.openfreemap.org; font-src 'self' data:; img-src 'self' data: https://github.com https://github.githubassets.com https://img.shields.io; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'";
 
 export type LatServerAppOptions = {
   /** Handle dynamic routes before immutable files and fallback handlers. */

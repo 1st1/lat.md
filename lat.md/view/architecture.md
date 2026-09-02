@@ -24,7 +24,7 @@ The graph renderer and graph projection stay out of ordinary document startup. O
 
 Map fences lazily request OpenFreeMap's hosted OpenStreetMap vector style through MapLibre. The authored GeoJSON or converted TopoJSON remains interactive over a local fallback when the basemap cannot load.
 
-The live server's default-self Content Security Policy explicitly permits only OpenFreeMap tile connections, GitHub custom emoji images, and bundled data fonts needed by those supported renderers.
+The live server's default-self Content Security Policy permits OpenFreeMap tile connections, GitHub-hosted images, Shields badges, and bundled data fonts used by supported content and renderers.
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
