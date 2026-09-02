@@ -2,6 +2,7 @@
 lat:
   require-code-mention: true
 ---
+
 # Search
 
 Tests in `tests/search.test.ts`.
@@ -39,10 +40,14 @@ first.
 Semantic search returns only candidates at or above the requested cosine-similarity threshold so
 callers can trade recall for less low-relevance noise.
 
-### Discards negative similarity scores
+### Applies the shared default similarity threshold
 
-Every semantic-search path applies a zero score floor even without an explicit relevance threshold,
-so results pointing away from the query in embedding space are never returned.
+Every semantic-search path applies [[src/search/search.ts#DEFAULT_SEARCH_THRESHOLD]] unless its public interface supplies an
+explicit override, keeping CLI, MCP, hooks, and UI ranking policy aligned.
+
+### Applies the shared default result limit
+
+CLI, MCP, and prompt-hook semantic search use [[src/search/search.ts#DEFAULT_SEARCH_LIMIT]] unless a caller explicitly overrides it; the UI retains its named presentation-specific limit.
 
 ### Finds performance section for latency query
 

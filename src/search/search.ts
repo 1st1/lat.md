@@ -1,6 +1,7 @@
 import type { Client } from '@libsql/client';
 import type { Embedder } from './embedder.js';
 
+export const DEFAULT_SEARCH_LIMIT = 5;
 export const DEFAULT_SEARCH_THRESHOLD = 0.35;
 
 export type SearchResult = {
@@ -15,8 +16,8 @@ export async function searchSections(
   db: Client,
   query: string,
   embedder: Embedder,
-  limit = 5,
-  threshold = 0,
+  limit = DEFAULT_SEARCH_LIMIT,
+  threshold = DEFAULT_SEARCH_THRESHOLD,
 ): Promise<SearchResult[]> {
   const [queryVec] = await embedder.embed([query]);
   const vecJson = JSON.stringify(queryVec);

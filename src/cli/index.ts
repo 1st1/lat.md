@@ -11,6 +11,10 @@ import { fileURLToPath } from 'node:url';
 import { Command, InvalidArgumentError } from 'commander';
 import { resolveCheckContext, resolveContext } from './context.js';
 import type { CmdResult } from '../context.js';
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_THRESHOLD,
+} from '../search/search.js';
 
 type CheckTargetArgs = {
   args: string[];
@@ -342,11 +346,15 @@ program
   .command('search')
   .description('Semantic search across lat.md sections')
   .argument('[query]', 'search query in plain English')
-  .option('--limit <n>', 'max results', '5')
+  .option(
+    '--limit <n>',
+    `max results (default: ${DEFAULT_SEARCH_LIMIT})`,
+    String(DEFAULT_SEARCH_LIMIT),
+  )
   .option('--debug', 'show result similarity scores')
   .option(
     '--threshold <score>',
-    'minimum cosine similarity score (default: 0.35)',
+    `minimum cosine similarity score (default: ${DEFAULT_SEARCH_THRESHOLD})`,
     parseSimilarityThreshold,
   )
   .action(

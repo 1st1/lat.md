@@ -5,6 +5,7 @@ import { findLatticeDir } from '../project-discovery.js';
 import { plainStyler, type CmdContext } from '../context.js';
 import { expandPrompt } from './expand.js';
 import { runSearch } from './search.js';
+import { DEFAULT_SEARCH_LIMIT } from '../search/search.js';
 import { getSection, formatSectionOutput } from './section.js';
 import { checkMd, checkCodeRefs, checkIndex, checkSections } from './check.js';
 import { CheckRunContext } from './check-context.js';
@@ -69,10 +70,16 @@ async function searchAndExpand(
     // Read-only: search an existing index but never build/update it here. A fresh
     // repo's first prompt must not trigger a full local embed pass — that's what
     // `lat search` / `lat reindex` are for. Returns no matches until then.
-    result = await runSearch(ctx.latDir, userPrompt, 5, undefined, {
-      buildIndex: false,
-      project: await commandProjectAnalysis(ctx),
-    });
+    result = await runSearch(
+      ctx.latDir,
+      userPrompt,
+      DEFAULT_SEARCH_LIMIT,
+      undefined,
+      {
+        buildIndex: false,
+        project: await commandProjectAnalysis(ctx),
+      },
+    );
   } catch {
     // No usable backend (e.g. reindex required, key rejected) — skip semantic
     // enrichment silently rather than blocking the user's prompt.
