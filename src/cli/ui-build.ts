@@ -7,7 +7,7 @@ import {
 /** Export the current vault as a serverless, read-only Lat UI. */
 export async function uiBuildCommand(
   ctx: CmdContext,
-  output = 'lat-ui',
+  output = '.lat-build/static',
   options: StaticViewBuildOptions = {},
 ): Promise<CmdResult> {
   try {

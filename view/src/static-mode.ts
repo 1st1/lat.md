@@ -1,47 +1,92 @@
+import { documentUrl } from '../../src/view/document-route';
+
 type LatStaticViewConfig = {
   basePath: string;
+  entry?: string;
+  searchApi?: string;
 };
 
-declare global {
-  interface Window {
-    __LAT_STATIC_VIEW__?: LatStaticViewConfig;
+const STATIC_VIEW_META_NAME = 'lat-static-view';
+
+function staticViewConfig(): LatStaticViewConfig | null {
+  if (typeof document === 'undefined') return null;
+  const content = document.querySelector<HTMLMetaElement>(
+    `meta[name="${STATIC_VIEW_META_NAME}"]`,
+  )?.content;
+  if (!content) return null;
+  try {
+    const value = JSON.parse(decodeURIComponent(content)) as unknown;
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      !('basePath' in value) ||
+      typeof value.basePath !== 'string' ||
+      !value.basePath.startsWith('/') ||
+      !value.basePath.endsWith('/') ||
+      ('entry' in value &&
+        value.entry !== undefined &&
+        (typeof value.entry !== 'string' || !value.entry)) ||
+      ('searchApi' in value &&
+        value.searchApi !== undefined &&
+        typeof value.searchApi !== 'string')
+    ) {
+      return null;
+    }
+    return value as LatStaticViewConfig;
+  } catch {
+    return null;
   }
 }
 
 export function staticViewBasePath(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.__LAT_STATIC_VIEW__?.basePath ?? null;
+  return staticViewConfig()?.basePath ?? null;
 }
 
 export function isStaticView(): boolean {
   return staticViewBasePath() !== null;
 }
 
-/** Prefix a Vite-emitted root asset with the static deployment base path. */
+/** Return the optional dynamic search endpoint attached to a static build. */
+export function staticViewSearchApi(): string | null {
+  return staticViewConfig()?.searchApi ?? null;
+}
+
+/** Prefix a bundled root asset with the static deployment base path. */
 export function staticViewAssetUrl(
   assetUrl: string,
   basePath: string | null = staticViewBasePath(),
 ): string {
-  if (!basePath || !assetUrl.startsWith('/assets/')) return assetUrl;
+  if (!basePath || !assetUrl.startsWith('/assets/')) {
+    return assetUrl;
+  }
   return `${basePath}${assetUrl.slice(1)}`;
 }
 
 /** Strip the configured deployment prefix and static route trailing slash. */
 export function viewPathname(pathname: string): string {
-  const basePath = staticViewBasePath();
-  if (!basePath) return pathname;
+  const config = staticViewConfig();
+  if (!config) return pathname;
+  const { basePath } = config;
   const prefix = basePath === '/' ? '' : basePath.slice(0, -1);
   const unprefixed =
     prefix && pathname.startsWith(prefix)
       ? pathname.slice(prefix.length) || '/'
       : pathname;
-  return unprefixed.length > 1 && unprefixed.endsWith('/')
-    ? unprefixed.slice(0, -1)
-    : unprefixed;
+  const route =
+    unprefixed.length > 1 && unprefixed.endsWith('/')
+      ? unprefixed.slice(0, -1)
+      : unprefixed;
+  return config.entry && (route === '/' || route === '/index.html')
+    ? documentUrl(config.entry)
+    : route;
 }
 
 export function staticViewRoute(path: string): string | null {
-  const basePath = staticViewBasePath();
-  if (!basePath) return null;
-  return `${basePath}${path.replace(/^\//, '')}`;
+  const config = staticViewConfig();
+  if (!config) return null;
+  const route = path.replace(/^\//, '');
+  if (config.entry && route === documentUrl(config.entry).slice(1)) {
+    return config.basePath;
+  }
+  return `${config.basePath}${route}`;
 }

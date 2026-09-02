@@ -125,9 +125,10 @@ export function searchQuery(search: string): string {
 }
 
 export function searchUrl(query: string): string {
-  if (!query) return '/search';
+  const path = staticViewRoute('search/') ?? '/search';
+  if (!query) return path;
   const search = new URLSearchParams({ q: query });
-  return `/search?${search}`;
+  return `${path}?${search}`;
 }
 
 export function graphNode(search: string): string {
@@ -341,7 +342,7 @@ export function searchEscapeAction(query: string): 'clear' | 'close' {
 }
 
 export function searchButtonAction(pathname: string): 'close' | 'open' {
-  return pathname === '/search' ? 'close' : 'open';
+  return viewPathname(pathname) === '/search' ? 'close' : 'open';
 }
 
 /** Position a newly rendered document without leaving its content in motion. */

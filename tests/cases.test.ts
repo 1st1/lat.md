@@ -91,23 +91,57 @@ describe('cli command surface', () => {
     expect(ui.exitCode).toBe(0);
     expect(ui.stdout).toContain('Usage: lat ui');
     expect(ui.stdout).toContain('build');
+    expect(ui.stdout).toContain('run');
     expect(ui.stdout).toContain('--logo-text <text>');
+    expect(ui.stdout).toContain('--no-git');
     expect(ui.stdout).toContain('--port <number>');
+
+    const run = runCli('basic-project', ['ui', 'run', '--help']);
+    expect(run.exitCode).toBe(0);
+    expect(run.stdout).toContain('Usage: lat ui run');
+    expect(run.stdout).toContain('--no-git');
 
     const build = runCli('basic-project', ['ui', 'build', '--help']);
     expect(build.exitCode).toBe(0);
     expect(build.stdout).toContain('Usage: lat ui build');
-    expect(build.stdout).toContain('--logo-text <text>');
+    expect(build.stdout).toContain('static');
+    expect(build.stdout).toContain('server');
+
+    const staticBuild = runCli('basic-project', [
+      'ui',
+      'build',
+      'static',
+      '--help',
+    ]);
+    expect(staticBuild.exitCode).toBe(0);
+    expect(staticBuild.stdout).toContain('Usage: lat ui build static');
+    expect(staticBuild.stdout).toContain('.lat-build/static');
+    expect(staticBuild.stdout).toContain('--force');
+    expect(staticBuild.stdout).toContain('--logo-text <text>');
+
+    const serverBuild = runCli('basic-project', [
+      'ui',
+      'build',
+      'server',
+      '--help',
+    ]);
+    expect(serverBuild.exitCode).toBe(0);
+    expect(serverBuild.stdout).toContain('Usage: lat ui build server');
+    expect(serverBuild.stdout).toContain('.lat-build/server');
+    expect(serverBuild.stdout).toContain('--force');
+    expect(serverBuild.stdout).toContain('--logo-text <text>');
 
     const existingOutput = runCli('basic-project', [
       'ui',
       'build',
+      'static',
       'lat.md',
       '--logo-text',
       'Project Atlas',
     ]);
     expect(existingOutput.exitCode).toBe(1);
     expect(existingOutput.stderr).toContain('Static UI output already exists:');
+    expect(existingOutput.stderr).toContain('Use --force to replace it.');
 
     const invalidPort = runCli('basic-project', ['ui', '--port', '0']);
     expect(invalidPort.exitCode).toBe(1);

@@ -1,8 +1,6 @@
-import { dirname, relative, resolve } from 'node:path';
-import type { SectionMatch } from '../lattice-model.js';
-import { toPosix } from '../path.js';
-import type { ViewSearchResponse, ViewSearchResult } from './protocol.js';
-import { documentUrl } from './document-route.js';
+import type { Section, SectionMatch } from '../lattice-model.js';
+import type { ViewSearchResponse } from './protocol.js';
+import { viewSearchResult } from './search-result.js';
 
 const VIEW_SEARCH_LIMIT = 10;
 
@@ -18,52 +16,53 @@ export type ViewSearchDependencies = {
   ) => Promise<{ query: string; matches: SectionMatch[] }>;
 };
 
-const defaultDependencies: ViewSearchDependencies = {
-  async runIndex(latDir) {
-    const { runIndex } = await import('../cli/search.js');
-    await runIndex(latDir);
-  },
-  async runSearch(latDir, query, limit, options) {
-    const { runSearch } = await import('../cli/search.js');
-    return runSearch(latDir, query, limit, undefined, options);
-  },
-};
-
-function viewSearchResult(
-  latDir: string,
-  match: SectionMatch,
-): ViewSearchResult {
-  const section = match.section;
-  const projectRoot = dirname(latDir);
-  const path = toPosix(
-    relative(latDir, resolve(projectRoot, section.filePath)),
-  );
-  const fileBreadcrumbs = path.replace(/\.md$/i, '').split('/');
+function defaultDependencies(
+  cacheDir?: string,
+  sectionById?: ReadonlyMap<string, Section>,
+): ViewSearchDependencies {
   return {
-    sectionId: section.id,
-    title: section.heading,
-    path,
-    breadcrumbs: [...fileBreadcrumbs, ...section.id.split('#').slice(1)],
-    description: section.firstParagraph,
-    url: documentUrl(path, section.githubSlug ?? ''),
-    score: match.score ?? 0,
+    async runIndex(latDir) {
+      const { runIndex } = await import('../cli/search.js');
+      await runIndex(latDir, undefined, undefined, { cacheDir });
+    },
+    async runSearch(latDir, query, limit, options) {
+      const { runSearch } = await import('../cli/search.js');
+      return runSearch(latDir, query, limit, undefined, {
+        ...options,
+        cacheDir,
+        sectionById,
+      });
+    },
   };
 }
 
 /** Create the lazily indexed semantic search service used by `lat ui`. */
 export function createViewSearch(
   latDir: string,
-  dependencies: ViewSearchDependencies = defaultDependencies,
+  dependencies?: ViewSearchDependencies,
   getGeneration: () => number = () => 0,
+  options: {
+    cacheDir?: string;
+    preindexed?: boolean;
+    sections?: readonly Section[];
+    documentPaths?: ReadonlyMap<string, string>;
+  } = {},
 ): ViewSearch {
+  const sectionById = options.sections
+    ? new Map(
+        options.sections.map((section) => [section.id.toLowerCase(), section]),
+      )
+    : undefined;
+  const resolvedDependencies =
+    dependencies ?? defaultDependencies(options.cacheDir, sectionById);
   let indexReady: Promise<void> | null = null;
-  let indexedGeneration = -1;
+  let indexedGeneration = options.preindexed ? getGeneration() : -1;
 
   const prepareIndex = async (): Promise<void> => {
     while (indexedGeneration < getGeneration() || indexedGeneration < 0) {
       if (!indexReady) {
         const generation = getGeneration();
-        indexReady = dependencies
+        indexReady = resolvedDependencies
           .runIndex(latDir)
           .then(() => {
             indexedGeneration = Math.max(indexedGeneration, generation);
@@ -81,7 +80,7 @@ export function createViewSearch(
     if (!query) return { query: '', results: [] };
 
     await prepareIndex();
-    const search = await dependencies.runSearch(
+    const search = await resolvedDependencies.runSearch(
       latDir,
       query,
       VIEW_SEARCH_LIMIT,
@@ -89,7 +88,9 @@ export function createViewSearch(
     );
     return {
       query: search.query,
-      results: search.matches.map((match) => viewSearchResult(latDir, match)),
+      results: search.matches.map((match) =>
+        viewSearchResult(latDir, match, options.documentPaths),
+      ),
     };
   };
 }

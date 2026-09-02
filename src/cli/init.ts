@@ -1406,6 +1406,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
     }
 
     ensureLatLocalConfigIgnored(latDir);
+    ensureGitignored(root, '.lat-build');
 
     // Step 2: Configure fresh/outdated setups, ask interactive users about an
     // available key, and offer to rebuild an index whose backend differs. This

@@ -18,13 +18,11 @@ import type {
   ViewSourceDocument,
 } from '../../src/view/protocol';
 import { DEFAULT_VIEW_LOGO_TEXT } from '../../src/view/protocol';
-import latLogoUrl from '../../website/public/logo-small.svg?url';
 import { FileTree } from './FileTree';
 import { MarkdownContent } from './MarkdownContent';
 import { DocumentModeSwitch, type DocumentMode } from './DocumentModeSwitch';
 import { DocumentToc } from './DocumentToc';
-import { fetchViewJson } from './data-source';
-import GraphView, { preloadViewGraph } from './GraphView';
+import { fetchViewJson, prefetchViewDocument } from './data-source';
 import { mergeProjectChange } from './live-updates';
 import {
   documentPath,
@@ -41,6 +39,7 @@ import {
   searchButtonAction,
   searchHistoryState,
   searchReturnTo,
+  searchUrl,
   scrollToDocumentLocation,
   sourcePath,
   sourceSymbol,
@@ -52,10 +51,12 @@ import { navigateAndCopySectionLink } from './section-back-references';
 import { SearchPage } from './SearchPage';
 import { SectionOutputDialog } from './SectionOutputDialog';
 import { sourceLineId, SourceView } from './SourceView';
+import latLogoUrl from './logo.svg?url';
 import {
   isStaticView,
   staticViewAssetUrl,
   staticViewBasePath,
+  staticViewSearchApi,
   viewPathname,
 } from './static-mode';
 import {
@@ -64,6 +65,7 @@ import {
 } from './unsaved-changes';
 
 const MarkdownEditor = lazy(() => import('./MarkdownEditor'));
+const GraphView = lazy(() => import('./GraphView'));
 
 type ViewRoute =
   | { kind: 'search' }
@@ -169,7 +171,7 @@ function AppHeader({
             aria-current={route?.kind === 'search' ? 'page' : undefined}
             aria-label="Search"
             className="sidebar-search"
-            href="/search"
+            href={searchUrl('')}
             onClick={onSearchNavigate}
             title="Search"
           >
@@ -281,6 +283,7 @@ function errorMessage(reason: unknown): string {
 
 export function App() {
   const staticView = isStaticView();
+  const searchEnabled = !staticView || staticViewSearchApi() !== null;
   const graphModeKey = graphModeStorageKey(staticViewBasePath());
   const [location, setLocation] = useState(currentLocation);
   const [index, setIndex] = useState<ViewIndex | null>(null);
@@ -401,12 +404,6 @@ export function App() {
         : route?.kind === 'search'
           ? 'Search'
           : 'Files';
-
-  useEffect(() => {
-    void preloadViewGraph().catch(() => {
-      // GraphView reports the error if the user opens it before a later retry.
-    });
-  }, []);
 
   useEffect(() => {
     if (route?.kind !== 'graph') return;
@@ -729,7 +726,8 @@ export function App() {
     positionedLocation.current = null;
     setHistoryScroll(null);
     const state =
-      url.pathname === '/search' && window.location.pathname !== '/search'
+      viewPathname(url.pathname) === '/search' &&
+      viewPathname(window.location.pathname) !== '/search'
         ? searchHistoryState(returnTo)
         : null;
     window.history.pushState(state, '', url);
@@ -781,6 +779,17 @@ export function App() {
     setMobileNavigationOpen(false);
     event.preventDefault();
     navigate(new URL(event.currentTarget.href));
+  }
+
+  function onNavigationIntent(event: MouseEvent<HTMLElement>): void {
+    const target = event.target;
+    const anchor =
+      target instanceof Element ? target.closest<HTMLAnchorElement>('a') : null;
+    if (!anchor) return;
+    const url = new URL(anchor.href, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    const path = documentPath(url.pathname);
+    if (path) void prefetchViewDocument(path).catch(() => {});
   }
 
   function onSearchToggleClick(event: MouseEvent<HTMLAnchorElement>): void {
@@ -885,23 +894,25 @@ export function App() {
         onNavigate={onNavigationClick}
         onSearchNavigate={onSearchToggleClick}
         route={route}
-        searchEnabled={!staticView}
+        searchEnabled={searchEnabled}
       />
     );
     return (
       <div className="graph-shell">
-        <GraphView
-          generation={projectChange.generation}
-          gitEnabled={gitEnabled}
-          header={header}
-          instanceId={projectChange.instanceId}
-          markdownGeneration={projectChange.markdownGeneration}
-          onNavigate={navigate}
-          onShowSectionOutput={staticView ? undefined : setSectionOutputId}
-          searchEnabled={!staticView}
-          selectedNodeId={graphSelectedNodeId}
-          target={graphSelectionTarget}
-        />
+        <Suspense fallback={<div className="state">Loading graph…</div>}>
+          <GraphView
+            generation={projectChange.generation}
+            gitEnabled={gitEnabled}
+            header={header}
+            instanceId={projectChange.instanceId}
+            markdownGeneration={projectChange.markdownGeneration}
+            onNavigate={navigate}
+            onShowSectionOutput={staticView ? undefined : setSectionOutputId}
+            searchEnabled={searchEnabled}
+            selectedNodeId={graphSelectedNodeId}
+            target={graphSelectionTarget}
+          />
+        </Suspense>
         <SectionOutputDialog
           onClose={() => setSectionOutputId(null)}
           sectionId={sectionOutputId}
@@ -915,6 +926,7 @@ export function App() {
       <aside
         className="sidebar"
         data-mobile-navigation-open={mobileNavigationOpen || undefined}
+        onMouseOver={onNavigationIntent}
       >
         <AppHeader
           className="sidebar-header"
@@ -928,7 +940,7 @@ export function App() {
           onNavigate={onNavigationClick}
           onSearchNavigate={onSearchToggleClick}
           route={route}
-          searchEnabled={!staticView}
+          searchEnabled={searchEnabled}
         />
         <MobileNavigationTrigger
           label={mobileNavigationLabel}
@@ -969,6 +981,7 @@ export function App() {
 
       <main
         className={historyScroll ? 'main restoring-history-scroll' : 'main'}
+        onMouseOver={onNavigationIntent}
       >
         {error ? (
           <div className="state error" role="alert">

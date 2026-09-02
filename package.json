@@ -23,6 +23,12 @@
   "bin": {
     "lat": "./dist/src/cli/index.js"
   },
+  "exports": {
+    "./server": {
+      "types": "./dist/src/view/server-deployment.d.ts",
+      "import": "./dist/src/view/server-deployment.js"
+    }
+  },
   "files": [
     "dist/src",
     "templates"
@@ -92,6 +98,7 @@
     "@repomix/tree-sitter-wasms": "^0.1.17",
     "commander": "^14.0.3",
     "diff": "^8.0.4",
+    "express": "^5.2.1",
     "github-slugger": "^2.0.0",
     "ignore-walk": "^8.0.0",
     "mdast-util-gfm-autolink-literal": "^2.0.1",

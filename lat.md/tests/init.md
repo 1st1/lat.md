@@ -60,3 +60,7 @@ Generated agent guidance must remain valid Markdown wherever project layouts exp
 ### Templates satisfy graph validation
 
 Every generated Markdown instruction template passes local graph validation, preventing setup-owned content from breaking `lat check` when an instruction file is symlinked into `lat.md/`.
+
+## Lat-owned build output ignore
+
+Initialization adds `.lat-build` to a Git project's root `.gitignore` while leaving platform-specific output to project configuration.

@@ -8,6 +8,9 @@ import type {
 } from '../../src/view/protocol';
 import {
   viewStaticSourceKey,
+  viewStaticDocumentRequest,
+  VIEW_STATIC_BOOTSTRAP_ID,
+  type ViewStaticBootstrap,
   type ViewStaticManifest,
   type ViewStaticSourceFile,
   type ViewStaticSourceRequest,
@@ -15,9 +18,11 @@ import {
   type ViewStaticExternalMarkdown,
   type ViewStaticExternalSourceView,
 } from '../../src/view/static-protocol';
-import { staticViewBasePath } from './static-mode';
+import { staticViewBasePath, staticViewSearchApi } from './static-mode';
 
 let manifestRequest: Promise<ViewStaticManifest> | null = null;
+let bootstrap: ViewStaticBootstrap | null | undefined;
+const staticFileRequests = new Map<string, Promise<object>>();
 
 export const VIEW_REQUEST_TIMEOUT_MS = 15_000;
 
@@ -132,16 +137,61 @@ function staticDataUrl(path: string): string {
   return new URL(`${basePath}${path}`, window.location.origin).toString();
 }
 
+function fetchStaticFile<T extends object>(path: string): Promise<T> {
+  const url = staticDataUrl(path);
+  const existing = staticFileRequests.get(url);
+  if (existing) return existing as Promise<T>;
+  const request = fetchJsonFile<T>(url).catch((error) => {
+    staticFileRequests.delete(url);
+    throw error;
+  });
+  staticFileRequests.set(url, request);
+  return request;
+}
+
+function staticBootstrap(): ViewStaticBootstrap | null {
+  if (bootstrap !== undefined) return bootstrap;
+  const content = document.getElementById(
+    VIEW_STATIC_BOOTSTRAP_ID,
+  )?.textContent;
+  if (!content) return (bootstrap = null);
+  try {
+    const value = JSON.parse(content) as ViewStaticBootstrap;
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      !value.manifest ||
+      typeof value.responses !== 'object'
+    ) {
+      return (bootstrap = null);
+    }
+    return (bootstrap = value);
+  } catch {
+    return (bootstrap = null);
+  }
+}
+
 function staticManifest(): Promise<ViewStaticManifest> {
+  const initial = staticBootstrap()?.manifest;
+  if (initial) return Promise.resolve(initial);
   if (!manifestRequest) {
-    manifestRequest = fetchJsonFile<ViewStaticManifest>(
-      staticDataUrl('data/manifest.json'),
+    manifestRequest = fetchStaticFile<ViewStaticManifest>(
+      'data/manifest.json',
     ).catch((error) => {
       manifestRequest = null;
       throw error;
     });
   }
   return manifestRequest;
+}
+
+/** Warm a content-addressed document when a static navigation is imminent. */
+export async function prefetchViewDocument(path: string): Promise<void> {
+  if (!staticViewBasePath()) return;
+  if (staticBootstrap()?.responses[viewStaticDocumentRequest(path)]) return;
+  const manifest = await staticManifest();
+  const dataPath = manifest.documents[path];
+  if (dataPath) await fetchStaticFile(dataPath);
 }
 
 function positiveInteger(value: string | null): number {
@@ -158,9 +208,20 @@ export async function fetchViewJson<T extends object>(
     return fetchJsonFile<T>(requestUrl, signal);
   }
 
-  const manifest = await staticManifest();
   const url = new URL(requestUrl, 'http://lat.local');
+  if (url.pathname === '/api/search') {
+    const endpoint = staticViewSearchApi();
+    if (!endpoint) throw new Error('Static views do not include search');
+    const target = new URL(endpoint, window.location.origin);
+    target.search = url.search;
+    return fetchJsonFile<T>(target.toString(), signal);
+  }
+
+  const manifest = await staticManifest();
   if (url.pathname === '/api/index') return manifest.index as T;
+
+  const initial = staticBootstrap()?.responses[requestUrl];
+  if (initial) return initial as T;
 
   let dataPath: string | undefined;
   if (url.pathname === '/api/graph') {
@@ -178,26 +239,22 @@ export async function fetchViewJson<T extends object>(
     const entry = manifest.sources[viewStaticSourceKey(request)];
     if (!entry) throw new Error('Static view data not found');
     const [file, view] = await Promise.all([
-      fetchJsonFile<ViewStaticSourceFile>(staticDataUrl(entry.file), signal),
-      fetchJsonFile<ViewStaticSourceView>(staticDataUrl(entry.view), signal),
+      fetchStaticFile<ViewStaticSourceFile>(entry.file),
+      fetchStaticFile<ViewStaticSourceView>(entry.view),
     ]);
     return { ...file, ...view } as ViewSourceDocument as T;
   } else if (url.pathname === '/api/external') {
     const entry = manifest.externals[url.searchParams.get('target') ?? ''];
     if (!entry) throw new Error('Static external data not found');
     if (entry.kind === 'markdown') {
-      const document = await fetchJsonFile<ViewStaticExternalMarkdown>(
-        staticDataUrl(entry.document),
-        signal,
+      const document = await fetchStaticFile<ViewStaticExternalMarkdown>(
+        entry.document,
       );
       return document as T;
     }
     const [file, view] = await Promise.all([
-      fetchJsonFile<ViewStaticSourceFile>(staticDataUrl(entry.file), signal),
-      fetchJsonFile<ViewStaticExternalSourceView>(
-        staticDataUrl(entry.view),
-        signal,
-      ),
+      fetchStaticFile<ViewStaticSourceFile>(entry.file),
+      fetchStaticFile<ViewStaticExternalSourceView>(entry.view),
     ]);
     return {
       ...view,
@@ -205,5 +262,5 @@ export async function fetchViewJson<T extends object>(
     } as ViewExternalDocument as T;
   }
   if (!dataPath) throw new Error('Static view data not found');
-  return fetchJsonFile<T>(staticDataUrl(dataPath), signal);
+  return fetchStaticFile<T>(dataPath);
 }

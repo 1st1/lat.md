@@ -5,7 +5,7 @@ lat:
 
 # View Tests
 
-Functional specifications for the browser server, static export, client navigation, and `lat ui` startup.
+Functional specifications for the local browser, deployable builds, client navigation, and `lat ui` startup.
 
 ## Serves the document index and browser shell
 
@@ -13,9 +13,9 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 Requesting the same route with `.md` returns the exact known vault file as `text/markdown`; missing or escaping paths remain unavailable. `HEAD` returns the same source headers without a body.
 
-Contained non-Markdown resources referenced by documents are served through `/resources/...`; missing files, directory traversal, and escaping symlinks remain unavailable.
+Relative images and other non-Markdown files resolve through vault-contained resource routes. Missing files, directories, and paths that escape through traversal or symlinks remain unavailable.
 
-By default the header renders the same Lat wordmark as the website. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
+By default the header renders the bundled Lat wordmark. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
 The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
 
@@ -23,25 +23,51 @@ The server anchors Vite's relative entry assets at `/assets/`, so every live doc
 
 ## Builds a static deployment
 
-`lat ui build [output]` emits a host-ready immutable snapshot with physical extensionless document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
+`lat ui build static [output]` emits a host-ready immutable snapshot with physical extensionless document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
-Every local document also emits its exact source at the corresponding `.md` URL, while referenced vault resources are copied under `resources/` and generated, relative, search, backlink, and graph navigation all target the extensionless React route.
+Without an explicit output, it writes `.lat-build/static/`.
+
+Every local document also emits its exact source at the corresponding `.md` URL, while generated, relative, search, backlink, and graph navigation all target the extensionless React route.
+
+The build copies each vault-local resource reached from a rendered document once, preserves its vault-relative path, and rewrites its URL under the configured deployment base.
 
 The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git, search, or the runtime-only section command, perform live API requests, or subscribe to project changes.
 
+Generated shells encode their base path, optional search endpoint, manifest, and initial route response as inert metadata rather than inline JavaScript, so static routing initializes under the same strict Content Security Policy as the portable server. Initial documents render without fetching JSON.
+
+Every manifest-selected JSON payload is named by a digest of its serialized content. The portable server gives these payloads and Vite assets immutable cache headers while keeping the stable manifest revalidatable.
+
+The compatibility entrypoint preserves URL fragments through a same-origin external redirect helper, with a visible destination link as its no-script fallback.
+
 Every source file stores its raw text and highlighted lines once. Request-specific focus, context, and reference metadata stays in small separate payloads, so multiple links into one file do not duplicate its code.
 
-`lat ui build --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the website wordmark.
+`lat ui build static --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the bundled Lat wordmark.
 
 An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
 
 Entry assets use that base, while lazy JavaScript, CSS, fonts, and renderer chunks resolve relative to their owning production asset. Rich fences therefore work at both root and nested deployments.
 
-Any existing output path is rejected before snapshot work begins, including an empty directory or prior generated export. Callers must remove it explicitly or choose a new destination.
+Any existing output path is rejected before snapshot work begins, including an empty directory or prior export. `--force` explicitly replaces it, but only after the complete successor has staged successfully. Transient busy-file errors during the final move are retried; destinations that could contain the project remain forbidden.
 
-## Builds the website wiki from published embedding packages
+## Builds a portable server deployment
 
-Website deployments compile the current Lat UI against pinned npm releases of the embedding engine and model package, avoiding Rust, WASM, and model generation in the Vercel build.
+`lat ui build server [output]` emits immutable public routes plus a portable Express application whose only dynamic feature is semantic search.
+
+The build creates its vector index once and stores flat section metadata beside it. Runtime search copies the database to writable temporary storage, resolves results without Markdown parsing, and never rebuilds the index. A warm server instance reuses one database handle and embedder across queries, then closes the handle before deleting owned temporary storage.
+
+The generated package directly imports and constructs its pinned Express version for framework detection, then passes that app to the shared runtime and delegates `npm start`, security headers, static caching, listening, and shutdown to `@lat.md/server`. No generated listener implementation is serialized into the artifact.
+
+The entrypoint passes literal module-relative manifest and index URLs as real runtime inputs and injects a search-engine factory made from ordinary embedding-engine and model imports. The runtime derives the sibling `public/` directory from the manifest instead of exposing it to file tracing; CDN-aware hosts publish that root directory without duplicating it inside the function. Package-owned code loads its own WASM and model assets, so file tracing follows the actual runtime graph without include globs or tracing-only expressions.
+
+Its static fallback preserves configured base paths, extensionless UI routes, and exact raw `.md` files on non-CDN hosts. `/` renders the configured entry document directly; `index.html` is only the physical file, and the former `/docs/...` route redirects to the root.
+
+The static client exposes Search only when the build advertises an endpoint. Editing, Git state, event streams, repository access, and the runtime section command remain disabled.
+
+### Runs the generated Node artifact end to end
+
+The Node-target regression test builds a complete portable artifact, loads its generated entrypoint against installed workspace packages, and serves it over loopback HTTP.
+
+It verifies the document shell, immutable JavaScript and CSS assets, and semantic results from the real local embedding model and built SQLite index. The test therefore covers the generated application contract rather than substituting a fake search handler.
 
 ## Keeps build-only packages out of runtime dependencies
 
@@ -261,4 +287,4 @@ The document API rejects traversal and non-Markdown targets so browser requests 
 
 `lat ui` prefers loopback port 4242, advances when an implicit default is occupied, and starts listening before passing the final URL to the platform browser launcher.
 
-An explicit `--port <number>` accepts 1–65535 and fails clearly rather than selecting another port when occupied. Startup reports the URL and points users to `lat ui build` for static export.
+An explicit `--port <number>` accepts 1–65535 and fails clearly rather than selecting another port when occupied. Startup reports the URL and points users to both deployment build targets.

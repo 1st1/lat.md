@@ -27,7 +27,10 @@ vi.mock('../src/search/search.js', () => ({
   searchSections: mocks.searchSections,
 }));
 
-import { openIndexedSearchSession } from '../src/search/query.js';
+import {
+  openIndexedSearchSession,
+  resolveSearchMatches,
+} from '../src/search/query.js';
 
 const section: Section = {
   id: 'lat.md/guide#Guide',
@@ -55,28 +58,54 @@ describe('indexed search sessions', () => {
       embed: vi.fn(),
     });
     mocks.searchSections.mockResolvedValue([
-      { id: section.id, score: 0.8 },
-      { id: 'lat.md/missing#Missing', score: 0.7 },
+      {
+        id: section.id,
+        file: section.file,
+        heading: section.heading,
+        content: section.firstParagraph,
+        score: 0.8,
+      },
+      {
+        id: 'lat.md/missing#Missing',
+        file: 'lat.md/missing',
+        heading: 'Missing',
+        content: 'Missing from the project snapshot.',
+        score: 0.7,
+      },
     ]);
   });
 
   // @lat: [[tests/search#RAG Tests#Reuses an indexed search session]]
   it('reuses one database and embedder across queries', async () => {
     const createSearchEngine = vi.fn();
-    const sectionById = new Map([[section.id.toLowerCase(), section]]);
-    const session = await openIndexedSearchSession(
-      '/project/lat.md',
-      sectionById,
-      {
-        cacheDir: '/runtime/cache',
-        createSearchEngine,
-      },
-    );
-
-    await expect(session.search('first', 7, 0.4)).resolves.toEqual({
-      query: 'first',
-      matches: [{ section, reason: 'semantic match', score: 0.8 }],
+    const session = await openIndexedSearchSession('/project/lat.md', {
+      cacheDir: '/runtime/cache',
+      createSearchEngine,
     });
+
+    const results = await session.search('first', 7, 0.4);
+    expect(results).toEqual([
+      {
+        id: section.id,
+        file: section.file,
+        heading: section.heading,
+        content: section.firstParagraph,
+        score: 0.8,
+      },
+      {
+        id: 'lat.md/missing#Missing',
+        file: 'lat.md/missing',
+        heading: 'Missing',
+        content: 'Missing from the project snapshot.',
+        score: 0.7,
+      },
+    ]);
+    expect(
+      resolveSearchMatches(
+        results,
+        new Map([[section.id.toLowerCase(), section]]),
+      ),
+    ).toEqual([{ section, reason: 'semantic match', score: 0.8 }]);
     await session.search('second', 3);
     await session.close();
     await session.close();
@@ -118,15 +147,9 @@ describe('indexed search sessions', () => {
   // @lat: [[tests/search#RAG Tests#Skips an unbuilt search index]]
   it('returns no matches without loading an embedder for an unbuilt index', async () => {
     mocks.getStoredModel.mockResolvedValue(null);
-    const session = await openIndexedSearchSession(
-      '/project/lat.md',
-      new Map([[section.id.toLowerCase(), section]]),
-    );
+    const session = await openIndexedSearchSession('/project/lat.md');
 
-    await expect(session.search('query', 5)).resolves.toEqual({
-      query: 'query',
-      matches: [],
-    });
+    await expect(session.search('query', 5)).resolves.toEqual([]);
     await session.close();
 
     expect(mocks.embedderForIndex).not.toHaveBeenCalled();
