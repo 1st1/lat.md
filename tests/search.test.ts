@@ -12,7 +12,11 @@ import {
   closeDb,
 } from '../src/search/db.js';
 import { indexSections } from '../src/search/index.js';
-import { searchSections } from '../src/search/search.js';
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_THRESHOLD,
+  searchSections,
+} from '../src/search/search.js';
 import { runSearch } from '../src/cli/search.js';
 import { formatResultList } from '../src/format.js';
 import { plainStyler, type CmdContext } from '../src/context.js';
@@ -95,6 +99,8 @@ describe('search (rag, local)', () => {
       db,
       'how do we handle user login and security?',
       embedder,
+      DEFAULT_SEARCH_LIMIT,
+      0,
     );
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].id).toContain('Authentication');
@@ -105,9 +111,21 @@ describe('search (rag, local)', () => {
   // @lat: [[search#RAG Tests#Filters results below the similarity threshold]]
   it('filters results below the similarity threshold', async () => {
     const query = 'how do we handle user login and security?';
-    const results = await searchSections(db, query, embedder);
+    const results = await searchSections(
+      db,
+      query,
+      embedder,
+      DEFAULT_SEARCH_LIMIT,
+      0,
+    );
     const threshold = (results[0].score + results[1].score) / 2;
-    const filtered = await searchSections(db, query, embedder, 5, threshold);
+    const filtered = await searchSections(
+      db,
+      query,
+      embedder,
+      DEFAULT_SEARCH_LIMIT,
+      threshold,
+    );
 
     expect(filtered.map((result) => result.id)).toEqual([results[0].id]);
     expect(filtered[0].score).toBeGreaterThanOrEqual(threshold);
@@ -119,6 +137,8 @@ describe('search (rag, local)', () => {
       db,
       'what tools do we use to measure response times?',
       embedder,
+      DEFAULT_SEARCH_LIMIT,
+      0,
     );
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].id).toContain('Performance');
@@ -182,12 +202,44 @@ describe('search result formatting', () => {
   });
 });
 
-describe('search score floor', () => {
-  // @lat: [[search#RAG Tests#Discards negative similarity scores]]
-  it('discards negative cosine similarities without an explicit threshold', async () => {
+describe('search threshold policy', () => {
+  // @lat: [[search#RAG Tests#Applies the shared default result limit]]
+  it('applies the shared default result limit', async () => {
+    const db = {
+      execute: vi.fn().mockResolvedValue({ rows: [] }),
+    } as unknown as Client;
+    const embedder = {
+      name: 'test',
+      dimensions: 1,
+      embed: vi.fn().mockResolvedValue([[1]]),
+    };
+
+    await searchSections(db, 'query', embedder);
+
+    expect(db.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ args: ['[1]', '[1]', DEFAULT_SEARCH_LIMIT] }),
+    );
+  });
+
+  // @lat: [[search#RAG Tests#Applies the shared default similarity threshold]]
+  it('applies the shared default unless a caller overrides it', async () => {
     const db = {
       execute: vi.fn().mockResolvedValue({
         rows: [
+          {
+            id: 'relevant',
+            file: 'relevant.md',
+            heading: 'Relevant',
+            content: 'Relevant match',
+            score: DEFAULT_SEARCH_THRESHOLD,
+          },
+          {
+            id: 'weak',
+            file: 'weak.md',
+            heading: 'Weak',
+            content: 'Weak match',
+            score: DEFAULT_SEARCH_THRESHOLD - 0.01,
+          },
           {
             id: 'negative',
             file: 'negative.md',
@@ -211,9 +263,21 @@ describe('search score floor', () => {
       embed: vi.fn().mockResolvedValue([[1]]),
     };
 
-    const results = await searchSections(db, 'query', embedder);
+    const defaults = await searchSections(db, 'query', embedder);
+    const overridden = await searchSections(
+      db,
+      'query',
+      embedder,
+      DEFAULT_SEARCH_LIMIT,
+      0,
+    );
 
-    expect(results.map((result) => result.id)).toEqual(['zero']);
+    expect(defaults.map((result) => result.id)).toEqual(['relevant']);
+    expect(overridden.map((result) => result.id)).toEqual([
+      'relevant',
+      'weak',
+      'zero',
+    ]);
   });
 });
 
@@ -261,6 +325,8 @@ describe('search (rag, legacy cache upgrade)', () => {
         latDir,
         'how do we handle user login and security?',
         5,
+        undefined,
+        { threshold: 0 },
       );
       expect(result.matches.length).toBeGreaterThan(0);
       expect(result.matches[0].section.id).toContain('Authentication');

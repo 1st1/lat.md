@@ -7,7 +7,10 @@ import { plainStyler, type CmdContext, type CmdResult } from '../context.js';
 import { locateCommand } from '../cli/locate.js';
 import { sectionCommand } from '../cli/section.js';
 import { searchCommand } from '../cli/search.js';
-import { DEFAULT_SEARCH_THRESHOLD } from '../search/search.js';
+import {
+  DEFAULT_SEARCH_LIMIT,
+  DEFAULT_SEARCH_THRESHOLD,
+} from '../search/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
 import { refsCommand, type Scope } from '../cli/refs.js';
@@ -64,8 +67,8 @@ export async function startMcpServer(): Promise<void> {
       limit: z
         .number()
         .optional()
-        .default(5)
-        .describe('Max results (default 5)'),
+        .default(DEFAULT_SEARCH_LIMIT)
+        .describe(`Max results (default ${DEFAULT_SEARCH_LIMIT})`),
       threshold: z
         .number()
         .min(0)
