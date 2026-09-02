@@ -69,9 +69,27 @@ The Node-target regression test builds a complete portable artifact, loads its g
 
 It verifies the document shell, immutable JavaScript and CSS assets, and semantic results from the real local embedding model and built SQLite index. The test therefore covers the generated application contract rather than substituting a fake search handler.
 
+## Selects server deployment targets
+
+`lat ui build server [output] --target node|vercel` keeps Node as the portable default while making platform packaging explicit.
+
+The `node` target defaults to `.lat-build/server/`. The `vercel` target defaults to `.vercel/output/`, builds the same Node artifact in temporary staging, installs production dependencies without lifecycle scripts, converts it into Build Output API v3, and removes staging. Output, base, force, and logo options apply to both.
+
+## Builds Vercel output directly
+
+The public Vercel target and repository preview convert an installed portable server artifact into Build Output API v3 without recursively invoking Vercel CLI.
+
+`web/public/` becomes the CDN `static/` tree. Vercel's Node File Trace selects the entrypoint, server manifest, vector index, runtime packages, WASM engine, and model weights for one base-path-specific search function without copying public content into it.
+
+Every runtime asset is reachable through a static import or `new URL(relativePath, import.meta.url)`. The embedding loader owns WASM initialization rather than relying on generated CommonJS glue to perform an opaque filesystem read.
+
+The generated configuration applies the shared security policy, gives content-addressed JSON and Vite assets immutable caching, resolves functions and exact static files first, and maps extensionless routes to their physical `index.html` files.
+
 ## Keeps build-only packages out of runtime dependencies
 
 The published CLI declares browser renderer inputs and test-only serializers as development dependencies because consumers execute prebuilt artifacts and should not install redundant source trees.
+
+Node File Trace remains a runtime dependency because the installed CLI invokes it when users select the Vercel server target; the Vercel CLI itself is not required.
 
 ## Renders canonical document trees
 
