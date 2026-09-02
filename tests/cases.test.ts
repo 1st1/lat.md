@@ -2022,11 +2022,12 @@ describe('error-long-body', () => {
 
 describe('error-non-md-file', () => {
   // @lat: [[check-index#Detects non-markdown file]]
-  it('reports non-.md file as error', async () => {
+  it('reports an unreferenced non-.md file but allows a linked resource', async () => {
     const errors = await checkIndex(latDir('error-non-md-file'));
     const nonMd = errors.filter((e) => e.message.includes('not a .md file'));
     expect(nonMd).toHaveLength(1);
     expect(nonMd[0].message).toContain('README');
+    expect(nonMd[0].message).not.toContain('asset.svg');
   });
 
   // @lat: [[check-index#Non-markdown files excluded from index listing]]

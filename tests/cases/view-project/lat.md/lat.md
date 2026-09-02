@@ -7,6 +7,8 @@ lat:
 
 Documentation used to exercise the local browser.
 
+![Project mark](media/project.svg)
+
 [Read the guide](guide.md#details).
 
 The browser resolves [[guide|wiki navigation]], [[guide#Details|wiki heading links]], and [[guide#Details|the same heading again]].

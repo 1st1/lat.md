@@ -13,6 +13,8 @@ The loopback server exposes the visible Markdown index, redirects its root to th
 
 Requesting the same route with `.md` returns the exact known vault file as `text/markdown`; missing or escaping paths remain unavailable. `HEAD` returns the same source headers without a body.
 
+Contained non-Markdown resources referenced by documents are served through `/resources/...`; missing files, directory traversal, and escaping symlinks remain unavailable.
+
 By default the header renders the same Lat wordmark as the website. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
 The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
@@ -23,7 +25,7 @@ The server anchors Vite's relative entry assets at `/assets/`, so every live doc
 
 `lat ui build [output]` emits a host-ready immutable snapshot with physical extensionless document and source routes, lazy graph data, and a compatibility entrypoint for old graph URLs.
 
-Every local document also emits its exact source at the corresponding `.md` URL, while generated, relative, search, backlink, and graph navigation all target the extensionless React route.
+Every local document also emits its exact source at the corresponding `.md` URL, while referenced vault resources are copied under `resources/` and generated, relative, search, backlink, and graph navigation all target the extensionless React route.
 
 The static client keeps Markdown and wiki navigation, backlinks, validation, source views, TOCs, and graph inspection. It does not expose Git, search, or the runtime-only section command, perform live API requests, or subscribe to project changes.
 

@@ -32,7 +32,7 @@ Given a subdirectory index file that lists a file which does not exist on disk, 
 
 ## Detects non-markdown file
 
-Given a checked directory containing a file without a `.md` extension (e.g. `README`), `checkIndex` reports it as an error since only markdown files belong in the documentation directory.
+Given a checked directory containing an unreferenced file without a `.md` extension (e.g. `README`), `checkIndex` reports it as an error; non-Markdown files linked from vault Markdown are accepted as local resources.
 
 ## Non-markdown files excluded from index listing
 

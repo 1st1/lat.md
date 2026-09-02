@@ -575,6 +575,28 @@ export class ViewStore {
     return { path: requestedPath, content: await readFile(path, 'utf8') };
   }
 
+  async getDocumentResource(requestedPath: string): Promise<Buffer> {
+    if (
+      !requestedPath ||
+      requestedPath.includes('\\') ||
+      isAbsolute(requestedPath) ||
+      requestedPath.toLowerCase().endsWith('.md')
+    ) {
+      throw new ViewDocumentNotFoundError('Document resource not found');
+    }
+    let path: string;
+    try {
+      path = await realpath(resolve(this.latDir, requestedPath));
+      if (!isInside(this.realLatDir, path) || !(await stat(path)).isFile()) {
+        throw new ViewDocumentNotFoundError('Document resource not found');
+      }
+      return await readFile(path);
+    } catch (error) {
+      if (error instanceof ViewDocumentNotFoundError) throw error;
+      throw new ViewDocumentNotFoundError('Document resource not found');
+    }
+  }
+
   editDocument(
     requestedPath: string,
     baseContent: string,
