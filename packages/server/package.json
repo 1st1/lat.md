@@ -1,0 +1,46 @@
+{
+  "name": "@lat.md/server",
+  "version": "0.1.0",
+  "description": "Shared HTTP runtime for local and deployed lat.md user interfaces",
+  "type": "module",
+  "license": "MIT",
+  "author": "Yury Selivanov",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1st1/lat.md.git",
+    "directory": "packages/server"
+  },
+  "keywords": [
+    "lat.md",
+    "express",
+    "documentation",
+    "server"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "lat-ui-server": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "typescript": "^5.7.0"
+  }
+}

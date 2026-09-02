@@ -74,7 +74,7 @@ The root scripts provide focused checks and builds as well as the complete CI-eq
 - `pnpm setup:rust` — prepare the Rust target and project-local build tools
 - `pnpm build:wasm` — rebuild the Rust/WASM engine only
 - `pnpm build:weights` — rebuild or reuse the MiniLM model package
-- `pnpm buildall` — build both workspace packages and the CLI
+- `pnpm buildall` — build all workspace packages and the CLI
 - `pnpm exec lat check` — validate the knowledge graph and code references
 
 Set `LAT_FORCE_WEIGHTS=1` when running `pnpm build:weights` to download and convert the model again instead of reusing existing artifacts.
@@ -148,11 +148,11 @@ Prettier with no semicolons, single quotes, trailing commas. Run `pnpm format` b
 
 ## Publishing
 
-A pnpm workspace publishing **three** npm packages: the root `lat.md` CLI and two supporting packages it depends on — `@lat.md/embed` (embedding engine) and `@lat.md/embed-minilm-fp16` (bundled local weights).
+A pnpm workspace publishing **four** npm packages: the root `lat.md` CLI and three supporting packages it depends on — `@lat.md/server` (shared Express runtime), `@lat.md/embed` (embedding engine), and `@lat.md/embed-minilm-fp16` (bundled local weights).
 
-The `bin` entry exposes the `lat` command. Only `dist/src` and `templates` are included in the root package — tests and the [[website]] are excluded; the embed packages each ship their own `dist`.
+The root `bin` entry exposes the `lat` command. Only `dist/src` and `templates` are included in the root package — tests and the [[website]] are excluded; each supporting package ships its own `dist` and the model package also ships its weights.
 
-The two `@lat.md/*` packages are runtime `dependencies` of the root, declared as `workspace:*`. `pnpm publish` rewrites `workspace:*` to the exact local version at publish time, so a released `lat.md` pins the embed packages by their real published versions.
+The three `@lat.md/*` packages are runtime `dependencies` of the root, declared as `workspace:*`. `pnpm publish` rewrites `workspace:*` to the exact local version at publish time, so a released `lat.md` pins every supporting package by its real published version.
 
 ### Release Process
 
@@ -173,8 +173,8 @@ Version numbers follow semver. While pre-1.0, bump the patch for fixes and the m
 GitHub Actions workflow at `.github/workflows/publish.yml`. Runs on every push to `main`:
 
 1. **Set up the toolchain** — Node 22 + pnpm and a Rust toolchain with the `wasm32-unknown-unknown` target. `pnpm buildall` installs the Cargo-locked `wasm-bindgen-cli` into the project. The workflow also installs ripgrep so both scan paths are exercised
-2. **Build and test** — `pnpm install --frozen-lockfile`, then `pnpm buildall` (builds the WASM engine + fp16 weights + the top-level `lat` via `tsc`), then `pnpm vitest run`
-3. **Publish changed packages** — a `publish_if_new` shell helper publishes each package **in dependency order** (`packages/embed-minilm-fp16` → `packages/embed` → root `.`), skipping any whose `version` is already on npm (checked via `npm view <name>@<version>`). Each publishes with `pnpm publish --provenance --access public --no-git-checks`. Because `workspace:*` is rewritten at publish time, publishing the leaf packages first guarantees the root's rewritten pins already resolve on npm
+2. **Build and test** — `pnpm install --frozen-lockfile`, then `pnpm buildall` (builds the shared server, WASM engine, fp16 weights, and top-level `lat`), then `pnpm vitest run`
+3. **Publish changed packages** — a `publish_if_new` shell helper publishes each package **in dependency order** (`packages/embed-minilm-fp16` → `packages/embed` → `packages/server` → root `.`), skipping any whose `version` is already on npm (checked via `npm view <name>@<version>`). Each publishes with `pnpm publish --provenance --access public --no-git-checks`. Because `workspace:*` is rewritten at publish time, publishing the leaf packages first guarantees the root's rewritten pins already resolve on npm
 4. **Create GitHub release** — if a `vX.Y.Z` tag/release for the root version does not yet exist, creates one with auto-generated notes
 
 Uses npm trusted publishing (OIDC) — no `NPM_TOKEN` secret needed. The `--provenance` flag signs each package using the GitHub Actions identity. Each package is linked to the `1st1/lat.md` repo on npmjs.com under Settings → Publishing Access.
