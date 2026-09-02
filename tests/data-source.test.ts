@@ -13,7 +13,7 @@ describe('view data source', () => {
     vi.unstubAllGlobals();
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally#Times out stalled document requests]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Updates long-running views incrementally#Times out stalled document requests]]
   it('turns a stalled request into a retryable timeout error', async () => {
     vi.useFakeTimers();
     vi.stubGlobal(
@@ -36,7 +36,7 @@ describe('view data source', () => {
     await rejected;
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally#Recovers interrupted document requests]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Updates long-running views incrementally#Recovers interrupted document requests]]
   it('recovers interrupted requests without retrying navigation cancellations', async () => {
     const recoveredFetch = vi
       .fn()
@@ -81,7 +81,7 @@ describe('view data source', () => {
     expect(cancelledFetch).toHaveBeenCalledTimes(1);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Edits local Markdown safely#Does not replay uncertain writes]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Edits local Markdown safely#Does not replay uncertain writes]]
   it('does not replay an interrupted editor write', async () => {
     const fetch = vi
       .fn()

@@ -25,7 +25,7 @@ function testContext(projectRoot = process.cwd()): CmdContext {
 }
 
 describe('Vercel UI builds', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Selects server deployment targets]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Selects server deployment targets]]
   it('selects node and Vercel server build targets', async () => {
     const buildNode = vi.fn(async (_ctx: CmdContext, output: string) => ({
       documents: 2,
@@ -70,7 +70,7 @@ describe('Vercel UI builds', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds Vercel output directly]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds Vercel output directly]]
   it('separates CDN files from the traced Vercel search function', async () => {
     const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-vercel-test-'));
     const artifactDir = join(buildRoot, 'web');

@@ -37,7 +37,7 @@ function treeTags(tree: ViewDocumentTree): string[] {
 }
 
 describe('source highlighting', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Highlights source syntax safely]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Highlights source syntax safely]]
   it('emits safe structured lines and preserves multiline tokens', () => {
     const lines = highlightSource(
       'src/example.ts',

@@ -43,7 +43,7 @@ describe('MarkdownContent', () => {
     container.remove();
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers]]
   it('keeps rich fences React-owned across navigation and tree updates', async () => {
     const tree: ViewDocumentTree = {
       version: 1,
@@ -111,7 +111,7 @@ describe('MarkdownContent', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Renders canonical document trees]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Renders canonical document trees]]
   it('renders safe document nodes and section interactions through React', async () => {
     const onCopySectionLink = vi.fn();
     const onShowSectionOutput = vi.fn();

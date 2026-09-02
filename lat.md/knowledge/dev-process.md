@@ -49,7 +49,7 @@ pnpm exec lat expand "the task, including any [[refs]]"
 
 Use `pnpm exec lat locate "Section Name"` for direct lookup. Update `lat.md/` for meaningful functionality, architecture, behavior, tests, or planned work; keep it a current snapshot rather than a changelog. Follow `AGENTS.md` for section and code-reference conventions.
 
-Add or update tests with behavior changes. Important tests have a specification under `lat.md/tests/` and exactly one nearby `@lat:` comment in the corresponding test.
+Add or update tests with behavior changes. Important tests have a specification under `lat.md/knowledge/tests/` and exactly one nearby `@lat:` comment in the corresponding test.
 
 Before opening or updating a pull request, run:
 
@@ -111,7 +111,7 @@ Cross-platform correctness relies on two conventions: stored paths are always PO
 
 ## Site Development
 
-The repository's site project exports the root vault through `lat ui build server`, exercising the same portable artifact users deploy.
+The public [[site]] is the `.lat-build/server/` output of `lat ui build server`, so documentation changes are deployed through the same portable artifact users receive.
 
 `pnpm build:site` compiles the shared server, downloads the exact published WASM and model artifacts matching this checkout, builds Lat, and writes the server artifact to `.lat-build/server/`.
 
@@ -156,7 +156,7 @@ Prettier with no semicolons, single quotes, trailing commas. Run `pnpm format` b
 
 A pnpm workspace publishing **four** npm packages: the root `lat.md` CLI and three supporting packages it depends on — `@lat.md/server` (shared Express runtime), `@lat.md/embed` (embedding engine), and `@lat.md/embed-minilm-fp16` (bundled local weights).
 
-The root `bin` entry exposes the `lat` command. Only `dist/src` and `templates` are included in the root package — tests and the [[website]] are excluded; each supporting package ships its own `dist` and the model package also ships its weights.
+The root `bin` entry exposes the `lat` command. Only `dist/src` and `templates` are included in the root package; tests and the legacy website workspace are excluded, while each supporting package ships its own `dist` and the model package also ships its weights.
 
 The three `@lat.md/*` packages are runtime `dependencies` of the root, declared as `workspace:*`. `pnpm publish` rewrites `workspace:*` to the exact local version at publish time, so a released `lat.md` pins every supporting package by its real published version.
 

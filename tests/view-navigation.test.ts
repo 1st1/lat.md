@@ -21,7 +21,7 @@ function paths(nodes: FileTreeNode[]): string[] {
 }
 
 describe('sidebar directory order', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Builds a nested file tree#Uses authored index order]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a nested file tree#Uses authored index order]]
   it('orders pages and folders by their index and preserves incomplete entries', () => {
     const files = [
       'handbook.md',
@@ -106,7 +106,7 @@ describe('directory index navigation', () => {
     rmDirBestEffort(projectRoot);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds a nested file tree#Shares directory order across live and exported views]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a nested file tree#Shares directory order across live and exported views]]
   it('shares parsed index order with the sidebar, live refresh, and static export', async () => {
     store = await createViewStore(latDir, projectRoot, {
       git: false,

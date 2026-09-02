@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mergeProjectChange } from '../view/src/live-updates.js';
 
 describe('live view updates', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally#Accepts restarted server generations]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Updates long-running views incrementally#Accepts restarted server generations]]
   it('accepts lower generations from a new server instance', () => {
     const current = {
       instanceId: 'old-server',
