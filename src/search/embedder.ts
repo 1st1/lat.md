@@ -9,6 +9,11 @@ import { getLlmKey, getRepoEmbedding } from '../config.js';
 export type { Embedder };
 export { EmbeddingAuthError };
 
+export type CreateSearchEngine = (key?: string) => Promise<Embedder>;
+
+const defaultCreateSearchEngine: CreateSearchEngine = (key) =>
+  key ? createEmbedder({ key }) : createEmbedder({ model: minilm });
+
 /** `meta.embedding_model` value for an embedder, e.g. `local:minilm-l6-v2:384`. */
 export function modelKey(embedder: Embedder): string {
   return `${embedder.name}:${embedder.dimensions}`;
@@ -47,15 +52,16 @@ export function localEmbedder(): Promise<Embedder> {
 export async function embedderForIndex(
   storedModel: string | null,
   latDir: string,
+  createSearchEngine: CreateSearchEngine = defaultCreateSearchEngine,
 ): Promise<Embedder> {
   if (storedModel === null) {
-    if (getRepoEmbedding(latDir) === 'local') return localEmbedder();
+    if (getRepoEmbedding(latDir) === 'local') return createSearchEngine();
     // No durable preference — decide from the environment, record it later.
-    return embedderFromEnv();
+    return createSearchEngine(getLlmKey());
   }
 
   if (storedModel.startsWith('local:')) {
-    return localEmbedder(); // ignores LAT_LLM_KEY entirely
+    return createSearchEngine(); // ignores LAT_LLM_KEY entirely
   }
 
   // Remote-pinned index: needs a key that resolves to the same model.
@@ -66,7 +72,7 @@ export async function embedderForIndex(
         `Run 'lat reindex' to switch to the local model or restore the key.`,
     );
   }
-  const embedder = await createEmbedder({ key });
+  const embedder = await createSearchEngine(key);
   if (modelKey(embedder) !== storedModel) {
     throw new ReindexRequiredError(
       `This index was built with '${storedModel}', but the current key resolves ` +
