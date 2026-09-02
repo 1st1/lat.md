@@ -1,11 +1,19 @@
 /**
  * Copy the built WASM engine into dist/ next to the compiled TS.
  * The CJS glue is renamed engine.js → engine.cjs so it is treated as CommonJS
- * inside this `type: module` package; wasm-loader.ts loads it via createRequire.
+ * inside this `type: module` package. Its self-loading footer is replaced so
+ * wasm-loader.ts can initialize it from an analyzable module-relative URL.
  */
-import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { patchNodeGlue } from './patch-node-glue.mjs';
 
 const pkgDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const src = join(pkgDir, 'wasm-dist');
@@ -20,6 +28,9 @@ if (!existsSync(glue) || !existsSync(wasm)) {
 }
 
 mkdirSync(dist, { recursive: true });
-copyFileSync(glue, join(dist, 'engine.cjs'));
+writeFileSync(
+  join(dist, 'engine.cjs'),
+  patchNodeGlue(readFileSync(glue, 'utf8')),
+);
 copyFileSync(wasm, join(dist, 'engine_bg.wasm'));
 console.log('Copied WASM engine → dist/');

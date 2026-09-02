@@ -392,7 +392,7 @@ All embedding generation is isolated in the `@lat.md/embed` package, exposed thr
 [[packages/embed/src/index.ts#createEmbedder]] entry point returning an `Embedder`
 (`{ name, dimensions, embed() }`). Two backends:
 
-- **local** — a candle (Rust) BERT engine compiled to WebAssembly ([[packages/embed/src/local.ts#createLocalEmbedder]]), driven by a `ModelManifest` from a weights package (`@lat.md/embed-minilm-fp16`, fp16 weights up-cast to fp32 at load). Pure WASM, no native binaries; masked-mean pooling + L2 normalize, matching `sentence-transformers`. Texts are embedded one at a time (the engine is single-threaded with no batch speedup, and padding a batch to its longest item wastes work); large jobs fan out across `worker_threads` (one engine per CPU, [[packages/embed/src/worker.ts]]) while small jobs run inline.
+- **local** — a candle (Rust) BERT engine compiled to WebAssembly ([[packages/embed/src/local.ts#createLocalEmbedder]]), driven by a `ModelManifest` from a weights package (`@lat.md/embed-minilm-fp16`, fp16 weights up-cast to fp32 at load). Pure WASM, no native binaries; the ESM loader reads its binary through a module-relative URL and initializes generated glue explicitly so deployment tracers retain the asset. Masked-mean pooling + L2 normalization matches `sentence-transformers`. Texts are embedded one at a time; large jobs fan out across `worker_threads` (one engine per CPU, [[packages/embed/src/worker.ts]]) while small jobs run inline.
 - **remote** — direct `fetch()` to an OpenAI-compatible `/v1/embeddings` endpoint, batching up to 2048 texts per request ([[packages/embed/src/remote.ts#detectProvider]]).
 
 ### Storage

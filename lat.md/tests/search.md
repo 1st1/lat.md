@@ -95,3 +95,11 @@ An indexed search session opens its database and embedder once, applies each que
 ### Skips an unbuilt search index
 
 Opening a query-only session before an index exists returns no matches without loading an embedder, while still closing the database cleanly.
+
+### Patches generated WASM loading explicitly
+
+The package build replaces wasm-bindgen's opaque filesystem loader with an explicit byte initializer that is idempotent and discoverable by deployment tracers.
+
+### Rejects unknown generated WASM glue
+
+The package build fails clearly when generated wasm-bindgen output no longer contains the loader shape Lat knows how to replace.
