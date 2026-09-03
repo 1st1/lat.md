@@ -262,7 +262,7 @@ describe('lat ui', () => {
     );
     expect(contentSecurityPolicy).toContain("font-src 'self' data:");
     expect(contentSecurityPolicy).toContain(
-      "img-src 'self' data: https://github.githubassets.com",
+      "img-src 'self' data: https://github.com https://github.githubassets.com https://img.shields.io",
     );
 
     const rawResponse = await fetch(new URL('/docs/guide.md', view.url));

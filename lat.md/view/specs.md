@@ -17,7 +17,7 @@ Relative images and other non-Markdown files resolve through vault-contained res
 
 By default the header renders the bundled Lat wordmark. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
-The browser shell keeps a default-self Content Security Policy while allowing the OpenFreeMap tile endpoint, GitHub's custom emoji image host, and data-backed renderer fonts.
+The browser shell keeps a default-self Content Security Policy while allowing OpenFreeMap tiles, GitHub-hosted images, Shields badges, and data-backed renderer fonts.
 
 The server anchors Vite's relative entry assets at `/assets/`, so every live document, source, search, and graph route loads the same production shell.
 
