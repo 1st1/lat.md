@@ -176,6 +176,8 @@ The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` 
 
 Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
 
+The topmost section menu in a local Markdown document links to the raw `.md` route. External documents and document previews outside their normal local route omit this action.
+
 In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 
 ## Responsive layout

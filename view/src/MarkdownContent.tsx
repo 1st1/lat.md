@@ -187,6 +187,7 @@ function SectionMenu({
   onShowSectionOutput,
   section,
   sectionOutputEnabled,
+  viewMarkdownUrl,
 }: {
   heading: {
     children: ReactNode[] | undefined;
@@ -198,6 +199,7 @@ function SectionMenu({
   onShowSectionOutput?: (sectionId: string) => void;
   section: ViewSectionBackReferences;
   sectionOutputEnabled: boolean;
+  viewMarkdownUrl?: string;
 }) {
   const [open, setOpen] = useState(false);
   const count = section.references.length;
@@ -261,6 +263,11 @@ function SectionMenu({
           </div>
         )}
         <div className="section-back-reference-actions">
+          {index === 0 && viewMarkdownUrl && (
+            <a className="section-back-reference-action" href={viewMarkdownUrl}>
+              View Markdown file
+            </a>
+          )}
           <button
             className="section-back-reference-action"
             onClick={stop(() => onCopySectionLink?.(section.headingId))}
@@ -300,6 +307,7 @@ type RenderContext = {
   sectionOutputEnabled: boolean;
   onCopySectionLink?: (headingId: string) => void;
   onShowSectionOutput?: (sectionId: string) => void;
+  viewMarkdownUrl?: string;
 };
 
 function DocumentElement({
@@ -345,6 +353,7 @@ function DocumentElement({
       onShowSectionOutput={context?.onShowSectionOutput}
       section={backReferences.section}
       sectionOutputEnabled={context?.sectionOutputEnabled ?? true}
+      viewMarkdownUrl={context?.viewMarkdownUrl}
     />
   );
 }
@@ -375,6 +384,7 @@ export function MarkdownContent({
   onShowSectionOutput,
   sectionOutputEnabled = true,
   tree,
+  viewMarkdownUrl,
 }: {
   backReferences?: ViewSectionBackReferences[];
   onClick?: (event: MouseEvent<HTMLElement>) => void;
@@ -382,6 +392,7 @@ export function MarkdownContent({
   onShowSectionOutput?: (sectionId: string) => void;
   sectionOutputEnabled?: boolean;
   tree: ViewDocumentTree;
+  viewMarkdownUrl?: string;
 }) {
   const context: RenderContext = {
     sections: new Map(
@@ -393,6 +404,7 @@ export function MarkdownContent({
     sectionOutputEnabled,
     onCopySectionLink,
     onShowSectionOutput,
+    viewMarkdownUrl,
   };
 
   return (

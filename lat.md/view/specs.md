@@ -227,7 +227,9 @@ Source links preserve their originating section and line so the code view can re
 
 Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
 
-Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
+Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. The topmost local Markdown section also links to the raw `.md` file, while external documents omit that action.
+
+In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally
 

@@ -99,6 +99,7 @@ import {
   historyStateWithScroll,
   isSameRenderedDocument,
   externalUrl,
+  rawDocumentUrl,
   readGraphMode,
   scrollToDocumentLocation,
   searchButtonAction,
@@ -2036,6 +2037,7 @@ describe('lat ui', () => {
       createElement(MarkdownContent, {
         backReferences: document.backReferences,
         tree: document.tree,
+        viewMarkdownUrl: '/docs/guide.md',
       }),
     );
     expect(rendered).toContain('aria-label="Section menu, 5 references"');
@@ -2045,6 +2047,8 @@ describe('lat ui', () => {
     expect(rendered).toContain('id="section-back-references-1"');
     expect(rendered).toContain('Copy link to the section');
     expect(rendered).toContain('Copy section ID');
+    expect(rendered).toContain('href="/docs/guide.md"');
+    expect(rendered.match(/View Markdown file/g)).toHaveLength(1);
     expect(rendered).toContain('Show <code>lat section</code> output');
     expect(rendered).toContain('section-back-reference-breadcrumb');
     expect(rendered).toContain('section-back-reference-breadcrumb-label');
@@ -2103,6 +2107,7 @@ describe('lat ui', () => {
     expect(emptyRendered).not.toContain('section-back-reference-count');
     expect(emptyRendered).toContain('Copy link to the section');
     expect(emptyRendered).toContain('Copy section ID');
+    expect(emptyRendered).not.toContain('View Markdown file');
     expect(emptyRendered).toContain('Show <code>lat section</code> output');
 
     const staticRendered = renderToStaticMarkup(
@@ -2380,6 +2385,9 @@ describe('lat ui', () => {
     expect(scrollIntoView).not.toHaveBeenCalled();
 
     expect(documentUrl('nested/my guide.md')).toBe('/docs/nested/my%20guide');
+    expect(rawDocumentUrl('nested/my guide.md')).toBe(
+      '/docs/nested/my%20guide.md',
+    );
     expect(documentPath('/docs/nested/my%20guide')).toBe('nested/my guide.md');
     expect(documentPath('/docs/nested/my%20guide.md')).toBeNull();
 
