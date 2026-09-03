@@ -20,6 +20,8 @@ import {
 import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import type { SectionMatch } from '../lattice-model.js';
+import type { Section } from '../lattice-model.js';
+import { searchIndexedSections } from '../search/query.js';
 import {
   analyzeMarkdownProject,
   commandProjectAnalysis,
@@ -43,13 +45,14 @@ async function withDb<T>(
   latDir: string,
   progress: IndexProgress | undefined,
   project: MarkdownProjectAnalysis,
+  cacheDir: string | undefined,
   fn: (
     db: Awaited<ReturnType<typeof openDb>>,
     embedder: Embedder,
     project: MarkdownProjectAnalysis,
   ) => Promise<T>,
 ): Promise<T> {
-  const db = openDb(latDir);
+  const db = openDb(latDir, cacheDir);
 
   try {
     await ensureMeta(db);
@@ -117,21 +120,6 @@ async function withDb<T>(
   }
 }
 
-/** Resolve raw search hits (by id) to full section matches. */
-async function resolveMatches(
-  project: MarkdownProjectAnalysis,
-  results: { id: string; score: number }[],
-): Promise<SectionMatch[]> {
-  if (results.length === 0) return [];
-
-  return results.flatMap((result) => {
-    const section = project.sectionById.get(result.id.toLowerCase());
-    return section
-      ? [{ section, reason: 'semantic match', score: result.score }]
-      : [];
-  });
-}
-
 /**
  * Run a semantic search across lat.md sections.
  * Handles indexing (with optional progress callback). Returns matched sections.
@@ -150,35 +138,24 @@ export async function runSearch(
   opts?: {
     buildIndex?: boolean;
     project?: MarkdownProjectAnalysis;
+    sectionById?: ReadonlyMap<string, Section>;
     threshold?: number;
+    cacheDir?: string;
   },
 ): Promise<SearchResult> {
   if (opts?.buildIndex === false) {
-    const db = openDb(latDir);
-    try {
-      await ensureMeta(db);
-      const stored = await getStoredModel(db);
-      // Never built (or a legacy pre-versioning cache) — leave building to
-      // `lat search`; don't load the embedder just to embed the query.
-      if (stored === null) return { query, matches: [] };
-      const embedder = await embedderForIndex(stored, latDir);
-      await ensureSectionsSchema(db, embedder.dimensions);
-      const results = await searchSections(
-        db,
-        query,
-        embedder,
-        limit,
-        opts.threshold,
-      );
-      const project =
-        opts.project ??
-        (await analyzeMarkdownProject(latDir, dirname(latDir), {
+    const sectionById =
+      opts.sectionById ??
+      opts.project?.sectionById ??
+      (
+        await analyzeMarkdownProject(latDir, dirname(latDir), {
           executor: 'auto',
-        }));
-      return { query, matches: await resolveMatches(project, results) };
-    } finally {
-      await closeDb(db);
-    }
+        })
+      ).sectionById;
+    return searchIndexedSections(latDir, query, limit, sectionById, {
+      cacheDir: opts.cacheDir,
+      threshold: opts.threshold,
+    });
   }
 
   const project =
@@ -186,16 +163,30 @@ export async function runSearch(
     (await analyzeMarkdownProject(latDir, dirname(latDir), {
       executor: 'auto',
     }));
-  return withDb(latDir, progress, project, async (db, embedder, analyzed) => {
-    const results = await searchSections(
-      db,
-      query,
-      embedder,
-      limit,
-      opts?.threshold,
-    );
-    return { query, matches: await resolveMatches(analyzed, results) };
-  });
+  return withDb(
+    latDir,
+    progress,
+    project,
+    opts?.cacheDir,
+    async (db, embedder, analyzed) => {
+      const results = await searchSections(
+        db,
+        query,
+        embedder,
+        limit,
+        opts?.threshold,
+      );
+      return {
+        query,
+        matches: results.flatMap((result) => {
+          const section = analyzed.sectionById.get(result.id.toLowerCase());
+          return section
+            ? [{ section, reason: 'semantic match', score: result.score }]
+            : [];
+        }),
+      };
+    },
+  );
 }
 
 /**
@@ -206,13 +197,14 @@ export async function runIndex(
   latDir: string,
   progress?: IndexProgress,
   analyzedProject?: MarkdownProjectAnalysis,
+  options: { cacheDir?: string } = {},
 ): Promise<void> {
   const project =
     analyzedProject ??
     (await analyzeMarkdownProject(latDir, dirname(latDir), {
       executor: 'auto',
     }));
-  await withDb(latDir, progress, project, async () => {});
+  await withDb(latDir, progress, project, options.cacheDir, async () => {});
 }
 
 export function cliProgress(s: Styler): IndexProgress {

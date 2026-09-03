@@ -2,8 +2,8 @@ import { createClient, type Client } from '@libsql/client';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-export function openDb(latDir: string): Client {
-  const cacheDir = join(latDir, '.cache');
+export function openDb(latDir: string, requestedCacheDir?: string): Client {
+  const cacheDir = requestedCacheDir ?? join(latDir, '.cache');
   mkdirSync(cacheDir, { recursive: true });
 
   const client = createClient({

@@ -87,3 +87,11 @@ search: the mismatched table is dropped and rebuilt at 384 dims and the query su
 
 This is the pre-versioning `.cache` upgrade path — before, the stale table was queried and threw a
 raw dimension-mismatch error.
+
+### Reuses an indexed search session
+
+An indexed search session opens its database and embedder once, applies each query's limit and threshold, resolves known section ids, and closes owned resources exactly once.
+
+### Skips an unbuilt search index
+
+Opening a query-only session before an index exists returns no matches without loading an embedder, while still closing the database cleanly.

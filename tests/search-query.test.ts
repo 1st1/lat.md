@@ -1,0 +1,137 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Section } from '../src/lattice-model.js';
+
+const mocks = vi.hoisted(() => ({
+  closeDb: vi.fn(),
+  embedderForIndex: vi.fn(),
+  ensureMeta: vi.fn(),
+  ensureSectionsSchema: vi.fn(),
+  getStoredModel: vi.fn(),
+  openDb: vi.fn(),
+  searchSections: vi.fn(),
+}));
+
+vi.mock('../src/search/db.js', () => ({
+  closeDb: mocks.closeDb,
+  ensureMeta: mocks.ensureMeta,
+  ensureSectionsSchema: mocks.ensureSectionsSchema,
+  getStoredModel: mocks.getStoredModel,
+  openDb: mocks.openDb,
+}));
+
+vi.mock('../src/search/embedder.js', () => ({
+  embedderForIndex: mocks.embedderForIndex,
+}));
+
+vi.mock('../src/search/search.js', () => ({
+  searchSections: mocks.searchSections,
+}));
+
+import { openIndexedSearchSession } from '../src/search/query.js';
+
+const section: Section = {
+  id: 'lat.md/guide#Guide',
+  heading: 'Guide',
+  depth: 1,
+  file: 'lat.md/guide',
+  filePath: 'lat.md/guide.md',
+  children: [],
+  startLine: 1,
+  endLine: 3,
+  firstParagraph: 'A guide.',
+};
+
+describe('indexed search sessions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.openDb.mockReturnValue({ database: 'test' });
+    mocks.ensureMeta.mockResolvedValue(undefined);
+    mocks.ensureSectionsSchema.mockResolvedValue(undefined);
+    mocks.closeDb.mockResolvedValue(undefined);
+    mocks.getStoredModel.mockResolvedValue('local:test:1');
+    mocks.embedderForIndex.mockResolvedValue({
+      name: 'local:test',
+      dimensions: 1,
+      embed: vi.fn(),
+    });
+    mocks.searchSections.mockResolvedValue([
+      { id: section.id, score: 0.8 },
+      { id: 'lat.md/missing#Missing', score: 0.7 },
+    ]);
+  });
+
+  // @lat: [[tests/search#RAG Tests#Reuses an indexed search session]]
+  it('reuses one database and embedder across queries', async () => {
+    const createSearchEngine = vi.fn();
+    const sectionById = new Map([[section.id.toLowerCase(), section]]);
+    const session = await openIndexedSearchSession(
+      '/project/lat.md',
+      sectionById,
+      {
+        cacheDir: '/runtime/cache',
+        createSearchEngine,
+      },
+    );
+
+    await expect(session.search('first', 7, 0.4)).resolves.toEqual({
+      query: 'first',
+      matches: [{ section, reason: 'semantic match', score: 0.8 }],
+    });
+    await session.search('second', 3);
+    await session.close();
+    await session.close();
+
+    expect(mocks.openDb).toHaveBeenCalledOnce();
+    expect(mocks.openDb).toHaveBeenCalledWith(
+      '/project/lat.md',
+      '/runtime/cache',
+    );
+    expect(mocks.embedderForIndex).toHaveBeenCalledOnce();
+    expect(mocks.embedderForIndex).toHaveBeenCalledWith(
+      'local:test:1',
+      '/project/lat.md',
+      createSearchEngine,
+    );
+    expect(mocks.ensureSectionsSchema).toHaveBeenCalledWith(
+      expect.anything(),
+      1,
+    );
+    expect(mocks.searchSections).toHaveBeenNthCalledWith(
+      1,
+      expect.anything(),
+      'first',
+      expect.anything(),
+      7,
+      0.4,
+    );
+    expect(mocks.searchSections).toHaveBeenNthCalledWith(
+      2,
+      expect.anything(),
+      'second',
+      expect.anything(),
+      3,
+      undefined,
+    );
+    expect(mocks.closeDb).toHaveBeenCalledOnce();
+  });
+
+  // @lat: [[tests/search#RAG Tests#Skips an unbuilt search index]]
+  it('returns no matches without loading an embedder for an unbuilt index', async () => {
+    mocks.getStoredModel.mockResolvedValue(null);
+    const session = await openIndexedSearchSession(
+      '/project/lat.md',
+      new Map([[section.id.toLowerCase(), section]]),
+    );
+
+    await expect(session.search('query', 5)).resolves.toEqual({
+      query: 'query',
+      matches: [],
+    });
+    await session.close();
+
+    expect(mocks.embedderForIndex).not.toHaveBeenCalled();
+    expect(mocks.ensureSectionsSchema).not.toHaveBeenCalled();
+    expect(mocks.searchSections).not.toHaveBeenCalled();
+    expect(mocks.closeDb).toHaveBeenCalledOnce();
+  });
+});

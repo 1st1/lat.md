@@ -350,7 +350,7 @@ Query is optional — `lat search` with no query just builds the index on first 
 
 Search returns at most `--limit` results ([[src/search/search.ts#DEFAULT_SEARCH_LIMIT]] by default) whose cosine-similarity score is at least `--threshold` ([[src/search/search.ts#DEFAULT_SEARCH_THRESHOLD]] by default). The accepted threshold range is `0` to `1`; lower it to favor recall or raise it to favor precision. The vector-search core owns both defaults: CLI, MCP, and prompt-hook retrieval share them unless their interfaces supply an explicit override, while the UI deliberately requests its own named limit.
 
-Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
+Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. [[src/search/query.ts#openIndexedSearchSession]] reuses one database handle and embedder when a runtime serves multiple queries. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
 
 ### Backend selection
 
