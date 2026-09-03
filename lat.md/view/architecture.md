@@ -98,6 +98,8 @@ The build creates the semantic index once and serializes the flat section metada
 
 Static client configuration treats search as an independent capability: pure static builds omit the control and route, while server builds point the same client at their configured search endpoint. Documents, source views, externals, and the graph remain static in both targets.
 
+Shutdown retries deletion of its owned temporary index. Persistent Windows native-file locks may leave that disposable OS-temp copy behind without failing shutdown; caller-provided caches and deployed indexes are never removed.
+
 ### Vercel server export
 
 [[src/view/vercel-server-build.ts#buildVercelServerView]] implements `--target vercel` by composing the portable Node builder with [[src/view/vercel-build.ts#buildVercelOutput]].

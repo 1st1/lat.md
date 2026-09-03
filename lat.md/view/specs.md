@@ -69,6 +69,8 @@ The Node-target regression test builds a complete portable artifact, loads its g
 
 Indexing runs in a child process that exits before staging is renamed, releasing native SQLite handles on Windows. The existing analyzed snapshot crosses the process boundary intact, and indexing errors reject the build before publication.
 
+Shutdown closes search and retries removal of its owned runtime cache. Persistent Windows lock errors on that disposable copy do not fail shutdown; other cleanup errors still surface.
+
 It verifies the document shell, immutable JavaScript and CSS assets, and semantic results from the real local embedding model and built SQLite index. The test therefore covers the generated application contract rather than substituting a fake search handler.
 
 ## Selects server deployment targets
