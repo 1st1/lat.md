@@ -15,7 +15,7 @@ Requesting the same route with `.md` returns the exact known vault file as `text
 
 Relative images and other non-Markdown files resolve through vault-contained resource routes. Missing files, directories, and paths that escape through traversal or symlinks remain unavailable.
 
-By default the header renders the bundled Lat wordmark. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
+By default the header renders the compact, solid-cell Lat wordmark bundled in [[view/src/logo.svg]], without shaded cells. This asset is independent of logos embedded in Markdown content. `lat ui --logo-text <text>` replaces it with safely rendered plain text.
 
 The browser shell keeps a default-self Content Security Policy while allowing OpenFreeMap tiles, GitHub-hosted images, Shields badges, and data-backed renderer fonts.
 
