@@ -1392,6 +1392,10 @@ a {
   border: 0;
 }
 
+.markdown .section-back-reference-action {
+  text-decoration: none;
+}
+
 .section-back-reference-action:hover {
   color: color-mix(in srgb, var(--muted) 82%, white);
 }

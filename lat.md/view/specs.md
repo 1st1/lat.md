@@ -67,6 +67,10 @@ The static client exposes Search only when the build advertises an endpoint. Edi
 
 The Node-target regression test builds a complete portable artifact, loads its generated entrypoint against installed workspace packages, and serves it over loopback HTTP.
 
+Indexing runs in a child process that exits before staging is renamed, releasing native SQLite handles on Windows. The existing analyzed snapshot crosses the process boundary intact, and indexing errors reject the build before publication.
+
+Shutdown closes search and retries removal of its owned runtime cache. Persistent Windows lock errors on that disposable copy do not fail shutdown; other cleanup errors still surface.
+
 It verifies the document shell, immutable JavaScript and CSS assets, and semantic results from the real local embedding model and built SQLite index. The test therefore covers the generated application contract rather than substituting a fake search handler.
 
 ## Selects server deployment targets
@@ -227,7 +231,11 @@ Source links preserve their originating section and line so the code view can re
 
 Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
 
-Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
+Muted actions stack below the references with “Copy link to the section” first. They can also copy the canonical ID accepted by `lat section`. The topmost local Markdown section links to the raw `.md` file, while external documents omit that action.
+
+Following the menu link returns the exact source from both the live UI and generated Node server. Exported homepages retain their `/docs/<file>.md` source route, and nested deployments preserve their base path.
+
+In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally
 

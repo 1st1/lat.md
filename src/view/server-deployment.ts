@@ -81,6 +81,28 @@ type PreparedServerView = {
   close: () => Promise<void>;
 };
 
+/** Native SQLite handles may outlive close until the Windows process exits. */
+async function removeRuntimeCache(path: string): Promise<void> {
+  try {
+    await rm(path, {
+      recursive: true,
+      force: true,
+      maxRetries: 10,
+      retryDelay: 150,
+    });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (
+      process.platform !== 'win32' ||
+      (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY')
+    ) {
+      throw error;
+    }
+    // This is an owned OS-temp copy, never the deployed index or user data.
+    // A lingering native lock must not fail otherwise successful shutdown.
+  }
+}
+
 async function prepareServerView(
   options: ServerViewAppOptions,
   manifestFile: string,
@@ -101,7 +123,7 @@ async function prepareServerView(
       await copyFile(indexFile, join(runtimeCacheDir, 'vectors.db'));
     } catch (error) {
       if (ownsCache) {
-        await rm(runtimeCacheDir, { recursive: true, force: true });
+        await removeRuntimeCache(runtimeCacheDir);
       }
       throw error;
     }
@@ -131,8 +153,7 @@ async function prepareServerView(
       try {
         await ownedSearch?.close();
       } finally {
-        if (ownsCache)
-          await rm(runtimeCacheDir, { recursive: true, force: true });
+        if (ownsCache) await removeRuntimeCache(runtimeCacheDir);
       }
     },
   };

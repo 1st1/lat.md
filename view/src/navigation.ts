@@ -25,6 +25,12 @@ export function documentPath(pathname: string): string | null {
   return routeDocumentPath(viewPathname(pathname));
 }
 
+/** Build the raw Markdown URL paired with a local rendered document route. */
+export function rawDocumentUrl(path: string): string {
+  const route = `${routeDocumentUrl(path)}.md`;
+  return staticViewRoute(route.slice(1)) ?? route;
+}
+
 /** Build the browser route for one canonical external target. */
 export function externalUrl(target: string): string {
   const colon = target.indexOf(':');

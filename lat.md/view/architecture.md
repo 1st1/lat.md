@@ -92,9 +92,13 @@ Framework-aware hosts can serve `public/` from a CDN and route remaining request
 
 The build creates the semantic index once and serializes the flat section metadata required to turn index ids into browser results. [[src/view/preindexed-search.ts#createPreindexedViewSearch]] queries that copied index without importing indexing or Markdown parsers, then hydrates its storage-level rows through the same resolver as other search callers.
 
+[[src/view/server-build.ts#buildServerSearchIndex]] indexes the analyzed snapshot in a child process and waits for its exit before publishing staging. Process exit releases native database handles that can otherwise prevent directory renames on Windows.
+
 [[src/view/server-deployment.ts#createServerViewApp]] consumes the explicit manifest and index paths, derives static fallback content from the artifact layout, copies the immutable database into a writable runtime cache, and registers only the search API on the supplied Express app. Each server instance opens that copy and resolves its injected local embedder once; hosted keys do not alter the prebuilt index's model. The local model initializes on the first query and remains available for later warm queries. Shutdown closes the database before removing temporary storage. Git, editing, events, and repository reads remain absent.
 
 Static client configuration treats search as an independent capability: pure static builds omit the control and route, while server builds point the same client at their configured search endpoint. Documents, source views, externals, and the graph remain static in both targets.
+
+Shutdown retries deletion of its owned temporary index. Persistent Windows native-file locks may leave that disposable OS-temp copy behind without failing shutdown; caller-provided caches and deployed indexes are never removed.
 
 ### Vercel server export
 
@@ -179,6 +183,10 @@ The view store projects cached Markdown `indexEntries` into [[src/view/protocol.
 [[cli#check#index]] requires every visible Markdown page and directory to be listed. While editing an invalid vault, the sidebar keeps unlisted entries visible after listed ones in natural order; missing or stale entries remain validation errors.
 
 Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
+
+The topmost section menu in a local Markdown document links to the raw `.md` route. External documents and document previews outside their normal local route omit this action.
+
+Raw-file links preserve the deployment base and `/docs/` source path in live, static, and server builds. An exported homepage at `/` still links to its `/docs/<file>.md` source rather than appending `.md` to the homepage URL.
 
 In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 

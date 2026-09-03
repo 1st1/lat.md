@@ -35,6 +35,7 @@ import {
   historyScrollPosition,
   historyStateWithScroll,
   isSameRenderedDocument,
+  rawDocumentUrl,
   readGraphMode,
   searchButtonAction,
   searchHistoryState,
@@ -1089,6 +1090,11 @@ export function App() {
                   onShowSectionOutput={setSectionOutputId}
                   sectionOutputEnabled={!staticView}
                   tree={documentTree}
+                  viewMarkdownUrl={
+                    route?.kind === 'markdown'
+                      ? rawDocumentUrl(route.path)
+                      : undefined
+                  }
                 />
               )}
             </div>
