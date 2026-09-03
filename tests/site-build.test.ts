@@ -5,7 +5,7 @@ import { join } from 'node:path';
 const repositoryRoot = join(import.meta.dirname, '..');
 
 describe('repository site build', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Builds this repository's site directly]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds this repository's site directly]]
   it('uses the ignored default server artifact for one Vercel build', () => {
     const rootPackage = JSON.parse(
       readFileSync(join(repositoryRoot, 'package.json'), 'utf8'),

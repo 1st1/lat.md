@@ -229,7 +229,7 @@ describe('lat ui', () => {
     rmSync(join(latDir, '.cache'), { recursive: true, force: true });
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Serves the document index and browser shell]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Serves the document index and browser shell]]
   it('serves the document index and browser shell', async () => {
     const indexResponse = await fetch(new URL('/api/index', view.url));
     expect(indexResponse.status).toBe(200);
@@ -331,7 +331,7 @@ describe('lat ui', () => {
     expect(styles).toContain('.brand-logo');
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a static deployment]]
   it('builds a static deployment without live Git or search services', async () => {
     const move = vi
       .fn()
@@ -614,7 +614,7 @@ describe('lat ui', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds a portable server deployment]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a portable server deployment]]
   it('builds static assets with a portable Express search server', async () => {
     const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-server-test-'));
     const serverProjectRoot = join(buildRoot, 'project');
@@ -868,7 +868,7 @@ describe('lat ui', () => {
     }
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds a portable server deployment#Runs the generated Node artifact end to end]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a portable server deployment#Runs the generated Node artifact end to end]]
   it('runs the generated Node artifact with static assets and semantic search', async () => {
     const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-node-e2e-'));
     const serverProjectRoot = join(buildRoot, 'project');
@@ -998,7 +998,7 @@ describe('lat ui', () => {
     }
   }, 60_000);
 
-  // @lat: [[lat.md/view/specs#View Tests#Keeps build-only packages out of runtime dependencies]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Keeps build-only packages out of runtime dependencies]]
   it('keeps build-only packages out of runtime dependencies', () => {
     const repositoryRoot = join(import.meta.dirname, '..');
     const rootPackage = JSON.parse(
@@ -1029,7 +1029,7 @@ describe('lat ui', () => {
     }
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
     const shell = await fetch(new URL('/graph', view.url));
     expect(shell.status).toBe(200);
@@ -1211,7 +1211,7 @@ describe('lat ui', () => {
     expect(styles).toContain('padding: 0 18px 0 28px;');
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Searches sections with embeddings]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Searches sections with embeddings]]
   it('serves lazily indexed semantic section search', async () => {
     expect(searchUrl('runner details')).toBe('/search?q=runner+details');
     expect(searchQuery('?q=runner+details')).toBe('runner details');
@@ -1259,7 +1259,7 @@ describe('lat ui', () => {
     expect(runIndex).toHaveBeenCalledTimes(1);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Refreshes search after Markdown changes]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Refreshes search after Markdown changes]]
   it('shares one incremental search index update per Markdown generation', async () => {
     let generation = 0;
     const index = vi.fn(async () => {});
@@ -1283,7 +1283,7 @@ describe('lat ui', () => {
     expect(search).toHaveBeenCalledTimes(4);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Renders Markdown with navigable local links]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Renders Markdown with navigable local links]]
   it('renders Markdown with navigable local links', async () => {
     const response = await fetch(
       new URL('/api/document?path=lat.md', view.url),
@@ -1625,7 +1625,7 @@ describe('lat ui', () => {
     expect(stlCanvasStyles).toContain('height: 100%;');
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Shows a local table of contents]]
   it('builds nested document navigation and tracks the active heading', async () => {
     const content =
       '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
@@ -1760,7 +1760,7 @@ describe('lat ui', () => {
     ]);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Adapts navigation to mobile screens]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Adapts navigation to mobile screens]]
   it('keeps mobile navigation accessible without compressing desktop rails', () => {
     const app = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'App.tsx'),
@@ -1809,7 +1809,7 @@ describe('lat ui', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
   it('exposes code-mention frontmatter as document metadata', async () => {
     const response = await fetch(
       new URL('/api/document?path=guide.md', view.url),
@@ -1821,7 +1821,7 @@ describe('lat ui', () => {
     expect(viewDocumentHtml(document)).not.toContain('require-code-mention');
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Resolves Markdown and source wiki links]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Resolves Markdown and source wiki links]]
   it('resolves Markdown and source wiki links', async () => {
     const response = await fetch(
       new URL('/api/document?path=lat.md', view.url),
@@ -1917,7 +1917,7 @@ describe('lat ui', () => {
     }
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Serves source definitions securely]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Serves source definitions securely]]
   it('serves source definitions with symbol ranges', async () => {
     const response = await fetch(
       new URL('/api/source?path=src/app.ts&symbol=run', view.url),
@@ -1955,7 +1955,7 @@ describe('lat ui', () => {
     });
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Shows source reference context]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Shows source reference context]]
   it('shows the originating paragraph and other section references', async () => {
     const url = new URL('/api/source', view.url);
     url.searchParams.set('path', 'src/app.ts');
@@ -1996,7 +1996,7 @@ describe('lat ui', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Shows section back-references]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Shows section back-references]]
   it('shows section menus with references, empty state, and section actions', async () => {
     const response = await fetch(
       new URL('/api/document?path=guide.md', view.url),
@@ -2191,7 +2191,7 @@ describe('lat ui', () => {
     });
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Places context within a collapsed source window]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Places context within a collapsed source window]]
   it('places context before the focused lines and collapses distant code', () => {
     const focus = {
       symbol: 'run',
@@ -2247,7 +2247,7 @@ describe('lat ui', () => {
     });
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds a nested file tree]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Builds a nested file tree]]
   it('builds a nested file tree', () => {
     const tree = buildFileTree([
       'lat.md',
@@ -2346,7 +2346,7 @@ describe('lat ui', () => {
     expect(externalUrl('node:api/assert')).toBe('/external/node/api/assert');
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Stabilizes fragment navigation immediately]]
   it('positions fragment navigation without smooth scrolling', () => {
     const scrollIntoView = vi.fn();
     const getElementById = vi.fn(() => ({ scrollIntoView }));
@@ -2410,7 +2410,7 @@ describe('lat ui', () => {
     ).toBe(true);
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Restores history scroll positions]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Restores history scroll positions]]
   it('preserves scroll positions in navigation history state', () => {
     const state = historyStateWithScroll(
       searchHistoryState('/docs/guide#details'),
@@ -2424,7 +2424,7 @@ describe('lat ui', () => {
     );
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Rejects files outside the Markdown vault]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Rejects files outside the Markdown vault]]
   it('rejects files outside the Markdown vault', async () => {
     const outside = await fetch(
       new URL('/api/document?path=../package.json', view.url),
@@ -2435,7 +2435,7 @@ describe('lat ui', () => {
     });
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Launches the browser after the server starts]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Launches the browser after the server starts]]
   it('launches the browser after the server starts', async () => {
     const openBrowser = vi.fn(async () => {});
     let started: ViewServer | undefined;
@@ -2480,7 +2480,7 @@ describe('lat ui', () => {
 });
 
 describe('lat ui validation diagnostics', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Shows live validation errors]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Shows live validation errors]]
   it('marks invalid files and refreshes their clickable diagnostics', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-errors-'));
     const errorsLatDir = join(root, 'lat.md');
@@ -2538,7 +2538,7 @@ describe('lat ui validation diagnostics', () => {
 });
 
 describe('lat ui git state', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Shows live Git state]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Shows live Git state]]
   it('refreshes file state and renders HEAD changes as inline word diffs', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-git-'));
     const gitLatDir = join(root, 'lat.md');
@@ -2853,7 +2853,7 @@ describe('lat ui git state', () => {
 });
 
 describe('lat ui live project index', () => {
-  // @lat: [[lat.md/view/specs#View Tests#Edits local Markdown safely]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Edits local Markdown safely]]
   it('applies editor patches over unrelated disk changes and rejects overlaps', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-edit-'));
     const liveLatDir = join(root, 'lat.md');
@@ -2941,7 +2941,7 @@ describe('lat ui live project index', () => {
     }
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Updates long-running views incrementally]]
+  // @lat: [[lat.md/knowledge/view/specs#View Tests#Updates long-running views incrementally]]
   it('updates cached files, backlinks, code refs, and clients incrementally', async () => {
     const root = mkdtempSync(join(tmpdir(), 'lat-view-live-'));
     const liveLatDir = join(root, 'lat.md');
