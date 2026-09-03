@@ -25,7 +25,6 @@ import { setRepoEmbedding } from '../src/config.js';
 import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
 import { uiBuildServerCommand } from '../src/cli/ui-build-server.js';
-import { runIndex as buildSearchIndex } from '../src/cli/search.js';
 import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
 import {
   DEFAULT_VIEW_PORT,
@@ -38,7 +37,10 @@ import {
   normalizeStaticViewBasePath,
   staticViewUrl,
 } from '../src/view/static-build.js';
-import { buildServerView } from '../src/view/server-build.js';
+import {
+  buildServerSearchIndex,
+  buildServerView,
+} from '../src/view/server-build.js';
 import {
   createServerViewApp,
   type ServerViewManifest,
@@ -655,8 +657,7 @@ describe('lat ui', () => {
               express: '5.2.1',
             }[name]!;
           },
-          async runIndex(_latDir, _progress, _project, options) {
-            const cacheDir = options!.cacheDir!;
+          async buildSearchIndex(_latDir, _project, cacheDir) {
             mkdirSync(cacheDir, { recursive: true });
             writeFileSync(join(cacheDir, 'vectors.db'), 'index');
           },
@@ -924,7 +925,7 @@ describe('lat ui', () => {
               ),
             ).version as string;
           },
-          runIndex: buildSearchIndex,
+          buildSearchIndex: buildServerSearchIndex,
         },
       );
 

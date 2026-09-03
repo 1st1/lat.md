@@ -1,11 +1,15 @@
 import { readFileSync } from 'node:fs';
+import { fork } from 'node:child_process';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getLatServerVersion } from '@lat.md/server';
 import type { CmdContext } from '../context.js';
-import { analyzeMarkdownProject } from '../project-analysis.js';
-import { runIndex } from '../cli/search.js';
+import {
+  analyzeMarkdownProject,
+  type MarkdownProjectAnalysis,
+} from '../project-analysis.js';
+import type { ServerIndexRequest } from './server-index-worker.js';
 import { getLocalVersion } from '../version.js';
 import { toPosix } from '../path.js';
 import {
@@ -33,7 +37,7 @@ export type ServerViewBuildDependencies = {
   getLocalVersion: typeof getLocalVersion;
   getLatServerVersion: typeof getLatServerVersion;
   getPackageVersion: typeof getPackageVersion;
-  runIndex: typeof runIndex;
+  buildSearchIndex: typeof buildServerSearchIndex;
 };
 
 const defaultDependencies: ServerViewBuildDependencies = {
@@ -42,8 +46,58 @@ const defaultDependencies: ServerViewBuildDependencies = {
   getLocalVersion,
   getLatServerVersion,
   getPackageVersion,
-  runIndex,
+  buildSearchIndex: buildServerSearchIndex,
 };
+
+/** Wait for the index process to exit so native handles cannot lock staging. */
+export function buildServerSearchIndex(
+  latDir: string,
+  project: MarkdownProjectAnalysis,
+  cacheDir: string,
+): Promise<void> {
+  const sourceRuntime = import.meta.url.endsWith('.ts');
+  const child = fork(
+    new URL(
+      sourceRuntime ? './server-index-worker.ts' : './server-index-worker.js',
+      import.meta.url,
+    ),
+    [],
+    {
+      execArgv: sourceRuntime ? ['--import', 'tsx'] : [],
+      serialization: 'advanced',
+      stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
+    },
+  );
+  return new Promise((resolveIndex, reject) => {
+    let stderr = '';
+    let sendError: Error | null = null;
+    child.stderr!.setEncoding('utf8');
+    child.stderr!.on('data', (chunk: string) => {
+      stderr = (stderr + chunk).slice(-64_000);
+    });
+    child.once('error', reject);
+    child.once('close', (code, signal) => {
+      if (sendError) reject(sendError);
+      else if (code === 0) resolveIndex();
+      else {
+        reject(
+          new Error(
+            `Server search indexing failed (${signal ?? code}): ${stderr.trim()}`,
+          ),
+        );
+      }
+    });
+    child.send(
+      { latDir, project, cacheDir } satisfies ServerIndexRequest,
+      (error) => {
+        if (error) {
+          sendError = error;
+          child.kill();
+        }
+      },
+    );
+  });
+}
 
 function getPackageVersion(name: string): string {
   let directory = dirname(fileURLToPath(import.meta.resolve(name)));
@@ -140,9 +194,7 @@ export async function buildServerView(
       ctx.projectRoot,
       { executor: 'auto' },
     );
-    await dependencies.runIndex(ctx.latDir, undefined, project, {
-      cacheDir: dataDir,
-    });
+    await dependencies.buildSearchIndex(ctx.latDir, project, dataDir);
     const sections: ServerViewSection[] = project.sections.map(
       ({ children: _children, ...section }) => ({
         ...section,

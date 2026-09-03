@@ -67,6 +67,8 @@ The static client exposes Search only when the build advertises an endpoint. Edi
 
 The Node-target regression test builds a complete portable artifact, loads its generated entrypoint against installed workspace packages, and serves it over loopback HTTP.
 
+Indexing runs in a child process that exits before staging is renamed, releasing native SQLite handles on Windows. The existing analyzed snapshot crosses the process boundary intact, and indexing errors reject the build before publication.
+
 It verifies the document shell, immutable JavaScript and CSS assets, and semantic results from the real local embedding model and built SQLite index. The test therefore covers the generated application contract rather than substituting a fake search handler.
 
 ## Selects server deployment targets
