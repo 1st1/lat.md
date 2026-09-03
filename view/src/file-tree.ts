@@ -1,6 +1,7 @@
 import type {
   ViewExternalFile,
   ViewGitFileStatus,
+  ViewIndex,
 } from '../../src/view/protocol';
 
 export type FileTreeNode =
@@ -35,7 +36,23 @@ const finderCollator = new Intl.Collator(undefined, {
 function sortedChildren(
   children: Map<string, MutableNode>,
   indexPath: string | null,
+  directoryOrder: ViewIndex['directoryOrder'],
+  directory = '',
 ): FileTreeNode[] {
+  const ranks = new Map<string, number>();
+  const entries = Object.hasOwn(directoryOrder, directory)
+    ? directoryOrder[directory]
+    : [];
+  for (const [rank, name] of entries.entries()) {
+    if (!ranks.has(name)) ranks.set(name, rank);
+  }
+  const rank = (node: MutableNode): number =>
+    Math.min(
+      ranks.get(node.name) ?? Infinity,
+      node.kind === 'file'
+        ? (ranks.get(node.name.replace(/\.md$/i, '')) ?? Infinity)
+        : Infinity,
+    );
   return [...children.values()]
     .sort((a, b) => {
       if (indexPath) {
@@ -43,6 +60,9 @@ function sortedChildren(
         const bIsIndex = b.kind === 'file' && b.path === indexPath;
         if (aIsIndex !== bIsIndex) return aIsIndex ? -1 : 1;
       }
+      const aRank = rank(a);
+      const bRank = rank(b);
+      if (aRank !== bRank) return aRank - bRank;
       return (
         finderCollator.compare(a.name, b.name) || a.name.localeCompare(b.name)
       );
@@ -54,6 +74,8 @@ function sortedChildren(
             children: sortedChildren(
               node.children,
               `${node.path}/${node.name}.md`,
+              directoryOrder,
+              node.path,
             ),
           }
         : node,
@@ -111,6 +133,8 @@ function buildTree(
     externalTarget?: string;
     externalPathTarget?: string;
   }>,
+  directoryOrder: ViewIndex['directoryOrder'] = {},
+  entry = 'lat.md',
 ): FileTreeNode[] {
   const root = new Map<string, MutableNode>();
 
@@ -147,12 +171,20 @@ function buildTree(
     });
   }
 
-  return sortedChildren(root, 'lat.md');
+  return sortedChildren(root, entry, directoryOrder);
 }
 
 /** Convert vault-relative file paths into the hierarchy shown in the sidebar. */
-export function buildFileTree(files: string[]): FileTreeNode[] {
-  return buildTree(files.map((path) => ({ path })));
+export function buildFileTree(
+  files: string[],
+  directoryOrder: ViewIndex['directoryOrder'] = {},
+  entry = 'lat.md',
+): FileTreeNode[] {
+  return buildTree(
+    files.map((path) => ({ path })),
+    directoryOrder,
+    entry,
+  );
 }
 
 /** Group referenced external files into source-handle roots for the sidebar. */

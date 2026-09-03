@@ -235,6 +235,7 @@ describe('lat ui', () => {
     expect(indexResponse.status).toBe(200);
     expect((await indexResponse.json()) as ViewIndex).toEqual({
       files: ['guide.md', 'lat.md'],
+      directoryOrder: { '': ['guide'] },
       externalFiles: [],
       entry: 'lat.md',
       errorCounts: {},
@@ -418,6 +419,7 @@ describe('lat ui', () => {
       expect(manifest.version).toBe(1);
       expect(manifest.index).toEqual({
         files: ['guide.md', 'lat.md'],
+        directoryOrder: { '': ['guide'] },
         externalFiles: [],
         entry: 'lat.md',
         errorCounts: {},
