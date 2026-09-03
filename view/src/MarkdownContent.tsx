@@ -263,11 +263,6 @@ function SectionMenu({
           </div>
         )}
         <div className="section-back-reference-actions">
-          {index === 0 && viewMarkdownUrl && (
-            <a className="section-back-reference-action" href={viewMarkdownUrl}>
-              View Markdown file
-            </a>
-          )}
           <button
             className="section-back-reference-action"
             onClick={stop(() => onCopySectionLink?.(section.headingId))}
@@ -275,6 +270,11 @@ function SectionMenu({
           >
             Copy link to the section
           </button>
+          {index === 0 && viewMarkdownUrl && (
+            <a className="section-back-reference-action" href={viewMarkdownUrl}>
+              View Markdown file
+            </a>
+          )}
           <button
             className="section-back-reference-action"
             onClick={stop(() =>

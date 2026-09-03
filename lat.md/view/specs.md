@@ -227,7 +227,7 @@ Source links preserve their originating section and line so the code view can re
 
 Every section exposes a burger-icon menu with a count only when references exist. It lists distinct Markdown and code back-references or an empty state, and can navigate to and copy the section URL.
 
-Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. The topmost local Markdown section also links to the raw `.md` file, while external documents omit that action.
+Muted actions stack below the references with “Copy link to the section” first. They can also copy the canonical ID accepted by `lat section`. The topmost local Markdown section links to the raw `.md` file, while external documents omit that action.
 
 Following the menu link returns the exact source from both the live UI and generated Node server. Exported homepages retain their `/docs/<file>.md` source route, and nested deployments preserve their base path.
 
