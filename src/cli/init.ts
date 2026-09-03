@@ -33,6 +33,7 @@ import {
 import { getLocalVersion, fetchLatestVersion } from '../version.js';
 import { selectMenu, type SelectOption } from './select-menu.js';
 import { checklistMenu } from './checklist-menu.js';
+import { readInitAgents, writeInitAgents } from './init-preferences.js';
 
 async function confirm(
   rl: ReturnType<typeof createInterface>,
@@ -1433,6 +1434,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
     const selectedAgents = await checklistMenu(
       allAgents,
       'Which coding agents do you use?',
+      readInitAgents(latDir),
     );
 
     const useClaudeCode = selectedAgents.includes('claude');
@@ -1487,6 +1489,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
       // agent. Stamp the version so future non-interactive runs do not reapply
       // fresh/outdated defaults and overwrite the chosen backend.
       writeInitMeta(latDir, {});
+      if (interactive) writeInitAgents(latDir, selectedAgents);
       console.log('');
       console.log(
         styleText('dim', 'No agents selected. You can re-run') +
@@ -1553,6 +1556,7 @@ export async function initCmd(targetDir?: string): Promise<void> {
 
     // Record init version and file hashes so `lat check` can detect stale setups
     writeInitMeta(latDir, fileHashes);
+    if (interactive) writeInitAgents(latDir, selectedAgents);
 
     console.log('');
     console.log(
