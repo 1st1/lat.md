@@ -41,6 +41,111 @@ describe('MarkdownContent', () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  const codeText = 'const value = "<hello>";\n\tconsole.log(value);\n';
+  const codeTree: ViewDocumentTree = {
+    version: 1,
+    type: 'root',
+    children: [
+      {
+        type: 'element',
+        tagName: 'pre',
+        properties: { className: ['example'] },
+        children: [
+          {
+            type: 'element',
+            tagName: 'code',
+            properties: { className: ['language-js'] },
+            children: [
+              {
+                type: 'element',
+                tagName: 'span',
+                properties: { className: ['hljs-keyword'] },
+                children: [{ type: 'text', value: 'const' }],
+              },
+              { type: 'text', value: codeText.slice(5) },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'element',
+        tagName: 'pre',
+        properties: {},
+        children: [{ type: 'text', value: 'plain\ntext\n' }],
+      },
+      {
+        type: 'element',
+        tagName: 'code',
+        properties: {},
+        children: [{ type: 'text', value: 'inline' }],
+      },
+    ],
+  };
+
+  // @lat: [[lat.md/view/specs#View Tests#Copies code blocks#Copies plain and highlighted text]]
+  it('copies exact code text independently of highlighting and UI labels', async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const onClick = vi.fn();
+    await act(async () =>
+      root.render(
+        createElement(MarkdownContent, {
+          tree: codeTree,
+          onClick,
+          sectionOutputEnabled: false,
+        }),
+      ),
+    );
+    const buttons =
+      container.querySelectorAll<HTMLButtonElement>('.code-block-copy');
+    expect(buttons).toHaveLength(2);
+    expect(
+      container.querySelector('pre.example .hljs-keyword')?.textContent,
+    ).toBe('const');
+    expect(container.querySelector('pre')?.textContent).toBe(codeText);
+    await act(async () => buttons[0].click());
+    expect(writeText).toHaveBeenLastCalledWith(codeText);
+    expect(buttons[0].textContent).toBe('Copied!');
+    expect(buttons[1].textContent).toBe('Copy');
+    expect(onClick).not.toHaveBeenCalled();
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(
+      'Copied!',
+    );
+    await act(async () => vi.advanceTimersByTime(2500));
+    expect(buttons[0].getAttribute('aria-label')).toBe('Copy code');
+    await act(async () => buttons[1].click());
+    expect(writeText).toHaveBeenLastCalledWith('plain\ntext\n');
+    expect(container.querySelector('pre')?.textContent).toBe(codeText);
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Copies code blocks#Reports clipboard failures]]
+  it('reports unavailable or rejected clipboard access and allows retry', async () => {
+    vi.stubGlobal('navigator', {});
+    await act(async () =>
+      root.render(createElement(MarkdownContent, { tree: codeTree })),
+    );
+    const button =
+      container.querySelector<HTMLButtonElement>('.code-block-copy')!;
+    await act(async () => button.click());
+    expect(button.textContent).toBe('Retry copy');
+    expect(container.querySelector('[role="status"]')?.textContent).toBe(
+      'Copy failed. Try again.',
+    );
+    const writeText = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('Permission denied'))
+      .mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    await act(async () => button.click());
+    expect(button.textContent).toBe('Retry copy');
+    await act(async () => button.click());
+    expect(button.textContent).toBe('Copied!');
+    expect(writeText).toHaveBeenLastCalledWith(codeText);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers]]

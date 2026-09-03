@@ -117,6 +117,18 @@ External-document repository links resolve against the document's source path. F
 
 Static export discovers and rewrites links by traversing node properties while retaining the same document-tree payload as the live server.
 
+## Copies code blocks
+
+Code-block clipboard controls sit outside the scrollable source, appear on hover or keyboard focus, and remain visible on touch devices without changing the code's content or highlighting.
+
+### Copies plain and highlighted text
+
+Each rendered `pre` copies its own plain text with indentation, special characters, and trailing newlines intact. Inline code has no button, success is announced temporarily, and static views retain the action.
+
+### Reports clipboard failures
+
+Missing clipboard APIs or denied permissions show a retryable failure rather than false success. Retrying can succeed without replacing the code or navigating the page.
+
 ## Renders Markdown with navigable local links
 
 Markdown normalizes into a safe tree with GitHub-style heading ids and intact relative destinations. HTTP(S) and protocol-relative links gain decorative external-site icons in documents and reference contexts.

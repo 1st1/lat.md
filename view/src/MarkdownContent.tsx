@@ -19,6 +19,7 @@ import {
   type MarkdownRichFenceKind,
 } from './MarkdownRichFence';
 import { copySectionId } from './section-back-references';
+import { CodeBlock } from './CodeBlock';
 
 const VOID_ELEMENTS = new Set([
   'area',
@@ -326,10 +327,17 @@ function DocumentElement({
         documentNode(child, `${path}.${index}`, context),
       );
   const fenceKind = richFenceKind(node);
+  const element = createElement(node.tagName, properties, children);
+  const content =
+    node.tagName === 'pre' ? (
+      <CodeBlock text={documentNodeText(node)}>{element}</CodeBlock>
+    ) : (
+      element
+    );
   if (fenceKind) {
     return (
       <MarkdownRichFence
-        fallback={createElement(node.tagName, properties, children)}
+        fallback={content}
         key={path}
         kind={fenceKind}
         source={node.children.map(documentNodeText).join('')}
@@ -342,7 +350,7 @@ function DocumentElement({
       : null;
   const backReferences = headingId ? context?.sections.get(headingId) : null;
   if (!backReferences) {
-    return createElement(node.tagName, properties, children);
+    return content;
   }
   return (
     <SectionMenu
