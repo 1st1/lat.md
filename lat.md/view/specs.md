@@ -229,6 +229,8 @@ Every section exposes a burger-icon menu with a count only when references exist
 
 Muted actions stack below the references and can copy the URL or canonical ID accepted by `lat section`. The topmost local Markdown section also links to the raw `.md` file, while external documents omit that action.
 
+Following the menu link returns the exact source from both the live UI and generated Node server. Exported homepages retain their `/docs/<file>.md` source route, and nested deployments preserve their base path.
+
 In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 
 ## Updates long-running views incrementally

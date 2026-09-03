@@ -178,6 +178,8 @@ Every section heading exposes a burger-icon action menu, with a numeric badge on
 
 The topmost section menu in a local Markdown document links to the raw `.md` route. External documents and document previews outside their normal local route omit this action.
 
+Raw-file links preserve the deployment base and `/docs/` source path in live, static, and server builds. An exported homepage at `/` still links to its `/docs/<file>.md` source rather than appending `.md` to the homepage URL.
+
 In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 
 ## Responsive layout

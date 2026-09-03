@@ -385,6 +385,10 @@ describe('lat ui', () => {
       expect(viewPathname('/project/index.html')).toBe('/docs/lat');
       expect(viewPathname('/project/')).toBe('/docs/lat');
       expect(staticViewRoute('docs/lat')).toBe('/project/');
+      expect(rawDocumentUrl('lat.md')).toBe('/project/docs/lat.md');
+      expect(rawDocumentUrl('nested/my guide.md')).toBe(
+        '/project/docs/nested/my%20guide.md',
+      );
     } finally {
       vi.unstubAllGlobals();
     }
@@ -959,7 +963,51 @@ describe('lat ui', () => {
 
       const document = await fetch(`${origin}/project/`);
       expect(document.status).toBe(200);
-      expect(await document.text()).toContain('lat ui shell');
+      const shell = await document.text();
+      expect(shell).toContain('lat ui shell');
+
+      const staticConfig = shell.match(
+        /<meta name="lat-static-view" content="([^"]+)"/,
+      )?.[1];
+      expect(staticConfig).toBeDefined();
+      vi.stubGlobal('document', {
+        querySelector: () => ({ content: staticConfig }),
+      });
+      try {
+        const manifest = (await (
+          await fetch(`${origin}/project/data/manifest.json`)
+        ).json()) as ViewStaticManifest;
+        for (const path of ['lat.md', 'guide.md']) {
+          const model = (await (
+            await fetch(`${origin}/project/${manifest.documents[path]}`)
+          ).json()) as ViewDocument;
+          const rendered = renderToStaticMarkup(
+            createElement(MarkdownContent, {
+              backReferences: model.backReferences,
+              tree: model.tree,
+              sectionOutputEnabled: false,
+              viewMarkdownUrl: rawDocumentUrl(model.path),
+            }),
+          );
+          const links = [
+            ...rendered.matchAll(
+              /<a class="section-back-reference-action" href="([^"]+)">View Markdown file<\/a>/g,
+            ),
+          ];
+          expect(links).toHaveLength(1);
+          const href = links[0][1];
+          expect(href).toBe(`/project/docs/${path}`);
+          expect(documentPath(new URL(href, origin).pathname)).toBeNull();
+          const raw = await fetch(new URL(href, origin));
+          expect(raw.status).toBe(200);
+          expect(raw.headers.get('content-type')).toContain('text/markdown');
+          expect(await raw.text()).toBe(
+            readFileSync(join(serverProjectRoot, 'lat.md', path), 'utf8'),
+          );
+        }
+      } finally {
+        vi.unstubAllGlobals();
+      }
 
       for (const asset of ['app.js', 'app.css']) {
         const response = await fetch(`${origin}/project/assets/${asset}`);
@@ -2037,7 +2085,7 @@ describe('lat ui', () => {
       createElement(MarkdownContent, {
         backReferences: document.backReferences,
         tree: document.tree,
-        viewMarkdownUrl: '/docs/guide.md',
+        viewMarkdownUrl: rawDocumentUrl(document.path),
       }),
     );
     expect(rendered).toContain('aria-label="Section menu, 5 references"');
@@ -2049,6 +2097,15 @@ describe('lat ui', () => {
     expect(rendered).toContain('Copy section ID');
     expect(rendered).toContain('href="/docs/guide.md"');
     expect(rendered.match(/View Markdown file/g)).toHaveLength(1);
+    const rawHref = rendered.match(
+      /<a class="section-back-reference-action" href="([^"]+)">View Markdown file<\/a>/,
+    )?.[1];
+    expect(rawHref).toBe('/docs/guide.md');
+    const raw = await fetch(new URL(rawHref!, view.url));
+    expect(raw.status).toBe(200);
+    expect(await raw.text()).toBe(
+      readFileSync(join(latDir, document.path), 'utf8'),
+    );
     expect(rendered).toContain('Show <code>lat section</code> output');
     expect(rendered).toContain('section-back-reference-breadcrumb');
     expect(rendered).toContain('section-back-reference-breadcrumb-label');

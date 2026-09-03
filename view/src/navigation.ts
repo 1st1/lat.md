@@ -27,7 +27,8 @@ export function documentPath(pathname: string): string | null {
 
 /** Build the raw Markdown URL paired with a local rendered document route. */
 export function rawDocumentUrl(path: string): string {
-  return `${documentUrl(path)}.md`;
+  const route = `${routeDocumentUrl(path)}.md`;
+  return staticViewRoute(route.slice(1)) ?? route;
 }
 
 /** Build the browser route for one canonical external target. */
