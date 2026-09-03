@@ -4,9 +4,8 @@
  * (the same pattern lat.md uses for tree-sitter WASM in `src/source-parser.ts`).
  */
 
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 export interface WasmEngine {
   embed(texts: string[]): number[][];
@@ -15,6 +14,7 @@ export interface WasmEngine {
 }
 
 export interface WasmModule {
+  __initialize(bytes: Uint8Array): void;
   Embedder: new (
     weights: Uint8Array,
     tokenizer: Uint8Array,
@@ -28,7 +28,10 @@ let cached: WasmModule | null = null;
 export function loadWasmEngine(): WasmModule {
   if (cached) return cached;
   const require = createRequire(import.meta.url);
-  const here = dirname(fileURLToPath(import.meta.url)); // dist/
-  cached = require(join(here, 'engine.cjs')) as WasmModule;
+  const engine = require('./engine.cjs') as WasmModule;
+  engine.__initialize(
+    new Uint8Array(readFileSync(new URL('./engine_bg.wasm', import.meta.url))),
+  );
+  cached = engine;
   return cached;
 }

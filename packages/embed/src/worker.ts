@@ -8,20 +8,9 @@
  */
 import { parentPort, workerData } from 'node:worker_threads';
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { loadWasmEngine } from './wasm-loader.js';
 
-const require = createRequire(import.meta.url);
-const enginePath = join(dirname(fileURLToPath(import.meta.url)), 'engine.cjs');
-const { Embedder } = require(enginePath) as {
-  Embedder: new (
-    w: Uint8Array,
-    t: Uint8Array,
-    c: Uint8Array,
-    maxTokens: number,
-  ) => { embed(texts: string[]): number[][] };
-};
+const { Embedder } = loadWasmEngine();
 
 const { weightsPath, tokenizerPath, configPath, maxTokens } = workerData as {
   weightsPath: string;
