@@ -96,6 +96,12 @@ The build creates the semantic index once and serializes the flat section metada
 
 Static client configuration treats search as an independent capability: pure static builds omit the control and route, while server builds point the same client at their configured search endpoint. Documents, source views, externals, and the graph remain static in both targets.
 
+### Vercel server export
+
+[[src/view/vercel-server-build.ts#buildVercelServerView]] implements `--target vercel` by composing the portable Node builder with [[src/view/vercel-build.ts#buildVercelOutput]].
+
+It defaults to `.vercel/output/`, builds the Node artifact in temporary sibling staging, and installs its production dependency graph without lifecycle scripts. Node File Trace can then follow the real Express, search, WASM, model, manifest, and index imports while public files move only into the CDN static tree. The staging artifact is removed after success or failure.
+
 ## Live Markdown editing
 
 Live local documents can switch between the rendered tree and an editable Markdown source while static and external documents remain read-only.

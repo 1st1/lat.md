@@ -128,8 +128,21 @@ describe('cli command surface', () => {
     expect(serverBuild.exitCode).toBe(0);
     expect(serverBuild.stdout).toContain('Usage: lat ui build server');
     expect(serverBuild.stdout).toContain('.lat-build/server');
+    expect(serverBuild.stdout).toContain('.vercel/output');
     expect(serverBuild.stdout).toContain('--force');
     expect(serverBuild.stdout).toContain('--logo-text <text>');
+    expect(serverBuild.stdout).toContain('--target <target>');
+    expect(serverBuild.stdout).toContain('node or vercel');
+
+    const invalidTarget = runCli('basic-project', [
+      'ui',
+      'build',
+      'server',
+      '--target',
+      'edge',
+    ]);
+    expect(invalidTarget.exitCode).toBe(1);
+    expect(invalidTarget.stderr).toContain('target must be node or vercel');
 
     const existingOutput = runCli('basic-project', [
       'ui',

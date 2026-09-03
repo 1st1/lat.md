@@ -38,6 +38,15 @@ type UiRunOptions = {
   port?: number;
 };
 
+type UiServerBuildTarget = 'node' | 'vercel';
+
+function parseUiServerBuildTarget(value: string): UiServerBuildTarget {
+  if (value !== 'node' && value !== 'vercel') {
+    throw new InvalidArgumentError('target must be node or vercel');
+  }
+  return value;
+}
+
 function configureUiRun(command: Command): Command {
   return command
     .option('--logo-text <text>', 'top-left logo text')
@@ -208,19 +217,25 @@ uiBuild
   .description('Build a static Lat UI with a portable search server')
   .argument(
     '[output]',
-    'output directory relative to the project (default: .lat-build/server)',
-    '.lat-build/server',
+    'output directory (default: .lat-build/server for node, .vercel/output for vercel)',
   )
   .option('--base <path>', 'deployment base path', '/')
   .option('--force', 'replace an existing output path')
   .option('--logo-text <text>', 'top-left logo text')
+  .option(
+    '--target <target>',
+    'deployment target: node or vercel',
+    parseUiServerBuildTarget,
+    'node',
+  )
   .action(
     async (
-      output: string,
+      output: string | undefined,
       opts: {
         base: string;
         force?: boolean;
         logoText?: string;
+        target: UiServerBuildTarget;
       },
     ) => {
       const ctx = resolveContext(program.opts());
@@ -231,6 +246,7 @@ uiBuild
           force: opts.force,
           logoText:
             opts.logoText ?? (ui.opts() as { logoText?: string }).logoText,
+          target: opts.target,
         }),
       );
     },
