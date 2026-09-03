@@ -112,6 +112,8 @@ Reference functions, classes, constants, and methods in source files:
 [[src/app.h#Greeter]]                   — C struct
 ```
 
+When prose names an implementation symbol or a behavior governed by one, link the symbol instead of using a bare code span or copying its literal value. Prefer `[[src/config.ts#DEFAULT_TIMEOUT]]` (or `[[src/config.ts#DEFAULT_TIMEOUT|the default timeout]]`) over a bare identifier or copied value. Keep the behavioral explanation in prose; the link makes its implementation binding navigable and validated.
+
 `lat check` validates that all targets exist.
 
 ## Code refs
