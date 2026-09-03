@@ -172,7 +172,11 @@ Wide layouts give the sticky TOC a fixed 286px column and the available viewport
 
 A moving end-of-page activation line makes short final sections reachable.
 
-The sidebar is a natural-order file tree. Root `lat.md` and each `name/name.md` directory index stay first; selecting a directory opens its index and expands the directory. When external files are referenced, an `External sources` label separates source-handle folders from the local tree.
+The sidebar follows the page and subdirectory order authored in each directory's index list, with the index page pinned first. Selecting a directory opens its index and expands it. An `External sources` label separates referenced source-handle folders from the local tree.
+
+The view store projects cached Markdown `indexEntries` into [[src/view/protocol.ts#ViewIndex]] for the shared browser tree; live refreshes and exported sites use the same order without parsing Markdown again. External sources retain natural sorting.
+
+[[cli#check#index]] requires every visible Markdown page and directory to be listed. While editing an invalid vault, the sidebar keeps unlisted entries visible after listed ones in natural order; missing or stale entries remain validation errors.
 
 Every section heading exposes a burger-icon action menu, with a numeric badge only when references exist. It shows incoming Markdown, wiki, and `@lat:` locations or an empty state, followed by stacked muted actions that copy the navigated URL or canonical section ID.
 

@@ -18,6 +18,10 @@ Given a `lat.md/` directory whose index file lists all visible entries with desc
 
 Given an index file that lists a file which does not exist on disk, `checkIndex` reports it as a stale entry.
 
+## Detects missing entries
+
+Existing root and subdirectory indexes must list every visible Markdown child. Files omitted from those lists fail validation with the missing link entries, even though the UI keeps them navigable during editing.
+
 ## Detects missing subdirectory index file
 
 Given a `lat.md/` directory with a subdirectory containing files but no index file for that subdirectory, `checkIndex` reports a missing-index error with a snippet listing the subdirectory's entries.

@@ -959,6 +959,8 @@ export function App() {
               errorCounts={index.errorCounts}
               externalFiles={index.externalFiles}
               files={index.files}
+              directoryOrder={index.directoryOrder}
+              entry={index.entry}
               gitFiles={
                 gitEnabled ? (index.git?.files ?? NO_GIT_FILES) : NO_GIT_FILES
               }

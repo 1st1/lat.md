@@ -12,6 +12,8 @@ export type ViewExternalFile = {
 
 export type ViewIndex = {
   files: string[];
+  /** Authored directory-index entries, keyed by vault-relative directory ('' at root). */
+  directoryOrder: Record<string, string[]>;
   externalFiles: ViewExternalFile[];
   entry: string;
   errorCounts: Record<string, number>;

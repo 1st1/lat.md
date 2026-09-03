@@ -287,9 +287,19 @@ Supported languages, including Dart and Java, become structured line trees witho
 
 ## Builds a nested file tree
 
-Vault paths form a natural-order hierarchy with root and directory index files pinned first and complete paths retained for navigation.
+Vault paths form a hierarchy with root and directory index files pinned first and complete paths retained for navigation. Natural sorting provides a fallback while an index is missing or incomplete.
 
 Selecting a directory opens its `name/name.md` index and keeps the directory expanded.
+
+### Uses authored index order
+
+Each directory lists its pages and child directories in the order of its index entries, after the pinned index page. Aliases and optional file extensions preserve the order; stale links do not create sidebar entries.
+
+In an invalid working tree, unlisted files remain visible after listed entries in natural order so authors can repair their indexes. This fallback does not permit orphan pages to pass validation. External files keep their natural order.
+
+### Shares directory order across live and exported views
+
+The sidebar consumes directory order from cached Markdown analysis through the shared UI index. Reordering an index updates live navigation, and static exports carry the same order without additional document requests.
 
 ## Stabilizes fragment navigation immediately
 

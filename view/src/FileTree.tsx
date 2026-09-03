@@ -11,6 +11,7 @@ import {
 import type {
   ViewExternalFile,
   ViewGitFileStatus,
+  ViewIndex,
 } from '../../src/view/protocol';
 import { documentUrl, externalUrl } from './navigation';
 
@@ -20,6 +21,8 @@ type FileTreeProps = {
   errorCounts: Record<string, number>;
   externalFiles: ViewExternalFile[];
   files: string[];
+  directoryOrder: ViewIndex['directoryOrder'];
+  entry: string;
   gitFiles: Record<string, ViewGitFileStatus>;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
 };
@@ -175,10 +178,15 @@ export function FileTree({
   errorCounts,
   externalFiles,
   files,
+  directoryOrder,
+  entry,
   gitFiles,
   onNavigate,
 }: FileTreeProps) {
-  const tree = useMemo(() => buildFileTree(files), [files]);
+  const tree = useMemo(
+    () => buildFileTree(files, directoryOrder, entry),
+    [files, directoryOrder, entry],
+  );
   const externalTree = useMemo(
     () => buildExternalFileTree(externalFiles),
     [externalFiles],

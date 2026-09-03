@@ -213,13 +213,13 @@ async function scanCodeState(
 
 function viewIndex(
   latDir: string,
-  paths: string[],
+  markdownFiles: ReadonlyMap<string, ViewParsedMarkdownFile>,
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
   git: ViewGitSnapshot,
   references: ViewReferenceIndex,
   external: ExternalResolver,
 ): ViewIndex {
-  const files = [...paths].sort();
+  const files = [...markdownFiles.keys()].sort();
   const externalFiles = new Map<string, ViewExternalFile>();
   for (const target of references.externalByTarget.keys()) {
     try {
@@ -241,8 +241,19 @@ function viewIndex(
   const indexName = directoryName.endsWith('.md')
     ? directoryName
     : `${directoryName}.md`;
+  const directoryOrder = Object.fromEntries(
+    [...markdownFiles].flatMap(([path, file]) => {
+      const separator = path.lastIndexOf('/');
+      const directory = separator === -1 ? '' : path.slice(0, separator);
+      const name = directory ? basename(directory) : directoryName;
+      const filename = name.endsWith('.md') ? name : `${name}.md`;
+      if (path.slice(separator + 1) !== filename) return [];
+      return [[directory, file.indexEntries]];
+    }),
+  );
   return {
     files,
+    directoryOrder,
     externalFiles: [...externalFiles.values()].sort(
       (left, right) =>
         left.handle.localeCompare(right.handle) ||
@@ -321,14 +332,7 @@ async function buildSnapshot(
     ),
     diagnostics,
     git,
-    index: viewIndex(
-      latDir,
-      [...files.keys()],
-      diagnostics,
-      git,
-      references,
-      external,
-    ),
+    index: viewIndex(latDir, files, diagnostics, git, references, external),
     external,
   };
 }
