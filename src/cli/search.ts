@@ -21,7 +21,10 @@ import { indexSections, type IndexStats } from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import type { SectionMatch } from '../lattice-model.js';
 import type { Section } from '../lattice-model.js';
-import { searchIndexedSections } from '../search/query.js';
+import {
+  resolveSearchMatches,
+  searchIndexedSections,
+} from '../search/query.js';
 import {
   analyzeMarkdownProject,
   commandProjectAnalysis,
@@ -178,12 +181,7 @@ export async function runSearch(
       );
       return {
         query,
-        matches: results.flatMap((result) => {
-          const section = analyzed.sectionById.get(result.id.toLowerCase());
-          return section
-            ? [{ section, reason: 'semantic match', score: result.score }]
-            : [];
-        }),
+        matches: resolveSearchMatches(results, analyzed.sectionById),
       };
     },
   );

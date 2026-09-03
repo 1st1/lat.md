@@ -5,17 +5,27 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
+  readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { createServer } from 'node:http';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import express from 'express';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { plainStyler, type CmdContext } from '../src/context.js';
+import { setRepoEmbedding } from '../src/config.js';
 import { uiCommand } from '../src/cli/ui.js';
 import { uiBuildCommand } from '../src/cli/ui-build.js';
+import { uiBuildServerCommand } from '../src/cli/ui-build-server.js';
+import { runIndex as buildSearchIndex } from '../src/cli/search.js';
 import { analyzeMarkdownFile } from '../src/markdown-analysis.js';
 import {
   DEFAULT_VIEW_PORT,
@@ -23,10 +33,19 @@ import {
   type ViewServer,
 } from '../src/view/server.js';
 import {
+  buildStaticView,
+  moveViewBuildOutput,
   normalizeStaticViewBasePath,
   staticViewUrl,
 } from '../src/view/static-build.js';
+import { buildServerView } from '../src/view/server-build.js';
+import {
+  createServerViewApp,
+  type ServerViewManifest,
+} from '../src/view/server-deployment.js';
+import { analyzeMarkdownProject } from '../src/project-analysis.js';
 import type {
+  ViewStaticBootstrap,
   ViewStaticManifest,
   ViewStaticSourceFile,
   ViewStaticSourceView,
@@ -48,6 +67,7 @@ import { MarkdownContent } from '../view/src/MarkdownContent.js';
 import { SourceView } from '../view/src/SourceView.js';
 import { documentTreeToHtml } from './document-tree.js';
 import { createViewSearch } from '../src/view/search.js';
+import { createPreindexedViewSearch } from '../src/view/preindexed-search.js';
 import { buildViewTableOfContents } from '../src/view/table-of-contents.js';
 import {
   activeDocumentTocId,
@@ -111,7 +131,13 @@ import {
   getSourceWindow,
   getSourceWindowRows,
 } from '../view/src/source-window.js';
-import { staticViewAssetUrl } from '../view/src/static-mode.js';
+import {
+  staticViewAssetUrl,
+  staticViewBasePath,
+  staticViewRoute,
+  staticViewSearchApi,
+  viewPathname,
+} from '../view/src/static-mode.js';
 import viewViteConfig from '../view/vite.config.js';
 import {
   deterministicGraphPosition,
@@ -186,6 +212,10 @@ describe('lat ui', () => {
     );
     writeFileSync(join(clientDir, 'assets', 'app.js'), 'export {};');
     writeFileSync(join(clientDir, 'assets', 'app.css'), 'main {}');
+    writeFileSync(
+      join(clientDir, 'logo.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg"/>',
+    );
     view = await startViewServer(testContext(), {
       clientDir,
       git: false,
@@ -196,6 +226,7 @@ describe('lat ui', () => {
   afterAll(async () => {
     await view.close();
     rmSync(clientDir, { recursive: true, force: true });
+    rmSync(join(latDir, '.cache'), { recursive: true, force: true });
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Serves the document index and browser shell]]
@@ -217,6 +248,7 @@ describe('lat ui', () => {
 
     const shellResponse = await fetch(new URL('/docs/guide', view.url));
     expect(shellResponse.status).toBe(200);
+    expect(shellResponse.headers.get('x-powered-by')).toBeNull();
     const shell = await shellResponse.text();
     expect(shell).toContain('lat ui shell');
     expect(shell).toContain('src="/assets/app.js"');
@@ -291,7 +323,7 @@ describe('lat ui', () => {
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
     );
-    expect(app).toContain('../../website/public/logo-small.svg?url');
+    expect(app).toContain("import latLogoUrl from './logo.svg?url'");
     expect(app).toContain('brandText === DEFAULT_VIEW_LOGO_TEXT');
     expect(app).toContain('<BrandText text={brandText} />');
     expect(app).toContain('src={staticViewAssetUrl(latLogoUrl)}');
@@ -300,6 +332,20 @@ describe('lat ui', () => {
 
   // @lat: [[lat.md/view/specs#View Tests#Builds a static deployment]]
   it('builds a static deployment without live Git or search services', async () => {
+    const move = vi
+      .fn()
+      .mockRejectedValueOnce(
+        Object.assign(new Error('busy'), { code: 'EBUSY' }),
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error('busy'), { code: 'EPERM' }),
+      )
+      .mockResolvedValue(undefined);
+    const wait = vi.fn(async () => {});
+    await moveViewBuildOutput('staging', 'output', { move, wait });
+    expect(move).toHaveBeenCalledTimes(3);
+    expect(wait).toHaveBeenCalledTimes(2);
+
     expect(viewViteConfig).toMatchObject({ base: './' });
     expect(normalizeStaticViewBasePath('/project')).toBe('/project/');
     expect(staticViewUrl('/docs/guide', '/project/')).toBe(
@@ -308,6 +354,7 @@ describe('lat ui', () => {
     expect(staticViewUrl('/docs/guide.md', '/project/')).toBe(
       '/project/docs/guide.md',
     );
+    expect(staticViewUrl('/docs/lat', '/project/', 'lat.md')).toBe('/project/');
     expect(staticViewUrl('/graph?node=document%3Alat.md', '/project/')).toBe(
       '/project/graph/?node=document%3Alat.md',
     );
@@ -320,6 +367,26 @@ describe('lat ui', () => {
     expect(staticViewAssetUrl('/assets/logo.svg', '/')).toBe(
       '/assets/logo.svg',
     );
+    expect(staticViewAssetUrl('/logo.svg', '/project/')).toBe('/logo.svg');
+    const staticConfig = encodeURIComponent(
+      JSON.stringify({
+        basePath: '/project/',
+        entry: 'lat.md',
+        searchApi: '/project/api/search',
+      }),
+    );
+    vi.stubGlobal('document', {
+      querySelector: () => ({ content: staticConfig }),
+    });
+    try {
+      expect(staticViewBasePath()).toBe('/project/');
+      expect(staticViewSearchApi()).toBe('/project/api/search');
+      expect(viewPathname('/project/index.html')).toBe('/docs/lat');
+      expect(viewPathname('/project/')).toBe('/docs/lat');
+      expect(staticViewRoute('docs/lat')).toBe('/project/');
+    } finally {
+      vi.unstubAllGlobals();
+    }
     expect(() => normalizeStaticViewBasePath('project')).toThrow(
       'absolute URL path',
     );
@@ -390,12 +457,22 @@ describe('lat ui', () => {
       const document = JSON.parse(
         readFileSync(join(payloadDir, manifest.documents['lat.md']), 'utf8'),
       ) as ViewDocument;
+      const documentContent = readFileSync(
+        join(payloadDir, manifest.documents['lat.md']),
+        'utf8',
+      );
+      expect(manifest.documents['lat.md']).toBe(
+        `data/documents/${createHash('sha256').update(documentContent).digest('hex').slice(0, 20)}.json`,
+      );
       expect(viewDocumentGitHtml(document)).toBeNull();
       expect(viewDocumentHtml(document)).toContain(
         'href="/project/docs/guide#details"',
       );
       expect(viewDocumentHtml(document)).toContain(
         'href="/project/code/src/app.ts/?from=',
+      );
+      expect(viewDocumentHtml(document)).toContain(
+        'src="/project/resources/media/project.svg"',
       );
 
       const graph = JSON.parse(
@@ -404,9 +481,7 @@ describe('lat ui', () => {
       expect(graph.nodes.every((node) => node.gitStatus === undefined)).toBe(
         true,
       );
-      expect(graph.nodes.map((node) => node.url)).toContain(
-        '/project/docs/lat',
-      );
+      expect(graph.nodes.map((node) => node.url)).toContain('/project/');
       expect(graph.nodes.some((node) => node.kind === 'source')).toBe(true);
 
       expect(existsSync(join(payloadDir, 'docs', 'lat', 'index.html'))).toBe(
@@ -432,24 +507,40 @@ describe('lat ui', () => {
       expect(existsSync(join(outputDir, 'assets'))).toBe(false);
       expect(existsSync(join(outputDir, 'data'))).toBe(false);
 
-      const shell = readFileSync(
-        join(payloadDir, 'docs', 'lat', 'index.html'),
-        'utf8',
-      );
+      const shell = readFileSync(join(payloadDir, 'index.html'), 'utf8');
       expect(shell).toContain('/project/assets/app.js');
       expect(shell).toContain('/project/assets/app.css');
       expect(shell).not.toContain('./assets/');
+      expect(shell).toContain('meta name="lat-static-view"');
+      const bootstrapMatch = shell.match(
+        /<script id="lat-static-bootstrap" type="application\/json">([^<]+)<\/script>/,
+      );
+      expect(bootstrapMatch).not.toBeNull();
+      const bootstrap = JSON.parse(bootstrapMatch![1]) as ViewStaticBootstrap;
+      expect(bootstrap.manifest).toEqual(manifest);
+      expect(bootstrap.responses['/api/document?path=lat.md']).toEqual(
+        document,
+      );
       expect(shell).toContain(
-        'globalThis.__LAT_STATIC_VIEW__={"basePath":"/project/"}',
+        encodeURIComponent(
+          JSON.stringify({ basePath: '/project/', entry: 'lat.md' }),
+        ),
       );
-      expect(readFileSync(join(outputDir, 'index.html'), 'utf8')).toContain(
-        '/project/docs/lat',
+      expect(shell).not.toContain('globalThis.__LAT_STATIC_VIEW__');
+      const redirect = readFileSync(join(outputDir, 'index.html'), 'utf8');
+      expect(redirect).toContain('/project/');
+      expect(redirect).toContain('meta name="lat-redirect"');
+      expect(redirect).toContain('src="/project/data/redirect.js"');
+      expect(redirect).not.toContain('<script>');
+      expect(readFileSync(join(payloadDir, 'index.html'), 'utf8')).not.toBe(
+        redirect,
       );
-      expect(readFileSync(join(payloadDir, 'index.html'), 'utf8')).toContain(
-        '/project/docs/lat',
-      );
-
-      expect(existsSync(join(outputDir, '.lat-ui-build'))).toBe(false);
+      expect(
+        readFileSync(join(payloadDir, 'docs', 'lat', 'index.html'), 'utf8'),
+      ).toContain('/project/');
+      expect(
+        readFileSync(join(payloadDir, 'data', 'redirect.js'), 'utf8'),
+      ).toContain('window.location.replace');
 
       await expect(
         uiBuildCommand(staticContext, outputDir, {
@@ -457,9 +548,33 @@ describe('lat ui', () => {
           clientDir,
         }),
       ).resolves.toEqual({
-        output: `Static UI output already exists: ${outputDir}`,
+        output: `Static UI output already exists: ${outputDir}. Use --force to replace it.`,
         isError: true,
       });
+
+      const preserved = join(outputDir, 'preserved.txt');
+      writeFileSync(preserved, 'keep until the replacement succeeds');
+      await expect(
+        uiBuildCommand(staticContext, outputDir, {
+          basePath: '/project',
+          clientDir: join(staticProjectRoot, 'missing-client'),
+          force: true,
+        }),
+      ).resolves.toMatchObject({ isError: true });
+      expect(readFileSync(preserved, 'utf8')).toBe(
+        'keep until the replacement succeeds',
+      );
+
+      const forced = await uiBuildCommand(staticContext, outputDir, {
+        basePath: '/project',
+        clientDir,
+        force: true,
+      });
+      expect(forced.isError).not.toBe(true);
+      expect(existsSync(preserved)).toBe(false);
+      expect(
+        readdirSync(outputDir).some((name) => name.startsWith('.lat-')),
+      ).toBe(false);
 
       const emptyOutput = join(staticProjectRoot, 'empty-output');
       mkdirSync(emptyOutput);
@@ -469,7 +584,7 @@ describe('lat ui', () => {
           clientDir: join(staticProjectRoot, 'missing-client'),
         }),
       ).resolves.toEqual({
-        output: `Static UI output already exists: ${emptyOutput}`,
+        output: `Static UI output already exists: ${emptyOutput}. Use --force to replace it.`,
         isError: true,
       });
     } finally {
@@ -477,42 +592,409 @@ describe('lat ui', () => {
     }
   });
 
-  // @lat: [[lat.md/view/specs#View Tests#Builds the website wiki from published embedding packages]]
-  it('builds the website wiki without compiling workspace embedding packages', () => {
-    const repositoryRoot = join(import.meta.dirname, '..');
-    const websitePackage = JSON.parse(
-      readFileSync(join(repositoryRoot, 'website', 'package.json'), 'utf8'),
-    ) as {
-      devDependencies: Record<string, string>;
-    };
-    expect(websitePackage.devDependencies).toMatchObject({
-      '@lat.md/embed': 'npm:@lat.md/embed@0.2.0',
-      '@lat.md/embed-minilm-fp16': 'npm:@lat.md/embed-minilm-fp16@0.1.0',
-    });
+  it('uses the portable server output by default', async () => {
+    const buildNode = vi.fn(async (_ctx: CmdContext, output: string) => ({
+      documents: 2,
+      outputDir: output,
+      sources: 3,
+    }));
 
-    const buildConfig = JSON.parse(
-      readFileSync(
-        join(repositoryRoot, 'website', 'tsconfig.lat-build.json'),
-        'utf8',
-      ),
-    ) as {
-      compilerOptions: { paths: Record<string, string[]> };
-    };
-    expect(buildConfig.compilerOptions.paths).toEqual({
-      '@lat.md/embed': ['./node_modules/@lat.md/embed/dist/index.d.ts'],
-      '@lat.md/embed-minilm-fp16': [
-        './node_modules/@lat.md/embed-minilm-fp16/dist/index.d.ts',
-      ],
+    await expect(
+      uiBuildServerCommand(testContext(), undefined, {}, { buildNode }),
+    ).resolves.toEqual({
+      output:
+        'Built 2 documents and 3 source views for node at .lat-build/server',
     });
-
-    const buildScript = readFileSync(
-      join(repositoryRoot, 'website', 'scripts', 'build-wiki.mjs'),
-      'utf8',
+    expect(buildNode).toHaveBeenCalledWith(
+      expect.anything(),
+      '.lat-build/server',
+      {},
     );
-    expect(buildScript).toContain('tsconfig.lat-build.json');
-    expect(buildScript).toContain("'build:view'");
-    expect(buildScript).not.toContain("'buildall'");
   });
+
+  // @lat: [[lat.md/view/specs#View Tests#Builds a portable server deployment]]
+  it('builds static assets with a portable Express search server', async () => {
+    const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-server-test-'));
+    const serverProjectRoot = join(buildRoot, 'project');
+    cpSync(projectRoot, serverProjectRoot, { recursive: true });
+    const serverContext: CmdContext = {
+      ...testContext(),
+      projectRoot: serverProjectRoot,
+      latDir: join(serverProjectRoot, 'lat.md'),
+    };
+    const outputDir = join(serverProjectRoot, 'server-site');
+    const generatedDir = join(serverProjectRoot, 'generated');
+    mkdirSync(generatedDir);
+    writeFileSync(
+      join(generatedDir, 'compiled.ts'),
+      `${['// @lat:', '[[guide#Details]]'].join(' ')}\n`,
+    );
+    try {
+      const result = await buildServerView(
+        serverContext,
+        outputDir,
+        {
+          basePath: '/project',
+          clientDir,
+          codeExcludePaths: [generatedDir],
+        },
+        {
+          analyzeMarkdownProject,
+          buildStaticView,
+          getLocalVersion: () => '9.8.7',
+          getLatServerVersion: () => '1.2.3',
+          getPackageVersion(name) {
+            return {
+              '@lat.md/embed': '2.3.4',
+              '@lat.md/embed-minilm-fp16': '3.4.5',
+              express: '5.2.1',
+            }[name]!;
+          },
+          async runIndex(_latDir, _progress, _project, options) {
+            const cacheDir = options!.cacheDir!;
+            mkdirSync(cacheDir, { recursive: true });
+            writeFileSync(join(cacheDir, 'vectors.db'), 'index');
+          },
+        },
+      );
+      expect(result.outputDir).toBe(outputDir);
+      expect(
+        existsSync(
+          join(outputDir, 'public', 'project', 'search', 'index.html'),
+        ),
+      ).toBe(true);
+      const shell = readFileSync(
+        join(outputDir, 'public', 'project', 'index.html'),
+        'utf8',
+      );
+      expect(shell).toContain('meta name="lat-static-view"');
+      expect(shell).toContain(
+        encodeURIComponent(
+          JSON.stringify({
+            basePath: '/project/',
+            entry: 'lat.md',
+            searchApi: '/project/api/search',
+          }),
+        ),
+      );
+      expect(shell).not.toContain('globalThis.__LAT_STATIC_VIEW__');
+      const manifest = JSON.parse(
+        readFileSync(join(outputDir, 'server-data', 'server.json'), 'utf8'),
+      ) as ServerViewManifest;
+      expect(manifest.basePath).toBe('/project/');
+      expect(manifest.sections.length).toBeGreaterThan(0);
+      expect(
+        manifest.sections.every((section) => !('children' in section)),
+      ).toBe(true);
+      expect(
+        readFileSync(join(outputDir, 'server-data', 'vectors.db'), 'utf8'),
+      ).toBe('index');
+      expect(
+        JSON.parse(readFileSync(join(outputDir, 'package.json'), 'utf8')),
+      ).toMatchObject({
+        scripts: { start: 'lat-ui-server app.mjs' },
+        dependencies: {
+          '@lat.md/embed': '2.3.4',
+          '@lat.md/embed-minilm-fp16': '3.4.5',
+          '@lat.md/server': '1.2.3',
+          express: '5.2.1',
+          'lat.md': '9.8.7',
+        },
+      });
+      const appModule = readFileSync(join(outputDir, 'app.mjs'), 'utf8');
+      expect(appModule).toContain(
+        "import { createEmbedder } from '@lat.md/embed'",
+      );
+      expect(appModule).toContain(
+        "import minilm from '@lat.md/embed-minilm-fp16'",
+      );
+      expect(appModule).toContain("import express from 'express'");
+      expect(appModule).toContain("from 'lat.md/server'");
+      expect(appModule).toContain('app: express()');
+      expect(appModule).not.toContain('publicDir');
+      expect(appModule).not.toContain("new URL('./public/");
+      expect(appModule).toContain(
+        "manifestFile: new URL('./server-data/server.json'",
+      );
+      expect(appModule).toContain(
+        "indexFile: new URL('./server-data/vectors.db'",
+      );
+      expect(appModule).toContain(
+        'createSearchEngine: () => createEmbedder({ model: minilm })',
+      );
+      expect(appModule).not.toContain('node_modules/');
+      expect(appModule).not.toContain('access(');
+      expect(appModule).not.toContain('void ');
+      expect(existsSync(join(outputDir, 'start.mjs'))).toBe(false);
+      expect(
+        readdirSync(outputDir).some((name) => name.startsWith('.lat-')),
+      ).toBe(false);
+
+      const staticManifest = JSON.parse(
+        readFileSync(
+          join(outputDir, 'public', 'project', 'data', 'manifest.json'),
+          'utf8',
+        ),
+      ) as ViewStaticManifest;
+      const exportedSourceFiles = await Promise.all(
+        Object.values(staticManifest.sources).map(async ({ file }) => {
+          const source = JSON.parse(
+            readFileSync(join(outputDir, 'public', 'project', file), 'utf8'),
+          ) as ViewStaticSourceFile;
+          return source.path;
+        }),
+      );
+      expect(exportedSourceFiles).not.toContain('generated/compiled.ts');
+
+      const builtSection = manifest.sections[0];
+      const { documentPath, ...section } = builtSection;
+      const runSearch = vi.fn(async () => [
+        {
+          id: section.id,
+          file: section.file,
+          heading: section.heading,
+          content: section.firstParagraph,
+          score: 0.9,
+        },
+      ]);
+      const closeSearch = vi.fn(async () => {});
+      const openSearchSession = vi.fn(async () => ({
+        search: runSearch,
+        close: closeSearch,
+      }));
+      const createSearchEngine = vi.fn(async () => ({
+        name: 'local:test',
+        dimensions: 1,
+        embed: async () => [[0]],
+      }));
+      const search = await createPreindexedViewSearch(
+        join(outputDir, 'server-data'),
+        join(outputDir, 'runtime-cache'),
+        [{ ...section, children: [] }],
+        new Map([[builtSection.id.toLowerCase(), documentPath]]),
+        { openSearchSession },
+        createSearchEngine,
+      );
+      expect(openSearchSession).toHaveBeenCalledWith(
+        join(outputDir, 'server-data'),
+        {
+          cacheDir: join(outputDir, 'runtime-cache'),
+          createSearchEngine,
+        },
+      );
+      const deployment = createServerViewApp({
+        app: express(),
+        manifestFile: join(outputDir, 'server-data', 'server.json'),
+        indexFile: join(outputDir, 'server-data', 'vectors.db'),
+        search,
+      });
+      const server = createServer(deployment.app);
+      await new Promise<void>((resolveListen) =>
+        server.listen(0, '127.0.0.1', resolveListen),
+      );
+      const address = server.address();
+      expect(address && typeof address !== 'string').toBe(true);
+      const origin = `http://127.0.0.1:${typeof address === 'string' || !address ? 0 : address.port}`;
+      try {
+        const rootResponse = await fetch(origin, { redirect: 'manual' });
+        expect(rootResponse.status).toBe(200);
+        expect(await rootResponse.text()).toContain('meta name="lat-redirect"');
+
+        const response = await fetch(
+          `${origin}/project/api/search?query=portable`,
+        );
+        expect(response.status).toBe(200);
+        expect(response.headers.get('x-powered-by')).toBeNull();
+        expect(response.headers.get('content-security-policy')).toContain(
+          "default-src 'self'",
+        );
+        await expect(response.json()).resolves.toEqual({
+          query: 'portable',
+          results: [
+            expect.objectContaining({
+              path: documentPath,
+              score: 0.9,
+            }),
+          ],
+        });
+        expect(runSearch).toHaveBeenLastCalledWith('portable', 10);
+        expect(runSearch).toHaveBeenCalledTimes(1);
+
+        const searchHead = await fetch(
+          `${origin}/project/api/search?query=portable`,
+          { method: 'HEAD' },
+        );
+        expect(searchHead.status).toBe(200);
+        expect(await searchHead.text()).toBe('');
+        expect(runSearch).toHaveBeenCalledTimes(2);
+        expect(openSearchSession).toHaveBeenCalledTimes(1);
+
+        const document = await fetch(`${origin}/project/`);
+        expect(document.status).toBe(200);
+        expect(document.headers.get('cache-control')).toBe('no-cache');
+        expect(await document.text()).toContain('lat ui shell');
+
+        const oldDocumentRoute = await fetch(`${origin}/project/docs/lat`);
+        expect(oldDocumentRoute.status).toBe(200);
+        expect(await oldDocumentRoute.text()).toContain(
+          'meta name="lat-redirect"',
+        );
+
+        const documentData = await fetch(
+          `${origin}/project/${staticManifest.documents['lat.md']}`,
+        );
+        expect(documentData.status).toBe(200);
+        expect(documentData.headers.get('cache-control')).toBe(
+          'public, max-age=31536000, immutable',
+        );
+
+        const stableManifest = await fetch(
+          `${origin}/project/data/manifest.json`,
+        );
+        expect(stableManifest.status).toBe(200);
+        expect(stableManifest.headers.get('cache-control')).toBe('no-cache');
+      } finally {
+        await new Promise<void>((resolveClose, reject) =>
+          server.close((error) => (error ? reject(error) : resolveClose())),
+        );
+        await deployment.close();
+        await search.close();
+        expect(closeSearch).toHaveBeenCalledTimes(1);
+      }
+    } finally {
+      rmSync(buildRoot, { recursive: true, force: true });
+    }
+  });
+
+  // @lat: [[lat.md/view/specs#View Tests#Builds a portable server deployment#Runs the generated Node artifact end to end]]
+  it('runs the generated Node artifact with static assets and semantic search', async () => {
+    const buildRoot = mkdtempSync(join(tmpdir(), 'lat-ui-node-e2e-'));
+    const serverProjectRoot = join(buildRoot, 'project');
+    const outputDir = join(serverProjectRoot, 'server-site');
+    const repositoryRoot = join(import.meta.dirname, '..');
+    const previousXdgConfig = process.env.XDG_CONFIG_HOME;
+    cpSync(projectRoot, serverProjectRoot, { recursive: true });
+    process.env.XDG_CONFIG_HOME = join(buildRoot, 'xdg');
+    setRepoEmbedding(join(serverProjectRoot, 'lat.md'), 'local');
+
+    let closeGeneratedApp: (() => Promise<void>) | undefined;
+    let server: ReturnType<typeof createServer> | undefined;
+    try {
+      await buildServerView(
+        {
+          ...testContext(),
+          projectRoot: serverProjectRoot,
+          latDir: join(serverProjectRoot, 'lat.md'),
+        },
+        outputDir,
+        { basePath: '/project', clientDir },
+        {
+          analyzeMarkdownProject,
+          buildStaticView,
+          getLocalVersion: () =>
+            JSON.parse(
+              readFileSync(join(repositoryRoot, 'package.json'), 'utf8'),
+            ).version as string,
+          getLatServerVersion: () =>
+            JSON.parse(
+              readFileSync(
+                join(repositoryRoot, 'packages', 'server', 'package.json'),
+                'utf8',
+              ),
+            ).version as string,
+          getPackageVersion(name) {
+            const packageDirectories: Record<string, string[]> = {
+              '@lat.md/embed': ['packages', 'embed'],
+              '@lat.md/embed-minilm-fp16': ['packages', 'embed-minilm-fp16'],
+              express: ['node_modules', 'express'],
+            };
+            return JSON.parse(
+              readFileSync(
+                join(
+                  repositoryRoot,
+                  ...packageDirectories[name]!,
+                  'package.json',
+                ),
+                'utf8',
+              ),
+            ).version as string;
+          },
+          runIndex: buildSearchIndex,
+        },
+      );
+
+      const nodeModules = join(outputDir, 'node_modules');
+      mkdirSync(join(nodeModules, '@lat.md'), { recursive: true });
+      const linkPackage = (name: string, source: string) => {
+        symlinkSync(
+          realpathSync(source),
+          join(nodeModules, ...name.split('/')),
+          process.platform === 'win32' ? 'junction' : 'dir',
+        );
+      };
+      linkPackage('@lat.md/embed', join(repositoryRoot, 'packages', 'embed'));
+      linkPackage(
+        '@lat.md/embed-minilm-fp16',
+        join(repositoryRoot, 'packages', 'embed-minilm-fp16'),
+      );
+      linkPackage('@lat.md/server', join(repositoryRoot, 'packages', 'server'));
+      linkPackage('express', join(repositoryRoot, 'node_modules', 'express'));
+      linkPackage('lat.md', repositoryRoot);
+
+      const generated = (await import(
+        pathToFileURL(join(outputDir, 'app.mjs')).href
+      )) as {
+        default: Parameters<typeof createServer>[0];
+        close: () => Promise<void>;
+      };
+      closeGeneratedApp = generated.close;
+      server = createServer(generated.default);
+      await new Promise<void>((resolveListen) =>
+        server!.listen(0, '127.0.0.1', resolveListen),
+      );
+      const address = server.address();
+      expect(address && typeof address !== 'string').toBe(true);
+      const origin = `http://127.0.0.1:${typeof address === 'string' || !address ? 0 : address.port}`;
+
+      const document = await fetch(`${origin}/project/`);
+      expect(document.status).toBe(200);
+      expect(await document.text()).toContain('lat ui shell');
+
+      for (const asset of ['app.js', 'app.css']) {
+        const response = await fetch(`${origin}/project/assets/${asset}`);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe(
+          'public, max-age=31536000, immutable',
+        );
+        expect((await response.text()).length).toBeGreaterThan(0);
+      }
+
+      const search = await fetch(
+        `${origin}/project/api/search?query=${encodeURIComponent('relative Markdown heading fragments')}`,
+      );
+      expect(search.status).toBe(200);
+      expect(search.headers.get('cache-control')).toBe('no-store');
+      const payload = (await search.json()) as ViewSearchResponse;
+      expect(payload.query).toBe('relative Markdown heading fragments');
+      expect(payload.results.length).toBeGreaterThan(0);
+      expect(payload.results).toContainEqual(
+        expect.objectContaining({ path: 'guide.md' }),
+      );
+    } finally {
+      if (server) {
+        await new Promise<void>((resolveClose, reject) =>
+          server!.close((error) => (error ? reject(error) : resolveClose())),
+        );
+      }
+      await closeGeneratedApp?.();
+      if (previousXdgConfig === undefined) {
+        delete process.env.XDG_CONFIG_HOME;
+      } else {
+        process.env.XDG_CONFIG_HOME = previousXdgConfig;
+      }
+      rmSync(buildRoot, { recursive: true, force: true });
+    }
+  }, 60_000);
 
   // @lat: [[lat.md/view/specs#View Tests#Keeps build-only packages out of runtime dependencies]]
   it('keeps build-only packages out of runtime dependencies', () => {
@@ -1361,9 +1843,6 @@ describe('lat ui', () => {
     );
     expect(viewDocumentHtml(document)).toContain('line=18#run');
     expect(viewDocumentHtml(document)).toContain(
-      'src="/resources/media/project.svg"',
-    );
-    expect(viewDocumentHtml(document)).toContain(
       'class="wiki-link-segmented wiki-link-code"',
     );
     expect(viewDocumentHtml(document)).toContain(
@@ -1976,7 +2455,7 @@ describe('lat ui', () => {
     expect(openBrowser).toHaveBeenCalledWith(started!.url);
     expect(result.output).toBe(
       `Viewing lat.md at ${started!.url}\n` +
-        'Note: you can use `lat ui build` to build a static version of the UI',
+        'Note: use `lat ui build static` or `lat ui build server` to build a deployable UI',
     );
     const index = (await (
       await fetch(new URL('/api/index', started!.url))
@@ -2200,7 +2679,7 @@ describe('lat ui git state', () => {
       undefined,
       {},
       buildGitDiffTree(
-        '`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to `lat ui build` for static export.',
+        '`lat ui` starts listening before passing the loopback URL to the platform browser launcher, then reports the URL and points users to the build commands for deployment.',
         portDescription,
       ),
     );

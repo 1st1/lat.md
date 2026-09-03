@@ -26,7 +26,10 @@ import type {
 import { DEFAULT_VIEW_LOGO_TEXT } from './protocol.js';
 import { documentTreeUrls, rewriteDocumentTreeUrls } from './document-tree.js';
 import {
+  VIEW_STATIC_BOOTSTRAP_ID,
+  viewStaticDocumentRequest,
   viewStaticSourceKey,
+  type ViewStaticBootstrap,
   type ViewStaticExternalSourceView,
   type ViewStaticManifest,
   type ViewStaticSourceRequest,
@@ -41,12 +44,17 @@ import {
 } from './document-route.js';
 
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
+const VIEW_BUILD_MOVE_MAX_RETRIES = 10;
+const VIEW_BUILD_MOVE_RETRY_DELAY_MS = 150;
 
 export type StaticViewBuildOptions = {
   basePath?: string;
   clientDir?: string;
+  codeExcludePaths?: string[];
+  force?: boolean;
   logoText?: string;
   externalCa?: string | Buffer;
+  searchApi?: string;
 };
 
 export type StaticViewBuildResult = {
@@ -100,7 +108,11 @@ function decodeHtmlUrlAttribute(value: string): string {
 }
 
 /** Convert a live view route to its physical static-directory URL. */
-export function staticViewUrl(value: string, basePath: string): string {
+export function staticViewUrl(
+  value: string,
+  basePath: string,
+  entryPath?: string,
+): string {
   if (!value || value.startsWith('#')) return value;
   let url: URL;
   try {
@@ -113,6 +125,9 @@ export function staticViewUrl(value: string, basePath: string): string {
   if (url.pathname.startsWith('/docs/')) {
     const route = url.pathname.slice(1).replace(/\/+$/, '');
     const suffix = `${url.search}${url.hash}`;
+    if (entryPath && documentPath(url.pathname) === entryPath) {
+      return `${basePath}${suffix}`;
+    }
     return `${basePath}${route}${suffix}`;
   }
   if (url.pathname.startsWith('/resources/')) {
@@ -137,10 +152,11 @@ function documentPathFromUrl(value: URL): string | null {
 function rewriteHtmlLink(
   value: string,
   basePath: string,
+  entryPath: string,
   sourcePath: string | null,
   documentPaths: ReadonlySet<string>,
 ): string {
-  const direct = staticViewUrl(value, basePath);
+  const direct = staticViewUrl(value, basePath, entryPath);
   if (direct !== value || !sourcePath || value.startsWith('#')) return direct;
 
   let resolved: URL;
@@ -166,6 +182,7 @@ function rewriteHtmlLink(
     return staticViewUrl(
       `${resolved.pathname}${resolved.search}${resolved.hash}`,
       basePath,
+      entryPath,
     );
   }
   if (
@@ -178,23 +195,26 @@ function rewriteHtmlLink(
   return staticViewUrl(
     `${documentUrl(documentPath)}${resolved.search}${resolved.hash}`,
     basePath,
+    entryPath,
   );
 }
 
 function rewriteDocumentLinks(
   tree: ViewDocument['tree'],
   basePath: string,
+  entryPath: string,
   sourcePath: string | null,
   documentPaths: ReadonlySet<string>,
 ): ViewDocument['tree'] {
   return rewriteDocumentTreeUrls(tree, (value) =>
-    rewriteHtmlLink(value, basePath, sourcePath, documentPaths),
+    rewriteHtmlLink(value, basePath, entryPath, sourcePath, documentPaths),
   );
 }
 
 function rewriteMarkdownReference(
   reference: ViewMarkdownBackReference,
   basePath: string,
+  entryPath: string,
   sourcePath: string | null,
   documentPaths: ReadonlySet<string>,
 ): ViewMarkdownBackReference {
@@ -203,16 +223,18 @@ function rewriteMarkdownReference(
     paragraphTree: rewriteDocumentLinks(
       reference.paragraphTree,
       basePath,
+      entryPath,
       sourcePath,
       documentPaths,
     ),
-    url: staticViewUrl(reference.url, basePath),
+    url: staticViewUrl(reference.url, basePath, entryPath),
   };
 }
 
 function rewriteBackReference(
   reference: ViewSectionBackReference,
   basePath: string,
+  entryPath: string,
   sectionPaths: ReadonlyMap<string, string>,
   documentPaths: ReadonlySet<string>,
 ): ViewSectionBackReference {
@@ -220,15 +242,20 @@ function rewriteBackReference(
     ? rewriteMarkdownReference(
         reference,
         basePath,
+        entryPath,
         sectionPaths.get(reference.sectionId.split('#', 1)[0]) ?? null,
         documentPaths,
       )
-    : { ...reference, url: staticViewUrl(reference.url, basePath) };
+    : {
+        ...reference,
+        url: staticViewUrl(reference.url, basePath, entryPath),
+      };
 }
 
 function rewriteDocument(
   document: ViewDocument,
   basePath: string,
+  entryPath: string,
   sectionPaths: ReadonlyMap<string, string>,
   documentPaths: ReadonlySet<string>,
 ): ViewDocument {
@@ -237,6 +264,7 @@ function rewriteDocument(
     tree: rewriteDocumentLinks(
       document.tree,
       basePath,
+      entryPath,
       document.path,
       documentPaths,
     ),
@@ -244,7 +272,13 @@ function rewriteDocument(
     backReferences: document.backReferences.map((section) => ({
       ...section,
       references: section.references.map((reference) =>
-        rewriteBackReference(reference, basePath, sectionPaths, documentPaths),
+        rewriteBackReference(
+          reference,
+          basePath,
+          entryPath,
+          sectionPaths,
+          documentPaths,
+        ),
       ),
     })),
   };
@@ -253,6 +287,7 @@ function rewriteDocument(
 function rewriteSourceReference(
   reference: ViewSourceReference,
   basePath: string,
+  entryPath: string,
   sectionPaths: ReadonlyMap<string, string>,
   documentPaths: ReadonlySet<string>,
 ): ViewSourceReference {
@@ -262,16 +297,18 @@ function rewriteSourceReference(
     paragraphTree: rewriteDocumentLinks(
       reference.paragraphTree,
       basePath,
+      entryPath,
       sectionPaths.get(sectionPath) ?? null,
       documentPaths,
     ),
-    url: staticViewUrl(reference.url, basePath),
+    url: staticViewUrl(reference.url, basePath, entryPath),
   };
 }
 
 function rewriteSource(
   source: ViewSourceDocument,
   basePath: string,
+  entryPath: string,
   sectionPaths: ReadonlyMap<string, string>,
   documentPaths: ReadonlySet<string>,
 ): ViewSourceDocument {
@@ -281,22 +318,33 @@ function rewriteSource(
       ? rewriteSourceReference(
           source.context,
           basePath,
+          entryPath,
           sectionPaths,
           documentPaths,
         )
       : null,
     otherReferences: source.otherReferences.map((reference) =>
-      rewriteSourceReference(reference, basePath, sectionPaths, documentPaths),
+      rewriteSourceReference(
+        reference,
+        basePath,
+        entryPath,
+        sectionPaths,
+        documentPaths,
+      ),
     ),
   };
 }
 
-function rewriteGraph(graph: ViewGraph, basePath: string): ViewGraph {
+function rewriteGraph(
+  graph: ViewGraph,
+  basePath: string,
+  entryPath: string,
+): ViewGraph {
   return {
     ...graph,
     nodes: graph.nodes.map(({ gitStatus: _gitStatus, ...node }) => ({
       ...node,
-      url: staticViewUrl(node.url, basePath),
+      url: staticViewUrl(node.url, basePath, entryPath),
     })),
   };
 }
@@ -459,23 +507,42 @@ function sourceRequestsFromSource(
   }
 }
 
-function dataFile(
-  kind:
-    | 'documents'
-    | 'source-files'
-    | 'source-views'
-    | 'external-documents'
-    | 'external-source-files'
-    | 'external-source-views',
-  key: string,
-): string {
-  const digest = createHash('sha256').update(key).digest('hex').slice(0, 20);
+type ViewStaticDataKind =
+  | 'documents'
+  | 'graphs'
+  | 'source-files'
+  | 'source-views'
+  | 'external-documents'
+  | 'external-source-files'
+  | 'external-source-views';
+
+function serializeJson(value: unknown): string {
+  return `${JSON.stringify(value)}\n`;
+}
+
+function dataFile(kind: ViewStaticDataKind, content: string): string {
+  const digest = createHash('sha256')
+    .update(content)
+    .digest('hex')
+    .slice(0, 20);
   return `data/${kind}/${digest}.json`;
 }
 
 async function writeJson(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
-  await writeFile(path, `${JSON.stringify(value)}\n`);
+  await writeFile(path, serializeJson(value));
+}
+
+async function writeDataJson(
+  outputDir: string,
+  kind: ViewStaticDataKind,
+  value: unknown,
+): Promise<string> {
+  const content = serializeJson(value);
+  const path = dataFile(kind, content);
+  await mkdir(dirname(join(outputDir, path)), { recursive: true });
+  await writeFile(join(outputDir, path), content);
+  return path;
 }
 
 async function outputExists(path: string): Promise<boolean> {
@@ -488,17 +555,71 @@ async function outputExists(path: string): Promise<boolean> {
   }
 }
 
-async function validateOutput(outputDir: string, projectRoot: string) {
+/** Refuse build targets that exist or could replace the project itself. */
+export async function validateViewBuildOutput(
+  outputDir: string,
+  projectRoot: string,
+  kind = 'Static',
+  force = false,
+): Promise<void> {
   if (
     outputDir === parse(outputDir).root ||
     outputDir === projectRoot ||
     isInside(outputDir, projectRoot)
   ) {
-    throw new Error('Static UI output must not contain the project root');
+    throw new Error(`${kind} UI output must not contain the project root`);
   }
-  if (await outputExists(outputDir)) {
-    throw new Error(`Static UI output already exists: ${outputDir}`);
+  if (!force && (await outputExists(outputDir))) {
+    throw new Error(
+      `${kind} UI output already exists: ${outputDir}. Use --force to replace it.`,
+    );
   }
+}
+
+type ViewBuildMoveDependencies = {
+  move: typeof rename;
+  wait: (milliseconds: number) => Promise<void>;
+};
+
+const defaultViewBuildMoveDependencies: ViewBuildMoveDependencies = {
+  move: rename,
+  wait: (milliseconds) =>
+    new Promise((resolveWait) => setTimeout(resolveWait, milliseconds)),
+};
+
+/** Commit a staged build after transient filesystem locks have cleared. */
+export async function moveViewBuildOutput(
+  stagingDir: string,
+  outputDir: string,
+  dependencies: ViewBuildMoveDependencies = defaultViewBuildMoveDependencies,
+): Promise<void> {
+  for (let retries = 0; ; retries += 1) {
+    try {
+      await dependencies.move(stagingDir, outputDir);
+      return;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (
+        retries >= VIEW_BUILD_MOVE_MAX_RETRIES ||
+        (code !== 'EBUSY' && code !== 'EPERM' && code !== 'ENOTEMPTY')
+      ) {
+        throw error;
+      }
+      await dependencies.wait(VIEW_BUILD_MOVE_RETRY_DELAY_MS);
+    }
+  }
+}
+
+/** Remove abandoned staging after transient filesystem locks have cleared. */
+export async function removeViewBuildStaging(
+  stagingDir: string,
+): Promise<void> {
+  await rm(stagingDir, {
+    recursive: true,
+    force: true,
+    maxRetries: VIEW_BUILD_MOVE_MAX_RETRIES,
+    retryDelay: VIEW_BUILD_MOVE_RETRY_DELAY_MS,
+  });
 }
 
 function sectionDocumentPaths(
@@ -511,26 +632,58 @@ function sectionDocumentPaths(
   return result;
 }
 
-function clientShell(html: string, basePath: string): string {
+function clientShell(
+  html: string,
+  basePath: string,
+  entry: string,
+  searchApi?: string,
+): string {
   const assets = rewriteClientAssetUrls(html, basePath);
-  const configValue = JSON.stringify({ basePath }).replaceAll('<', '\\u003c');
-  const config = `<script>globalThis.__LAT_STATIC_VIEW__=${configValue}</script>`;
+  const configValue = encodeURIComponent(
+    JSON.stringify({ basePath, entry, searchApi }),
+  );
+  const config = `<meta name="lat-static-view" content="${configValue}">`;
   return assets.includes('</head>')
     ? assets.replace('</head>', `  ${config}\n  </head>`)
     : `${config}\n${assets}`;
 }
 
-function redirectShell(target: string): string {
+function bootstrapShell(
+  shell: string,
+  manifest: ViewStaticManifest,
+  responses: Record<string, object> = {},
+): string {
+  const bootstrap: ViewStaticBootstrap = { manifest, responses };
+  const value = JSON.stringify(bootstrap).replaceAll('<', '\\u003c');
+  const data = `<script id="${VIEW_STATIC_BOOTSTRAP_ID}" type="application/json">${value}</script>`;
+  return shell.includes('</head>')
+    ? shell.replace('</head>', `  ${data}\n  </head>`)
+    : `${data}\n${shell}`;
+}
+
+const REDIRECT_SCRIPT_PATH = 'data/redirect.js';
+const REDIRECT_SCRIPT = `const meta = document.querySelector('meta[name="lat-redirect"]');
+if (meta) {
+  try {
+    window.location.replace(decodeURIComponent(meta.content) + window.location.hash);
+  } catch {}
+}
+`;
+
+function redirectShell(target: string, basePath: string): string {
   const escaped = target.replaceAll('&', '&amp;').replaceAll('"', '&quot;');
-  const scriptTarget = JSON.stringify(target).replaceAll('<', '\\u003c');
+  const scriptUrl = `${basePath}${REDIRECT_SCRIPT_PATH}`
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;');
   return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0;url=${escaped}" />
+    <meta name="lat-redirect" content="${encodeURIComponent(target)}" />
     <title>lat.md</title>
+    <script src="${scriptUrl}" defer></script>
   </head>
-  <body><script>window.location.replace(${scriptTarget} + window.location.hash)</script></body>
+  <body><a href="${escaped}">Open lat.md</a></body>
 </html>
 `;
 }
@@ -555,12 +708,19 @@ export async function buildStaticView(
   const basePath = normalizeStaticViewBasePath(options.basePath ?? '/');
   const clientDir = options.clientDir ?? defaultClientDir;
   const logoText = options.logoText ?? DEFAULT_VIEW_LOGO_TEXT;
-  await validateOutput(outputDir, ctx.projectRoot);
+  await validateViewBuildOutput(
+    outputDir,
+    ctx.projectRoot,
+    'Static',
+    options.force,
+  );
 
   await mkdir(dirname(outputDir), { recursive: true });
-  const stagingDir = await mkdtemp(join(dirname(outputDir), '.lat-ui-build-'));
+  const stagingDir = await mkdtemp(
+    join(dirname(outputDir), '.lat-static-staging-'),
+  );
   const store = await createViewStore(ctx.latDir, ctx.projectRoot, {
-    codeExcludePaths: [outputDir],
+    codeExcludePaths: [outputDir, ...(options.codeExcludePaths ?? [])],
     git: false,
     watch: false,
     externalIgnoreLocal: true,
@@ -572,8 +732,13 @@ export async function buildStaticView(
     const payloadDir = staticViewPayloadDir(stagingDir, basePath);
     await mkdir(payloadDir, { recursive: true });
     await cp(clientDir, payloadDir, { recursive: true });
-    const shell = clientShell(clientHtml, basePath);
     const index = { ...store.getIndex(), git: null, logoText };
+    const shell = clientShell(
+      clientHtml,
+      basePath,
+      index.entry,
+      options.searchApi,
+    );
     const documents = new Map<string, ViewDocument>();
     const documentResources = new Set<string>();
     const sourceRequests = new Map<string, ViewStaticSourceRequest>();
@@ -688,32 +853,42 @@ export async function buildStaticView(
       }
     }
 
+    const rewrittenGraph = rewriteGraph(graph, basePath, index.entry);
     const manifest: ViewStaticManifest = {
       version: 1,
       index,
-      graph: 'data/graph.json',
+      graph: await writeDataJson(payloadDir, 'graphs', rewrittenGraph),
       documents: {},
       sources: {},
       externals: {},
     };
-    await writeJson(
-      join(payloadDir, manifest.graph),
-      rewriteGraph(graph, basePath),
-    );
+    const documentBootstraps = new Map<
+      string,
+      { request: string; document: ViewDocument }
+    >();
 
     for (const [path, document] of documents) {
-      const dataPath = dataFile('documents', path);
-      manifest.documents[path] = dataPath;
-      await writeJson(
-        join(payloadDir, dataPath),
-        rewriteDocument(document, basePath, sectionPaths, documentPaths),
+      const rewritten = rewriteDocument(
+        document,
+        basePath,
+        index.entry,
+        sectionPaths,
+        documentPaths,
+      );
+      manifest.documents[path] = await writeDataJson(
+        payloadDir,
+        'documents',
+        rewritten,
       );
       const source = await store.getDocumentSource(path);
       const rawPath = join(payloadDir, 'docs', ...path.split('/'));
       await mkdir(dirname(rawPath), { recursive: true });
       await writeFile(rawPath, source.content);
       const route = `docs/${path.slice(0, -'.md'.length)}`;
-      await writeRouteShell(payloadDir, route, shell);
+      documentBootstraps.set(route, {
+        request: viewStaticDocumentRequest(path),
+        document: rewritten,
+      });
     }
 
     for (const path of [...documentResources].sort()) {
@@ -735,44 +910,43 @@ export async function buildStaticView(
       const rewritten = rewriteSource(
         source,
         basePath,
+        index.entry,
         sectionPaths,
         documentPaths,
       );
       const { path, content, highlightedLines, ...view } = rewritten;
       let fileDataPath = sourceFiles.get(path);
       if (!fileDataPath) {
-        fileDataPath = dataFile('source-files', path);
-        sourceFiles.set(path, fileDataPath);
-        await writeJson(join(payloadDir, fileDataPath), {
+        fileDataPath = await writeDataJson(payloadDir, 'source-files', {
           path,
           content,
           highlightedLines,
         });
+        sourceFiles.set(path, fileDataPath);
       }
-      const viewDataPath = dataFile('source-views', key);
+      const viewDataPath = await writeDataJson(
+        payloadDir,
+        'source-views',
+        view,
+      );
       manifest.sources[key] = { file: fileDataPath, view: viewDataPath };
-      await writeJson(join(payloadDir, viewDataPath), view);
-    }
-    for (const path of sourceFiles.keys()) {
-      const route = `code/${path}`;
-      await writeRouteShell(payloadDir, route, shell);
     }
 
     const externalSourceFiles = new Map<string, string>();
     const externalRoutes = new Set<string>();
     for (const [target, external] of externals) {
       if (external.kind === 'markdown') {
-        const dataPath = dataFile('external-documents', target);
-        manifest.externals[target] = { kind: 'markdown', document: dataPath };
-        await writeJson(join(payloadDir, dataPath), {
+        const dataPath = await writeDataJson(payloadDir, 'external-documents', {
           ...external,
           document: rewriteDocument(
             external.document,
             basePath,
+            index.entry,
             sectionPaths,
             documentPaths,
           ),
         } satisfies ViewExternalDocument);
+        manifest.externals[target] = { kind: 'markdown', document: dataPath };
         const colon = external.document.path.indexOf(':');
         externalRoutes.add(
           `external/${external.document.path.slice(0, colon)}/${external.document.path.slice(colon + 1)}`,
@@ -783,57 +957,106 @@ export async function buildStaticView(
       const rewritten = rewriteSource(
         external.source,
         basePath,
+        index.entry,
         sectionPaths,
         documentPaths,
       );
       const { path, content, highlightedLines, ...sourceView } = rewritten;
       let fileDataPath = externalSourceFiles.get(path);
       if (!fileDataPath) {
-        fileDataPath = dataFile('external-source-files', path);
+        fileDataPath = await writeDataJson(
+          payloadDir,
+          'external-source-files',
+          {
+            path,
+            content,
+            highlightedLines,
+          },
+        );
         externalSourceFiles.set(path, fileDataPath);
-        await writeJson(join(payloadDir, fileDataPath), {
-          path,
-          content,
-          highlightedLines,
-        });
       }
-      const viewDataPath = dataFile('external-source-views', target);
-      manifest.externals[target] = {
-        kind: 'source',
-        file: fileDataPath,
-        view: viewDataPath,
-      };
       const view: ViewStaticExternalSourceView = {
         kind: 'source',
         target: external.target,
         source: sourceView,
       };
-      await writeJson(join(payloadDir, viewDataPath), view);
+      const viewDataPath = await writeDataJson(
+        payloadDir,
+        'external-source-views',
+        view,
+      );
+      manifest.externals[target] = {
+        kind: 'source',
+        file: fileDataPath,
+        view: viewDataPath,
+      };
       const colon = path.indexOf(':');
       externalRoutes.add(
         `external/${path.slice(0, colon)}/${path.slice(colon + 1)}`,
       );
     }
-    for (const route of externalRoutes) {
-      await writeRouteShell(payloadDir, route, shell);
-    }
-    await writeRouteShell(payloadDir, 'graph', shell);
     await writeJson(join(payloadDir, 'data/manifest.json'), manifest);
-    const entryRedirect = redirectShell(
-      staticViewUrl(documentUrl(index.entry), basePath),
-    );
-    await writeFile(join(payloadDir, 'index.html'), entryRedirect);
-    if (payloadDir !== stagingDir) {
-      await writeFile(join(stagingDir, 'index.html'), entryRedirect);
+    const entryRoute = `docs/${index.entry.slice(0, -'.md'.length)}`;
+    const entryBootstrap = documentBootstraps.get(entryRoute);
+    if (!entryBootstrap) {
+      throw new Error(`Static UI entry document is missing: ${index.entry}`);
     }
-    await rename(stagingDir, outputDir);
+    for (const [route, initial] of documentBootstraps) {
+      if (route === entryRoute) continue;
+      await writeRouteShell(
+        payloadDir,
+        route,
+        bootstrapShell(shell, manifest, {
+          [initial.request]: initial.document,
+        }),
+      );
+    }
+    const genericShell = bootstrapShell(shell, manifest);
+    for (const path of sourceFiles.keys()) {
+      await writeRouteShell(payloadDir, `code/${path}`, genericShell);
+    }
+    for (const route of externalRoutes) {
+      await writeRouteShell(payloadDir, route, genericShell);
+    }
+    await writeRouteShell(
+      payloadDir,
+      'graph',
+      bootstrapShell(shell, manifest, { '/api/graph': rewrittenGraph }),
+    );
+    if (options.searchApi) {
+      await writeRouteShell(payloadDir, 'search', genericShell);
+    }
+    const redirectScriptPath = join(payloadDir, REDIRECT_SCRIPT_PATH);
+    await mkdir(dirname(redirectScriptPath), { recursive: true });
+    await writeFile(redirectScriptPath, REDIRECT_SCRIPT);
+    await writeFile(
+      join(payloadDir, 'index.html'),
+      bootstrapShell(shell, manifest, {
+        [entryBootstrap.request]: entryBootstrap.document,
+      }),
+    );
+    await writeRouteShell(
+      payloadDir,
+      entryRoute,
+      redirectShell(basePath, basePath),
+    );
+    if (payloadDir !== stagingDir) {
+      await writeFile(
+        join(stagingDir, 'index.html'),
+        redirectShell(basePath, basePath),
+      );
+    }
+    if (options.force) {
+      await rm(outputDir, { recursive: true, force: true });
+    }
+    await moveViewBuildOutput(stagingDir, outputDir);
     return {
       documents: documents.size,
       outputDir,
       sources: sources.size + externals.size,
     };
   } catch (error) {
-    await rm(stagingDir, { recursive: true, force: true });
+    await removeViewBuildStaging(stagingDir);
     throw error;
   } finally {
     await store.close();

@@ -90,7 +90,7 @@ raw dimension-mismatch error.
 
 ### Reuses an indexed search session
 
-An indexed search session opens its database and embedder once, applies each query's limit and threshold, resolves known section ids, and closes owned resources exactly once.
+An indexed search session owns one database and embedder, applies each query's limit and threshold, and returns storage rows without project metadata. A shared resolver hydrates known section ids for every caller.
 
 ### Skips an unbuilt search index
 

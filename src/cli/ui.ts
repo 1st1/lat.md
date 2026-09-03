@@ -57,7 +57,7 @@ export async function uiCommand(
 
   const lines = [
     `Viewing lat.md at ${server.url}`,
-    'Note: you can use `lat ui build` to build a static version of the UI',
+    'Note: use `lat ui build static` or `lat ui build server` to build a deployable UI',
   ];
   try {
     await (options.openBrowser ?? openBrowser)(server.url);

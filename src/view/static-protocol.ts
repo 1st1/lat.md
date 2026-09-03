@@ -51,6 +51,18 @@ export type ViewStaticManifest = {
   externals: Record<string, ViewStaticExternalEntry>;
 };
 
+export type ViewStaticBootstrap = {
+  manifest: ViewStaticManifest;
+  responses: Record<string, object>;
+};
+
+export const VIEW_STATIC_BOOTSTRAP_ID = 'lat-static-bootstrap';
+
+/** Match the live document endpoint key used by the static browser adapter. */
+export function viewStaticDocumentRequest(path: string): string {
+  return `/api/document?path=${encodeURIComponent(path)}`;
+}
+
 /** Stable lookup key shared by the static exporter and browser adapter. */
 export function viewStaticSourceKey(request: ViewStaticSourceRequest): string {
   return JSON.stringify([

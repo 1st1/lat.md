@@ -252,6 +252,20 @@ describe('lat init embedding setup', () => {
     expect(readInitVersion(latDir())).toBe(INIT_VERSION);
   });
 
+  // @lat: [[tests/init#Lat-owned build output ignore]]
+  it('gitignores the Lat-owned UI build output', async () => {
+    const git = spawnSync('git', ['init', '--quiet'], { cwd: root });
+    expect(git.status, git.stderr?.toString()).toBe(0);
+
+    await initCmd(root);
+
+    const ignored = readFileSync(join(root, '.gitignore'), 'utf8').split(
+      /\r?\n/,
+    );
+    expect(ignored).toContain('.lat-build');
+    expect(ignored).not.toContain('.vercel');
+  });
+
   // @lat: [[init#Embedding setup#Configured key asks for a backend]]
   it('allows a configured key to opt the repo into hosted embeddings', async () => {
     createLatDir();

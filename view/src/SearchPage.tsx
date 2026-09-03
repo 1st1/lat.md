@@ -6,10 +6,10 @@ import {
   type MouseEvent,
 } from 'react';
 import type {
-  ViewError,
   ViewSearchResponse,
   ViewSearchResult,
 } from '../../src/view/protocol';
+import { fetchViewJson } from './data-source';
 import {
   searchEscapeAction,
   searchQuery,
@@ -96,20 +96,10 @@ export function SearchPage({
 
     const timeout = window.setTimeout(() => {
       setLoading(true);
-      void fetch(`/api/search?query=${encodeURIComponent(normalized)}`, {
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          const value = (await response.json()) as
-            | ViewSearchResponse
-            | ViewError;
-          if (!response.ok) {
-            throw new Error(
-              'error' in value ? value.error : 'Search request failed',
-            );
-          }
-          return value as ViewSearchResponse;
-        })
+      void fetchViewJson<ViewSearchResponse>(
+        `/api/search?query=${encodeURIComponent(normalized)}`,
+        controller.signal,
+      )
         .then((response) => {
           setResults(response.results);
           setSearched(true);

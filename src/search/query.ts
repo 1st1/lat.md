@@ -7,7 +7,7 @@ import {
   openDb,
 } from './db.js';
 import { embedderForIndex, type CreateSearchEngine } from './embedder.js';
-import { searchSections } from './search.js';
+import { searchSections, type SearchResult } from './search.js';
 
 export type IndexedSearchResult = {
   query: string;
@@ -19,14 +19,32 @@ export type IndexedSearchSession = {
     query: string,
     limit: number,
     threshold?: number,
-  ) => Promise<IndexedSearchResult>;
+  ) => Promise<SearchResult[]>;
   close: () => Promise<void>;
 };
+
+/** Resolve scored index rows against one already-analyzed project snapshot. */
+export function resolveSearchMatches(
+  results: readonly SearchResult[],
+  sectionById: ReadonlyMap<string, Section>,
+): SectionMatch[] {
+  return results.flatMap((result) => {
+    const section = sectionById.get(result.id.toLowerCase());
+    return section
+      ? [
+          {
+            section,
+            reason: 'semantic match',
+            score: result.score,
+          } satisfies SectionMatch,
+        ]
+      : [];
+  });
+}
 
 /** Open one reusable database and embedder for a sequence of index queries. */
 export async function openIndexedSearchSession(
   latDir: string,
-  sectionById: ReadonlyMap<string, Section>,
   options: {
     cacheDir?: string;
     createSearchEngine?: CreateSearchEngine;
@@ -44,9 +62,9 @@ export async function openIndexedSearchSession(
     const stored = await getStoredModel(db);
     if (stored === null) {
       return {
-        search: async (query) => {
+        search: async () => {
           if (closed) throw new Error('Search session is closed');
-          return { query, matches: [] };
+          return [];
         },
         close,
       };
@@ -60,28 +78,7 @@ export async function openIndexedSearchSession(
     return {
       async search(query, limit, threshold) {
         if (closed) throw new Error('Search session is closed');
-        const results = await searchSections(
-          db,
-          query,
-          embedder,
-          limit,
-          threshold,
-        );
-        return {
-          query,
-          matches: results.flatMap((result) => {
-            const section = sectionById.get(result.id.toLowerCase());
-            return section
-              ? [
-                  {
-                    section,
-                    reason: 'semantic match',
-                    score: result.score,
-                  } satisfies SectionMatch,
-                ]
-              : [];
-          }),
-        };
+        return searchSections(db, query, embedder, limit, threshold);
       },
       close,
     };
@@ -99,9 +96,13 @@ export async function searchIndexedSections(
   sectionById: ReadonlyMap<string, Section>,
   options: { cacheDir?: string; threshold?: number } = {},
 ): Promise<IndexedSearchResult> {
-  const session = await openIndexedSearchSession(latDir, sectionById, options);
+  const session = await openIndexedSearchSession(latDir, options);
   try {
-    return await session.search(query, limit, options.threshold);
+    const results = await session.search(query, limit, options.threshold);
+    return {
+      query,
+      matches: resolveSearchMatches(results, sectionById),
+    };
   } finally {
     await session.close();
   }
