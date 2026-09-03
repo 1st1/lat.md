@@ -85,6 +85,18 @@ Every runtime asset is reachable through a static import or `new URL(relativePat
 
 The generated configuration applies the shared security policy, gives content-addressed JSON and Vite assets immutable caching, resolves functions and exact static files first, and maps extensionless routes to their physical `index.html` files.
 
+## Builds this repository's site directly
+
+The repository's separate site project builds the same portable server artifact exposed by the CLI, with no deployment-only application wrapper or duplicate GitHub Actions build.
+
+`pnpm build:site` hydrates version-matched published embedding artifacts, builds the shared server and browser, then invokes `lat ui build server` with its default `.lat-build/server/` output.
+
+The Vercel build vendors this branch's `lat.md` and `@lat.md/*` packages into the artifact under content-addressed archive names, so the deployment installs the pull request rather than released npm packages.
+
+`pnpm build:site:vercel` is the project's sole build command. It installs that artifact without lifecycle scripts and writes `.vercel/output` directly; the repository requires no Vercel manifest, root Express app, nested Vercel CLI build, or artifact handoff between CI systems.
+
+Hosted previews intentionally use published embedding packages. `pnpm build:site:source` validates local engine or model changes, which cannot appear in a hosted preview until their package versions are published.
+
 ## Keeps build-only packages out of runtime dependencies
 
 The published CLI declares browser renderer inputs and test-only serializers as development dependencies because consumers execute prebuilt artifacts and should not install redundant source trees.
