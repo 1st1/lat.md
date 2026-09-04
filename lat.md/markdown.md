@@ -68,6 +68,24 @@ Lat documents follow GitHub's repository-file Markdown surface. Conversation-onl
 
 Those enrichments depend on live GitHub repository, account, permission, or issue metadata and are not part of portable document syntax. GitHub itself does not create issue or pull-request autolinks or code-snippet embeds in repository Markdown files.
 
+## Images
+
+Add images to a Lat page using standard Markdown image syntax. Provide alt text describing the image and a path relative to the page that contains it.
+
+```markdown
+![Architecture diagram](./media/architecture.png)
+```
+
+For this example, put `architecture.png` in a `media/` directory beside the Markdown page. From a nested page, adjust the relative path to the image's location. Keep local image assets inside `lat.md/` so the browser can serve them and static exports can include them.
+
+The leading `!` embeds the image; an ordinary Markdown link opens its destination. Wiki links such as `[[page#Section]]` navigate to sections or files and are not the image-embedding syntax. To make an image clickable, wrap it in a link:
+
+```markdown
+[![Architecture diagram](./media/architecture.png)](./architecture.md)
+```
+
+[[cli#check#links]] checks local image paths. See [[markdown#Relative Links]] for path resolution and resource rules. Hosted images remain subject to the browser's content security policy; local assets are the portable option.
+
 ## Wiki Links
 
 Obsidian-style links: `[[target]]` or `[[target|alias]]`. Uses `|` as the alias divider.

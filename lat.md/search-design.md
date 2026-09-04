@@ -147,6 +147,14 @@ Continue evaluating word-form normalization on a broader repository query set. P
 
 The pinned `@tursodatabase/database` 0.7.2 accepts only `default`, `raw`, `simple`, `whitespace`, and `ngram` tokenizers. In-memory probes reject Tantivy's `en_stem` tokenizer; Turso does not expose its English stemmer. Arbitrary `stemming` and `synonyms` index options are accepted but do not enable matching in probes. Prefer an upstream tokenizer capability when available; current integration needs application-side normalization or an engine change. See [Turso FTS options](https://docs.turso.tech/sql-reference/functions/fts) and [Tantivy tokenizers](https://docs.rs/tantivy/latest/tantivy/tokenizer/index.html).
 
+### Image authoring coverage
+
+[[markdown#Images]] provides an explicit answer section for image-authoring queries. Evaluate missing answer coverage separately from ranking failures when testing the repository corpus.
+
+Before that section existed, `how to add images in wiki` returned parser and wiki-link internals; the scattered image-path guidance under Relative Links ranked fifteenth. With the image syntax and asset rules documented together, Images ranks first lexically and semantically for that query without ranking changes.
+
+The same section ranks first for `how to add images`, `images`, and `how to embed an image in a page`. The broader paraphrase `how to add a picture to a note` ranks it fifth in the measured local-model snapshot; keep that wording as a harder relevance case rather than assuming synonyms are fully solved.
+
 ### Application-side stemming
 
 [[packages/stemmer]] supplies English Snowball stemming through a small Rust/WASM package. [[src/search/lexical.ts]] applies identical analysis to document fields and query terms for lexical matching.
