@@ -1,0 +1,144 @@
+{
+  "experiment": "001-union-rrf",
+  "checkpoint": "18cc9ce",
+  "corpusCommit": "72fbf5c356f298e9d551c456174059fe16da668b",
+  "baseline": "retrieved-k60-s1",
+  "splitSeed": "lat-rrf-001-v1",
+  "developmentPerTopic": 8,
+  "policies": [
+    {
+      "id": "retrieved-k10-s1",
+      "candidateScoring": "retrieved",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "retrieved-k10-s1.5",
+      "candidateScoring": "retrieved",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "retrieved-k10-s2",
+      "candidateScoring": "retrieved",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    },
+    {
+      "id": "retrieved-k20-s1",
+      "candidateScoring": "retrieved",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "retrieved-k20-s1.5",
+      "candidateScoring": "retrieved",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "retrieved-k20-s2",
+      "candidateScoring": "retrieved",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    },
+    {
+      "id": "retrieved-k60-s1",
+      "candidateScoring": "retrieved",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "retrieved-k60-s1.5",
+      "candidateScoring": "retrieved",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "retrieved-k60-s2",
+      "candidateScoring": "retrieved",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    },
+    {
+      "id": "union-k10-s1",
+      "candidateScoring": "union",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "union-k10-s1.5",
+      "candidateScoring": "union",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "union-k10-s2",
+      "candidateScoring": "union",
+      "rrfK": 10,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    },
+    {
+      "id": "union-k20-s1",
+      "candidateScoring": "union",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "union-k20-s1.5",
+      "candidateScoring": "union",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "union-k20-s2",
+      "candidateScoring": "union",
+      "rrfK": 20,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    },
+    {
+      "id": "union-k60-s1",
+      "candidateScoring": "union",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    },
+    {
+      "id": "union-k60-s1.5",
+      "candidateScoring": "union",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 1.5
+    },
+    {
+      "id": "union-k60-s2",
+      "candidateScoring": "union",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 2
+    }
+  ],
+  "gates": {
+    "allTop5Judged": true,
+    "selection": "development indexed-answer pooled nDCG@5; tie-break direct-answer@5 then MRR@10",
+    "validation": "pooled nDCG@5 and direct-answer@5 must not regress on the topic-stratified validation partition",
+    "latency": "report live engine-only and total-query measurements before promotion",
+    "unjudged": "never infer grade zero; review the complete top-ten pool before selecting",
+    "promotion": "explicit reviewed decision and separate commit; production default stays baseline during experiment"
+  }
+}

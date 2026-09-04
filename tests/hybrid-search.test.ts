@@ -25,7 +25,13 @@ import {
 import { lexicalTokens, LEXICAL_VERSION } from '../src/search/lexical.js';
 import { stem, stemWords } from '@lat.md/stemmer';
 import { indexSections } from '../src/search/index.js';
-import { searchSections, collapse } from '../src/search/search.js';
+import {
+  searchSections,
+  collapse,
+  collectSearchCandidates,
+  rankSearchCandidates,
+  BASELINE_RANKING,
+} from '../src/search/search.js';
 import { writeIndex } from '../src/search/cache.js';
 import { formatResultList } from '../src/format.js';
 import { plainStyler } from '../src/context.js';
@@ -276,6 +282,96 @@ describe('hybrid search', () => {
       );
     } finally {
       await f.db.close();
+    }
+  });
+  // @lat: [[tests/search#Hybrid Retrieval#Rescores the candidate union without inventing matches]]
+  it('fills truncated lexical scores while preserving genuine channel nonmatches', async () => {
+    const markdown =
+      '# Guide\n\nOverview.\n\n' +
+      Array.from(
+        { length: 105 },
+        (_, i) => `## Filler ${i}\n\nneedle alpha`,
+      ).join('\n\n') +
+      '\n\n## Semantic target\n\nalpha semantic-target\n\n## Zero match\n\nsemantic-target';
+    const f = fixture(markdown),
+      db = new SearchDb(join(f.root, 'union.db'));
+    const engine = {
+      ...simple,
+      embed: async (texts: string[]) =>
+        texts.map((t) =>
+          t === 'needle alpha' || t.includes('semantic-target')
+            ? [1, 0]
+            : [0, 1],
+        ),
+    };
+    try {
+      await ensureMeta(db);
+      await ensureSectionsSchema(db, 2);
+      await indexSections(f.lat, db, engine);
+      const retrieved = await collectSearchCandidates(
+        db,
+        'needle alpha',
+        engine,
+      );
+      const union = await collectSearchCandidates(
+        db,
+        'needle alpha',
+        engine,
+        5,
+        0.2,
+        'union',
+      );
+      const target = [...retrieved.semantic.list.keys()].find((id) =>
+        id.endsWith('#Semantic target'),
+      )!;
+      const zero = [...retrieved.semantic.list.keys()].find((id) =>
+        id.endsWith('#Zero match'),
+      )!;
+      expect(target).toBeTruthy();
+      expect(zero).toBeTruthy();
+      expect(retrieved.lexical.list.has(target)).toBe(false);
+      expect(union.lexical.list.get(target)!.score).toBeGreaterThan(0);
+      expect(union.lexical.list.has(zero)).toBe(false);
+      expect(
+        [...union.semantic.list.keys()].some((id) => id.includes('#Filler')),
+      ).toBe(false);
+      expect(
+        [
+          ...new Set([
+            ...union.lexical.list.keys(),
+            ...union.semantic.list.keys(),
+          ]),
+        ].sort(),
+      ).toEqual(
+        [
+          ...new Set([
+            ...retrieved.lexical.list.keys(),
+            ...retrieved.semantic.list.keys(),
+          ]),
+        ].sort(),
+      );
+      expect(
+        rankSearchCandidates(union, {
+          ...BASELINE_RANKING,
+          candidateScoring: 'union',
+        })[0].id,
+      ).toBe(target);
+      const weighted = rankSearchCandidates(retrieved, {
+        ...BASELINE_RANKING,
+        semanticWeight: 2,
+      });
+      expect(
+        weighted
+          .slice(0, 2)
+          .map((r) => r.id)
+          .sort(),
+      ).toEqual([target, zero].sort());
+      const defaults = await searchSections(db, 'needle alpha', engine);
+      expect(defaults.map((r) => r.id)).toEqual(
+        rankSearchCandidates(retrieved).map((r) => r.id),
+      );
+    } finally {
+      await db.close();
     }
   });
   // @lat: [[tests/search#Hybrid Retrieval#Publishes only successful generations]]

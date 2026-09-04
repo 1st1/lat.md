@@ -51,7 +51,8 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"packages/server/src/**/*.ts\" \"view/**/*.{ts,tsx,css,html}\"",
     "cook-test-rag": "tsx scripts/cook-test-rag.ts",
     "eval:search": "tsc && node scripts/evaluate-search.mjs",
-    "bench:search": "tsc && node scripts/benchmark-search.mjs"
+    "bench:search": "tsc && node scripts/benchmark-search.mjs",
+    "experiment:search": "node --import tsx scripts/experiment-search.mjs"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.11.0",

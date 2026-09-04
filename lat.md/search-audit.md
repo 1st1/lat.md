@@ -143,8 +143,20 @@ Reuse the saved query intents, section grades, discovered answer targets, and so
 
 The audit retains all 100 queries, 990 graded query-section pairs, 201 grep commands with findings, and 156 source/test evidence entries. Evidence records include paths and line ranges; they are findings summaries, not a complete archive of terminal output. Corpus hashes and the baseline patch identify the evaluated document content.
 
-Twenty-nine grep-discovered target pairs across 21 queries lie outside the graded top ten. Preserve them as known answer/navigation targets, but assign explicit relevance grades before mixing them into graded metrics: some are partial context rather than direct answers. Treat all other unseen pairs as unjudged, not irrelevant.
+The replay runner in [[scripts/experiment-search.mjs]] now captures complete passage scores and query vectors, runs the actual retrieval/fusion code, verifies baseline top-ten ordering and scores for all 100 queries, and writes immutable runs with source, corpus, configuration, and label hashes. New results enter a review queue; unjudged results block selection.
 
-A replay runner should match result section IDs to saved query-specific grades, report known-target ranks and judged-result coverage, and emit a queue of unjudged results for focused review. Cache query embeddings and complete channel candidates/scores for cheap fusion sweeps; the current durable artifacts retain only top-ten result details and selected deeper-target diagnostics, not the complete candidate pool or query vectors.
+Experiment 001 adds explicit grades for 29 discovered targets and 248 newly surfaced pairs, giving 1,267 graded pairs. All 18 variants have fully judged top tens. Cached sweeps take about one second; replay includes known-target ranks beyond the displayed top ten.
 
-Use the frozen corpus for controlled ranking comparisons. Revalidate labels when section contents change; source references and saved findings make that review narrower than repeating the original grep investigation.
+Use the frozen corpus and exact archived database for controlled comparisons. Revalidate labels when section contents change. Rebuilding only the FTS index changed lexical scores despite unchanged rows, so reconstructing Markdown alone does not reproduce this baseline.
+
+### Candidate union and weighted RRF result
+
+Experiment 001 retains the production baseline after a predeclared development winner failed validation. Its artifacts preserve every ranking, judgment, configuration, and rollback checkpoint.
+
+The grid compares retrieved versus union-rescored candidates, RRF constants 10/20/60, and semantic weights 1/1.5/2 against lexical weight 1. Union scoring preserves the original section union, scores all its passages in both channels, and retains true lexical nonmatches and the semantic threshold. The pinned engine requires global lexical scoring followed by filtering, adding a full-scan cost.
+
+The topic-stratified split contains 80 development and 20 validation queries (73 and 20 with indexed answers). Selection uses pooled nDCG@5, then direct-answer@5 and MRR@10; validation nDCG@5 and direct-answer@5 must not regress. These previously inspected queries are not an untouched holdout.
+
+The development winner uses retrieved candidates, k=10, and equal weights: development nDCG rises from 0.80455 to 0.81307, but validation falls from 0.84381 to 0.84082. It fails the gate. Under baseline weights and k=60, union rescoring gives identical top-five quality while adding about 1.5 ms median engine time on the 716-passage corpus.
+
+The k=20, semantic-weight=1.5 variant is promising for fresh-query confirmation; selecting it after the development winner failed would use validation for tuning. Production remains retrieved candidates, k=60, equal weights. See [[tests/cases/hybrid/experiments/001-union-rrf/README.md]] for commands, measurements, and limitations, and [[tests/cases/hybrid/experiments/registry.json]] for the baseline checkpoint.
