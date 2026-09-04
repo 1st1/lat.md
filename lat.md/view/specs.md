@@ -101,6 +101,10 @@ The Vercel build vendors this branch's `lat.md` and `@lat.md/*` packages into th
 
 Hosted previews intentionally use published embedding packages. `pnpm build:site:source` validates local engine or model changes, which cannot appear in a hosted preview until their package versions are published.
 
+## Publishes the website's agent guide
+
+The website build copies the repository-root `llms.txt` unchanged into public output. It explains installation and points to the homepage without deep documentation links; the general-purpose exporter remains unchanged.
+
 ## Keeps build-only packages out of runtime dependencies
 
 The published CLI declares browser renderer inputs and test-only serializers as development dependencies because consumers execute prebuilt artifacts and should not install redundant source trees.

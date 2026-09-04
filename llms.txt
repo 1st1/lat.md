@@ -1,0 +1,15 @@
+# Lat
+
+> Lat is a knowledge graph for your codebase, written in Markdown. It connects architecture, design decisions, and test specifications to source code.
+
+Install the `lat.md` npm package globally:
+
+```sh
+npm install -g lat.md
+```
+
+Then run `lat init` from your project's root to set up Lat and your coding agents.
+
+## Documentation
+
+- [Lat website](https://lat.md/): Browse the site for current documentation, usage guides, and examples.
