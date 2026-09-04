@@ -1,0 +1,29 @@
+{
+  "name": "@lat.md/stemmer",
+  "version": "0.1.0",
+  "description": "English Snowball stemming in a small Rust/WASM package",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1st1/lat.md.git",
+    "directory": "packages/stemmer"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "THIRD_PARTY_NOTICES"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs && tsc",
+    "typecheck": "tsc --noEmit"
+  }
+}
