@@ -28,8 +28,17 @@ export type LatConfig = {
 export function readConfig(): LatConfig {
   const configPath = getConfigPath();
   if (!existsSync(configPath)) return {};
+  let content: string;
   try {
-    return JSON.parse(readFileSync(configPath, 'utf-8'));
+    content = readFileSync(configPath, 'utf-8');
+  } catch (err) {
+    process.stderr.write(
+      `Error: failed to read config ${configPath}: ${(err as Error).message}\n`,
+    );
+    process.exit(1);
+  }
+  try {
+    return JSON.parse(content);
   } catch (err) {
     process.stderr.write(
       `Error: failed to parse config ${configPath}: ${(err as Error).message}\n`,
