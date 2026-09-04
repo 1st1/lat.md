@@ -46,6 +46,8 @@ Rich fences remain `pre` and `code` elements with inert text children in the con
 
 Source and fenced-code highlighting starts as Lowlight HAST and becomes document-tree nodes without HTML serialization. Multiline tokens are split structurally into independently renderable lines. Raw reStructuredText and AsciiDoc pass-through content remains inert text.
 
+Rendered `pre` blocks use [[view/src/CodeBlock.tsx#CodeBlock]] for a clipboard button outside the horizontally scrolling code. It copies plain text with whitespace intact, reports success or failure, and appears on hover or keyboard focus; touch devices always show it. The shared renderer covers live, static, external, and formatted section-output documents, including rich-fence source fallbacks.
+
 Static export traverses tree properties to discover linked source and external targets and to rewrite route URLs. It does not parse or edit serialized markup.
 
 ## Build targets

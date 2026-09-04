@@ -2100,6 +2100,86 @@ a.wiki-link-active {
   background: transparent;
 }
 
+.code-block {
+  position: relative;
+  min-width: 0;
+  margin: 0 0 1.25em;
+}
+
+.markdown .code-block > pre {
+  margin: 0;
+  padding-right: 104px;
+}
+
+.code-block-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 32px;
+  padding: 6px 8px;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  background: var(--code);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+}
+
+.code-block-copy svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.code-block-copy:hover {
+  color: var(--text);
+  background: var(--reference-control-hover);
+}
+
+.code-block-copy:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 2px;
+}
+
+.code-block-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-block-copy {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .code-block:hover > .code-block-copy,
+  .code-block:focus-within > .code-block-copy {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (any-pointer: coarse) {
+  .code-block-copy {
+    min-height: 44px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 .markdown .markdown-diagram {
   padding: 18px;
   margin: 0 0 1.25em;
