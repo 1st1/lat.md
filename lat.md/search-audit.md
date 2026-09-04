@@ -174,3 +174,17 @@ Across the frozen 100-query audit, rebuilding changes top-one results for one qu
 OPTIMIZE INDEX repairs small update examples but skips the single-segment deletion case and differs from rebuilt rankings in the audit. Rebuilding only the derived FTS index takes about 8 ms on 716 passages without embedding work; larger-corpus costs remain unmeasured.
 
 Indexing now transactionally rebuilds FTS after replacement/deletion batches. The live-statistics lexical version repairs existing indexes once without embedding calls. Tests compare incremental edits and deletions with fresh scores, and verify rebuild/maintenance rollback. No-op searches and embedding reuse remain intact; the historical ranking experiment stays frozen.
+
+## Pre-RAG comparison
+
+Fresh indexes over the same 100-query corpus show stronger retrieval on the current branch than the immediate pre-RAG checkpoint. Saved outputs, new judgments, and exact indexes make the comparison replayable.
+
+Three isolated clones compare pre-RAG b139199, current 74658ec, and the exact v0.12.2 release 8d345ed. All use the same 39 hashed Markdown files, 506 sections, and MiniLM weights. Historical embedding code preserves its original truncation behavior.
+
+The current implementation raises direct-answer presence from 81 to 91 queries within five results, and from 60 to 75 at rank one. Among 93 indexed-answer queries, pooled nDCG@5 rises from 0.6354 to 0.8092. Eleven queries gain a direct answer in five; segmented wiki-link styling loses one.
+
+Reviewers graded 311 additional pairs for 1,578 total judgments, with no unjudged returned results. Native limits five and ten are measured separately. Previously inspected queries and new-design prose limit generalization; this is a whole-system comparison, not a chunking or fusion ablation.
+
+Alternating local measurements show engine medians of 3.36 ms old and 2.20 ms current, and warm totals of 17.64 and 16.55 ms. A single warmed fresh-index sample takes 7.50 versus 7.00 seconds, despite embedding inputs rising from 506 to 716; larger-corpus costs remain uncertain.
+
+[[scripts/evaluate-rag-comparison.mjs]] replays metrics from frozen outputs. [[scripts/prepare-rag-comparison.mjs]], [[scripts/run-pre-rag-comparison.mjs]], [[scripts/run-current-rag-comparison.mjs]], [[scripts/run-release-rag-comparison.mjs]], and [[scripts/benchmark-rag-generations.mjs]] reproduce the isolated runs. See [[tests/cases/hybrid/experiments/002-pre-rag-comparison/README.md]] for controls, caveats, dependency setup, and rollback commits.

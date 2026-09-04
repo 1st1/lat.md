@@ -1,0 +1,4045 @@
+[
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration",
+    "grade": 0,
+    "reason": "Describes external preview routes and rendering, not authored wiki-link syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "417-438",
+        "finding": "Describes external preview routes and rendering, not authored wiki-link syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "Formats command-output source snippets; does not explain links to external repositories.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "Formats command-output source snippets; does not explain links to external repositories."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Nested in-file refs pass",
+    "grade": 0,
+    "reason": "Tests nested section links, with no image embedding syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "94-97",
+        "finding": "Tests nested section links, with no image embedding syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Passage and context experiments",
+    "grade": 1,
+    "reason": "Explains chunk-context dilution and ranking experiments, but not the overall retrieval pipeline or backlink policy.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "47-54",
+        "finding": "Explains chunk-context dilution and ranking experiments, but not the overall retrieval pipeline or backlink policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Rejects invalid vectors before changing the index",
+    "grade": 1,
+    "reason": "Covers embedding validation and atomic index safety, one supporting detail of RAG architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "153-156",
+        "finding": "Covers embedding validation and atomic index safety, one supporting detail of RAG architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Reuses an indexed search session",
+    "grade": 1,
+    "reason": "Describes indexed sessions and hydration, but not chunking or storage redesign.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "89-92",
+        "finding": "Describes indexed sessions and hydration, but not chunking or storage redesign."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Builds a section tree from nested headings",
+    "grade": 0,
+    "reason": "Parses heading hierarchy; does not split oversized Markdown blocks.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "9-12",
+        "finding": "Parses heading hierarchy; does not split oversized Markdown blocks."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Skips an unbuilt search index",
+    "grade": 1,
+    "reason": "Covers absent-index handling, adjacent to model-state failures but not mismatch detection or reindex prompts.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "93-96",
+        "finding": "Covers absent-index handling, adjacent to model-state failures but not mismatch detection or reindex prompts."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Nested in-file refs pass",
+    "grade": 1,
+    "reason": "Shows extensionless local section links accepted by validation, but does not establish optional extensions or external defaults.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "94-97",
+        "finding": "Shows extensionless local section links accepted by validation, but does not establish optional extensions or external defaults."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/check-links#Check Links#Rejects non-GitHub heading fragments",
+    "grade": 0,
+    "reason": "Specifies heading-fragment slug rules, not fragmentless repository file/directory support.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "34-37",
+        "finding": "Specifies heading-fragment slug rules, not fragmentless repository file/directory support."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction#Extracts wiki link references",
+    "grade": 0,
+    "reason": "Tests extracting wiki-link metadata rather than validating arbitrary repository targets.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "9-12",
+        "finding": "Tests extracting wiki-link metadata rather than validating arbitrary repository targets."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref refs finds md references",
+    "grade": 0,
+    "reason": "Tests full-path wiki backlink lookup; no literal bracket escaping.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "66-69",
+        "finding": "Tests full-path wiki backlink lookup; no literal bracket escaping."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "Inline-code formatting of source snippets does not address Markdown shortcut references.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "Inline-code formatting of source snippets does not address Markdown shortcut references."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Existing image evidence",
+    "grade": 0,
+    "reason": "Reports image retrieval rankings; no heading-resolution behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "13-26",
+        "finding": "Reports image retrieval rankings; no heading-resolution behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/check-md#Check MD#Passes with valid links",
+    "grade": 0,
+    "reason": "Generic valid-link and source-symbol tests do not establish literal versus slug heading behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "18-44",
+        "finding": "Generic valid-link and source-symbol tests do not establish literal versus slug heading behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#Validation",
+    "grade": 0,
+    "reason": "External target validation does not describe packed same-line reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "381-386",
+        "finding": "External target validation does not describe packed same-line reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref refs finds md references",
+    "grade": 0,
+    "reason": "Backlink lookup with full refs is unrelated to packed reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "66-69",
+        "finding": "Backlink lookup with full refs is unrelated to packed reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q018",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 0,
+    "reason": "Wiki validation tests do not cover the ordinary-link versus wiki heading-form distinction.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-44",
+        "finding": "Wiki validation tests do not cover the ordinary-link versus wiki heading-form distinction."
+      }
+    ]
+  },
+  {
+    "queryId": "q019",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Parser Integration",
+    "grade": 2,
+    "reason": "Directly explains rendered Markdown heading text and format-specific generated/explicit aliases, including case rules.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "70-83",
+        "finding": "Directly explains rendered Markdown heading text and format-specific generated/explicit aliases, including case rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q020",
+    "sectionId": "lat.md/cli#CLI#refs",
+    "grade": 1,
+    "reason": "Explains source-symbol queries and exact resolution in refs, but not wiki tokenizer grammar or external handles.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "46-65",
+        "finding": "Explains source-symbol queries and exact resolution in refs, but not wiki tokenizer grammar or external handles."
+      }
+    ]
+  },
+  {
+    "queryId": "q021",
+    "sectionId": "lat.md/cli#CLI#check",
+    "grade": 0,
+    "reason": "General check command documentation lacks AsciiDoc alias generation or local checkout semantics.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "66-134",
+        "finding": "General check command documentation lacks AsciiDoc alias generation or local checkout semantics."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration",
+    "grade": 0,
+    "reason": "Browser integration does not explain provider cache cleanup on switching to local.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "417-438",
+        "finding": "Browser integration does not explain provider cache cleanup on switching to local."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration",
+    "grade": 0,
+    "reason": "Preview formats and routes do not specify extension inference or required extensions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "417-438",
+        "finding": "Preview formats and routes do not specify extension inference or required extensions."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/tests/check-links#Check Links#Default check validates relative links",
+    "grade": 0,
+    "reason": "Ordinary broken-link checking does not define external default extensions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "22-25",
+        "finding": "Ordinary broken-link checking does not define external default extensions."
+      }
+    ]
+  },
+  {
+    "queryId": "q024",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+    "grade": 1,
+    "reason": "Defines stable external identity and configured handles, useful context for cache keys, but omits cache layout/invalidation and handle naming rules.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "39-69",
+        "finding": "Defines stable external identity and configured handles, useful context for cache keys, but omits cache layout/invalidation and handle naming rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/search-design#Search Redesign#Evaluation and delivery#Repository relevance case",
+    "grade": 0,
+    "reason": "A search-ranking investigation does not describe external configuration/retrieval diagnostics.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "152-163",
+        "finding": "A search-ranking investigation does not describe external configuration/retrieval diagnostics."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/view/specs#View Tests#Shows live validation errors",
+    "grade": 1,
+    "reason": "Explains presentation and clearing of live validation errors, but not external-source diagnostics or repair steps.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "320-325",
+        "finding": "Explains presentation and clearing of live validation errors, but not external-source diagnostics or repair steps."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/view/specs#View Tests#Renders canonical document trees",
+    "grade": 1,
+    "reason": "Identifies external formats and canonical link routing, but omits named fragment kinds and line-range rejection.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "118-127",
+        "finding": "Identifies external formats and canonical link routing, but omits named fragment kinds and line-range rejection."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#On-demand Retrieval",
+    "grade": 1,
+    "reason": "Explains retrieval scope and lazy checkout, but not prefix application or checkout suggestions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "472-479",
+        "finding": "Explains retrieval scope and lazy checkout, but not prefix application or checkout suggestions."
+      }
+    ]
+  },
+  {
+    "queryId": "q028",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Merge Semantics",
+    "grade": 1,
+    "reason": "Distinguishes local overrides from canonical fetch/checkout choices and restricted fetch-url overrides, without template rules.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "176-189",
+        "finding": "Distinguishes local overrides from canonical fetch/checkout choices and restricted fetch-url overrides, without template rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q029",
+    "sectionId": "lat.md/view/specs#View Tests#Renders canonical document trees",
+    "grade": 2,
+    "reason": "Directly documents the three external document formats and AST-to-canonical-tree parser architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "118-127",
+        "finding": "Directly documents the three external document formats and AST-to-canonical-tree parser architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#GitHub Repository Boundaries",
+    "grade": 0,
+    "reason": "GitHub literal references in rendered Markdown do not explain source inspection commands.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "261-269",
+        "finding": "GitHub literal references in rendered Markdown do not explain source inspection commands."
+      }
+    ]
+  },
+  {
+    "queryId": "q033",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis",
+    "grade": 2,
+    "reason": "Contains the authoritative source-format registry, grammar/extractor/test obligations, and code-mention discovery scope.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "1-87",
+        "finding": "Contains the authoritative source-format registry, grammar/extractor/test obligations, and code-mention discovery scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q034",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Finds performance section for latency query",
+    "grade": 0,
+    "reason": "Tests relevance for a latency query, not check profiling or parser caches.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "51-55",
+        "finding": "Tests relevance for a latency query, not check profiling or parser caches."
+      }
+    ]
+  },
+  {
+    "queryId": "q036",
+    "sectionId": "lat.md/tests/hook#Hook",
+    "grade": 1,
+    "reason": "Contains ignore-aware tracked/untracked discovery tests, but not the generic walker or ripgrep architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "6-80",
+        "finding": "Contains ignore-aware tracked/untracked discovery tests, but not the generic walker or ripgrep architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links",
+    "grade": 1,
+    "reason": "Explains project-root-relative references and safe symlink boundaries, but not nearest-project discovery.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "89-171",
+        "finding": "Explains project-root-relative references and safe symlink boundaries, but not nearest-project discovery."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/cli#CLI#refs",
+    "grade": 0,
+    "reason": "Reference lookup has no parser-cache naming, sharding, or content-hash contract.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "46-65",
+        "finding": "Reference lookup has no parser-cache naming, sharding, or content-hash contract."
+      }
+    ]
+  },
+  {
+    "queryId": "q039",
+    "sectionId": "lat.md/markdown#Markdown#Strikethrough",
+    "grade": 0,
+    "reason": "Strikethrough serialization has no parser-cache invalidation contract.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "11-14",
+        "finding": "Strikethrough serialization has no parser-cache invalidation contract."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/cli#CLI#refs",
+    "grade": 1,
+    "reason": "Documents separate Markdown/code reference scanning scopes, but not shared inventory, GUI watches, or ripgrep fallback.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "46-65",
+        "finding": "Documents separate Markdown/code reference scanning scopes, but not shared inventory, GUI watches, or ripgrep fallback."
+      }
+    ]
+  },
+  {
+    "queryId": "q041",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions",
+    "grade": 0,
+    "reason": "Generated instruction validation is unrelated to graph layout computation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "56-63",
+        "finding": "Generated instruction validation is unrelated to graph layout computation."
+      }
+    ]
+  },
+  {
+    "queryId": "q043",
+    "sectionId": "lat.md/cli#CLI#search#Indexing",
+    "grade": 0,
+    "reason": "Passage indexing does not explain graph cached layout or semantic node filtering.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "407-414",
+        "finding": "Passage indexing does not explain graph cached layout or semantic node filtering."
+      }
+    ]
+  },
+  {
+    "queryId": "q046",
+    "sectionId": "lat.md/view/specs#View Tests#Shows section back-references",
+    "grade": 0,
+    "reason": "Section reference-menu navigation does not explain graph presentation persistence.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "286-295",
+        "finding": "Section reference-menu navigation does not explain graph presentation persistence."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/view/specs#View Tests#Refreshes search after Markdown changes",
+    "grade": 0,
+    "reason": "Search refresh indexing has no relevance-based graph sizing behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "316-319",
+        "finding": "Search refresh indexing has no relevance-based graph sizing behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q048",
+    "sectionId": "lat.md/view/specs#View Tests#Shows source reference context",
+    "grade": 0,
+    "reason": "Source reference context does not define graph node types or backlink sizing.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "282-285",
+        "finding": "Source reference context does not define graph node types or backlink sizing."
+      }
+    ]
+  },
+  {
+    "queryId": "q049",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Wiki-link reference counts",
+    "grade": 0,
+    "reason": "Inline wiki reference badges do not explain graph projection or route-driven graph inspector.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "213-222",
+        "finding": "Inline wiki reference badges do not explain graph projection or route-driven graph inspector."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 1,
+    "reason": "Explains graph-edge collapsing and same-document contribution to backlink totals, but not paragraph/code-location count deduplication.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Explains graph-edge collapsing and same-document contribution to backlink totals, but not paragraph/code-location count deduplication."
+      }
+    ]
+  },
+  {
+    "queryId": "q055",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput renders source ref line ranges",
+    "grade": 0,
+    "reason": "CLI symbol line-range formatting does not describe GUI context buffers or expansion.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "54-57",
+        "finding": "CLI symbol line-range formatting does not describe GUI context buffers or expansion."
+      }
+    ]
+  },
+  {
+    "queryId": "q058",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Live UI",
+    "grade": 0,
+    "reason": "External document rendering does not address require-code-mention frontmatter or its browser test.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "425-430",
+        "finding": "External document rendering does not address require-code-mention frontmatter or its browser test."
+      }
+    ]
+  },
+  {
+    "queryId": "q058",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Live external previews",
+    "grade": 0,
+    "reason": "External preview tests do not cover document frontmatter or require-code-mention.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "64-71",
+        "finding": "External preview tests do not cover document frontmatter or require-code-mention."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/view/specs#View Tests#Updates long-running views incrementally#Recovers interrupted document requests",
+    "grade": 0,
+    "reason": "Transport retries and cancelled navigation are distinct from same-document fragment remount avoidance.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "312-315",
+        "finding": "Transport retries and cancelled navigation are distinct from same-document fragment remount avoidance."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/tests/check-index#Check Index#Detects missing entries",
+    "grade": 0,
+    "reason": "Missing index entries are validation conditions, but section gives no sidebar ancestor-marker propagation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "21-24",
+        "finding": "Missing index entries are validation conditions, but section gives no sidebar ancestor-marker propagation."
+      }
+    ]
+  },
+  {
+    "queryId": "q061",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 0,
+    "reason": "Demo navigation links do not describe linked image/resource export copying.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Demo navigation links do not describe linked image/resource export copying."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Wiki-link extraction tests do not test rendered segment styling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Wiki-link extraction tests do not test rendered segment styling."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Graph-edge styling categories are unrelated to wiki-link text colors and underlines.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Graph-edge styling categories are unrelated to wiki-link text colors and underlines."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/markdown#Markdown#GitHub Surface Boundaries",
+    "grade": 0,
+    "reason": "GitHub enrichment exclusions do not define reference-definition rows.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "65-70",
+        "finding": "GitHub enrichment exclusions do not define reference-definition rows."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref refs finds md references",
+    "grade": 0,
+    "reason": "CLI backlinks are unrelated to rendered reference-definition rows.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "66-69",
+        "finding": "CLI backlinks are unrelated to rendered reference-definition rows."
+      }
+    ]
+  },
+  {
+    "queryId": "q066",
+    "sectionId": "lat.md/tests/hook#Hook#Counts tracked and untracked files together",
+    "grade": 0,
+    "reason": "Stop-hook churn accounting does not select inline versus block Git rendering.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "72-77",
+        "finding": "Stop-hook churn accounting does not select inline versus block Git rendering."
+      }
+    ]
+  },
+  {
+    "queryId": "q071",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Configuration Reloading",
+    "grade": 0,
+    "reason": "External resolver cache invalidation is distinct from exported JSON payload caching.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "353-360",
+        "finding": "External resolver cache invalidation is distinct from exported JSON payload caching."
+      }
+    ]
+  },
+  {
+    "queryId": "q074",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs#Detects missing code mention for required file",
+    "grade": 0,
+    "reason": "Required code mentions do not govern build overwrite or ownership markers.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "14-17",
+        "finding": "Required code mentions do not govern build overwrite or ownership markers."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/cli#CLI#search#Backend selection",
+    "grade": 0,
+    "reason": "Embedding backend selection does not describe HTTP asset cache headers or deployment protection.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "356-389",
+        "finding": "Embedding backend selection does not describe HTTP asset cache headers or deployment protection."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/cli#CLI#init#Pi",
+    "grade": 0,
+    "reason": "Pi extension setup has no serverless deployment search behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "203-211",
+        "finding": "Pi extension setup has no serverless deployment search behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#Read-only Access",
+    "grade": 0,
+    "reason": "Read-only external repository access is unrelated to serverless runtime exclusions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "466-471",
+        "finding": "Read-only external repository access is unrelated to serverless runtime exclusions."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Runtime boundary",
+    "grade": 1,
+    "reason": "Explains shared live/exported runtime and no-git behavior, but not Vercel ephemeral preindexed search or watcher exclusion.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "5-40",
+        "finding": "Explains shared live/exported runtime and no-git behavior, but not Vercel ephemeral preindexed search or watcher exclusion."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides",
+    "grade": 0,
+    "reason": "External local overrides do not govern build output replacement.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "160-201",
+        "finding": "External local overrides do not govern build output replacement."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/cli#CLI#search#Indexing",
+    "grade": 1,
+    "reason": "Explains cached analysis and embedding reuse relevant to indexing cost, but not build-time preindexing or runtime packaging.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "407-414",
+        "finding": "Explains cached analysis and embedding reuse relevant to indexing cost, but not build-time preindexing or runtime packaging."
+      }
+    ]
+  },
+  {
+    "queryId": "q081",
+    "sectionId": "lat.md/dev-process#Dev Process#Testing#Continuous Integration",
+    "grade": 1,
+    "reason": "Names graph validation CI and cross-platform tests, but not profiling flags or phase diagnostics.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "104-111",
+        "finding": "Names graph validation CI and cross-platform tests, but not profiling flags or phase diagnostics."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Real query corpus",
+    "grade": 0,
+    "reason": "Query-log extraction metadata does not document CLI JSON output options.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "104-112",
+        "finding": "Query-log extraction metadata does not document CLI JSON output options."
+      }
+    ]
+  },
+  {
+    "queryId": "q083",
+    "sectionId": "lat.md/tests/hook#Hook#Exits silently on second pass when check passes",
+    "grade": 1,
+    "reason": "Documents guarded second-pass stop behavior, one lifecycle detail, but no Claude/Codex adapter parity.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "40-43",
+        "finding": "Documents guarded second-pass stop behavior, one lifecycle detail, but no Claude/Codex adapter parity."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref passes check code-refs",
+    "grade": 0,
+    "reason": "Code-reference validation is unrelated to init-version state after cloning.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "54-57",
+        "finding": "Code-reference validation is unrelated to init-version state after cloning."
+      }
+    ]
+  },
+  {
+    "queryId": "q086",
+    "sectionId": "lat.md/tests/hook#Hook#Exits silently when check passes and no diff",
+    "grade": 1,
+    "reason": "Covers clean diff no-op hook behavior, but not untracked files or ignore handling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "12-15",
+        "finding": "Covers clean diff no-op hook behavior, but not untracked files or ignore handling."
+      }
+    ]
+  },
+  {
+    "queryId": "q089",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides",
+    "grade": 0,
+    "reason": "External checkout overrides have no Stop hook Git scope behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "160-201",
+        "finding": "External checkout overrides have no Stop hook Git scope behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q090",
+    "sectionId": "lat.md/cli#CLI#init#Codex",
+    "grade": 1,
+    "reason": "Describes Codex Stop hook validation and setup, but omits non-Git handling.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "240-254",
+        "finding": "Describes Codex Stop hook validation and setup, but omits non-Git handling."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Ambiguous short ref in code",
+    "grade": 0,
+    "reason": "Ambiguous short refs are unrelated to Dart shorthand or annotation-adjacent scanning.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "22-25",
+        "finding": "Ambiguous short refs are unrelated to Dart shorthand or annotation-adjacent scanning."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Returns serializable file facts",
+    "grade": 0,
+    "reason": "Generic Markdown file-analysis serialization does not explain Java source parsing or registration.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "10-13",
+        "finding": "Generic Markdown file-analysis serialization does not explain Java source parsing or registration."
+      }
+    ]
+  },
+  {
+    "queryId": "q094",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Build targets#Static export",
+    "grade": 1,
+    "reason": "Explains deployment asset paths and bundling, but not WASM glue patching or embedding asset tracing.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "63-90",
+        "finding": "Explains deployment asset paths and bundling, but not WASM glue patching or embedding asset tracing."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/tests/mcp#MCP#Lists all tools",
+    "grade": 0,
+    "reason": "MCP tool listing does not provide install or initial setup commands.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "11-13",
+        "finding": "MCP tool listing does not provide install or initial setup commands."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/markdown#Markdown#Bare Autolinks",
+    "grade": 0,
+    "reason": "Bare web autolinks do not explain external repository wiki-link syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "19-22",
+        "finding": "Bare web autolinks do not explain external repository wiki-link syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Links and Autolinks",
+    "grade": 0,
+    "reason": "Web and email link examples omit configured external source handles and symbols.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "36-44",
+        "finding": "Web and email link examples omit configured external source handles and symbols."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/cli#CLI#expand",
+    "grade": 0,
+    "reason": "Reference expansion and fuzzy section lookup do not describe lexical stemming.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "135-149",
+        "finding": "Reference expansion and fuzzy section lookup do not describe lexical stemming."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/search-design#Search Redesign#Coverage and ownership",
+    "grade": 1,
+    "reason": "Explains passage ownership, embedding limits and cache identity, but not hybrid ranking or backlink relevance.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "5-14",
+        "finding": "Explains passage ownership, embedding limits and cache identity, but not hybrid ranking or backlink relevance."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/tests/locate#Locate",
+    "grade": 0,
+    "reason": "Section-name locate matching tests do not describe embedding storage or retrieval architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/locate.md",
+        "lines": "5-39",
+        "finding": "Section-name locate matching tests do not describe embedding storage or retrieval architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/check-headless#Check Explicit Directories#Reuses check data across validators",
+    "grade": 0,
+    "reason": "Validator analysis reuse does not describe splitting oversized Markdown blocks.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-headless.md",
+        "lines": "23-26",
+        "finding": "Validator analysis reuse does not describe splitting oversized Markdown blocks."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Graph edge deduplication does not describe search chunk boundaries.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Graph edge deduplication does not describe search chunk boundaries."
+      }
+    ]
+  },
+  {
+    "queryId": "q011",
+    "sectionId": "lat.md/parser#Parser#Wiki Links",
+    "grade": 1,
+    "reason": "Identifies the wiki-link parser and node structure, but omits ordinary-versus-wiki heading resolution rules.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "29-38",
+        "finding": "Identifies the wiki-link parser and node structure, but omits ordinary-versus-wiki heading resolution rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref passes check md",
+    "grade": 1,
+    "reason": "Directly verifies optional .md on local short references, but does not cover external defaults or their validation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "26-29",
+        "finding": "Directly verifies optional .md on local short references, but does not cover external defaults or their validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 2,
+    "reason": "Child tests explicitly accept existing fragmentless repository files/directories and reject unsupported fragments.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-44",
+        "finding": "Child tests explicitly accept existing fragmentless repository files/directories and reject unsupported fragments."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Nested in-file refs pass",
+    "grade": 0,
+    "reason": "Nested in-file heading references do not establish arbitrary repository path support.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "94-97",
+        "finding": "Nested in-file heading references do not establish arbitrary repository path support."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref refs finds md references",
+    "grade": 0,
+    "reason": "Reverse-reference lookup does not explain escaping Markdown shortcut references.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "42-45",
+        "finding": "Reverse-reference lookup does not explain escaping Markdown shortcut references."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Renders wiki links in firstParagraph",
+    "grade": 0,
+    "reason": "First-paragraph wiki-link serialization is unrelated to literal bracket escaping.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "21-23",
+        "finding": "First-paragraph wiki-link serialization is unrelated to literal bracket escaping."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/check-links#Check Links",
+    "grade": 2,
+    "reason": "Includes tests for ordinary GitHub-only fragments and wiki acceptance of literal headings and slugs.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "6-41",
+        "finding": "Includes tests for ordinary GitHub-only fragments and wiki acceptance of literal headings and slugs."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Wiki-reference extraction tests do not cover heading fragment normalization or lookup.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Wiki-reference extraction tests do not cover heading fragment normalization or lookup."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 0,
+    "reason": "Wiki target validation does not cover ordinary Markdown reference-definition parsing.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-44",
+        "finding": "Wiki target validation does not cover ordinary Markdown reference-definition parsing."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref refs finds md references",
+    "grade": 0,
+    "reason": "Reverse-reference lookup does not cover packed Markdown reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "42-45",
+        "finding": "Reverse-reference lookup does not cover packed Markdown reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q018",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Extracting wiki-reference metadata does not verify fragment compatibility.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Extracting wiki-reference metadata does not verify fragment compatibility."
+      }
+    ]
+  },
+  {
+    "queryId": "q019",
+    "sectionId": "lat.md/markdown#Markdown#Leading Paragraph",
+    "grade": 0,
+    "reason": "Leading-paragraph validation does not describe heading identity normalization.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "199-206",
+        "finding": "Leading-paragraph validation does not describe heading identity normalization."
+      }
+    ]
+  },
+  {
+    "queryId": "q020",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 1,
+    "reason": "Covers extracted wiki-reference metadata, but not alias grammar or external/source fragment resolution.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Covers extracted wiki-reference metadata, but not alias grammar or external/source fragment resolution."
+      }
+    ]
+  },
+  {
+    "queryId": "q021",
+    "sectionId": "lat.md/cli#CLI#expand",
+    "grade": 0,
+    "reason": "Local Markdown expansion matching does not explain AsciiDoc heading aliases.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "135-149",
+        "finding": "Local Markdown expansion matching does not explain AsciiDoc heading aliases."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 0,
+    "reason": "External backlink lookup does not explain local provider cache transitions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "External backlink lookup does not explain local provider cache transitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/markdown#Markdown#GitHub Surface Boundaries",
+    "grade": 0,
+    "reason": "GitHub presentation enrichments do not determine external path extensions.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "65-70",
+        "finding": "GitHub presentation enrichments do not determine external path extensions."
+      }
+    ]
+  },
+  {
+    "queryId": "q024",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Persistent cache",
+    "grade": 1,
+    "reason": "Explains namespaced parsed-cache identity and invalidation, but not provider metadata generations or valid handle rules.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "33-50",
+        "finding": "Explains namespaced parsed-cache identity and invalidation, but not provider metadata generations or valid handle rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q024",
+    "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+    "grade": 0,
+    "reason": "Local short-reference resolution does not describe external provider cache metadata.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "56-71",
+        "finding": "Local short-reference resolution does not describe external provider cache metadata."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/tests/check-links#Check Links#Detects broken relative links",
+    "grade": 0,
+    "reason": "Ordinary broken-relative-link diagnostics do not describe external configuration/retrieval failures.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "10-13",
+        "finding": "Ordinary broken-relative-link diagnostics do not describe external configuration/retrieval failures."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/cli#CLI#search#Indexing",
+    "grade": 0,
+    "reason": "Search chunk ranges and token limits do not define authored external fragment syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "407-414",
+        "finding": "Search chunk ranges and token limits do not define authored external fragment syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Cache Layout",
+    "grade": 1,
+    "reason": "Explains prefix-expanded cache paths, but not prefix configuration or suggested sparse checkouts.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "303-330",
+        "finding": "Explains prefix-expanded cache paths, but not prefix configuration or suggested sparse checkouts."
+      }
+    ]
+  },
+  {
+    "queryId": "q028",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Cache Invalidation",
+    "grade": 1,
+    "reason": "Explains strategy-specific cache generations, but omits URL-template inference and placeholder validation.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "331-352",
+        "finding": "Explains strategy-specific cache generations, but omits URL-template inference and placeholder validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q029",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Local wiki-reference extraction tests do not describe external document formats or anchors.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Local wiki-reference extraction tests do not describe external document formats or anchors."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+    "grade": 1,
+    "reason": "Supplies canonical repository, pinned commit and prefix metadata, but not source inspection or editable checkout instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "84-159",
+        "finding": "Supplies canonical repository, pinned commit and prefix metadata, but not source inspection or editable checkout instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q031",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Command sessions",
+    "grade": 1,
+    "reason": "Explains command-scoped analysis reuse, but not bounded worker scheduling.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "81-87",
+        "finding": "Explains command-scoped analysis reuse, but not bounded worker scheduling."
+      }
+    ]
+  },
+  {
+    "queryId": "q033",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#File analysis",
+    "grade": 0,
+    "reason": "Markdown file facts do not describe the supported source-language registry.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "5-14",
+        "finding": "Markdown file facts do not describe the supported source-language registry."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/cli#CLI#hook#Stop",
+    "grade": 0,
+    "reason": "Stop hook invokes validation but does not establish concurrent validators or shared scans.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "307-316",
+        "finding": "Stop hook invokes validation but does not establish concurrent validators or shared scans."
+      }
+    ]
+  },
+  {
+    "queryId": "q036",
+    "sectionId": "lat.md/tests/hook#Hook#Counts untracked files before the first commit",
+    "grade": 0,
+    "reason": "Counting untracked files before the first commit does not explain discovery traversal or ignore handling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "78-80",
+        "finding": "Counting untracked files before the first commit does not explain discovery traversal or ignore handling."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/cli#CLI#check#index",
+    "grade": 0,
+    "reason": "Documentation directory index validation is distinct from persistent parser-cache identity.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "118-134",
+        "finding": "Documentation directory index validation is distinct from persistent parser-cache identity."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Persists and reuses unchanged file analysis",
+    "grade": 1,
+    "reason": "Verifies content-addressed cache reuse, but omits path identity, sharding and collision avoidance.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "22-25",
+        "finding": "Verifies content-addressed cache reuse, but omits path identity, sharding and collision avoidance."
+      }
+    ]
+  },
+  {
+    "queryId": "q039",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 0,
+    "reason": "Section tree metadata tests do not describe serialized parser-cache version or hash invalidation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-23",
+        "finding": "Section tree metadata tests do not describe serialized parser-cache version or hash invalidation."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs#Detects dangling code ref",
+    "grade": 0,
+    "reason": "Dangling-reference validation alone does not describe discovery inventory, sharing or watcher scope.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "10-13",
+        "finding": "Dangling-reference validation alone does not describe discovery inventory, sharing or watcher scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q041",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Reuses vectors after source movement",
+    "grade": 0,
+    "reason": "Reusing embeddings after blank-line movement is unrelated to graph layout stability.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "125-128",
+        "finding": "Reusing embeddings after blank-line movement is unrelated to graph layout stability."
+      }
+    ]
+  },
+  {
+    "queryId": "q043",
+    "sectionId": "lat.md/view/graph#Graph View",
+    "grade": 2,
+    "reason": "Client and server subsections explain cached projections, deterministic non-animated layout and semantic section-to-node filtering.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "1-106",
+        "finding": "Client and server subsections explain cached projections, deterministic non-animated layout and semantic section-to-node filtering."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Formula and lexical experiments",
+    "grade": 0,
+    "reason": "Retrieval formula experiments do not describe graph node radius normalization.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "27-46",
+        "finding": "Retrieval formula experiments do not describe graph node radius normalization."
+      }
+    ]
+  },
+  {
+    "queryId": "q048",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Document formats#Native document tree projection",
+    "grade": 0,
+    "reason": "External document-tree rendering tests do not describe graph node kinds or backlink sizing.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "28-31",
+        "finding": "External document-tree rendering tests do not describe graph node kinds or backlink sizing."
+      }
+    ]
+  },
+  {
+    "queryId": "q049",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration",
+    "grade": 1,
+    "reason": "Explains shared previews and external routing with graph preservation, but not graph projection or route-driven inspector architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "417-438",
+        "finding": "Explains shared previews and external routing with graph preservation, but not graph projection or route-driven inspector architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_section shows section content",
+    "grade": 0,
+    "reason": "Section output content test does not cover backlink occurrence deduplication.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "26-29",
+        "finding": "Section output content test does not cover backlink occurrence deduplication."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/view/specs#View Tests#Expands matching passages",
+    "grade": 0,
+    "reason": "Passage expand/collapse control does not explain query URL state or Back navigation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "236-239",
+        "finding": "Passage expand/collapse control does not explain query URL state or Back navigation."
+      }
+    ]
+  },
+  {
+    "queryId": "q055",
+    "sectionId": "lat.md/view/specs#View Tests#Uses Geist syntax colors",
+    "grade": 0,
+    "reason": "Syntax color roles do not define focused source context buffers or line expansion.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "352-355",
+        "finding": "Syntax color roles do not define focused source context buffers or line expansion."
+      }
+    ]
+  },
+  {
+    "queryId": "q058",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs",
+    "grade": 1,
+    "reason": "Verifies require-code-mention validation, but omits browser frontmatter protocol and rendering tests.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "6-26",
+        "finding": "Verifies require-code-mention validation, but omits browser frontmatter protocol and rendering tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 0,
+    "reason": "External backlink lookup does not describe same-document browser routing.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "External backlink lookup does not describe same-document browser routing."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/cli#CLI#check#code-refs",
+    "grade": 0,
+    "reason": "Code-reference validity rules do not describe sidebar ancestor error markers.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "102-108",
+        "finding": "Code-reference validity rules do not describe sidebar ancestor error markers."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/view/specs#View Tests#Builds a nested file tree#Uses authored index order",
+    "grade": 1,
+    "reason": "Explains sidebar hierarchy ordering and visibility during invalid states, but not propagation of validation markers.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "362-367",
+        "finding": "Explains sidebar hierarchy ordering and visibility during invalid states, but not propagation of validation markers."
+      }
+    ]
+  },
+  {
+    "queryId": "q061",
+    "sectionId": "lat.md/view/specs#View Tests#Renders canonical document trees",
+    "grade": 1,
+    "reason": "Explains static traversal and rewriting of document link properties, but not copying linked image/resources.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "118-127",
+        "finding": "Explains static traversal and rewriting of document link properties, but not copying linked image/resources."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/tests/roundtrip#Roundtrip",
+    "grade": 0,
+    "reason": "Markdown parse/render roundtrip fidelity does not describe visual wiki-link colors or underlines.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/roundtrip.md",
+        "lines": "1-11",
+        "finding": "Markdown parse/render roundtrip fidelity does not describe visual wiki-link colors or underlines."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights source syntax safely",
+    "grade": 0,
+    "reason": "Safe syntax token rendering does not define source-link icon wrapping.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "348-351",
+        "finding": "Safe syntax token rendering does not define source-link icon wrapping."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/tests/check-links#Check Links#Rejects non-GitHub heading fragments",
+    "grade": 0,
+    "reason": "Heading fragment validation does not describe reference-definition presentation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "34-37",
+        "finding": "Heading fragment validation does not describe reference-definition presentation."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 0,
+    "reason": "Wiki and ordinary link demos do not show reference-definition rows or label badges.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Wiki and ordinary link demos do not show reference-definition rows or label badges."
+      }
+    ]
+  },
+  {
+    "queryId": "q066",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Reuses unchanged chunks within edited sections",
+    "grade": 0,
+    "reason": "Embedding cache invalidation after word edits does not describe Git diff presentation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "129-132",
+        "finding": "Embedding cache invalidation after word edits does not describe Git diff presentation."
+      }
+    ]
+  },
+  {
+    "queryId": "q071",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live project index",
+    "grade": 1,
+    "reason": "Explains live snapshot and client cache invalidation, but not exported JSON layout or waterfall prevention.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "133-150",
+        "finding": "Explains live snapshot and client cache invalidation, but not exported JSON layout or waterfall prevention."
+      }
+    ]
+  },
+  {
+    "queryId": "q074",
+    "sectionId": "lat.md/tests/hook#Hook#Ignores non-code files in diff",
+    "grade": 0,
+    "reason": "Stop-hook churn filtering does not describe generated build ownership or overwrite policy.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "48-51",
+        "finding": "Stop-hook churn filtering does not describe generated build ownership or overwrite policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Persists and reuses unchanged file analysis",
+    "grade": 0,
+    "reason": "Parser analysis disk caching does not define Vercel HTTP asset cache headers.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "22-25",
+        "finding": "Parser analysis disk caching does not define Vercel HTTP asset cache headers."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface#Add",
+    "grade": 0,
+    "reason": "External source configuration commands do not describe serverless search deployment.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "212-256",
+        "finding": "External source configuration commands do not describe serverless search deployment."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/tests/mcp#MCP#Lists all tools",
+    "grade": 0,
+    "reason": "MCP tool enumeration does not describe portable Vercel runtime capabilities.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "11-13",
+        "finding": "MCP tool enumeration does not describe portable Vercel runtime capabilities."
+      }
+    ]
+  },
+  {
+    "queryId": "q077",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Packages stemmer runtime assets",
+    "grade": 1,
+    "reason": "Directly verifies deployed search includes stemmer JavaScript and WASM, but does not describe the complete portable server artifact.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "177-179",
+        "finding": "Directly verifies deployed search includes stemmer JavaScript and WASM, but does not describe the complete portable server artifact."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/tests/check-links#Check Links#Detects broken relative links",
+    "grade": 0,
+    "reason": "Broken relative-link validation does not define build destination overwrite behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "10-13",
+        "finding": "Broken relative-link validation does not define build destination overwrite behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Reuses an indexed search session",
+    "grade": 1,
+    "reason": "Documents database/embedder session reuse, but omits server build preindexing and cold-start behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "89-92",
+        "finding": "Documents database/embedder session reuse, but omits server build preindexing and cold-start behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q081",
+    "sectionId": "lat.md/tests/tests#Tests#Conventions",
+    "grade": 1,
+    "reason": "Identifies validation fixture conventions and relevant test groups, but not profiling flags or diagnostic phases.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/tests.md",
+        "lines": "5-37",
+        "finding": "Identifies validation fixture conventions and relevant test groups, but not profiling flags or diagnostic phases."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Wiki-reference extraction metadata is unrelated to CLI JSON output modes.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Wiki-reference extraction metadata is unrelated to CLI JSON output modes."
+      }
+    ]
+  },
+  {
+    "queryId": "q084",
+    "sectionId": "lat.md/tests/check-headless#Check Explicit Directories#Profiles persistent parser cache hits",
+    "grade": 0,
+    "reason": "Parser-cache profiling tests do not describe Codex setup or lifecycle parity.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-headless.md",
+        "lines": "27-30",
+        "finding": "Parser-cache profiling tests do not describe Codex setup or lifecycle parity."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback#checkCodeRefs detects dangling ref without rg",
+    "grade": 0,
+    "reason": "Ripgrep fallback validation does not explain init-version metadata warnings.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "14-17",
+        "finding": "Ripgrep fallback validation does not explain init-version metadata warnings."
+      }
+    ]
+  },
+  {
+    "queryId": "q087",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#Section and Expand",
+    "grade": 0,
+    "reason": "External section expansion does not describe generated AGENTS leading paragraphs.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "387-392",
+        "finding": "External section expansion does not describe generated AGENTS leading paragraphs."
+      }
+    ]
+  },
+  {
+    "queryId": "q089",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Initialization",
+    "grade": 0,
+    "reason": "Ignoring local external-source overrides does not describe nested-project Stop-hook churn scope.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "190-201",
+        "finding": "Ignoring local external-source overrides does not describe nested-project Stop-hook churn scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q090",
+    "sectionId": "lat.md/tests/init#Init#Lat-owned build output ignore",
+    "grade": 0,
+    "reason": "Git build-output ignore initialization does not describe Stop-hook behavior outside Git.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "64-66",
+        "finding": "Git build-output ignore initialization does not describe Stop-hook behavior outside Git."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis",
+    "grade": 2,
+    "reason": "Source analysis names Java support, symbol-table facts and authoritative registry requirements for grammars, extraction and test fixtures.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "1-87",
+        "finding": "Source analysis names Java support, symbol-table facts and authoritative registry requirements for grammars, extraction and test fixtures."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Markdown wiki-reference extraction does not describe Java source parsing.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-15",
+        "finding": "Markdown wiki-reference extraction does not describe Java source parsing."
+      }
+    ]
+  },
+  {
+    "queryId": "q095",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref refs finds md references",
+    "grade": 0,
+    "reason": "Full-path reverse-reference lookup does not verify Windows backslash normalization.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "66-69",
+        "finding": "Full-path reverse-reference lookup does not verify Windows backslash normalization."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_check reports errors",
+    "grade": 0,
+    "reason": "MCP validation error response does not provide installation or initial setup instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "34-36",
+        "finding": "MCP validation error response does not provide installation or initial setup instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction#Extracts wiki link references",
+    "grade": 0,
+    "reason": "Tests extracting wiki targets, not authoring external repository links.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "9-12",
+        "finding": "Tests extracting wiki targets, not authoring external repository links."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/view/specs#View Tests#Renders canonical document trees",
+    "grade": 0,
+    "reason": "Describes rendered document protocol and preview routes, without external wiki-link syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "118-127",
+        "finding": "Describes rendered document protocol and preview routes, without external wiki-link syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Filters results below the similarity threshold",
+    "grade": 0,
+    "reason": "Similarity eligibility does not explain stemming or lexical normalization.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "38-41",
+        "finding": "Similarity eligibility does not explain stemming or lexical normalization."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/search-design#Search Redesign#Evaluation and delivery",
+    "grade": 2,
+    "reason": "The parent section includes direct-answer descendants: application-side stemming and lexical index/fusion architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "136-187",
+        "finding": "The parent section includes direct-answer descendants: application-side stemming and lexical index/fusion architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Overfetches toward unique sections",
+    "grade": 2,
+    "reason": "Directly documents retrieval overfetching toward unique owner sections and its budget.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "161-164",
+        "finding": "Directly documents retrieval overfetching toward unique owner sections and its budget."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 0,
+    "reason": "Generic section parsing overview gives no oversized-block chunk fallback.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-8",
+        "finding": "Generic section parsing overview gives no oversized-block chunk fallback."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup",
+    "grade": 2,
+    "reason": "The parent section includes direct-answer descendants: model mismatch and reindex embedding setup tests.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "10-55",
+        "finding": "The parent section includes direct-answer descendants: model mismatch and reindex embedding setup tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Ambiguous short ref in md",
+    "grade": 1,
+    "reason": "Explains ambiguity of short local Markdown paths, relevant resolution context but not extension inference.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "10-15",
+        "finding": "Explains ambiguity of short local Markdown paths, relevant resolution context but not extension inference."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Wiki links accept literal and GitHub headings",
+    "grade": 0,
+    "reason": "Literal versus slug heading fragments are independent of optional file extensions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "30-33",
+        "finding": "Literal versus slug heading fragments are independent of optional file extensions."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/check-md#Check MD#Detects broken links",
+    "grade": 2,
+    "reason": "The parent section includes direct-answer descendants: invalid repository-path link validation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "10-17",
+        "finding": "The parent section includes direct-answer descendants: invalid repository-path link validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q014",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 1,
+    "reason": "Provides navigation to wiki-link validation tests but does not compare ordinary links or graph participation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-9",
+        "finding": "Provides navigation to wiki-link validation tests but does not compare ordinary links or graph participation."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Windows-style backslash refs pass",
+    "grade": 0,
+    "reason": "Windows path separators in code comments are unrelated to escaping Markdown shortcut brackets.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "58-61",
+        "finding": "Windows path separators in code comments are unrelated to escaping Markdown shortcut brackets."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Parser Integration",
+    "grade": 1,
+    "reason": "Explains external heading aliases and full-text titles, relevant fragment-resolution context but not the requested local tests.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "70-83",
+        "finding": "Explains external heading aliases and full-text titles, relevant fragment-resolution context but not the requested local tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 1,
+    "reason": "Identifies wiki validation test family, without literal/slug rules.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-9",
+        "finding": "Identifies wiki validation test family, without literal/slug rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 1,
+    "reason": "Identifies hierarchy and section metadata parsing tests, without fragment compatibility rules.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-8",
+        "finding": "Identifies hierarchy and section metadata parsing tests, without fragment compatibility rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions#Templates satisfy graph validation",
+    "grade": 0,
+    "reason": "Generated instruction validation does not address packed Markdown reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "60-63",
+        "finding": "Generated instruction validation does not address packed Markdown reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q018",
+    "sectionId": "lat.md/tests/check-links#Check Links",
+    "grade": 2,
+    "reason": "The parent section includes direct-answer descendants: accepted and rejected GitHub-style heading fragments.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "6-41",
+        "finding": "The parent section includes direct-answer descendants: accepted and rejected GitHub-style heading fragments."
+      }
+    ]
+  },
+  {
+    "queryId": "q018",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Links and Autolinks",
+    "grade": 0,
+    "reason": "Web autolinks and explicit URL labels do not cover local heading fragment compatibility.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "36-44",
+        "finding": "Web autolinks and explicit URL labels do not cover local heading fragment compatibility."
+      }
+    ]
+  },
+  {
+    "queryId": "q020",
+    "sectionId": "lat.md/cli#CLI#check#md",
+    "grade": 1,
+    "reason": "Describes wiki source-symbol target validation, but not grammar, aliases or external prefixes.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "94-97",
+        "finding": "Describes wiki source-symbol target validation, but not grammar, aliases or external prefixes."
+      }
+    ]
+  },
+  {
+    "queryId": "q020",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction#Extracts wiki link references",
+    "grade": 1,
+    "reason": "Identifies wiki target extraction and metadata, a parser entry point without the requested grammar rules.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "9-12",
+        "finding": "Identifies wiki target extraction and metadata, a parser entry point without the requested grammar rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q021",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Ambiguous short ref in md",
+    "grade": 0,
+    "reason": "Ambiguous local file stems do not explain external AsciiDoc anchors.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "10-15",
+        "finding": "Ambiguous local file stems do not explain external AsciiDoc anchors."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Local watcher refresh",
+    "grade": 0,
+    "reason": "Watcher refresh of local content does not explain provider cache switching or deletion.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "72-75",
+        "finding": "Watcher refresh of local content does not explain provider cache switching or deletion."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/tests/check-links#Check Links",
+    "grade": 0,
+    "reason": "Generic ordinary link validation gives no external extension inference behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "6-9",
+        "finding": "Generic ordinary link validation gives no external extension inference behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q024",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration",
+    "grade": 0,
+    "reason": "Browser preview routes and sidebar display do not describe provider cache metadata or invalidation.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "417-424",
+        "finding": "Browser preview routes and sidebar display do not describe provider cache metadata or invalidation."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/external-sources#External Sources#Known Limitations",
+    "grade": 1,
+    "reason": "Lists unsupported formats/authentication and invalidation limitations, helpful context for failure causes but not actionable diagnostics.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "486-493",
+        "finding": "Lists unsupported formats/authentication and invalidation limitations, helpful context for failure causes but not actionable diagnostics."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Persistent document analysis cache",
+    "grade": 0,
+    "reason": "Parser-cache hit/miss reporting and malformed-cache recovery do not describe configuration or retrieval repair diagnostics.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "32-37",
+        "finding": "Parser-cache hit/miss reporting and malformed-cache recovery do not describe configuration or retrieval repair diagnostics."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/cli#CLI#section",
+    "grade": 0,
+    "reason": "Section command output includes source ranges, but does not define accepted external fragments or rejection of line ranges.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "23-45",
+        "finding": "Section command output includes source ranges, but does not define accepted external fragments or rejection of line ranges."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 0,
+    "reason": "External backlink queries do not explain repository prefix scoping or checkout suggestions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "External backlink queries do not explain repository prefix scoping or checkout suggestions."
+      }
+    ]
+  },
+  {
+    "queryId": "q028",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides",
+    "grade": 1,
+    "reason": "Describes local provider overrides, related to provider choice but without fetch URL template validation.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "160-175",
+        "finding": "Describes local provider overrides, related to provider choice but without fetch URL template validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q029",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 0,
+    "reason": "Local Markdown section parsing overview does not explain supported external processors.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-8",
+        "finding": "Local Markdown section parsing overview does not explain supported external processors."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#On-demand Retrieval",
+    "grade": 1,
+    "reason": "Explains lazy retrieval and managed checkout storage, useful context for editable checkout recommendations but not the inspection command.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "472-479",
+        "finding": "Explains lazy retrieval and managed checkout storage, useful context for editable checkout recommendations but not the inspection command."
+      }
+    ]
+  },
+  {
+    "queryId": "q032",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live project index",
+    "grade": 0,
+    "reason": "Live server snapshot updates do not explain parallel TypeScript fallback reads or their ordering.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "133-150",
+        "finding": "Live server snapshot updates do not explain parallel TypeScript fallback reads or their ordering."
+      }
+    ]
+  },
+  {
+    "queryId": "q033",
+    "sectionId": "lat.md/tests/check-index#Check Index#Detects non-markdown file",
+    "grade": 0,
+    "reason": "Vault non-Markdown validation is unrelated to the supported source-language registry.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "37-40",
+        "finding": "Vault non-Markdown validation is unrelated to the supported source-language registry."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/tests/hook#Hook",
+    "grade": 0,
+    "reason": "Hook test setup does not describe parallel validators or shared analysis.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "6-11",
+        "finding": "Hook test setup does not describe parallel validators or shared analysis."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/cli#CLI#refs#Scope",
+    "grade": 0,
+    "reason": "Reference search scope does not explain nearest project-root or symlink discovery.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "58-65",
+        "finding": "Reference search scope does not explain nearest project-root or symlink discovery."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/cli#CLI#expand",
+    "grade": 0,
+    "reason": "Reference expansion and fuzzy matching do not describe parser-cache key identity.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "135-149",
+        "finding": "Reference expansion and fuzzy matching do not describe parser-cache key identity."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/tests/check-index#Check Index#Detects non-markdown file",
+    "grade": 0,
+    "reason": "Vault file validation does not describe parser cache hashes or collision avoidance.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "37-40",
+        "finding": "Vault file validation does not describe parser cache hashes or collision avoidance."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Source analysis",
+    "grade": 1,
+    "reason": "Describes lazy source parsing and the language registry that scopes discovery, but not scan sharing or rg fallback.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "23-32",
+        "finding": "Describes lazy source parsing and the language registry that scopes discovery, but not scan sharing or rg fallback."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref passes check code-refs",
+    "grade": 0,
+    "reason": "Short code-ref target resolution is independent of inventory discovery and scan reuse.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "34-37",
+        "finding": "Short code-ref target resolution is independent of inventory discovery and scan reuse."
+      }
+    ]
+  },
+  {
+    "queryId": "q043",
+    "sectionId": "lat.md/cli#CLI#search",
+    "grade": 1,
+    "reason": "Explains reusable search sessions and hybrid scores underlying graph filtering, without graph layout or filter implementation.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "342-355",
+        "finding": "Explains reusable search sessions and hybrid scores underlying graph filtering, without graph layout or filter implementation."
+      }
+    ]
+  },
+  {
+    "queryId": "q045",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Document formats#Native document tree projection",
+    "grade": 0,
+    "reason": "External document rendering trees do not explain graph label breadcrumb disambiguation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "28-31",
+        "finding": "External document rendering trees do not explain graph label breadcrumb disambiguation."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup",
+    "grade": 0,
+    "reason": "Embedding initialization does not describe relevance-driven graph node sizing.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "10-13",
+        "finding": "Embedding initialization does not describe relevance-driven graph node sizing."
+      }
+    ]
+  },
+  {
+    "queryId": "q048",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions#Templates satisfy graph validation",
+    "grade": 0,
+    "reason": "Generated instruction validation does not describe graph node projection, sizing or labels.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "60-63",
+        "finding": "Generated instruction validation does not describe graph node projection, sizing or labels."
+      }
+    ]
+  },
+  {
+    "queryId": "q049",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Live external previews",
+    "grade": 1,
+    "reason": "External preview graph relationships and backlinks provide relevant integration context, without graph workspace or inspector architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "64-71",
+        "finding": "External preview graph relationships and backlinks provide relevant integration context, without graph workspace or inspector architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 1,
+    "reason": "Wiki reference extraction is upstream context for backlinks, but no deduplication rules are provided.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-8",
+        "finding": "Wiki reference extraction is upstream context for backlinks, but no deduplication rules are provided."
+      }
+    ]
+  },
+  {
+    "queryId": "q055",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "CLI snippet quoting does not describe browser source context buffers or expansion.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "CLI snippet quoting does not describe browser source context buffers or expansion."
+      }
+    ]
+  },
+  {
+    "queryId": "q056",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Graph edge deduplication is unrelated to source viewport preservation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Graph edge deduplication is unrelated to source viewport preservation."
+      }
+    ]
+  },
+  {
+    "queryId": "q058",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export",
+    "grade": 1,
+    "reason": "Identifies versioned document-tree browser tests, but omits frontmatter and require-code-mention metadata.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "60-63",
+        "finding": "Identifies versioned document-tree browser tests, but omits frontmatter and require-code-mention metadata."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights search destination passages",
+    "grade": 0,
+    "reason": "Search passage highlighting and anchor retention do not explain same-document no-remount routing.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "240-243",
+        "finding": "Search passage highlighting and anchor retention do not explain same-document no-remount routing."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/cli#CLI#check#md",
+    "grade": 0,
+    "reason": "CLI wiki validation does not explain sidebar marker propagation.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "94-97",
+        "finding": "CLI wiki validation does not explain sidebar marker propagation."
+      }
+    ]
+  },
+  {
+    "queryId": "q061",
+    "sectionId": "lat.md/tests/check-links#Check Links#Names the resolved file and the link kind",
+    "grade": 0,
+    "reason": "Validation diagnostics for image links do not explain static export resource copying.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "18-21",
+        "finding": "Validation diagnostics for image links do not explain static export resource copying."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 0,
+    "reason": "Wiki validation tests do not address browser underline/color rendering.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-9",
+        "finding": "Wiki validation tests do not address browser underline/color rendering."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo",
+    "grade": 1,
+    "reason": "Offers a UI rendering smoke-test entry point, without the segmented-link styling rules.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "1-6",
+        "finding": "Offers a UI rendering smoke-test entry point, without the segmented-link styling rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/view/specs#View Tests#Shows source reference context",
+    "grade": 0,
+    "reason": "Source reference context and backlink display do not explain icon/label wrapping.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "282-285",
+        "finding": "Source reference context and backlink display do not explain icon/label wrapping."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Wiki-link extraction is unrelated to rendering ordinary Markdown reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-8",
+        "finding": "Wiki-link extraction is unrelated to rendering ordinary Markdown reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q066",
+    "sectionId": "lat.md/markdown#Markdown#Strikethrough",
+    "grade": 0,
+    "reason": "Authored strikethrough syntax is unrelated to Git diff word-overlap heuristics.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "11-14",
+        "finding": "Authored strikethrough syntax is unrelated to Git diff word-overlap heuristics."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Builds a section tree from nested headings",
+    "grade": 0,
+    "reason": "Parser hierarchy metadata does not establish rendered TOC H1 styling or indentation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "9-12",
+        "finding": "Parser hierarchy metadata does not establish rendered TOC H1 styling or indentation."
+      }
+    ]
+  },
+  {
+    "queryId": "q074",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs#Detects dangling code ref",
+    "grade": 0,
+    "reason": "Dangling reference detection does not describe generated-output ownership or scan exclusion.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "10-13",
+        "finding": "Dangling reference detection does not describe generated-output ownership or scan exclusion."
+      }
+    ]
+  },
+  {
+    "queryId": "q074",
+    "sectionId": "lat.md/tests/hook#Hook#Supports projects outside Git",
+    "grade": 0,
+    "reason": "Stop-hook behavior outside Git does not explain UI output overwrite and generated exclusions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "16-19",
+        "finding": "Stop-hook behavior outside Git does not explain UI output overwrite and generated exclusions."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/website#Website#Current State",
+    "grade": 1,
+    "reason": "Describes the website static export and Vercel source inclusion, related deployment context without cache-control policy.",
+    "evidence": [
+      {
+        "path": "lat.md/website.md",
+        "lines": "9-17",
+        "finding": "Describes the website static export and Vercel source inclusion, related deployment context without cache-control policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface#Show and List",
+    "grade": 0,
+    "reason": "External source inspection and cache metadata do not explain serverless search runtime.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "257-264",
+        "finding": "External source inspection and cache metadata do not explain serverless search runtime."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_search finds performance section",
+    "grade": 0,
+    "reason": "MCP semantic-search test does not explain ephemeral serverless state or excluded APIs.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "40-42",
+        "finding": "MCP semantic-search test does not explain ephemeral serverless state or excluded APIs."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#Validation",
+    "grade": 0,
+    "reason": "External validation does not define UI build destination overwrite rules.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "381-386",
+        "finding": "External validation does not define UI build destination overwrite rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions#Templates satisfy graph validation",
+    "grade": 0,
+    "reason": "Instruction template graph validation does not define UI build ownership or force behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "60-63",
+        "finding": "Instruction template graph validation does not define UI build ownership or force behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/view/specs#View Tests#Refreshes search after Markdown changes",
+    "grade": 1,
+    "reason": "Describes lazy and shared incremental runtime search indexing, relevant cost context but not preindexed server builds.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "316-319",
+        "finding": "Describes lazy and shared incremental runtime search indexing, relevant cost context but not preindexed server builds."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis",
+    "grade": 0,
+    "reason": "Serializable internal analysis facts do not establish CLI JSON output.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "1-4",
+        "finding": "Serializable internal analysis facts do not establish CLI JSON output."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/tests/refs-e2e#Refs End-to-End#File-level query finds all refs to that file",
+    "grade": 0,
+    "reason": "File-level backlink matching does not establish machine-readable CLI output.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/refs-e2e.md",
+        "lines": "17-20",
+        "finding": "File-level backlink matching does not establish machine-readable CLI output."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#Immutable Revisions",
+    "grade": 0,
+    "reason": "Pinned external revisions are unrelated to missing local initialization-version metadata.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "460-465",
+        "finding": "Pinned external revisions are unrelated to missing local initialization-version metadata."
+      }
+    ]
+  },
+  {
+    "queryId": "q086",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Initialization",
+    "grade": 0,
+    "reason": "Ignoring local external overrides does not explain Stop-hook untracked-file counting.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "190-201",
+        "finding": "Ignoring local external overrides does not explain Stop-hook untracked-file counting."
+      }
+    ]
+  },
+  {
+    "queryId": "q088",
+    "sectionId": "lat.md/tests/init#Init",
+    "grade": 2,
+    "reason": "The parent section includes direct-answer descendants: backend choice, persistence and hosted embedding setup tests.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "6-66",
+        "finding": "The parent section includes direct-answer descendants: backend choice, persistence and hosted embedding setup tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q089",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Managed Checkout",
+    "grade": 0,
+    "reason": "Managed external checkout storage does not explain nested project diff scope.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "291-298",
+        "finding": "Managed external checkout storage does not explain nested project diff scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/cli#CLI#check#code-refs",
+    "grade": 1,
+    "reason": "Documents dangling code-reference validation applicable to the requested regression, without Dart grammar-specific behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "102-108",
+        "finding": "Documents dangling code-reference validation applicable to the requested regression, without Dart grammar-specific behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#File analysis",
+    "grade": 0,
+    "reason": "Markdown file analysis does not describe Java symbol parsing or source formats.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "5-14",
+        "finding": "Markdown file analysis does not describe Java symbol parsing or source formats."
+      }
+    ]
+  },
+  {
+    "queryId": "q094",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Static Export",
+    "grade": 0,
+    "reason": "External static bundle source payloads do not explain embedding WASM glue or model asset tracing.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "431-438",
+        "finding": "External static bundle source payloads do not explain embedding WASM glue or model asset tracing."
+      }
+    ]
+  },
+  {
+    "queryId": "q095",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback#scanCodeRefs finds refs without rg",
+    "grade": 1,
+    "reason": "Documents fallback code-ref scanning and returned paths, related regression context but without Windows separator rules.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "10-13",
+        "finding": "Documents fallback code-ref scanning and returned paths, related regression context but without Windows separator rules."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/tests/check-md#Check MD",
+    "grade": 0,
+    "reason": "Wiki-link and source-symbol validation does not explain image embedding syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "6-44",
+        "finding": "Wiki-link and source-symbol validation does not explain image embedding syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/tests/check-md#Check MD#Passes with valid links",
+    "grade": 0,
+    "reason": "Wiki-link and source-symbol validation does not explain image embedding syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "18-44",
+        "finding": "Wiki-link and source-symbol validation does not explain image embedding syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Live UI",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "425-430",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/markdown#Markdown#Emoji Shortcodes",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "37-40",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/search-design#Search Redesign#Chunk boundaries",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "27-48",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/search-design#Search Redesign#Evaluation and delivery#Image authoring coverage",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "164-171",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Canonical static export",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "84-87",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Document formats#Native document tree projection",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "28-31",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Nonexistent leaf in nested ref is error",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "106-108",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/tests/roundtrip#Roundtrip#Covered features",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/roundtrip.md",
+        "lines": "7-11",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Emoji Shortcodes",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "84-93",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q003",
+    "sectionId": "lat.md/view/specs#View Tests#Renders canonical document trees",
+    "grade": 0,
+    "reason": "This repository section contains no recipe or climate answer to the out-of-domain negative control.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "118-127",
+        "finding": "This repository section contains no recipe or climate answer to the out-of-domain negative control."
+      }
+    ]
+  },
+  {
+    "queryId": "q008",
+    "sectionId": "lat.md/tests/locate#Locate",
+    "grade": 0,
+    "reason": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/locate.md",
+        "lines": "5-39",
+        "finding": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking."
+      }
+    ]
+  },
+  {
+    "queryId": "q008",
+    "sectionId": "lat.md/tests/locate#Locate#Fuzzy matches with typos",
+    "grade": 0,
+    "reason": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/locate.md",
+        "lines": "17-20",
+        "finding": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking."
+      }
+    ]
+  },
+  {
+    "queryId": "q008",
+    "sectionId": "lat.md/tests/locate#Locate#Reports match reasons",
+    "grade": 0,
+    "reason": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/locate.md",
+        "lines": "25-28",
+        "finding": "Exact and edit-distance locate matching does not explain cosine similarity or hybrid ranking."
+      }
+    ]
+  },
+  {
+    "queryId": "q031",
+    "sectionId": "lat.md/cli#CLI#search#Indexing",
+    "grade": 0,
+    "reason": "Shared parsing/indexing context does not describe worker scheduling, pool bounds, or scaling.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "407-414",
+        "finding": "Shared parsing/indexing context does not describe worker scheduling, pool bounds, or scaling."
+      }
+    ]
+  },
+  {
+    "queryId": "q031",
+    "sectionId": "lat.md/tests/check-headless#Check Explicit Directories#Reuses check data across validators",
+    "grade": 1,
+    "reason": "Parse-once scheduling across concurrent validators and shared snapshots provides useful execution context, without worker pool bounds.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-headless.md",
+        "lines": "23-26",
+        "finding": "Parse-once scheduling across concurrent validators and shared snapshots provides useful execution context, without worker pool bounds."
+      }
+    ]
+  },
+  {
+    "queryId": "q042",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Rich Diagram Fences",
+    "grade": 0,
+    "reason": "Markdown diagram or syntax rendering does not explain Sigma graph category colors or its legend.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "138-260",
+        "finding": "Markdown diagram or syntax rendering does not explain Sigma graph category colors or its legend."
+      }
+    ]
+  },
+  {
+    "queryId": "q042",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Syntax Highlighting",
+    "grade": 0,
+    "reason": "Markdown diagram or syntax rendering does not explain Sigma graph category colors or its legend.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "94-123",
+        "finding": "Markdown diagram or syntax rendering does not explain Sigma graph category colors or its legend."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/tests/check-index#Check Index#Detects missing entries",
+    "grade": 0,
+    "reason": "Link validation or generated instruction validation does not describe graph inspector navigation state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "21-24",
+        "finding": "Link validation or generated instruction validation does not describe graph inspector navigation state."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/tests/check-links#Check Links#Detects broken relative links",
+    "grade": 0,
+    "reason": "Link validation or generated instruction validation does not describe graph inspector navigation state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "10-13",
+        "finding": "Link validation or generated instruction validation does not describe graph inspector navigation state."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions",
+    "grade": 0,
+    "reason": "Link validation or generated instruction validation does not describe graph inspector navigation state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "56-63",
+        "finding": "Link validation or generated instruction validation does not describe graph inspector navigation state."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions#Templates satisfy graph validation",
+    "grade": 0,
+    "reason": "Link validation or generated instruction validation does not describe graph inspector navigation state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "60-63",
+        "finding": "Link validation or generated instruction validation does not describe graph inspector navigation state."
+      }
+    ]
+  },
+  {
+    "queryId": "q045",
+    "sectionId": "lat.md/search-design#Search Redesign#Coverage and ownership",
+    "grade": 0,
+    "reason": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "5-14",
+        "finding": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation."
+      }
+    ]
+  },
+  {
+    "queryId": "q045",
+    "sectionId": "lat.md/search-design#Search Redesign#Lexical scope experiments",
+    "grade": 0,
+    "reason": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "83-90",
+        "finding": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation."
+      }
+    ]
+  },
+  {
+    "queryId": "q045",
+    "sectionId": "lat.md/view/specs#View Tests#Shows source reference context",
+    "grade": 0,
+    "reason": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "282-285",
+        "finding": "Passage ownership, lexical retrieval, or source-reference context does not explain graph-label disambiguation."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/expand#Expand",
+    "grade": 0,
+    "reason": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/expand.md",
+        "lines": "5-19",
+        "finding": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/section#Section#Section with incoming refs only",
+    "grade": 0,
+    "reason": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "34-37",
+        "finding": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/specs#View Tests#Restores history scroll positions",
+    "grade": 0,
+    "reason": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "384-389",
+        "finding": "CLI reference handling or history scrolling does not document the heading-menu state behind the Firefox symptom."
+      }
+    ]
+  },
+  {
+    "queryId": "q052",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Renders wiki links in firstParagraph",
+    "grade": 0,
+    "reason": "Section metadata or graph-edge semantics does not describe H1 TOC top-of-document navigation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "21-23",
+        "finding": "Section metadata or graph-edge semantics does not describe H1 TOC top-of-document navigation."
+      }
+    ]
+  },
+  {
+    "queryId": "q052",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Section metadata or graph-edge semantics does not describe H1 TOC top-of-document navigation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Section metadata or graph-edge semantics does not describe H1 TOC top-of-document navigation."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Live UI",
+    "grade": 0,
+    "reason": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "425-430",
+        "finding": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/specs#View Tests#Copies code blocks",
+    "grade": 0,
+    "reason": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "128-139",
+        "finding": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers",
+    "grade": 0,
+    "reason": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "380-383",
+        "finding": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/specs#View Tests#Updates long-running views incrementally",
+    "grade": 0,
+    "reason": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "296-315",
+        "finding": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/specs#View Tests#Updates long-running views incrementally#Recovers interrupted document requests",
+    "grade": 0,
+    "reason": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "312-315",
+        "finding": "Preview refresh, render lifecycles, or clipboard behavior does not explain Back/swipe scroll restoration and hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 0,
+    "reason": "CLI references, embedding setup, or result limits do not explain browser search URL/history state.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "CLI references, embedding setup, or result limits do not explain browser search URL/history state."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup#Hosted re-run defaults to hosted",
+    "grade": 0,
+    "reason": "CLI references, embedding setup, or result limits do not explain browser search URL/history state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "44-47",
+        "finding": "CLI references, embedding setup, or result limits do not explain browser search URL/history state."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Applies the shared default result limit",
+    "grade": 0,
+    "reason": "CLI references, embedding setup, or result limits do not explain browser search URL/history state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "47-50",
+        "finding": "CLI references, embedding setup, or result limits do not explain browser search URL/history state."
+      }
+    ]
+  },
+  {
+    "queryId": "q056",
+    "sectionId": "lat.md/view/specs#View Tests#Shows a local table of contents",
+    "grade": 0,
+    "reason": "TOC layout or source reference context does not describe expanding hidden source lines while preserving viewport.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "174-185",
+        "finding": "TOC layout or source reference context does not describe expanding hidden source lines while preserving viewport."
+      }
+    ]
+  },
+  {
+    "queryId": "q056",
+    "sectionId": "lat.md/view/specs#View Tests#Shows source reference context",
+    "grade": 0,
+    "reason": "TOC layout or source reference context does not describe expanding hidden source lines while preserving viewport.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "282-285",
+        "finding": "TOC layout or source reference context does not describe expanding hidden source lines while preserving viewport."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 0,
+    "reason": "This section describes a different navigation/search feature and does not explain Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "This section describes a different navigation/search feature and does not explain Back scroll restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/search-design#Search Redesign",
+    "grade": 0,
+    "reason": "This section describes a different navigation/search feature and does not explain Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "1-198",
+        "finding": "This section describes a different navigation/search feature and does not explain Back scroll restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Unused source omission",
+    "grade": 0,
+    "reason": "This section describes a different navigation/search feature and does not explain Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "80-83",
+        "finding": "This section describes a different navigation/search feature and does not explain Back scroll restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "This section describes a different navigation/search feature and does not explain Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "This section describes a different navigation/search feature and does not explain Back scroll restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights search destination passages",
+    "grade": 0,
+    "reason": "This section describes a different navigation/search feature and does not explain Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "240-243",
+        "finding": "This section describes a different navigation/search feature and does not explain Back scroll restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q062",
+    "sectionId": "lat.md/parser#Parser",
+    "grade": 0,
+    "reason": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "1-74",
+        "finding": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q062",
+    "sectionId": "lat.md/parser#Parser#Safe HTML",
+    "grade": 0,
+    "reason": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "21-24",
+        "finding": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q062",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Source navigation",
+    "grade": 0,
+    "reason": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "223-228",
+        "finding": "Parsing, HTML safety, or source navigation does not explain the rendered clipboard control or its tests."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/tests/check-links#Check Links#Names the resolved file and the link kind",
+    "grade": 0,
+    "reason": "Validation diagnostic labels do not describe keeping a source-language icon attached during wrapping.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "18-21",
+        "finding": "Validation diagnostic labels do not describe keeping a source-language icon attached during wrapping."
+      }
+    ]
+  },
+  {
+    "queryId": "q067",
+    "sectionId": "lat.md/markdown#Markdown#Tables",
+    "grade": 0,
+    "reason": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "5-10",
+        "finding": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints."
+      }
+    ]
+  },
+  {
+    "queryId": "q067",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 0,
+    "reason": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints."
+      }
+    ]
+  },
+  {
+    "queryId": "q067",
+    "sectionId": "lat.md/view/specs#View Tests#Edits local Markdown safely",
+    "grade": 0,
+    "reason": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "252-267",
+        "finding": "Table rendering, wiki-link demos, or editor behavior does not describe document prose/code overflow constraints."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 0,
+    "reason": "Section parsing metadata is not the rendered H1 TOC indentation and bold styling behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-23",
+        "finding": "Section parsing metadata is not the rendered H1 TOC indentation and bold styling behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/cli#CLI#check#sections",
+    "grade": 0,
+    "reason": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "109-117",
+        "finding": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 0,
+    "reason": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/view/specs#View Tests#Expands matching passages",
+    "grade": 0,
+    "reason": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "236-239",
+        "finding": "Paragraph validation, link rendering, or search expansion does not describe active TOC tracking at the page bottom."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Responsive layout",
+    "grade": 0,
+    "reason": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "201-212",
+        "finding": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Typography and Strikethrough",
+    "grade": 0,
+    "reason": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "7-14",
+        "finding": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata",
+    "grade": 0,
+    "reason": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "248-251",
+        "finding": "Responsive layout, typography, or metadata does not identify the TOC icon source, license, or styling."
+      }
+    ]
+  },
+  {
+    "queryId": "q071",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Cache writes stay internal",
+    "grade": 0,
+    "reason": "Internal cache invalidation does not describe export payload structure, immutable caching, or document waterfalls.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "76-79",
+        "finding": "Internal cache invalidation does not describe export payload structure, immutable caching, or document waterfalls."
+      }
+    ]
+  },
+  {
+    "queryId": "q072",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 0,
+    "reason": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects."
+      }
+    ]
+  },
+  {
+    "queryId": "q072",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup#Hosted re-run defaults to hosted",
+    "grade": 0,
+    "reason": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "44-47",
+        "finding": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects."
+      }
+    ]
+  },
+  {
+    "queryId": "q072",
+    "sectionId": "lat.md/view/specs#View Tests#Builds a nested file tree#Shares directory order across live and exported views",
+    "grade": 0,
+    "reason": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "368-371",
+        "finding": "Relative-link validation, backend setup, or sidebar order does not identify the export entry route and redirects."
+      }
+    ]
+  },
+  {
+    "queryId": "q077",
+    "sectionId": "lat.md/dev-process#Dev Process#Publishing",
+    "grade": 1,
+    "reason": "Publishing lists the shared server, embedding engine and bundled weights as runtime packages, but not server hosting requirements.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "155-186",
+        "finding": "Publishing lists the shared server, embedding engine and bundled weights as runtime packages, but not server hosting requirements."
+      }
+    ]
+  },
+  {
+    "queryId": "q077",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Static Export",
+    "grade": 0,
+    "reason": "Offline external static bundles do not specify portable Node server runtime or filesystem/WASM requirements.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "431-438",
+        "finding": "Offline external static bundles do not specify portable Node server runtime or filesystem/WASM requirements."
+      }
+    ]
+  },
+  {
+    "queryId": "q080",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export",
+    "grade": 0,
+    "reason": "External preview and bundling tests do not describe shared raw-text/highlight payloads across symbol contexts.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "60-94",
+        "finding": "External preview and bundling tests do not describe shared raw-text/highlight payloads across symbol contexts."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/dev-process#Dev Process#Publishing#Publish Workflow",
+    "grade": 0,
+    "reason": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "177-186",
+        "finding": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Static Export",
+    "grade": 0,
+    "reason": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "431-438",
+        "finding": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export",
+    "grade": 0,
+    "reason": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "60-94",
+        "finding": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Retrieval strategies",
+    "grade": 0,
+    "reason": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "14-21",
+        "finding": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Build targets#Static export",
+    "grade": 0,
+    "reason": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "63-90",
+        "finding": "This publishing/static/external section does not specify the CI OS matrix or pull-request preview workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q096",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax",
+    "grade": 0,
+    "reason": "External wiki-link syntax and resolution do not explain contributor installation or native linker prerequisites.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "7-83",
+        "finding": "External wiki-link syntax and resolution do not explain contributor installation or native linker prerequisites."
+      }
+    ]
+  },
+  {
+    "queryId": "q097",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Patches generated WASM loading explicitly",
+    "grade": 1,
+    "reason": "The WASM loader build is package/deployment implementation context, without npm version pins or publication procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "97-100",
+        "finding": "The WASM loader build is package/deployment implementation context, without npm version pins or publication procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q097",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Rejects unknown generated WASM glue",
+    "grade": 1,
+    "reason": "The generated WASM build guard is package build context, without npm dependency pins or publication procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "101-104",
+        "finding": "The generated WASM build guard is package build context, without npm dependency pins or publication procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q098",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+    "grade": 0,
+    "reason": "External repository configuration and init backend preferences do not explain npm prerelease dist-tags.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "84-159",
+        "finding": "External repository configuration and init backend preferences do not explain npm prerelease dist-tags."
+      }
+    ]
+  },
+  {
+    "queryId": "q098",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup#Non-interactive re-run does not choose",
+    "grade": 0,
+    "reason": "External repository configuration and init backend preferences do not explain npm prerelease dist-tags.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "48-51",
+        "finding": "External repository configuration and init backend preferences do not explain npm prerelease dist-tags."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Initialization",
+    "grade": 0,
+    "reason": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "190-201",
+        "finding": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs",
+    "grade": 0,
+    "reason": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "6-26",
+        "finding": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_locate finds a section",
+    "grade": 0,
+    "reason": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "14-16",
+        "finding": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_search works offline without a key",
+    "grade": 0,
+    "reason": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "43-44",
+        "finding": "This init-related or validation/MCP behavior does not give the end-user install command or first setup procedure."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/cli#CLI#search#Embeddings",
+    "grade": 0,
+    "reason": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "390-398",
+        "finding": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests",
+    "grade": 0,
+    "reason": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "6-52",
+        "finding": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Preserves complete passage coverage",
+    "grade": 0,
+    "reason": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "109-112",
+        "finding": "Embedding/analysis/coverage tests do not explain wording policy for generated language instructions."
+      }
+    ]
+  }
+]
