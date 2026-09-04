@@ -78,3 +78,27 @@ First evaluate a modest reduction in heading/path weights and soft coverage of m
 Next compare smaller natural passages and bounded heading context with the current packing policy. Measure added embedding count and cost, candidate recall, and section-level quality; do not assume the isolated-paragraph gains transfer unchanged to the whole corpus.
 
 Finally evaluate a small candidate reranker if top results remain dominated by topic mentions rather than useful answers. [Sentence Transformers' retrieval and reranking guidance](https://www.sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html) describes scoring query-passage pairs after broad retrieval. A reranker still needs relevant candidates and a measured local latency/download budget.
+
+## Indexing performance
+
+Local measurements compare installed 0.12.2 with the hybrid implementation on identical copies of this repository's 502-section documentation corpus. Full rebuilds improve slightly; small edits regress despite chunk embedding reuse.
+
+Measured on Apple M4 Pro with local MiniLM, using the documentation snapshot at `7ac12f8`. The new implementation stores 706 passages versus 502 section vectors in 0.12.2: 40.6% more embeddings. Submitted text grows from 269,484 to 307,815 characters, including new structural context; character counts are not model token counts.
+
+| Operation | 0.12.2 | Hybrid |
+| --- | ---: | ---: |
+| Full rebuild, median of three | 8.12 s | 6.92 s |
+| Embedding portion of full rebuild, median | 4.67 s | 5.75 s |
+| Unchanged normal indexing, median of three | 88 ms | 9 ms |
+| One-word edit, normal indexing, median of three | 363 ms | 718 ms |
+| Offset-only update, single lower-level probe | 87 ms | 909 ms |
+
+Full rebuild measurements include schema creation, indexing, and database closing; hybrid measurements include staging, checkpointing, and publishing. Both use their actual local embedding package and the same copied Markdown. Run versions sequentially to avoid CPU contention. Normal indexing uses `runIndex` without a query. Timings exclude CLI startup, query embedding, and result retrieval; they are local observations, not hosted latency predictions.
+
+The same-length word replacement occurs in External Sources / Link Syntax. It embeds one old section versus one of three new passages. A separate offset probe prepends two blank lines to the file: both versions embed zero inputs, but hybrid rewrites 39 sections' source metadata. A regression test additionally verifies unchanged chunk hashes and refreshed search evidence within one edited section.
+
+A diagnostic hybrid edit took 858 ms: project analysis 110 ms, token counting 589 ms across 13,586 calls, embedding 114 ms, and SQL inside the staging callback 25 ms. Token counting includes lazy initialization of the local model; these are one-run component measurements, not independent medians. Re-chunking unchanged files dominates the avoidable work.
+
+Full embedding time increases about 23%, while total rebuild time decreases about 15% because non-embedding work drops from approximately 3.45 s to 1.17 s. The old path performs individual section writes and maintains a vector index; the new path batches writes in a transaction. This comparison does not isolate every database change.
+
+[[rag-architecture#Incremental indexing]] defines current cache guarantees and the remaining work of regenerating chunk layouts when source changes. Do not infer one embedding per paragraph, whole-section re-embedding on every edit, or historical hash retention from these measurements.

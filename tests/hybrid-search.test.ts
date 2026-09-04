@@ -242,6 +242,42 @@ describe('hybrid search', () => {
       await f.db.close();
     }
   });
+  // @lat: [[tests/search#Hybrid Retrieval#Reuses unchanged chunks within edited sections]]
+  it('embeds only the changed passage in a multi-passage section', async () => {
+    const paragraphs = ['alpha', 'bravo', 'delta'].map((word) =>
+      `${word} `.repeat(25).trim(),
+    );
+    const markdown = `# Guide\n\n${paragraphs.join('\n\n')}`;
+    const f = await indexed(markdown);
+    try {
+      const before = (
+        await f.db.execute('SELECT input_hash FROM chunks ORDER BY ordinal')
+      ).rows.map((r) => r.input_hash);
+      expect(before).toHaveLength(3);
+      const spy = vi.fn(simple.embed);
+      writeFileSync(
+        join(f.lat, 'guide.md'),
+        markdown.replace('bravo', 'gamma'),
+      );
+      await indexSections(f.lat, f.db, { ...simple, embed: spy });
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.mock.calls[0][0]).toHaveLength(1);
+      expect(spy.mock.calls[0][0][0]).toContain('gamma');
+      const after = (
+        await f.db.execute('SELECT input_hash FROM chunks ORDER BY ordinal')
+      ).rows.map((r) => r.input_hash);
+      expect(after).toHaveLength(3);
+      expect(after[0]).toBe(before[0]);
+      expect(after[1]).not.toBe(before[1]);
+      expect(after[2]).toBe(before[2]);
+      const results = await searchSections(f.db, 'gamma', simple);
+      expect(results[0].evidence.some((e) => e.text.includes('gamma'))).toBe(
+        true,
+      );
+    } finally {
+      await f.db.close();
+    }
+  });
   // @lat: [[tests/search#Hybrid Retrieval#Publishes only successful generations]]
   it('preserves the active generation when replacement fails', async () => {
     const f = fixture('# Guide\n\nneedle text');

@@ -65,6 +65,8 @@ Embedding reuse is keyed by the complete contextual input and embedding fingerpr
 
 Tests: [[tests/search#Hybrid Retrieval#Reuses vectors after source movement]] and [[tests/search#Hybrid Retrieval#Rejects invalid vectors before changing the index]], implemented in [[tests/hybrid-search.test.ts]].
 
+Measured reindexing costs and optimization candidates are recorded in [[search-audit#Indexing performance]].
+
 ## Lexical analysis
 
 Full-text search indexes normalized passage body, heading, and ancestor path in separate fields. Original passage text remains the source for embeddings, previews, and citations.
