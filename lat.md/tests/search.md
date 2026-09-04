@@ -134,6 +134,18 @@ A word replacement within one passage embeds only that passage, preserves the ot
 
 Cross-channel scoring recovers a positive match omitted by initial overfetch, preserves true zero matches and semantic thresholds, retains the original section union, and keeps the baseline default reproducible.
 
+### Keeps incremental FTS scores equal to fresh indexes
+
+Section replacements, deletions, and deleting all sections produce the same lexical scores and hybrid ranks as fresh indexing, while line-only edits reuse every embedding.
+
+### Repairs historical FTS statistics once without embedding
+
+An unchanged project repairs old lexical statistics without embedding calls. Failed maintenance rolls back scores and version metadata; subsequent no-op indexing does not rebuild FTS.
+
+### Rolls back failed FTS rebuilds
+
+A failed FTS rebuild restores the prior sections and searchable scores, and a subsequent successful indexing attempt applies the edit.
+
 ### Publishes only successful generations
 
 A failed replacement leaves the existing manifest and complete searchable generation intact.

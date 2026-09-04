@@ -111,7 +111,7 @@ Do not propagate authority through siblings or recursively mix containment edges
 
 V1 uses local Turso 0.7.2 after testing scoring, rollback, and checkpointed index copies. libSQL remains only as a lazy reader for legacy migration and backend inspection during init.
 
-Tables store sections with parent pointers, owned chunks, reusable embeddings, exact identifier tokens, and metadata. Authority and closure tables are deferred. Initial and large-batch indexing build FTS after inserting rows to avoid costly per-row maintenance.
+Tables store sections with parent pointers, owned chunks, reusable embeddings, exact identifier tokens, and metadata. Authority and closure tables are deferred. Initial and large-batch indexing build FTS after inserting rows to avoid costly per-row maintenance. Replacement/deletion batches also rebuild FTS transactionally, removing historical document statistics from BM25. The live-statistics lexical version repairs older indexes once without regenerating embeddings; unchanged searches skip maintenance.
 
 [[src/search/db.ts]] uses exact cosine scans as described in Turso's [vector guide](https://docs.turso.tech/guides/vector-search). Published cross-process readers use experimental multiprocess_wal. Unpublished staging uses single-process mode to avoid a large-FTS-build stall observed with multiprocess WAL. FTS requires experimental index_method and an exact-column, score-only query with LIMIT; higher observed scores are better.
 
