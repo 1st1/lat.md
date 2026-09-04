@@ -179,6 +179,12 @@ The fixed-width desktop rail fills the available viewport height without program
 
 The active indicator stays within the desktop rail; dropdowns omit it. The compact dropdown and expanded list align with the reading column's right edge, and its trigger matches View/Edit's height and vertical center.
 
+The active section's complete subtree remains subtly highlighted across subsection transitions and clears when entering a sibling section. Active ancestors retain their own indented bars, including skipped heading levels; only the current heading has `aria-current`.
+
+Desktop bars glide between headings at each indentation level and resize for wrapped titles. Layout changes update their positions; reduced-motion preferences disable both bar transitions and smooth TOC scrolling. Dropdowns remain bar-free.
+
+TOC auto-scrolling continuously eases toward the active heading without restarting when the target changes. Motion is frame-rate independent, stops for direct wheel, touch, pointer, or keyboard interaction, and snaps immediately with reduced motion.
+
 On wide screens, View/Edit stays at the reading column's right edge with or without a TOC, including Edit mode. A missing compact TOC lets the header span the reading column without changing the prose width limit.
 
 Sections containing rendered Git changes carry an orange disc when Git is enabled, while sections owning validation errors carry a red disc. Both remain visible together when both states apply.

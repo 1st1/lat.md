@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -12,9 +13,17 @@ import {
   centeredDocumentTocScrollTop,
   documentTocActivationLine,
   documentTocIndentationDepth,
+  documentTocActiveGroup,
+  nextDocumentTocScrollTop,
 } from './document-toc';
 
 type TocLinkStyle = CSSProperties & { '--toc-depth': number };
+type TocIndicator = {
+  depth: number;
+  top: number;
+  height: number;
+  visible: boolean;
+};
 
 function TocIcon() {
   return (
@@ -46,8 +55,78 @@ export function DocumentToc({
   const minimumSubsectionDepth =
     subsectionDepths.length > 0 ? Math.min(...subsectionDepths) : 2;
   const [activeId, setActiveId] = useState(ids[0] ?? '');
+  const { groupIds, ancestorIds } = useMemo(
+    () => documentTocActiveGroup(items, activeId),
+    [items, activeId],
+  );
   const [expanded, setExpanded] = useState(false);
   const navigationRef = useRef<HTMLElement>(null);
+  const scrollAnimation = useRef({ frame: 0, target: 0, position: 0, time: 0 });
+
+  useEffect(() => {
+    const navigation = navigationRef.current;
+    const animation = scrollAnimation.current;
+    const stop = () => {
+      window.cancelAnimationFrame(animation.frame);
+      animation.frame = 0;
+    };
+    navigation?.addEventListener('wheel', stop, { passive: true });
+    navigation?.addEventListener('touchstart', stop, { passive: true });
+    navigation?.addEventListener('pointerdown', stop);
+    navigation?.addEventListener('keydown', stop);
+    return () => {
+      stop();
+      navigation?.removeEventListener('wheel', stop);
+      navigation?.removeEventListener('touchstart', stop);
+      navigation?.removeEventListener('pointerdown', stop);
+      navigation?.removeEventListener('keydown', stop);
+    };
+  }, []);
+  const [indicators, setIndicators] = useState<TocIndicator[]>([]);
+  const indicatorIds = useRef(ids);
+
+  useLayoutEffect(() => {
+    const navigation = navigationRef.current;
+    if (!navigation) return;
+    const links = [
+      ...navigation.querySelectorAll<HTMLElement>('.document-toc-link'),
+    ];
+    const measure = () => {
+      if (!navigation.clientHeight) return;
+      const next = links.flatMap((link, index): TocIndicator[] => {
+        if (
+          !link.hasAttribute('aria-current') &&
+          !link.hasAttribute('data-active-ancestor')
+        )
+          return [];
+        const insetTop = index === 0 ? 0 : 4;
+        const insetBottom = index === links.length - 1 ? 0 : 4;
+        return [
+          {
+            depth: Number(link.style.getPropertyValue('--toc-depth')),
+            top: link.offsetTop + insetTop,
+            height: Math.max(0, link.offsetHeight - insetTop - insetBottom),
+            visible: true,
+          },
+        ];
+      });
+      const sameDocument = indicatorIds.current === ids;
+      indicatorIds.current = ids;
+      setIndicators((previous) => [
+        ...next,
+        ...(sameDocument
+          ? previous
+              .filter((bar) => !next.some((item) => item.depth === bar.depth))
+              .map((bar) => ({ ...bar, visible: false }))
+          : []),
+      ]);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(navigation);
+    links.forEach((link) => observer.observe(link));
+    return () => observer.disconnect();
+  }, [activeId, ancestorIds, ids, expanded]);
 
   useEffect(() => {
     setExpanded(false);
@@ -110,9 +189,43 @@ export function DocumentToc({
       itemHeight: activeRect.height,
       itemTop: navigation.scrollTop + activeRect.top - navigationRect.top,
     });
-    if (Math.abs(navigation.scrollTop - top) < 1) return;
+    const animation = scrollAnimation.current;
+    animation.target = top;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (reducedMotion.matches) {
+      window.cancelAnimationFrame(animation.frame);
+      animation.frame = 0;
+      navigation.scrollTo({ behavior: 'instant', top });
+      return;
+    }
+    if (animation.frame || Math.abs(navigation.scrollTop - top) < 1) return;
 
-    navigation.scrollTo({ behavior: 'smooth', top });
+    animation.position = navigation.scrollTop;
+    animation.time = performance.now();
+    const tick = (time: number) => {
+      animation.frame = 0;
+      if (!navigation.clientHeight) return;
+      animation.target = Math.max(
+        0,
+        Math.min(
+          animation.target,
+          navigation.scrollHeight - navigation.clientHeight,
+        ),
+      );
+      animation.position = reducedMotion.matches
+        ? animation.target
+        : nextDocumentTocScrollTop(
+            animation.position,
+            animation.target,
+            time - animation.time,
+          );
+      animation.time = time;
+      navigation.scrollTo({ behavior: 'instant', top: animation.position });
+      if (animation.position !== animation.target) {
+        animation.frame = window.requestAnimationFrame(tick);
+      }
+    };
+    animation.frame = window.requestAnimationFrame(tick);
   }, [activeId, expanded]);
 
   if (items.length === 0) return null;
@@ -149,6 +262,8 @@ export function DocumentToc({
               aria-current={activeId === item.id ? 'location' : undefined}
               className="document-toc-link"
               data-depth={item.depth}
+              data-active-group={groupIds.has(item.id) || undefined}
+              data-active-ancestor={ancestorIds.has(item.id) || undefined}
               href={`#${encodeURIComponent(item.id)}`}
               key={item.id}
               onClick={(event) => {
@@ -192,6 +307,21 @@ export function DocumentToc({
             </a>
           );
         })}
+        {indicators.map((bar) => (
+          <span
+            aria-hidden="true"
+            className="document-toc-indicator"
+            key={bar.depth}
+            style={
+              {
+                '--toc-depth': bar.depth,
+                transform: `translateY(${bar.top}px)`,
+                height: bar.height,
+                opacity: bar.visible ? 1 : 0,
+              } as TocLinkStyle
+            }
+          />
+        ))}
       </nav>
     </aside>
   );

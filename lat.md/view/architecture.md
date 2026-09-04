@@ -176,6 +176,8 @@ Rendered link text is always underlined. A [[src/view/document-tree.ts#decorateE
 
 Document responses project every parsed heading and canonical GitHub slug into a local TOC. Its H1 entry stays bold at the base indentation, while subsection indentation remains relative to the first subsection level.
 
+The current section and its entire subtree stay subtly emphasized while readers move through its subsections. Desktop indicators mark the active heading and its section ancestors at their own indentation; the document H1 does not emphasize the whole page.
+
 TOC entries show an orange disc when their section contains a rendered Git change and a red disc when it owns validation errors. Git discs follow the Git visibility toggle; error discs remain visible.
 
 Same-document fragment navigation updates history and scroll position without clearing, refetching, or remounting the rendered Markdown. The H1 TOC fragment positions the viewport at document scroll-top zero; source fragments remain part of route identity because they select code symbols.
