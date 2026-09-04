@@ -12,6 +12,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import xdg from '@folder/xdg';
+import { parse as parseYaml } from 'yaml';
+import { checklistMenu } from '../src/cli/checklist-menu.js';
 import {
   INIT_VERSION,
   readInitVersion,
@@ -72,6 +74,12 @@ vi.mock('../src/cli/checklist-menu.js', () => ({
   checklistMenu: vi.fn(async () => []),
 }));
 vi.mock('../src/cli/select-menu.js', () => ({ selectMenu }));
+vi.mock('node:readline/promises', () => ({
+  createInterface: vi.fn(() => ({
+    question: vi.fn(async () => 'n'),
+    close: vi.fn(),
+  })),
+}));
 vi.mock('../src/cli/reindex.js', () => ({ reindexCommand }));
 vi.mock('../src/search/db.js', () => ({
   closeDb,
@@ -227,6 +235,8 @@ describe('lat init embedding setup', () => {
     reindexCommand.mockReset();
     reindexCommand.mockResolvedValue({ output: 'Reindexed.' });
     selectMenu.mockReset();
+    vi.mocked(checklistMenu).mockReset();
+    vi.mocked(checklistMenu).mockResolvedValue([]);
     setRepoEmbedding.mockClear();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -241,6 +251,89 @@ describe('lat init embedding setup', () => {
       delete (process.stdin as { isTTY?: boolean }).isTTY;
     }
     rmSync(root, { recursive: true, force: true });
+  });
+
+  // @lat: [[init#Agent preferences#Remembers completed selections]]
+  it('persists selected agents locally and restores them on the next init', async () => {
+    createLatDir();
+    setInteractive(true);
+    const path = join(latDir(), 'config.local.yaml');
+    writeFileSync(
+      path,
+      '# My checkout\nexternal-sources:\n  docs:\n    local-path: ../docs\n',
+    );
+    vi.mocked(checklistMenu).mockResolvedValueOnce(['codex', 'cursor']);
+    selectMenu.mockResolvedValue('global');
+
+    await initCmd(root);
+
+    const saved = readFileSync(path, 'utf8');
+    expect(saved).toContain('# My checkout');
+    expect(parseYaml(saved)).toEqual({
+      'external-sources': { docs: { 'local-path': '../docs' } },
+      init: { agents: ['codex', 'cursor'] },
+    });
+    expect(readFileSync(join(latDir(), '.gitignore'), 'utf8')).toContain(
+      'config.local.yaml',
+    );
+    expect(existsSync(join(root, '.codex', 'hooks.json'))).toBe(true);
+
+    await initCmd(root);
+
+    expect(checklistMenu).toHaveBeenLastCalledWith(
+      expect.any(Array),
+      'Which coding agents do you use?',
+      ['codex', 'cursor'],
+    );
+    expect(parseYaml(readFileSync(path, 'utf8')).init.agents).toEqual([]);
+  });
+
+  // @lat: [[init#Agent preferences#Non-interactive runs preserve preferences]]
+  it('does not create or erase agent preferences without a TTY', async () => {
+    createLatDir();
+    const path = join(latDir(), 'config.local.yaml');
+    await initCmd(root);
+    expect(existsSync(path)).toBe(false);
+    const original = 'init:\n  agents: [codex]\n';
+    writeFileSync(path, original);
+
+    expectSuccess(runInit());
+
+    expect(readFileSync(path, 'utf8')).toBe(original);
+    expect(existsSync(join(root, '.codex'))).toBe(false);
+  });
+
+  // @lat: [[init#Agent preferences#Aborted setup preserves preferences]]
+  it('does not save a selection when the command-style prompt is canceled', async () => {
+    createLatDir();
+    setInteractive(true);
+    const path = join(latDir(), 'config.local.yaml');
+    const original = 'init:\n  agents: [cursor]\n';
+    writeFileSync(path, original);
+    vi.mocked(checklistMenu).mockResolvedValue(['codex']);
+    selectMenu.mockResolvedValue(null);
+
+    await initCmd(root);
+
+    expect(readFileSync(path, 'utf8')).toBe(original);
+  });
+
+  // @lat: [[init#Agent preferences#Rejects invalid local preferences]]
+  it('reports invalid YAML or preference shapes without overwriting them', async () => {
+    createLatDir();
+    setInteractive(true);
+    const path = join(latDir(), 'config.local.yaml');
+    for (const original of [
+      'init: [',
+      '- codex\n',
+      'init: false\n',
+      'init:\n  agents: codex\n',
+    ]) {
+      writeFileSync(path, original);
+      await expect(initCmd(root)).rejects.toThrow('config.local.yaml');
+      expect(readFileSync(path, 'utf8')).toBe(original);
+    }
+    expect(checklistMenu).not.toHaveBeenCalled();
   });
 
   // @lat: [[init#Embedding setup#Fresh init pins local embeddings]]

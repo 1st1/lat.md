@@ -184,6 +184,10 @@ Steps:
 
 Initialization also adds `.lat-build` to the project-level `.gitignore`, keeping Lat's default static and Node-server outputs out of version control. Platform-specific output remains the project's responsibility.
 
+Completed interactive setup stores selected agent IDs under `init.agents` in the ignored `lat.md/config.local.yaml`. Subsequent checklists preselect those agents; unknown IDs are ignored. An explicitly empty selection is saved, while canceled setup and non-interactive runs leave preferences unchanged. Deselecting an agent does not uninstall its existing integration.
+
+[[src/cli/init-preferences.ts]] updates only this preference, preserving external-source overrides, unrelated settings, and YAML comments. Invalid YAML or preference shapes produce an error instead of overwriting the file. Existing setups without a saved selection start unchecked.
+
 At the very end, after all steps complete, init checks whether ripgrep (`rg`) is available. If missing, prints a tip suggesting the user install it for faster code scanning, with a link to the ripgrep installation guide.
 
 At the very start, before any steps, init prints the ASCII `lat.md` logo (cyan, matching the website) followed by "Checking latest version..." and awaits [[src/version.ts#fetchLatestVersion]] (3s timeout). If a newer version exists, prints an update notice so the user can upgrade before proceeding. If the fetch fails or the version matches, the message is cleared silently.

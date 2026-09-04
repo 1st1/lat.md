@@ -53,6 +53,30 @@ A current-version non-interactive init with a configured key neither displays a 
 
 A non-interactive init with a configured backend that differs from the stored index prints the exact reindex command without starting an expensive rebuild.
 
+## Agent preferences
+
+Interactive setup remembers machine-local agent selections without changing unrelated configuration or treating unattended runs as user choices.
+
+### Remembers completed selections
+
+Completed setup saves selected agents in ignored local YAML, preserves external-source settings and comments, and supplies those defaults on the next run. Confirming no agents replaces the saved selection with an empty list.
+
+### Checklist restores editable defaults
+
+The checklist renders saved agents checked, ignores unknown or duplicate IDs, and allows users to toggle the defaults. Non-TTY operation still returns no selection.
+
+### Non-interactive runs preserve preferences
+
+Unattended initialization neither creates nor erases agent preferences, and does not install agents merely because they were selected during an earlier interactive run.
+
+### Aborted setup preserves preferences
+
+Canceling the command-style prompt leaves the previous selection untouched because agent setup did not complete.
+
+### Rejects invalid local preferences
+
+Malformed YAML, non-mapping configuration, and incorrectly typed preferences produce an actionable file-specific error without overwriting local configuration.
+
 ## Generated instructions
 
 Generated agent guidance must remain valid Markdown wherever project layouts expose it to Lat's graph scanner.

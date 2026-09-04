@@ -8,6 +8,7 @@ export interface ChecklistOption {
 /**
  * Display an interactive multi-select checklist with arrow-key navigation.
  * Returns an array of checked values.
+ * Known initial values start checked; unknown values are ignored.
  *
  * Keys: Up/Down (j/k) to move, Space to toggle, Enter to confirm, Ctrl+C to exit.
  * Non-TTY fallback: returns [].
@@ -15,13 +16,18 @@ export interface ChecklistOption {
 export async function checklistMenu(
   options: ChecklistOption[],
   prompt?: string,
+  initialValues: readonly string[] = [],
 ): Promise<string[]> {
   if (options.length === 0) return [];
   if (!process.stdin.isTTY) return [];
 
   return new Promise((resolve) => {
     let cursor = 0;
-    const checked = new Set<number>();
+    const checked = new Set(
+      options.flatMap((option, index) =>
+        initialValues.includes(option.value) ? [index] : [],
+      ),
+    );
     const stdin = process.stdin;
 
     const wasRaw = stdin.isRaw;
