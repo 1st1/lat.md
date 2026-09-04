@@ -50,6 +50,7 @@ import {
 } from './navigation';
 import { navigateAndCopySectionLink } from './section-back-references';
 import { SearchPage } from './SearchPage';
+import { applySearchHighlights } from './search-highlights';
 import { SectionOutputDialog } from './SectionOutputDialog';
 import { sourceLineId, SourceView } from './SourceView';
 import latLogoUrl from './logo.svg?url';
@@ -636,6 +637,12 @@ export function App() {
   }, [graphActive, page]);
 
   useLayoutEffect(() => {
+    const matches = applySearchHighlights(
+      window.document.querySelector<HTMLElement>('.markdown'),
+      page?.kind === 'markdown'
+        ? new URL(location, window.location.origin).search
+        : '',
+    );
     if (!page || positionedLocation.current === location) return;
     if (graphActive) {
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -656,14 +663,17 @@ export function App() {
       return;
     }
     if (page.kind === 'markdown') {
-      scrollToDocumentLocation(
-        window.location.hash,
-        {
-          getElementById: (id) => window.document.getElementById(id),
-          scrollTo: (options) => window.scrollTo(options),
-        },
-        page.document.tableOfContents.find((item) => item.depth === 1)?.id,
-      );
+      if (matches[0]) {
+        matches[0].scrollIntoView({ behavior: 'instant', block: 'center' });
+      } else
+        scrollToDocumentLocation(
+          window.location.hash,
+          {
+            getElementById: (id) => window.document.getElementById(id),
+            scrollTo: (options) => window.scrollTo(options),
+          },
+          page.document.tableOfContents.find((item) => item.depth === 1)?.id,
+        );
     } else {
       const line = page.source.focus?.startLine;
       if (line) {
@@ -675,7 +685,7 @@ export function App() {
       }
     }
     positionedLocation.current = location;
-  }, [graphActive, historyScroll, location, page]);
+  }, [graphActive, historyScroll, location, page, editingDocument]);
 
   function saveCurrentScroll(): void {
     window.history.replaceState(

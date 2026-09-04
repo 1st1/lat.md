@@ -172,7 +172,15 @@ async function renderMarkdown(
   ...args: Parameters<typeof renderMarkdownTree>
 ): Promise<Awaited<ReturnType<typeof renderMarkdownTree>> & { html: string }> {
   const rendered = await renderMarkdownTree(...args);
-  return { ...rendered, html: documentTreeToHtml(rendered.tree) };
+  // These assertions cover rendered content; source metadata is covered by
+  // search-highlights.test.ts against the unmodified document tree.
+  return {
+    ...rendered,
+    html: documentTreeToHtml(rendered.tree).replace(
+      / data-source-(?:start|end)-line="\d+"/g,
+      '',
+    ),
+  };
 }
 
 function viewDocumentHtml(document: ViewDocument): string {
@@ -1707,8 +1715,8 @@ describe('lat ui', () => {
     expect(document).not.toHaveProperty('html');
     expect(document.frontmatter.requireCodeMention).toBe(false);
     expect(document.graphNodeIds).toEqual({ '': 'document:lat.md' });
-    expect(viewDocumentHtml(document)).toContain(
-      '<h1 id="view-project">View Project</h1>',
+    expect(viewDocumentHtml(document)).toMatch(
+      /<h1 id="view-project"[^>]*>View Project<\/h1>/,
     );
     expect(viewDocumentHtml(document)).toContain('href="/guide#details"');
     expect(viewDocumentHtml(document)).not.toContain('require-code-mention');
@@ -2438,7 +2446,9 @@ describe('lat ui', () => {
         'lat.md',
         async () => ({ href: '/orphan', referenceCount }),
       );
-      expect(sparseReferences.html).toBe('<p><a href="/orphan">orphan</a></p>');
+      expect(sparseReferences.html).toMatch(
+        /^<p[^>]*><a href="\/orphan">orphan<\/a><\/p>$/,
+      );
     }
   });
 
@@ -2700,8 +2710,8 @@ describe('lat ui', () => {
       'href="/lat#unreferenced"',
     );
     expect(documentTreeToHtml(sectionOutput.tree)).toContain('<blockquote>');
-    expect(documentTreeToHtml(sectionOutput.tree)).toContain(
-      '<h2 id="unreferenced">Unreferenced</h2>',
+    expect(documentTreeToHtml(sectionOutput.tree)).toMatch(
+      /<h2 id="unreferenced"[^>]*>Unreferenced<\/h2>/,
     );
 
     const referencedSectionOutputResponse = await fetch(
@@ -3192,8 +3202,8 @@ describe('lat ui git state', () => {
       ),
     );
     expect(replaced.html).toContain('<p class="git-removed">The top Git');
-    expect(replaced.html).toContain(
-      '<p class="git-added">Polling also detects commits',
+    expect(replaced.html).toMatch(
+      /<p class="git-added"[^>]*>Polling also detects commits/,
     );
     expect(replaced.html).not.toContain('<del class="git-removed">');
 
@@ -3269,7 +3279,7 @@ describe('lat ui git state', () => {
       '<del class="git-removed">old</del><ins class="git-added">new</ins> renderer stays',
     );
     expect(rendered.html).toContain('<tr class="git-removed">');
-    expect(rendered.html).toContain('<tr class="git-added">');
+    expect(rendered.html).toMatch(/<tr class="git-added"[^>]*>/);
   });
 
   it('colors whole-table fallbacks for incompatible table edits', async () => {

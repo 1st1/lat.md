@@ -1,3 +1,4 @@
+import { SearchResultCard } from './SearchResultCard';
 import {
   useEffect,
   useLayoutEffect,
@@ -18,19 +19,6 @@ import {
 } from './navigation';
 
 const SEARCH_DEBOUNCE_MS = 250;
-
-function SearchBreadcrumbs({ result }: { result: ViewSearchResult }) {
-  return (
-    <span className="search-result-breadcrumbs">
-      {result.breadcrumbs.map((part, index) => (
-        <span key={`${part}-${index}`}>
-          {index > 0 && <span aria-hidden="true">›</span>}
-          {part}
-        </span>
-      ))}
-    </span>
-  );
-}
 
 export function SearchPage({
   onClose,
@@ -139,6 +127,11 @@ export function SearchPage({
 
       <div aria-live="polite" className="search-status">
         {loading && 'Searching sections…'}
+        {!loading &&
+          !error &&
+          searched &&
+          results.length > 0 &&
+          `Showing ${results.length} matching sections, ranked by relevance`}
         {!loading && error}
         {!loading &&
           !error &&
@@ -149,17 +142,13 @@ export function SearchPage({
 
       {results.length > 0 && (
         <div className="search-results">
-          {results.map((result) => (
-            <a
-              className="search-result"
-              href={result.url}
+          {results.map((result, index) => (
+            <SearchResultCard
               key={result.sectionId}
-              onClick={onNavigate}
-            >
-              <SearchBreadcrumbs result={result} />
-              <h2>{result.title}</h2>
-              {result.description && <p>{result.description}</p>}
-            </a>
+              result={result}
+              rank={index + 1}
+              onNavigate={onNavigate}
+            />
           ))}
         </div>
       )}

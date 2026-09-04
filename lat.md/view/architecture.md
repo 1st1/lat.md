@@ -232,6 +232,14 @@ The source view keeps five surrounding lines, collapses distant code, preserves 
 
 Search debounces embedding queries, links results to exact sections, and stores the latest query in the URL so Back restores it.
 
+[[view/src/SearchResultCard.tsx]] renders ranked cards with ancestor breadcrumbs, section links, formatted passage evidence, matched line ranges, and hybrid scores. Expandable score details distinguish text rank, semantic rank, and cosine similarity from confidence.
+
+Passage previews render Markdown paragraphs, emphasis, inline and fenced code, lists, and tables without executing HTML, loading images, or following embedded links. Long excerpts expand in place; source text and ranking are unchanged. Cards adapt to narrow screens.
+
+Each search card owns a stacking context. Opening score details raises the whole card above adjacent results, keeping their score controls and hover transforms beneath the expanded panel.
+
+Result URLs retain the section anchor and encode the preview passage's source ranges in a `match` query parameter. Rendered Markdown carries source-line attributes; the destination scrolls to and highlights the smallest overlapping blocks. Reloads and new tabs preserve highlights, while ordinary navigation clears them and history restores saved scroll positions.
+
 Escape clears a non-empty query, then returns to the page that opened search. Clicking the active Search icon closes search directly. In-app history records viewport positions and restores them before revealing returned Markdown, source, or search content.
 
 ## Graph workspace
