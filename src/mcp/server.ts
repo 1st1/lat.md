@@ -9,7 +9,7 @@ import { sectionCommand } from '../cli/section.js';
 import { searchCommand } from '../cli/search.js';
 import {
   DEFAULT_SEARCH_LIMIT,
-  DEFAULT_SEARCH_THRESHOLD,
+  DEFAULT_MIN_SIMILARITY,
 } from '../search/search.js';
 import { expandCommand } from '../cli/expand.js';
 import { checkAllCommand } from '../cli/check.js';
@@ -61,7 +61,7 @@ export async function startMcpServer(): Promise<void> {
 
   server.tool(
     'lat_search',
-    'Semantic search across lat.md sections using embeddings',
+    'Hybrid lexical and semantic search across lat.md sections',
     {
       query: z.string().describe('Search query in natural language'),
       limit: z
@@ -69,16 +69,18 @@ export async function startMcpServer(): Promise<void> {
         .optional()
         .default(DEFAULT_SEARCH_LIMIT)
         .describe(`Max results (default ${DEFAULT_SEARCH_LIMIT})`),
-      threshold: z
+      minSimilarity: z
         .number()
         .min(0)
         .max(1)
         .optional()
-        .default(DEFAULT_SEARCH_THRESHOLD)
-        .describe('Minimum cosine similarity score (default 0.35)'),
+        .default(DEFAULT_MIN_SIMILARITY)
+        .describe('Minimum cosine similarity score (default 0.20)'),
     },
-    async ({ query, limit, threshold }) =>
-      toMcp(await searchCommand(requestContext(), query, { limit, threshold })),
+    async ({ query, limit, minSimilarity }) =>
+      toMcp(
+        await searchCommand(requestContext(), query, { limit, minSimilarity }),
+      ),
   );
 
   server.tool(

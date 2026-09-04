@@ -1,4 +1,8 @@
-import { dirname } from 'node:path';
+import { LEXICAL_VERSION } from '../search/lexical.js';
+import { readManifest } from '../search/db.js';
+import { embeddingFingerprint } from '../search/chunks.js';
+import { writeIndex } from '../search/cache.js';
+import { dirname, join } from 'node:path';
 import type { CmdContext, CmdResult, Styler } from '../context.js';
 import {
   openDb,
@@ -17,7 +21,11 @@ import {
   EmbeddingAuthError,
   type Embedder,
 } from '../search/embedder.js';
-import { indexSections, type IndexStats } from '../search/index.js';
+import {
+  indexSections,
+  projectFingerprint,
+  type IndexStats,
+} from '../search/index.js';
 import { searchSections } from '../search/search.js';
 import type { SectionMatch } from '../lattice-model.js';
 import type { Section } from '../lattice-model.js';
@@ -55,72 +63,52 @@ async function withDb<T>(
     project: MarkdownProjectAnalysis,
   ) => Promise<T>,
 ): Promise<T> {
-  const db = openDb(latDir, cacheDir);
-
-  try {
-    await ensureMeta(db);
-    const stored = await getStoredModel(db);
-    // The stored model is authoritative — no silent backend switch. Throws
-    // ReindexRequiredError if the environment can't serve the stored index.
-    // Rebuilding / switching backends is `lat reindex`, never `lat search`.
-    const embedder = await embedderForIndex(stored, latDir);
-
-    await ensureSectionsSchema(db, embedder.dimensions);
-
-    const countResult = await db.execute('SELECT COUNT(*) as n FROM sections');
-    let isEmpty = (countResult.rows[0].n as number) === 0;
-
-    // Legacy cache: a version before the model was recorded left rows behind
-    // with no `meta.embedding_model`. Those vectors may be a different backend
-    // (and dimension) than the resolved embedder, and `CREATE TABLE IF NOT
-    // EXISTS` won't migrate the column width — so drop and rebuild from scratch
-    // under the resolved backend rather than querying a mismatched table.
-    if (!stored && !isEmpty) {
-      await dropSections(db);
-      await ensureSectionsSchema(db, embedder.dimensions);
-      isEmpty = true;
-    }
-
-    // If the repo is pinned to local but a key is set, say so — otherwise it
-    // looks like the key is being silently ignored.
-    if (isEmpty && embedder.name.startsWith('local:') && process.stderr.isTTY) {
-      let hasKey = false;
-      try {
-        hasKey = !!getLlmKey();
-      } catch {
-        /* key source misconfigured — irrelevant, we're local */
-      }
-      if (hasKey) {
-        process.stderr.write(
-          'This repo is configured for local embeddings; ignoring LAT_LLM_KEY.\n',
-        );
-      }
-    }
-
-    progress?.beforeIndex?.(isEmpty);
+  if (readManifest(cacheDir ?? join(latDir, '.cache'))) {
+    const db = openDb(latDir, cacheDir);
     try {
-      const stats = await indexSections(
-        latDir,
-        db,
-        embedder,
-        undefined,
-        project,
+      const stored = await getStoredModel(db);
+      const embedder = await embedderForIndex(stored, latDir);
+      const metadata = new Map(
+        (await db.execute('SELECT key,value FROM meta')).rows.map((row) => [
+          row.key,
+          row.value,
+        ]),
       );
-      // Pin the backend only after a successful index, so a failed build never
-      // leaves the repo wrongly pinned to an empty index.
-      if (!stored) await setStoredModel(db, modelKey(embedder));
-      progress?.afterIndex?.(stats, isEmpty);
-    } catch (err) {
-      // Failed fresh build → drop the half-created table so the next run is
-      // truly fresh (re-resolves the backend cleanly) rather than stuck.
-      if (!stored) await dropSections(db);
-      throw err;
+      if (metadata.get('fingerprint') !== embeddingFingerprint(embedder))
+        throw new ReindexRequiredError(
+          'Search chunking or embedding model changed; run lat reindex.',
+        );
+      if (
+        stored &&
+        metadata.get('lexical_version') === LEXICAL_VERSION &&
+        metadata.get('project_hash') === projectFingerprint(project)
+      ) {
+        progress?.afterIndex?.(
+          {
+            added: 0,
+            updated: 0,
+            removed: 0,
+            unchanged: project.sections.length,
+          },
+          false,
+        );
+        return await fn(db, embedder, project);
+      }
+    } finally {
+      await closeDb(db);
     }
-
-    return await fn(db, embedder, project);
-  } finally {
-    await closeDb(db);
   }
+  return writeIndex(latDir, cacheDir, false, async (db, stored) => {
+    const embedder = await embedderForIndex(stored, latDir);
+    await ensureSectionsSchema(db, embedder.dimensions);
+    const isEmpty =
+      (await db.execute('SELECT COUNT(*) AS n FROM sections')).rows[0].n === 0;
+    progress?.beforeIndex?.(isEmpty);
+    const stats = await indexSections(latDir, db, embedder, undefined, project);
+    await setStoredModel(db, modelKey(embedder));
+    progress?.afterIndex?.(stats, isEmpty);
+    return fn(db, embedder, project);
+  });
 }
 
 /**
@@ -142,7 +130,7 @@ export async function runSearch(
     buildIndex?: boolean;
     project?: MarkdownProjectAnalysis;
     sectionById?: ReadonlyMap<string, Section>;
-    threshold?: number;
+    minSimilarity?: number;
     cacheDir?: string;
   },
 ): Promise<SearchResult> {
@@ -157,7 +145,7 @@ export async function runSearch(
       ).sectionById;
     return searchIndexedSections(latDir, query, limit, sectionById, {
       cacheDir: opts.cacheDir,
-      threshold: opts.threshold,
+      minSimilarity: opts.minSimilarity,
     });
   }
 
@@ -177,7 +165,7 @@ export async function runSearch(
         query,
         embedder,
         limit,
-        opts?.threshold,
+        opts?.minSimilarity,
       );
       return {
         query,
@@ -233,7 +221,12 @@ export function cliProgress(s: Styler): IndexProgress {
 export async function searchCommand(
   ctx: CmdContext,
   query: string | undefined,
-  opts: { limit: number; debug?: boolean; threshold?: number },
+  opts: {
+    limit: number;
+    debug?: boolean;
+    minSimilarity?: number;
+    preview?: 'passage' | 'intro' | 'both';
+  },
   progress?: IndexProgress,
 ): Promise<CmdResult> {
   const s = ctx.styler;
@@ -246,7 +239,7 @@ export async function searchCommand(
     const project = await commandProjectAnalysis(ctx);
     const result = await runSearch(ctx.latDir, query, opts.limit, progress, {
       project,
-      threshold: opts.threshold,
+      minSimilarity: opts.minSimilarity,
     });
 
     if (result.matches.length === 0) {
@@ -259,7 +252,7 @@ export async function searchCommand(
           ctx,
           `Search results for "${query}":`,
           result.matches,
-          { showScores: opts.debug },
+          { showScores: opts.debug, preview: opts.preview ?? 'passage' },
         ) + formatNavHints(ctx),
     };
   } catch (err) {

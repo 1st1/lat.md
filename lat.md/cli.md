@@ -341,18 +341,17 @@ Implementation: [[src/mcp/server.ts]]
 
 ## search
 
-Semantic search across `lat.md` sections using vector embeddings. Works **offline by default** — no
-API key required.
+Hybrid lexical and semantic search returns ranked sections with matching source passages. Local embeddings work offline; hosted models remain available through the existing backend selection rules.
 
-Usage: `lat search [query] [--limit=<n>] [--threshold=<score>] [--debug]`
+Usage: `lat search [query] [--limit <n>] [--min-similarity <score>] [--preview passage|intro|both] [--debug]`.
 
-Query is optional — `lat search` with no query just builds the index on first use. `lat search` only reads; rebuilding is [[cli#reindex]]. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
+With no query, search builds or updates the index. With a query it checks document freshness before retrieval. Unchanged projects reuse their published index without embedding or copying a generation. Read-only prompt hooks never build or migrate.
 
-`--debug` appends each result's cosine-similarity score, rounded to six decimal places. Scores stay hidden by default, including in the MCP `lat_search` output.
+The semantic minimum defaults to 0.20 ([[src/search/search.ts#DEFAULT_MIN_SIMILARITY]]). Lexical evidence qualifies independently. The limit defaults to five ([[src/search/search.ts#DEFAULT_SEARCH_LIMIT]]); the UI requests ten. Empty queries return no matches and oversized embedding queries fail explicitly.
 
-Search returns at most `--limit` results ([[src/search/search.ts#DEFAULT_SEARCH_LIMIT]] by default) whose cosine-similarity score is at least `--threshold` ([[src/search/search.ts#DEFAULT_SEARCH_THRESHOLD]] by default). The accepted threshold range is `0` to `1`; lower it to favor recall or raise it to favor precision. The vector-search core owns both defaults: CLI, MCP, and prompt-hook retrieval share them unless their interfaces supply an explicit override, while the UI deliberately requests its own named limit.
+Passage previews are the default. `--preview intro` restores introduction previews; `both` displays both without changing ranking. `--debug` includes hybrid rank score, channel ranks and contributions, cosine similarity, and candidate-budget diagnostics. Hybrid scores are not confidence values.
 
-Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. [[src/search/query.ts#openIndexedSearchSession]] reuses one database handle and embedder when a runtime serves multiple queries. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
+CLI and MCP share [[src/cli/search.ts#runSearch]]. The MCP argument is `minSimilarity`; the old threshold option is removed. [[src/search/query.ts#openIndexedSearchSession]] owns one published database generation and embedder for repeated runtime queries.
 
 ### Backend selection
 
@@ -392,49 +391,38 @@ Implementation: [[src/search/embedder.ts]], [[src/config.ts]]
 
 All embedding generation is isolated in the `@lat.md/embed` package, exposed through one
 [[packages/embed/src/index.ts#createEmbedder]] entry point returning an `Embedder`
-(`{ name, dimensions, embed() }`). Two backends:
+(`{ name, dimensions, maxInputTokens, tokenizerFingerprint, countTokens(), embed() }`). Two backends:
 
 - **local** — a candle (Rust) BERT engine compiled to WebAssembly ([[packages/embed/src/local.ts#createLocalEmbedder]]), driven by a `ModelManifest` from a weights package (`@lat.md/embed-minilm-fp16`, fp16 weights up-cast to fp32 at load). Pure WASM, no native binaries; the ESM loader reads its binary through a module-relative URL and initializes generated glue explicitly so deployment tracers retain the asset. Masked-mean pooling + L2 normalization matches `sentence-transformers`. Texts are embedded one at a time; large jobs fan out across `worker_threads` (one engine per CPU, [[packages/embed/src/worker.ts]]) while small jobs run inline.
 - **remote** — direct `fetch()` to an OpenAI-compatible `/v1/embeddings` endpoint, batching up to 2048 texts per request ([[packages/embed/src/remote.ts#detectProvider]]).
 
 ### Storage
 
-Uses `@libsql/client` in local file mode. Under Node, file URLs load the native `libsql` platform binding, so database handles follow native OS lifetime and locking rules.
+Uses pinned `@tursodatabase/database` 0.7.2 locally with experimental `index_method` and `multiprocess_wal` enabled. Tables separate sections, owned passages, cached embeddings, exact identifier tokens, and metadata.
 
-Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries. Returned candidates retain their exact cosine similarity as a score for downstream consumers.
+[[src/search/db.ts]] provides the SQL adapter. The manifest `lat.md/.cache/search-index.json` names a checkpointed database generation. Full rebuilds and incremental updates stage separately; atomic manifest replacement publishes only successful work. Writers serialize through a process-owned lock.
 
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the embedding model + dimensions the index was built with ([[src/search/db.ts#getStoredModel]], e.g. `local:minilm-l6-v2:384` or `openai:1536`). This record is authoritative for [[cli#search#Backend selection]] — vectors from different models are not comparable, so a model change never silently rebuilds; [[cli#reindex]] drops (via [[src/search/db.ts#dropSections]]) and rebuilds explicitly.
-
-The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
-
-Implementation: [[src/search/db.ts]]
+Legacy `vectors.db` files are read with a lazily loaded libSQL client, archived with `.old-12` (numbered on collisions), and rebuilt automatically by indexing-capable search. Migration metadata preserves the prior embedding model across failure. Read-only hooks leave legacy storage untouched.
 
 ### Indexing
 
-Sections come from `loadAllSections()` + `flattenSections()`. Each file is read once ([[src/search/index.ts#loadFileLines]]) and each section's raw markdown (`startLine`–`endLine`, not just `firstParagraph`) is sliced from it for richer semantic signal.
+[[src/search/index.ts]] consumes cached block facts from the shared Markdown analysis. [[src/search/chunks.ts]] assigns each body block to its deepest section and packs bounded embedding inputs without copying descendant content into ancestors.
 
-Never read per section: that is O(sections × file size), and a 3.5 MB file holding 12k sections cost ~95 s per search before the query even ran.
+Local passages target 192 body tokens and hosted passages 512, with bounded heading context. Oversized prose, lists, code, and tables split using structural boundaries and Unicode-safe fallbacks. Source spans remain separate from added context. Heading-only sections remain searchable.
 
-Content freshness is tracked via SHA-256 hashes. On each run:
-
-1. Parse all sections, compute hashes
-2. Compare against stored hashes in the DB
-3. Only re-embed new or changed sections (saves API cost / local compute)
-4. Delete DB rows for sections that no longer exist
-
-On first run, automatically indexes all sections. A full rebuild is [[cli#reindex]].
-
-Implementation: [[src/search/index.ts]]
+Embedding hashes include input text, model, tokenizer, dimensions, and chunk policy. Offset-only changes reuse vectors. Token counts include special tokens, and both indexing and querying reject accidental truncation. See [[search-design#Chunk boundaries]].
 
 ### Vector Search
 
-Embeds the user's query via the active embedder, then runs a `vector_top_k()` KNN query joined back to the sections table.
+[[src/search/search.ts]] combines exact cosine scans with Tantivy passage FTS. Each channel collapses its strongest passage to owner sections before equal-weight reciprocal rank fusion with k = 60.
 
-Implementation: [[src/search/search.ts]]
+Retrieval targets at least 50 unique sections per channel, with bounded passage overfetch. Lexical fields weight heading 2, body 1, and path 0.5. Literal terms exclude common English stopwords; exact identifier tokens supplement FTS punctuation and long-token behavior.
+
+FTS uses the exact indexed columns, score-only SELECT, and LIMIT; query shapes without LIMIT or with an fts_match filter can silently return zero scores in this engine release. Application code performs fusion and metadata hydration.
 
 ## reindex
 
-Rebuilds the embedding index — the single write/rebuild path (`lat search` only reads). Usage:
+Explicitly rebuilds the complete hybrid index; ordinary search also performs incremental indexing. Usage:
 `lat reindex [--local] [--remote] [--yes]`.
 
 Backend selection honors the **durable per-repo preference**: a repo pinned to local rebuilds local

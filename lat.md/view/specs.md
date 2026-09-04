@@ -223,7 +223,7 @@ Graph search debounces through the embedding-backed `/api/search` service used b
 
 ## Searches sections with embeddings
 
-Search debounces embedding queries and renders ranked section summaries linked to their document anchors. Each result carries its finite cosine score so graph consumers can scale relevance without recomputing embeddings.
+Search debounces hybrid queries and renders matching passages linked to section anchors. Results carry a finite rankScore, separate optional cosine similarity, introduction text, and source evidence.
 
 The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search. Clicking the active Search icon closes the search immediately without clearing first.
 

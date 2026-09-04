@@ -697,7 +697,10 @@ export default function GraphView({
           for (const result of response.results) {
             pathScores.set(
               result.path,
-              Math.max(pathScores.get(result.path) ?? -Infinity, result.score),
+              Math.max(
+                pathScores.get(result.path) ?? -Infinity,
+                result.rankScore,
+              ),
             );
           }
           setSearchMatch({

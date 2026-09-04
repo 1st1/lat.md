@@ -29,7 +29,9 @@ jobs:
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: packages/embed/crate
+          workspaces: |
+            packages/embed/crate
+            packages/stemmer/crate
 
       # Cache the ~90 MB MiniLM weights fetched + converted by build-weights.mjs
       # (the script is idempotent and skips the fetch when model/ is present), so

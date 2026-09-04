@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 import { relative } from 'node:path';
-import type { Definition, Paragraph, Root, RootContent } from 'mdast';
+import type { Definition, Paragraph, Root, RootContent, Nodes } from 'mdast';
 import { visit } from 'unist-util-visit';
 import {
   extractLinks,
@@ -23,6 +23,49 @@ export type MarkdownParagraph = {
   endLine: number;
   text: string;
 };
+
+/** Source-positioned block facts; never retains the parser AST. */
+export type MarkdownBlock = {
+  type: string;
+  start: number;
+  end: number;
+  startLine: number;
+  endLine: number;
+  language?: string;
+  children: MarkdownBlock[];
+};
+
+function extractBlocks(tree: Root): MarkdownBlock[] {
+  const block = (node: Nodes): MarkdownBlock | undefined => {
+    if (
+      node.position?.start.offset === undefined ||
+      node.position?.end.offset === undefined
+    )
+      return;
+    return {
+      type: node.type,
+      start: node.position.start.offset,
+      end: node.position.end.offset,
+      startLine: node.position.start.line,
+      endLine: node.position.end.line,
+      ...('lang' in node && node.lang ? { language: node.lang } : {}),
+      children: [
+        'list',
+        'listItem',
+        'blockquote',
+        'table',
+        'tableRow',
+      ].includes(node.type)
+        ? ('children' in node ? node.children : [])
+            .map(block)
+            .filter((item): item is MarkdownBlock => !!item)
+        : [],
+    };
+  };
+  return tree.children
+    .map(block)
+    .filter((item): item is MarkdownBlock => !!item);
+}
 
 export type MarkdownDestinationLink = {
   kind: 'image' | 'link';
@@ -57,6 +100,7 @@ export type MarkdownFileAnalysis = {
   headingTitles: string[];
   wikiRefs: Ref[];
   paragraphs: MarkdownParagraph[];
+  blocks: MarkdownBlock[];
   markdownLinks: MarkdownDestinationLink[];
   validationLinks: MdLink[];
   indexEntries: string[];
@@ -196,6 +240,7 @@ export function analyzeMarkdownFile(
     headingTitles,
     wikiRefs,
     paragraphs,
+    blocks: extractBlocks(tree),
     markdownLinks,
     validationLinks,
     indexEntries,

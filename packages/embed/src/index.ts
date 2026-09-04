@@ -18,6 +18,11 @@ export interface Embedder {
   readonly name: string;
   /** Output dimensionality (384 local MiniLM, 1536 hosted OpenAI). */
   readonly dimensions: number;
+  /** Full input limit, including special tokens. */
+  readonly maxInputTokens: number;
+  readonly tokenizerFingerprint: string;
+  /** Count without truncation; includes model special tokens. */
+  countTokens(text: string): number;
   /**
    * Embed texts. `onProgress(done, total)` fires as internal batches complete —
    * useful for a progress indicator on the (synchronous, chunked) local backend.

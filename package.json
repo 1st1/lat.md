@@ -43,13 +43,15 @@
     "setup:rust": "pnpm --filter @lat.md/embed setup:rust",
     "build:wasm": "pnpm --filter @lat.md/embed build:wasm",
     "build:weights": "pnpm --filter @lat.md/embed-minilm-fp16 build:weights",
-    "build:packages": "pnpm --filter @lat.md/server build && pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",
+    "build:packages": "pnpm --filter @lat.md/server build && pnpm --filter @lat.md/stemmer build && pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm --filter @lat.md/server build && tsc --noEmit && tsc --noEmit -p view/tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"packages/server/src/**/*.ts\" \"view/**/*.{ts,tsx,css,html}\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"packages/server/src/**/*.ts\" \"view/**/*.{ts,tsx,css,html}\"",
-    "cook-test-rag": "tsx scripts/cook-test-rag.ts"
+    "cook-test-rag": "tsx scripts/cook-test-rag.ts",
+    "eval:search": "tsc && node scripts/evaluate-search.mjs",
+    "bench:search": "tsc && node scripts/benchmark-search.mjs"
   },
   "devDependencies": {
     "@codemirror/commands": "^6.11.0",
@@ -61,8 +63,8 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@lezer/highlight": "^1.2.3",
-    "@types/geojson": "^7946.0.16",
     "@types/express": "^5.0.6",
+    "@types/geojson": "^7946.0.16",
     "@types/hast": "^3.0.5",
     "@types/mdast": "^4.0.4",
     "@types/node": "^25.3.0",
@@ -101,6 +103,7 @@
     "@libsql/client": "^0.17.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@repomix/tree-sitter-wasms": "^0.1.17",
+    "@tursodatabase/database": "0.7.2",
     "@vercel/nft": "^1.10.0",
     "commander": "^14.0.3",
     "diff": "^8.0.4",
@@ -133,6 +136,7 @@
     "unist-util-visit": "^5.0.0",
     "web-tree-sitter": "^0.26.6",
     "yaml": "^2.8.2",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@lat.md/stemmer": "workspace:*"
   }
 }

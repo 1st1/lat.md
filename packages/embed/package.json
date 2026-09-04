@@ -35,6 +35,7 @@
     "build:wasm": "pnpm setup:rust && node scripts/build-wasm.mjs",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "js-tiktoken": "^1.0.21"
+  }
 }
