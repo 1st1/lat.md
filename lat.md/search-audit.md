@@ -159,6 +159,6 @@ The grid compares retrieved versus union-rescored candidates, RRF constants 10/2
 
 The topic-stratified split contains 80 development and 20 validation queries (73 and 20 with indexed answers). Selection uses pooled nDCG@5, then direct-answer@5 and MRR@10; validation nDCG@5 and direct-answer@5 must not regress. These previously inspected queries are not an untouched holdout.
 
-The development winner uses retrieved candidates, k=10, and equal weights: development nDCG rises from 0.80455 to 0.81307, but validation falls from 0.84381 to 0.84082. It fails the gate. Under baseline weights and k=60, union rescoring gives identical top-five quality while adding about 1.5 ms median engine time on the 716-passage corpus.
+The development winner uses retrieved candidates, k=10, and equal weights: development nDCG rises from 0.80455 to 0.81307, but validation falls from 0.84381 to 0.84082. It fails the gate. Under baseline weights and k=60, union rescoring gives identical top-five quality while adding 1.5–3.1 ms median engine time across two measurements on the 716-passage corpus.
 
 The k=20, semantic-weight=1.5 variant is promising for fresh-query confirmation; selecting it after the development winner failed would use validation for tuning. Production remains retrieved candidates, k=60, equal weights. See [[tests/cases/hybrid/experiments/001-union-rrf/README.md]] for commands, measurements, and limitations, and [[tests/cases/hybrid/experiments/registry.json]] for the baseline checkpoint.

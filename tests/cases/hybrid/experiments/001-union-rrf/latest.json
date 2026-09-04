@@ -1,9 +1,9 @@
 {
-  "file": "runs/2026-09-04T20-25-47.860Z-51b96a32.json.gz",
+  "file": "runs/2026-09-04T20-26-02.681Z-51b96a32.json.gz",
   "provenance": {
-    "sourceDirty": true,
+    "sourceDirty": false,
     "queriesHash": "9ac85d0f1aa95ae629e75eaf0c0a388d52cb0aa38c20cd408039e7e05bbdbb2c",
-    "commit": "18cc9ce918e73c816290901949ee70ee3d8d9836",
+    "commit": "43c0a1b3ab4a1d5dff8da1796d0b258f1e70dd22",
     "sourceHashes": {
       "src/search/search.ts": "e41edfe3454a3eb4246ed1fb600b3f4f4581a53daaf7837c60ba6dbcf8140212",
       "src/search/lexical.ts": "efa8ce8ea39d77b15099412a5be43f37ded89aba64fa82f6ec23143cffdb1904",

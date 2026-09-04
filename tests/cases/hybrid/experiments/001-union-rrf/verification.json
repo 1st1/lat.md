@@ -1,0 +1,18 @@
+{
+  "implementationCommit": "43c0a1b3ab4a1d5dff8da1796d0b258f1e70dd22",
+  "run": "runs/2026-09-04T20-26-02.681Z-51b96a32.json.gz",
+  "decision": {
+    "developmentWinner": "retrieved-k10-s1",
+    "validationPassed": false,
+    "promotion": "retain baseline"
+  },
+  "validation": {
+    "tests": "39 files passed; 347 passed, 1 skipped",
+    "typecheck": "passed (root and view)",
+    "latCheck": "passed",
+    "historicalRankingAndScoreParityQueries": 100,
+    "liveEngineRankingAndScoreParitySearches": 600,
+    "liveWarmTotalRankingAndScoreParitySearches": 40
+  },
+  "benchmark": "latency-2026-09-04T20-26-09.440Z.json"
+}
