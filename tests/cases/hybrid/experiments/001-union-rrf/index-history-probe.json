@@ -1,0 +1,7 @@
+{
+  "queryId": "q001",
+  "sameDatabaseFtsRebuildChangedSectionScores": 336,
+  "rebuiltFtsVersusFreshCorpusDifferences": 0,
+  "semanticSectionScoreDifferences": 0,
+  "notes": "Only DROP/CREATE FTS index changed the disposable copy; authoritative chunks and normalized lexical rows were unchanged."
+}

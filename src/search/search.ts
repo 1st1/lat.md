@@ -49,15 +49,84 @@ export function literalFtsQuery(query: string): string {
     .map((t) => `"${t.replaceAll('"', '\\"')}"`)
     .join(' OR ');
 }
-export async function searchSections(
+export type RankedCandidate = Candidate & { rank: number };
+export type CandidateChannel = {
+  list: Map<string, RankedCandidate>;
+  capped: boolean;
+  count: number;
+};
+export type SearchCandidates = {
+  lexical: CandidateChannel;
+  semantic: CandidateChannel;
+};
+export type SearchRankingPolicy = {
+  candidateScoring: 'retrieved' | 'union';
+  rrfK: number;
+  lexicalWeight: number;
+  semanticWeight: number;
+};
+/** Production remains pinned until a recorded experiment passes its gates. */
+export const BASELINE_RANKING: Readonly<SearchRankingPolicy> = Object.freeze({
+  candidateScoring: 'retrieved',
+  rrfK: 60,
+  lexicalWeight: 1,
+  semanticWeight: 1,
+});
+export const DEFAULT_RANKING = BASELINE_RANKING;
+
+function emptyChannel(): CandidateChannel {
+  return { list: new Map(), capped: false, count: 0 };
+}
+function compareCandidates(a: Candidate, b: Candidate): number {
+  return (
+    Number(!!b.exact) - Number(!!a.exact) ||
+    b.score - a.score ||
+    a.sectionId.localeCompare(b.sectionId) ||
+    a.id - b.id
+  );
+}
+function validateRankingPolicy(policy: Readonly<SearchRankingPolicy>): void {
+  if (
+    !['retrieved', 'union'].includes(policy.candidateScoring) ||
+    !Number.isFinite(policy.rrfK) ||
+    policy.rrfK < 0 ||
+    !Number.isFinite(policy.lexicalWeight) ||
+    policy.lexicalWeight < 0 ||
+    !Number.isFinite(policy.semanticWeight) ||
+    policy.semanticWeight < 0 ||
+    policy.lexicalWeight + policy.semanticWeight <= 0
+  )
+    throw new Error('Invalid search ranking policy');
+}
+/** Pure fusion shared by production search and cached-score experiments. */
+export function rankSearchCandidates(
+  { lexical, semantic }: SearchCandidates,
+  policy: Readonly<SearchRankingPolicy> = DEFAULT_RANKING,
+  limit = DEFAULT_SEARCH_LIMIT,
+) {
+  validateRankingPolicy(policy);
+  return [...new Set([...lexical.list.keys(), ...semantic.list.keys()])]
+    .map((id) => ({ id, l: lexical.list.get(id), v: semantic.list.get(id) }))
+    .map((r) => ({
+      ...r,
+      rankScore:
+        (r.l ? policy.lexicalWeight / (policy.rrfK + r.l.rank) : 0) +
+        (r.v ? policy.semanticWeight / (policy.rrfK + r.v.rank) : 0),
+    }))
+    .sort((a, b) => b.rankScore - a.rankScore || a.id.localeCompare(b.id))
+    .slice(0, limit);
+}
+/** Retrieve the original section union, optionally filling both channel scores. */
+export async function collectSearchCandidates(
   db: SearchDb,
   query: string,
   embedder: Embedder,
   limit = DEFAULT_SEARCH_LIMIT,
   minSimilarity = DEFAULT_MIN_SIMILARITY,
-): Promise<SearchResult[]> {
+  candidateScoring: SearchRankingPolicy['candidateScoring'] = 'retrieved',
+): Promise<SearchCandidates> {
   query = query.trim();
-  if (!query) return [];
+  if (!query) return { lexical: emptyChannel(), semantic: emptyChannel() };
   if (!Number.isInteger(limit) || limit < 1)
     throw new Error('limit must be a positive integer');
   if (!Number.isFinite(minSimilarity) || minSimilarity < 0 || minSimilarity > 1)
@@ -129,13 +198,7 @@ export async function searchSections(
         const exactIds = new Set(exact.map((c) => c.id));
         candidates = [...exact, ...hits.filter((c) => !exactIds.has(c.id))];
       } else candidates = hits;
-      candidates.sort(
-        (a, b) =>
-          Number(!!b.exact) - Number(!!a.exact) ||
-          b.score - a.score ||
-          a.sectionId.localeCompare(b.sectionId) ||
-          a.id - b.id,
-      );
+      candidates.sort(compareCandidates);
       if (
         new Set(candidates.map((c) => c.sectionId)).size >= target ||
         rows.length < count ||
@@ -153,16 +216,79 @@ export async function searchSections(
   }
   const lexical = await retrieve('lexical'),
     semantic = await retrieve('semantic');
-  const all = new Set([...lexical.list.keys(), ...semantic.list.keys()]);
-  const ranked = [...all]
-    .map((id) => ({ id, l: lexical.list.get(id), v: semantic.list.get(id) }))
-    .map((r) => ({
-      ...r,
-      rankScore:
-        (r.l ? 1 / (60 + r.l.rank) : 0) + (r.v ? 1 / (60 + r.v.rank) : 0),
-    }))
-    .sort((a, b) => b.rankScore - a.rankScore || a.id.localeCompare(b.id))
-    .slice(0, limit);
+
+  if (candidateScoring === 'union') {
+    const union = new Set([...lexical.list.keys(), ...semantic.list.keys()]);
+    if (union.size) {
+      // Keep FTS corpus statistics global. The pinned engine does not reliably
+      // support fts_score in filtered query shapes; filter the scored rows in JS.
+      // This experimental path deliberately exposes its full-scan cost to eval.
+      const lexicalRows = fts
+        ? (
+            await db.execute({
+              sql: 'SELECT id,fts_score(body,heading,path,?) AS score FROM lexical_chunks ORDER BY score DESC LIMIT ?',
+              args: [fts, owners.size],
+            })
+          ).rows
+        : [];
+      const exactIds = new Set(exact.map((c) => c.id));
+      const lexicalHits: Candidate[] = [
+        ...exact.filter((c) => union.has(c.sectionId)),
+        ...lexicalRows
+          .filter(
+            (r) =>
+              r.score > 0 &&
+              union.has(owners.get(r.id)!) &&
+              !exactIds.has(r.id),
+          )
+          .map((r) => ({
+            id: r.id,
+            sectionId: owners.get(r.id)!,
+            score: Number(r.score),
+          })),
+      ];
+      const semanticRows = (
+        await db.execute({
+          sql: `SELECT c.id,1-vector_distance_cos(e.embedding,vector32(?)) AS score FROM chunks c JOIN embeddings e ON c.input_hash=e.hash WHERE c.section_id IN (${[...union].map(() => '?').join(',')})`,
+          args: [vectorJson, ...union],
+        })
+      ).rows;
+      const semanticHits: Candidate[] = semanticRows
+        .filter((r) => r.score >= minSimilarity)
+        .map((r) => ({
+          id: r.id,
+          sectionId: owners.get(r.id)!,
+          score: Number(r.score),
+        }));
+      lexical.list = collapse(lexicalHits.sort(compareCandidates));
+      semantic.list = collapse(semanticHits.sort(compareCandidates));
+      lexical.count = lexicalHits.length;
+      semantic.count = semanticHits.length;
+    }
+  } else if (candidateScoring !== 'retrieved') {
+    throw new Error('Invalid candidate scoring policy');
+  }
+  return { lexical, semantic };
+}
+export async function searchSections(
+  db: SearchDb,
+  query: string,
+  embedder: Embedder,
+  limit = DEFAULT_SEARCH_LIMIT,
+  minSimilarity = DEFAULT_MIN_SIMILARITY,
+  policy: Readonly<SearchRankingPolicy> = DEFAULT_RANKING,
+): Promise<SearchResult[]> {
+  validateRankingPolicy(policy);
+  const candidates = await collectSearchCandidates(
+    db,
+    query,
+    embedder,
+    limit,
+    minSimilarity,
+    policy.candidateScoring,
+  );
+  const { lexical, semantic } = candidates;
+  const ranked = rankSearchCandidates(candidates, policy, limit);
   const results: SearchResult[] = [];
   for (const r of ranked) {
     const s = (

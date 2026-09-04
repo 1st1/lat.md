@@ -1,0 +1,3226 @@
+[
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#External document analysis",
+    "grade": 0,
+    "reason": "External parser facts and retrieval reuse do not show how to author links.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "15-22",
+        "finding": "External parser facts and retrieval reuse do not show how to author links. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#References",
+    "grade": 1,
+    "reason": "An exact handle:path#fragment example demonstrates an external target, though it is CLI refs syntax rather than authored wiki-link syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "393-400",
+        "finding": "An exact handle:path#fragment example demonstrates an external target, though it is CLI refs syntax rather than authored wiki-link syntax. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 0,
+    "reason": "Local relative Markdown links use a different resolver and syntax than configured external repository targets.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Local relative Markdown links use a different resolver and syntax than configured external repository targets. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/tests/check-links#Check Links",
+    "grade": 0,
+    "reason": "Local ordinary-link validation does not teach configured external wiki-link syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "6-9",
+        "finding": "Local ordinary-link validation does not teach configured external wiki-link syntax. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/cli#CLI#check#md",
+    "grade": 0,
+    "reason": "Wiki-target validation does not explain image syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "94-97",
+        "finding": "Wiki-target validation does not explain image syntax. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface#Add",
+    "grade": 0,
+    "reason": "Adding an external repository is unrelated to embedding images.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "212-256",
+        "finding": "Adding an external repository is unrelated to embedding images. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax",
+    "grade": 0,
+    "reason": "External wiki-link examples address documents and symbols, not image embedding.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "7-38",
+        "finding": "External wiki-link examples address documents and symbols, not image embedding. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q002",
+    "sectionId": "lat.md/tests/refs-e2e#Refs End-to-End#Finds referring sections via wiki links",
+    "grade": 0,
+    "reason": "Finding backlink sections does not explain image embedding.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/refs-e2e.md",
+        "lines": "9-12",
+        "finding": "Finding backlink sections does not explain image embedding. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/markdown#Markdown#Fenced Code Highlighting",
+    "grade": 0,
+    "reason": "Code-fence syntax highlighting is unrelated to linguistic stemming.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "41-44",
+        "finding": "Code-fence syntax highlighting is unrelated to linguistic stemming."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/search-design#Search Redesign#Lexical scope experiments",
+    "grade": 0,
+    "reason": "Passage versus whole-section lexical scope does not explain application-side stemming.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "83-90",
+        "finding": "Passage versus whole-section lexical scope does not explain application-side stemming."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction#Extracts wiki link references",
+    "grade": 0,
+    "reason": "Wiki reference extraction and file stems are unrelated to stemming search tokens.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "9-12",
+        "finding": "Wiki reference extraction and file stems are unrelated to stemming search tokens."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Ambiguous short ref in md",
+    "grade": 0,
+    "reason": "Filename stems are unrelated to linguistic stemming.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "10-15",
+        "finding": "Filename stems are unrelated to linguistic stemming."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Retrieves lexical evidence independently",
+    "grade": 0,
+    "reason": "Identifier retrieval below a semantic floor does not explain stemming availability or policy.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "117-120",
+        "finding": "Identifier retrieval below a semantic floor does not explain stemming availability or policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q004",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Upgrades lexical indexes without embedding again",
+    "grade": 2,
+    "reason": "Specifies migration from unstemmed FTS to normalized lexical fields without vector regeneration, directly establishing the shipped application-side normalization behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "173-176",
+        "finding": "Specifies migration from unstemmed FTS to normalized lexical fields without vector regeneration, directly establishing the shipped application-side normalization behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/cli#CLI#search",
+    "grade": 2,
+    "reason": "Directly describes hybrid section search, passage evidence, independent lexical eligibility and channel diagnostics.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "342-355",
+        "finding": "Directly describes hybrid section search, passage evidence, independent lexical eligibility and channel diagnostics."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Existing image evidence",
+    "grade": 1,
+    "reason": "Concrete image-query analysis illustrates lexical/semantic fusion behavior and semantic-floor effects, but is a narrow audit rather than the architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "13-26",
+        "finding": "Concrete image-query analysis illustrates lexical/semantic fusion behavior and semantic-floor effects, but is a narrow audit rather than the architecture."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/search-audit#Retrieval Tuning Assessment#Indexing performance",
+    "grade": 1,
+    "reason": "Measured passage growth and per-chunk embedding reuse give useful implementation context, without explaining ranking or backlink policy.",
+    "evidence": [
+      {
+        "path": "lat.md/search-audit.md",
+        "lines": "80-103",
+        "finding": "Measured passage growth and per-chunk embedding reuse give useful implementation context, without explaining ranking or backlink policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q005",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Collapses before rank fusion",
+    "grade": 2,
+    "reason": "Directly specifies passage-to-section collapse before fusion and tied ranks.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "121-124",
+        "finding": "Directly specifies passage-to-section collapse before fusion and tied ranks."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/cli#CLI#search#Storage",
+    "grade": 2,
+    "reason": "Directly explains new Turso schema separation, index generations and migration.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "399-406",
+        "finding": "Directly explains new Turso schema separation, index generations and migration. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/search-design#Search Redesign#Coverage and ownership",
+    "grade": 2,
+    "reason": "Defines deepest-section ownership, bounded inputs, chunk metadata and embedding identity.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "5-14",
+        "finding": "Defines deepest-section ownership, bounded inputs, chunk metadata and embedding identity. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q006",
+    "sectionId": "lat.md/search-design#Search Redesign#Lexical scope experiments",
+    "grade": 2,
+    "reason": "Describes passage/section lexical retrieval alternatives and chunk-boundary tradeoffs within redesign.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "83-90",
+        "finding": "Describes passage/section lexical retrieval alternatives and chunk-boundary tradeoffs within redesign. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q007",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Rejects invalid vectors before changing the index",
+    "grade": 0,
+    "reason": "Malformed-vector rejection protects index integrity but does not address chunk hashing, reuse, or incremental cost.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "153-156",
+        "finding": "Malformed-vector rejection protects index integrity but does not address chunk hashing, reuse, or incremental cost."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 0,
+    "reason": "Relative-link validation does not describe chunking fallbacks.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Relative-link validation does not describe chunking fallbacks."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/markdown#Markdown#Strikethrough",
+    "grade": 0,
+    "reason": "Strikethrough serialization is unrelated to oversized chunk splitting.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "11-14",
+        "finding": "Strikethrough serialization is unrelated to oversized chunk splitting."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "Inline-code delimiter formatting does not describe chunk boundaries or oversized blocks.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "Inline-code delimiter formatting does not describe chunk boundaries or oversized blocks."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback",
+    "grade": 0,
+    "reason": "TypeScript scanner fallback is unrelated to embedding chunk fallback.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "6-9",
+        "finding": "TypeScript scanner fallback is unrelated to embedding chunk fallback."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Rich Diagram Fences#ASCII STL",
+    "grade": 0,
+    "reason": "STL rendering example contains a code block but does not explain how to split oversized blocks.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "224-260",
+        "finding": "STL rendering example contains a code block but does not explain how to split oversized blocks."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/cli#CLI#search#Embeddings",
+    "grade": 1,
+    "reason": "Defines local and hosted embedding implementations and model dimensions; mismatch policy is elsewhere.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "390-398",
+        "finding": "Frozen 72fbf5c section: Defines local and hosted embedding implementations and model dimensions; mismatch policy is elsewhere."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup#Outdated re-run keeps a working hosted index",
+    "grade": 2,
+    "reason": "Directly specifies retaining compatible hosted backend on outdated init reruns.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "20-23",
+        "finding": "Frozen 72fbf5c section: Directly specifies retaining compatible hosted backend on outdated init reruns."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Rejects invalid vectors before changing the index",
+    "grade": 0,
+    "reason": "Malformed vector-output transaction safety does not describe stored-model/backend mismatch handling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "153-156",
+        "finding": "Frozen 72fbf5c section: Malformed vector-output transaction safety does not describe stored-model/backend mismatch handling."
+      }
+    ]
+  },
+  {
+    "queryId": "q010",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Rebuilds a legacy cache with no recorded model",
+    "grade": 2,
+    "reason": "Directly specifies rebuilding an unversioned incompatible-dimension cache instead of querying it.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "81-88",
+        "finding": "Frozen 72fbf5c section: Directly specifies rebuilding an unversioned incompatible-dimension cache instead of querying it."
+      }
+    ]
+  },
+  {
+    "queryId": "q011",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links",
+    "grade": 1,
+    "reason": "States Obsidian-style wiki syntax and section IDs, useful baseline but omits slug compatibility.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "89-96",
+        "finding": "States Obsidian-style wiki syntax and section IDs, useful baseline but omits slug compatibility. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q011",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 1,
+    "reason": "Shows wiki and GitHub-style relative-fragment links together, useful concrete compatibility examples but no normalization rules.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Shows wiki and GitHub-style relative-fragment links together, useful concrete compatibility examples but no normalization rules. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/external-sources#External Sources",
+    "grade": 1,
+    "reason": "Overview identifies configurable default extensions but does not explain optional spelling or schema validation.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "1-6",
+        "finding": "Overview identifies configurable default extensions but does not explain optional spelling or schema validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax",
+    "grade": 2,
+    "reason": "Explicitly shows extensionless external links when default-file-extension is md and says explicit .md remains valid.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "7-38",
+        "finding": "Explicitly shows extensionless external links when default-file-extension is md and says explicit .md remains valid."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Wiki links accept literal and GitHub headings",
+    "grade": 0,
+    "reason": "Accepted heading aliases do not address fragmentless repository files and directories.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "30-33",
+        "finding": "Frozen 72fbf5c section: Accepted heading aliases do not address fragmentless repository files and directories."
+      }
+    ]
+  },
+  {
+    "queryId": "q013",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Wiki-link reference counts",
+    "grade": 0,
+    "reason": "Reference-count badges do not specify arbitrary path acceptance or unsupported-format navigation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "213-222",
+        "finding": "Frozen 72fbf5c section: Reference-count badges do not specify arbitrary path acceptance or unsupported-format navigation."
+      }
+    ]
+  },
+  {
+    "queryId": "q014",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 1,
+    "reason": "Identifies wiki-reference extraction as one side of the comparison, without ordinary-link or graph semantics.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-8",
+        "finding": "Identifies wiki-reference extraction as one side of the comparison, without ordinary-link or graph semantics. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q014",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref refs finds md references",
+    "grade": 1,
+    "reason": "Specifies refs lookup for wiki short targets, directly useful on the refs side but not the overall comparison.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "42-45",
+        "finding": "Specifies refs lookup for wiki short targets, directly useful on the refs side but not the overall comparison. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+    "grade": 0,
+    "reason": "External path backslashes and aliases are unrelated to escaping opening brackets.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "39-69",
+        "finding": "Frozen 72fbf5c section: External path backslashes and aliases are unrelated to escaping opening brackets."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Short Path Disambiguation",
+    "grade": 0,
+    "reason": "Short file-path disambiguation is unrelated to shortcut-reference parsing.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "109-120",
+        "finding": "Frozen 72fbf5c section: Short file-path disambiguation is unrelated to shortcut-reference parsing."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/locate#Locate#Strips brackets from query",
+    "grade": 0,
+    "reason": "Unwrapping locate query brackets is not escaping Markdown reference syntax.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/locate.md",
+        "lines": "21-24",
+        "finding": "Frozen 72fbf5c section: Unwrapping locate query brackets is not escaping Markdown reference syntax."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/ref-extraction#Ref Extraction",
+    "grade": 0,
+    "reason": "Generic wiki-reference extraction overview does not explain Markdown shortcut links.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-extraction.md",
+        "lines": "5-8",
+        "finding": "Frozen 72fbf5c section: Generic wiki-reference extraction overview does not explain Markdown shortcut links."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing",
+    "grade": 0,
+    "reason": "Generic section-tree parsing overview gives no shortcut-reference behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "5-8",
+        "finding": "Frozen 72fbf5c section: Generic section-tree parsing overview gives no shortcut-reference behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q015",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#GitHub Repository Boundaries",
+    "grade": 0,
+    "reason": "GitHub issue/account autolink boundaries do not address bracketed references.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "261-269",
+        "finding": "Frozen 72fbf5c section: GitHub issue/account autolink boundaries do not address bracketed references."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Repository Path Links",
+    "grade": 1,
+    "reason": "Defines which target formats may carry fragments, useful context but not heading-slug compatibility.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "121-135",
+        "finding": "Defines which target formats may carry fragments, useful context but not heading-slug compatibility."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Strict vs Lenient Contexts",
+    "grade": 1,
+    "reason": "Explains strict versus lenient resolution entry points, useful implementation navigation without slug-specific behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "166-171",
+        "finding": "Explains strict versus lenient resolution entry points, useful implementation navigation without slug-specific behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/view/specs#View Tests#Resolves Markdown and source wiki links",
+    "grade": 1,
+    "reason": "UI resolution of wiki/source targets is supporting compatibility context, without literal/slug details.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "268-277",
+        "finding": "UI resolution of wiki/source targets is supporting compatibility context, without literal/slug details."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/cli#CLI#section",
+    "grade": 0,
+    "reason": "Section inspection output does not validate packed Markdown definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "23-45",
+        "finding": "Frozen 72fbf5c section: Section inspection output does not validate packed Markdown definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Strict vs Lenient Contexts",
+    "grade": 0,
+    "reason": "Strict wiki target resolution is separate from Markdown reference-definition parsing.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "166-171",
+        "finding": "Frozen 72fbf5c section: Strict wiki target resolution is separate from Markdown reference-definition parsing."
+      }
+    ]
+  },
+  {
+    "queryId": "q017",
+    "sectionId": "lat.md/tests/check-md#Check MD#Detects broken links",
+    "grade": 0,
+    "reason": "Broken wiki-section targets are different from packed Markdown reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-md.md",
+        "lines": "10-13",
+        "finding": "Frozen 72fbf5c section: Broken wiki-section targets are different from packed Markdown reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q018",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Source Code Links",
+    "grade": 0,
+    "reason": "Source-symbol fragments do not establish Markdown heading compatibility rules or their tests.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "136-165",
+        "finding": "Source-symbol fragments do not establish Markdown heading compatibility rules or their tests. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q019",
+    "sectionId": "lat.md/cli#CLI#section",
+    "grade": 1,
+    "reason": "Documents accepted section ID forms and links the shared resolver, but lacks literal/slug normalization and duplicate handling.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "23-45",
+        "finding": "Documents accepted section ID forms and links the shared resolver, but lacks literal/slug normalization and duplicate handling. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q019",
+    "sectionId": "lat.md/tests/check-sections#Check Sections#Excludes wiki link content from character count",
+    "grade": 0,
+    "reason": "Paragraph character counting is unrelated to heading identity normalization.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-sections.md",
+        "lines": "19-21",
+        "finding": "Paragraph character counting is unrelated to heading identity normalization. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q021",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Local Checkout",
+    "grade": 2,
+    "reason": "Directly answers local-checkout validation: repository identity, matching HEAD commit, safe paths and worktree-root discovery.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "277-284",
+        "finding": "Directly answers local-checkout validation: repository identity, matching HEAD commit, safe paths and worktree-root discovery."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Automatic Synchronization",
+    "grade": 1,
+    "reason": "Explains when external-aware commands reconcile changed generations, but omits the local sibling-directory deletion invariant.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "361-376",
+        "finding": "Explains when external-aware commands reconcile changed generations, but omits the local sibling-directory deletion invariant. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Configuration Reloading",
+    "grade": 1,
+    "reason": "Explains configuration reload and reconciliation triggers, but not the resulting local cache layout.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "353-360",
+        "finding": "Explains configuration reload and reconciliation triggers, but not the resulting local cache layout. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#On-demand Retrieval",
+    "grade": 0,
+    "reason": "On-demand referenced-file retrieval does not explain metadata or local directory deletion.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "472-479",
+        "finding": "On-demand referenced-file retrieval does not explain metadata or local directory deletion. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Local Checkout",
+    "grade": 1,
+    "reason": "Explains direct working-tree reads and local checkout validation, useful context for why local access differs from cached providers.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "277-284",
+        "finding": "Explains direct working-tree reads and local checkout validation, useful context for why local access differs from cached providers. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Repository Path Links",
+    "grade": 0,
+    "reason": "Local repository-path containment does not describe external provider cache transitions.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "121-135",
+        "finding": "Local repository-path containment does not describe external provider cache transitions. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q022",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Cache writes stay internal",
+    "grade": 0,
+    "reason": "Browser generation suppression for cache writes is separate from local provider transition cleanup.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "76-79",
+        "finding": "Browser generation suppression for cache writes is separate from local provider transition cleanup. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Short Path Disambiguation",
+    "grade": 1,
+    "reason": "Clarifies local Markdown short forms versus full source paths, useful for the requested contrast but not external defaults.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "109-120",
+        "finding": "Clarifies local Markdown short forms versus full source paths, useful for the requested contrast but not external defaults. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Source Code Links",
+    "grade": 1,
+    "reason": "Lists supported source extensions and the registry shared with external validation; does not state external default-extension inference.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "136-165",
+        "finding": "Lists supported source extensions and the registry shared with external validation; does not state external default-extension inference. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/tests/check-index#Check Index#Detects non-markdown file",
+    "grade": 0,
+    "reason": "Local directory-index acceptance of referenced resources does not establish external extension inference.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "37-40",
+        "finding": "Local directory-index acceptance of referenced resources does not establish external extension inference. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q024",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+    "grade": 2,
+    "reason": "Directly specifies canonical handle configuration fields, prefix, commit, strategy, fetch-url inference and checkout restrictions.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "84-115",
+        "finding": "Directly specifies canonical handle configuration fields, prefix, commit, strategy, fetch-url inference and checkout restrictions."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/external-sources#External Sources",
+    "grade": 0,
+    "reason": "General external-source overview does not specify actionable diagnostics or recovery.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "1-6",
+        "finding": "General external-source overview does not specify actionable diagnostics or recovery."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Recovers from malformed source cache entries",
+    "grade": 0,
+    "reason": "Transparent recovery from malformed source-symbol cache is not an external retrieval/configuration diagnostic.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "50-52",
+        "finding": "Transparent recovery from malformed source-symbol cache is not an external retrieval/configuration diagnostic."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Cache reconciliation",
+    "grade": 1,
+    "reason": "Documents generation mismatch recovery and absence of stale fallback, useful failure context but no actionable diagnostic examples.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "38-43",
+        "finding": "Documents generation mismatch recovery and absence of stale fallback, useful failure context but no actionable diagnostic examples."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/external-sources#External Sources#Known Limitations",
+    "grade": 1,
+    "reason": "Lists accepted external document formats and unsupported types, useful boundaries but not fragment rules or drift rationale.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "486-493",
+        "finding": "Lists accepted external document formats and unsupported types, useful boundaries but not fragment rules or drift rationale. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Document formats#Native document tree projection",
+    "grade": 0,
+    "reason": "RST/AsciiDoc presentation-tree safety does not describe named fragment resolution or rejection of line ranges.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "28-31",
+        "finding": "RST/AsciiDoc presentation-tree safety does not describe named fragment resolution or rejection of line ranges. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/tests/section#Section#Source refs include line range",
+    "grade": 0,
+    "reason": "Resolved source output line extents are distinct from permitted authored external fragments.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "50-53",
+        "finding": "Resolved source output line extents are distinct from permitted authored external fragments. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q026",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "Inline-code formatting of snippets does not explain fragment stability.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "Inline-code formatting of snippets does not explain fragment stability. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration#Fetch URL Resolution",
+    "grade": 2,
+    "reason": "Explicitly says path expands to prefix plus authored external path, directly answering repository-subdirectory scoping.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "134-159",
+        "finding": "Frozen 72fbf5c section: Explicitly says path expands to prefix plus authored external path, directly answering repository-subdirectory scoping."
+      }
+    ]
+  },
+  {
+    "queryId": "q028",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers",
+    "grade": 2,
+    "reason": "Directly specifies local/fetch/managed-checkout precedence and fallback to the selected canonical strategy.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "265-276",
+        "finding": "Directly specifies local/fetch/managed-checkout precedence and fallback to the selected canonical strategy."
+      }
+    ]
+  },
+  {
+    "queryId": "q028",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Local Checkout",
+    "grade": 1,
+    "reason": "Describes the optional local provider that can supersede canonical fetch/checkout, useful strategy context but not fetch URL validation.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "277-284",
+        "finding": "Describes the optional local provider that can supersede canonical fetch/checkout, useful strategy context but not fetch URL validation."
+      }
+    ]
+  },
+  {
+    "queryId": "q029",
+    "sectionId": "lat.md/markdown#Markdown",
+    "grade": 0,
+    "reason": "Generic local Markdown extension overview does not describe external formats or parser architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "1-4",
+        "finding": "Generic local Markdown extension overview does not describe external formats or parser architecture. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+    "grade": 1,
+    "reason": "Explains commit-independent identity, provider prefix and local-path treatment, useful source-resolution context but no command or sparse checkout output.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "39-69",
+        "finding": "Explains commit-independent identity, provider prefix and local-path treatment, useful source-resolution context but no command or sparse checkout output. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Commands and MCP#Content commands and MCP",
+    "grade": 1,
+    "reason": "Locates the shared pinned external command/MCP behavior but omits concrete inspection output or checkout suggestions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "52-55",
+        "finding": "Locates the shared pinned external command/MCP behavior but omits concrete inspection output or checkout suggestions. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q031",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Project snapshot",
+    "grade": 1,
+    "reason": "Explains immutable snapshot reduction and inputs that cannot be derived by individual workers, useful architecture context.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "51-60",
+        "finding": "Explains immutable snapshot reduction and inputs that cannot be derived by individual workers, useful architecture context."
+      }
+    ]
+  },
+  {
+    "queryId": "q031",
+    "sectionId": "lat.md/tests/check-headless#Check Explicit Directories#Profiles persistent parser cache hits",
+    "grade": 1,
+    "reason": "Warm cache bypassing worker/AST construction is useful scheduling/performance context, but not queue or worker count implementation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-headless.md",
+        "lines": "27-30",
+        "finding": "Warm cache bypassing worker/AST construction is useful scheduling/performance context, but not queue or worker count implementation."
+      }
+    ]
+  },
+  {
+    "queryId": "q032",
+    "sectionId": "lat.md/cli#CLI#check",
+    "grade": 1,
+    "reason": "Explains shared concurrent scanning and profiling for locating performance costs, but not fallback bounded-read implementation.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "66-93",
+        "finding": "Frozen 72fbf5c section: Explains shared concurrent scanning and profiling for locating performance costs, but not fallback bounded-read implementation."
+      }
+    ]
+  },
+  {
+    "queryId": "q032",
+    "sectionId": "lat.md/dev-process#Dev Process#Testing#Typecheck Test",
+    "grade": 0,
+    "reason": "TypeScript typechecking is unrelated to TypeScript fallback file-read scheduling.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "100-103",
+        "finding": "Frozen 72fbf5c section: TypeScript typechecking is unrelated to TypeScript fallback file-read scheduling."
+      }
+    ]
+  },
+  {
+    "queryId": "q032",
+    "sectionId": "lat.md/tests/check-code-refs#Check Code Refs#Scans Dart references around annotations",
+    "grade": 0,
+    "reason": "Dart annotation coverage does not specify fallback concurrency or worker scheduling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-code-refs.md",
+        "lines": "24-26",
+        "finding": "Frozen 72fbf5c section: Dart annotation coverage does not specify fallback concurrency or worker scheduling."
+      }
+    ]
+  },
+  {
+    "queryId": "q034",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Execution",
+    "grade": 2,
+    "reason": "Explicitly specifies parser-import duration events, worker imports, and zero-duration cache-hit skip events.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "69-80",
+        "finding": "Frozen 72fbf5c section: Explicitly specifies parser-import duration events, worker imports, and zero-duration cache-hit skip events."
+      }
+    ]
+  },
+  {
+    "queryId": "q034",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Automatic Synchronization",
+    "grade": 1,
+    "reason": "Explains shared external parse caching and warm behavior, background for interpreting profiling output.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "361-376",
+        "finding": "Frozen 72fbf5c section: Explains shared external parse caching and warm behavior, background for interpreting profiling output."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Execution",
+    "grade": 2,
+    "reason": "Directly describes inline/worker execution, bounded queues, parser initialization and CLI worker scheduling.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "69-80",
+        "finding": "Directly describes inline/worker execution, bounded queues, parser initialization and CLI worker scheduling."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/dev-process#Dev Process#Testing#Continuous Integration",
+    "grade": 0,
+    "reason": "CI platform matrix and build/check workflow do not explain within-command concurrency or scan sharing.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "104-111",
+        "finding": "CI platform matrix and build/check workflow do not explain within-command concurrency or scan sharing."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Produces equivalent inline and worker snapshots",
+    "grade": 1,
+    "reason": "Tests equivalent worker/inline snapshots, useful supporting evidence for shared analysis execution.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "14-17",
+        "finding": "Tests equivalent worker/inline snapshots, useful supporting evidence for shared analysis execution."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/tests/check-headless#Check Explicit Directories#Reports concise completion timing",
+    "grade": 0,
+    "reason": "Completion-message formatting does not explain concurrent validators or shared scans.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-headless.md",
+        "lines": "14-17",
+        "finding": "Completion-message formatting does not explain concurrent validators or shared scans."
+      }
+    ]
+  },
+  {
+    "queryId": "q036",
+    "sectionId": "lat.md/cli#CLI#hook#Stop",
+    "grade": 0,
+    "reason": "Hook Git diff/untracked churn inventory is distinct from the ignore-walk and rg fallback discovery pipeline.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "307-316",
+        "finding": "Hook Git diff/untracked churn inventory is distinct from the ignore-walk and rg fallback discovery pipeline. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q036",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback#Git repositories scan tracked sources",
+    "grade": 2,
+    "reason": "Precisely states common Git-tracked inventory and exclusions shared by both scanners.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "38-40",
+        "finding": "Precisely states common Git-tracked inventory and exclusions shared by both scanners. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+    "grade": 0,
+    "reason": "External checkout path resolution assumes an existing project root; it does not discover lat.md.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "39-69",
+        "finding": "Frozen 72fbf5c section: External checkout path resolution assumes an existing project root; it does not discover lat.md."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+    "grade": 0,
+    "reason": "Resolving short references within a known vault does not find the vault root.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "56-71",
+        "finding": "Frozen 72fbf5c section: Resolving short references within a known vault does not find the vault root."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/tests/check-index#Check Index",
+    "grade": 0,
+    "reason": "Validating directory index contents is not locating the nearest project.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-index.md",
+        "lines": "5-8",
+        "finding": "Frozen 72fbf5c section: Validating directory index contents is not locating the nearest project."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Short ref refs finds md references",
+    "grade": 0,
+    "reason": "Finding backlinks for short refs does not discover project roots.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "42-45",
+        "finding": "Frozen 72fbf5c section: Finding backlinks for short refs does not discover project roots."
+      }
+    ]
+  },
+  {
+    "queryId": "q037",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback#Matches ripgrep discovery semantics",
+    "grade": 0,
+    "reason": "File inventory symlink handling differs from ancestor project-root discovery.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "34-37",
+        "finding": "Frozen 72fbf5c section: File inventory symlink handling differs from ancestor project-root discovery."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 0,
+    "reason": "Relative link and fragment normalization are not cache-path identity hashing.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Relative link and fragment normalization are not cache-path identity hashing. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Resolution Rules",
+    "grade": 0,
+    "reason": "Wiki-link canonical resolution is a different identity mechanism from parser-cache keys.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "97-108",
+        "finding": "Wiki-link canonical resolution is a different identity mechanism from parser-cache keys. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q038",
+    "sectionId": "lat.md/parser#Parser#Sections",
+    "grade": 0,
+    "reason": "Section IDs and source fields are unrelated to persistent cache filename construction.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "39-55",
+        "finding": "Section IDs and source fields are unrelated to persistent cache filename construction. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q039",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Recovers from malformed cache entries",
+    "grade": 2,
+    "reason": "Directly specifies malformed/partial serialized cache entries becoming disposable misses and being replaced.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "34-37",
+        "finding": "Directly specifies malformed/partial serialized cache entries becoming disposable misses and being replaced."
+      }
+    ]
+  },
+  {
+    "queryId": "q039",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Recovers from malformed source cache entries",
+    "grade": 1,
+    "reason": "Source-symbol cache malformed-entry behavior is an analogous contract, but not the requested Markdown cache.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "50-52",
+        "finding": "Source-symbol cache malformed-entry behavior is an analogous contract, but not the requested Markdown cache."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/cli#CLI#init",
+    "grade": 0,
+    "reason": "An init-time tip to install ripgrep does not explain discovery APIs or watch scope.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "168-190",
+        "finding": "Frozen 72fbf5c section: An init-time tip to install ripgrep does not explain discovery APIs or watch scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q040",
+    "sectionId": "lat.md/tests/ts-fallback#TS Fallback#getSection includes code back-refs without rg",
+    "grade": 1,
+    "reason": "Verifies source code backlinks work without ripgrep, but not API separation or UI watch inventory.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ts-fallback.md",
+        "lines": "26-29",
+        "finding": "Frozen 72fbf5c section: Verifies source code backlinks work without ripgrep, but not API separation or UI watch inventory."
+      }
+    ]
+  },
+  {
+    "queryId": "q041",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Produces equivalent inline and worker snapshots",
+    "grade": 0,
+    "reason": "Parser analysis worker equivalence is unrelated to graph layout workers or settling animation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "14-17",
+        "finding": "Frozen 72fbf5c section: Parser analysis worker equivalence is unrelated to graph layout workers or settling animation."
+      }
+    ]
+  },
+  {
+    "queryId": "q042",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Rich Diagram Fences#Mermaid",
+    "grade": 0,
+    "reason": "Mermaid flowchart demo is not the Sigma graph legend.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "142-155",
+        "finding": "Mermaid flowchart demo is not the Sigma graph legend. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q042",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 1,
+    "reason": "Defines document/source/code relationship categories that provide context for legend semantics, without specifying colors.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Defines document/source/code relationship categories that provide context for legend semantics, without specifying colors. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q042",
+    "sectionId": "lat.md/view/specs#View Tests#Uses Geist syntax colors",
+    "grade": 0,
+    "reason": "Code token syntax colors are separate from graph node category colors.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "352-355",
+        "finding": "Code token syntax colors are separate from graph node category colors. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Graph edge construction does not specify inspector clicks, route history or graph-mode persistence.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Graph edge construction does not specify inspector clicks, route history or graph-mode persistence. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q044",
+    "sectionId": "lat.md/view/graph#Graph View#Research basis",
+    "grade": 1,
+    "reason": "Explains renderer node-click selection and graph interaction foundations, but not inspector-link routing or sticky mode.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "5-14",
+        "finding": "Explains renderer node-click selection and graph interaction foundations, but not inspector-link routing or sticky mode. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q045",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Graph edge provenance and self-loop omission do not explain node label breadcrumb disambiguation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Graph edge provenance and self-loop omission do not explain node label breadcrumb disambiguation."
+      }
+    ]
+  },
+  {
+    "queryId": "q046",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Nodes",
+    "grade": 1,
+    "reason": "Canonical node URLs provide limited context for document/source route identity, but no presentation persistence policy.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "40-51",
+        "finding": "Frozen 72fbf5c section: Canonical node URLs provide limited context for document/source route identity, but no presentation persistence policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q046",
+    "sectionId": "lat.md/view/graph#Graph View#Initial scope",
+    "grade": 0,
+    "reason": "Graph interaction scope and filters do not specify localStorage namespace or history semantics.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "92-101",
+        "finding": "Frozen 72fbf5c section: Graph interaction scope and filters do not specify localStorage namespace or history semantics."
+      }
+    ]
+  },
+  {
+    "queryId": "q046",
+    "sectionId": "lat.md/view/graph#Graph View#Server projection",
+    "grade": 0,
+    "reason": "Server graph projection and stable positions do not describe persisted presentation mode.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "62-71",
+        "finding": "Frozen 72fbf5c section: Server graph projection and stable positions do not describe persisted presentation mode."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/search-design#Search Redesign",
+    "grade": 0,
+    "reason": "Search architecture overview does not explain graph-node filtering or size.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "1-4",
+        "finding": "Search architecture overview does not explain graph-node filtering or size."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Collapses before rank fusion",
+    "grade": 0,
+    "reason": "Section rank collapse does not establish how graph nodes resize.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "121-124",
+        "finding": "Section rank collapse does not establish how graph nodes resize."
+      }
+    ]
+  },
+  {
+    "queryId": "q047",
+    "sectionId": "lat.md/view/graph#Graph View#Product shape",
+    "grade": 1,
+    "reason": "Locates the semantic filter in graph mode and describes its workspace; useful context but no relevance sizing formula.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "15-35",
+        "finding": "Locates the semantic filter in graph mode and describes its workspace; useful context but no relevance sizing formula."
+      }
+    ]
+  },
+  {
+    "queryId": "q048",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics",
+    "grade": 0,
+    "reason": "Stable canonical IDs preserving selection are adjacent graph lifecycle facts, but do not explain node kinds, backlink sizes or label rendering.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "36-39",
+        "finding": "Stable canonical IDs preserving selection are adjacent graph lifecycle facts, but do not explain node kinds, backlink sizes or label rendering."
+      }
+    ]
+  },
+  {
+    "queryId": "q049",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 2,
+    "reason": "Directly explains document/source/code-mention projection and edge provenance, a substantial architecture component.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Frozen 72fbf5c section: Directly explains document/source/code-mention projection and edge provenance, a substantial architecture component."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Full ref refs finds md references",
+    "grade": 1,
+    "reason": "Finds Markdown backlinks through full refs, useful navigation to references but no deduplication policy.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "66-69",
+        "finding": "Frozen 72fbf5c section: Finds Markdown backlinks through full refs, useful navigation to references but no deduplication policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/tests/section#Section#Reference summaries preserve leading paragraphs",
+    "grade": 0,
+    "reason": "Summary text truncation does not explain count deduplication.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "46-49",
+        "finding": "Frozen 72fbf5c section: Summary text truncation does not explain count deduplication."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Nonexistent leaf in nested ref is error",
+    "grade": 0,
+    "reason": "Missing heading validation does not concern browser panel state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "106-108",
+        "finding": "Missing heading validation does not concern browser panel state. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Skipped intermediate in ref is error",
+    "grade": 0,
+    "reason": "Exact heading-chain validation does not concern browser panel state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "98-101",
+        "finding": "Exact heading-chain validation does not concern browser panel state. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Wrong nesting order in ref is error",
+    "grade": 0,
+    "reason": "Heading nesting validation does not concern browser panel state.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "102-105",
+        "finding": "Heading nesting validation does not concern browser panel state. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/tests/section#Section#Section with both outgoing and incoming refs",
+    "grade": 0,
+    "reason": "CLI section-output formatting is unrelated to browser menu state or delayed refresh.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "38-41",
+        "finding": "CLI section-output formatting is unrelated to browser menu state or delayed refresh. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/specs#View Tests#Places context within a collapsed source window",
+    "grade": 0,
+    "reason": "Collapsed code windows are a different context UI from heading reference menus.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "344-347",
+        "finding": "Collapsed code windows are a different context UI from heading reference menus. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q052",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#Stable Fragments",
+    "grade": 0,
+    "reason": "External stable fragment identity does not specify H1 TOC scrolling.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "480-485",
+        "finding": "Frozen 72fbf5c section: External stable fragment identity does not specify H1 TOC scrolling."
+      }
+    ]
+  },
+  {
+    "queryId": "q052",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Repository Path Links",
+    "grade": 0,
+    "reason": "Repository path validation does not specify in-document scrolling.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "121-135",
+        "finding": "Frozen 72fbf5c section: Repository path validation does not specify in-document scrolling."
+      }
+    ]
+  },
+  {
+    "queryId": "q052",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights search destination passages",
+    "grade": 0,
+    "reason": "Search passage highlighting is a different navigation behavior from clicking the H1 TOC entry.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "240-243",
+        "finding": "Frozen 72fbf5c section: Search passage highlighting is a different navigation behavior from clicking the H1 TOC entry."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live Markdown editing",
+    "grade": 0,
+    "reason": "Same-document editor preservation and dirty navigation prompts do not describe history scroll restoration or Safari behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "117-132",
+        "finding": "Same-document editor preservation and dirty navigation prompts do not describe history scroll restoration or Safari behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q053",
+    "sectionId": "lat.md/view/specs#View Tests#Edits local Markdown safely",
+    "grade": 0,
+    "reason": "Dirty-editor navigation confirmations are unrelated to Back/swipe scroll restoration or temporary page hiding.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "252-263",
+        "finding": "Dirty-editor navigation confirmations are unrelated to Back/swipe scroll restoration or temporary page hiding."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/cli#CLI#search#Backend selection",
+    "grade": 0,
+    "reason": "Embedding backend selection does not govern browser URL or Back history.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "356-389",
+        "finding": "Frozen 72fbf5c section: Embedding backend selection does not govern browser URL or Back history."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/search-design#Search Redesign#Backlink prior",
+    "grade": 0,
+    "reason": "Proposed backlink authority ranking is unrelated to browser history.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "91-109",
+        "finding": "Frozen 72fbf5c section: Proposed backlink authority ranking is unrelated to browser history."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live project index",
+    "grade": 0,
+    "reason": "Live project updates and index freshness do not describe query/history restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "133-150",
+        "finding": "Frozen 72fbf5c section: Live project updates and index freshness do not describe query/history restoration."
+      }
+    ]
+  },
+  {
+    "queryId": "q054",
+    "sectionId": "lat.md/view/specs#View Tests#Shows live Git state",
+    "grade": 0,
+    "reason": "Git change presentation is unrelated to browser Back history.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "326-343",
+        "finding": "Frozen 72fbf5c section: Git change presentation is unrelated to browser Back history."
+      }
+    ]
+  },
+  {
+    "queryId": "q055",
+    "sectionId": "lat.md/cli#CLI#expand",
+    "grade": 0,
+    "reason": "Expanding wiki refs into agent text is unrelated to expanding hidden source lines.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "135-149",
+        "finding": "Frozen 72fbf5c section: Expanding wiki refs into agent text is unrelated to expanding hidden source lines."
+      }
+    ]
+  },
+  {
+    "queryId": "q055",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights source syntax safely",
+    "grade": 1,
+    "reason": "Structured source line trees and multiline syntax retention provide rendering context, not collapse/buffer policy.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "348-351",
+        "finding": "Frozen 72fbf5c section: Structured source line trees and multiline syntax retention provide rendering context, not collapse/buffer policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q056",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Reuses vectors after source movement",
+    "grade": 0,
+    "reason": "Embedding reuse after Markdown source movement does not preserve source-view scroll position.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "125-128",
+        "finding": "Frozen 72fbf5c section: Embedding reuse after Markdown source movement does not preserve source-view scroll position."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/search-design#Search Redesign#Backlink prior",
+    "grade": 0,
+    "reason": "Backlink ranking prior is unrelated to browser history.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "91-109",
+        "finding": "Backlink ranking prior is unrelated to browser history. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/view/specs#View Tests#Shows section back-references",
+    "grade": 0,
+    "reason": "Section backlink menus describe navigation destinations but not Back scroll restoration.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "286-295",
+        "finding": "Section backlink menus describe navigation destinations but not Back scroll restoration. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q057",
+    "sectionId": "lat.md/view/specs#View Tests#Stabilizes fragment navigation immediately#Preserves rich renderers",
+    "grade": 1,
+    "reason": "Describes preservation across fragment rerenders, useful adjacent navigation lifecycle context but no scroll restoration guarantee.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "380-383",
+        "finding": "Describes preservation across fragment rerenders, useful adjacent navigation lifecycle context but no scroll restoration guarantee. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#Stable Fragments",
+    "grade": 0,
+    "reason": "Stable external named targets address reference drift, not same-document router lifecycle.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "480-485",
+        "finding": "Stable external named targets address reference drift, not same-document router lifecycle."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/search-design#Search Redesign#Incremental indexing",
+    "grade": 0,
+    "reason": "Index fingerprints and re-chunking are unrelated to browser hash navigation.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "15-26",
+        "finding": "Index fingerprints and re-chunking are unrelated to browser hash navigation."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Reuses unchanged chunks within edited sections",
+    "grade": 0,
+    "reason": "Embedding chunk reuse is unrelated to browser remounts.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "129-132",
+        "finding": "Embedding chunk reuse is unrelated to browser remounts."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Responsive layout",
+    "grade": 1,
+    "reason": "Mobile TOC selection and fragment positioning give useful navigation context, but do not address remount prevention.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "201-212",
+        "finding": "Mobile TOC selection and fragment positioning give useful navigation context, but do not address remount prevention."
+      }
+    ]
+  },
+  {
+    "queryId": "q059",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 0,
+    "reason": "Same-document graph edge omission is not fragment navigation behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "52-61",
+        "finding": "Same-document graph edge omission is not fragment navigation behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 0,
+    "reason": "Broken-link validation rules do not specify sidebar marker propagation.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Frozen 72fbf5c section: Broken-link validation rules do not specify sidebar marker propagation."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Short Path Disambiguation",
+    "grade": 0,
+    "reason": "Reference ambiguity errors do not explain ancestor-directory markers.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "109-120",
+        "finding": "Frozen 72fbf5c section: Reference ambiguity errors do not explain ancestor-directory markers."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/tests/check-links#Check Links#Default check validates relative links",
+    "grade": 0,
+    "reason": "Default CLI validation does not address visual marker propagation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "22-25",
+        "finding": "Frozen 72fbf5c section: Default CLI validation does not address visual marker propagation."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Sidebar discovery",
+    "grade": 0,
+    "reason": "External-source sidebar organization says nothing about validation markers.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "92-94",
+        "finding": "Frozen 72fbf5c section: External-source sidebar organization says nothing about validation markers."
+      }
+    ]
+  },
+  {
+    "queryId": "q061",
+    "sectionId": "lat.md/tests/check-links#Check Links",
+    "grade": 0,
+    "reason": "Generic local-link validation test overview does not describe resource retention in exports.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "6-9",
+        "finding": "Generic local-link validation test overview does not describe resource retention in exports. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q061",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Document tree protocol",
+    "grade": 1,
+    "reason": "Explains static traversal of tree properties for linked targets and route rewriting, partial export-pipeline context without image/resource copying.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "41-58",
+        "finding": "Explains static traversal of tree properties for linked targets and route rewriting, partial export-pipeline context without image/resource copying. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q062",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Markdown navigation",
+    "grade": 0,
+    "reason": "Heading menus copy section IDs/URLs, which is a different control from code-block clipboard buttons.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "165-200",
+        "finding": "Heading menus copy section IDs/URLs, which is a different control from code-block clipboard buttons. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q062",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Typography and Strikethrough",
+    "grade": 0,
+    "reason": "Inline-code typography is unrelated to fenced-block clipboard behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "7-14",
+        "finding": "Inline-code typography is unrelated to fenced-block clipboard behavior. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Rich Diagram Fences",
+    "grade": 0,
+    "reason": "Diagram fence rendering does not describe wiki-link text colors.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "138-141",
+        "finding": "Diagram fence rendering does not describe wiki-link text colors. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/specs#View Tests",
+    "grade": 0,
+    "reason": "Generic browser test overview does not identify segmented wiki-link styling or its tests.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "6-9",
+        "finding": "Generic browser test overview does not identify segmented wiki-link styling or its tests. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights search destination passages",
+    "grade": 0,
+    "reason": "Search destination highlights are unrelated to segmented link underlines.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "240-243",
+        "finding": "Search destination highlights are unrelated to segmented link underlines. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights source syntax safely",
+    "grade": 0,
+    "reason": "Source syntax highlighting is distinct from segmented wiki-link styling.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "348-351",
+        "finding": "Source syntax highlighting is distinct from segmented wiki-link styling. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/tests/check-links#Check Links#Rejects backslash path separators",
+    "grade": 0,
+    "reason": "Backslash path validation is unrelated to language-icon layout.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "38-41",
+        "finding": "Backslash path validation is unrelated to language-icon layout."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/tests/hook#Hook#Counts untracked files before the first commit",
+    "grade": 0,
+    "reason": "Untracked line counts are unrelated to link-label wrapping.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "78-80",
+        "finding": "Untracked line counts are unrelated to link-label wrapping."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Windows-style backslash refs pass",
+    "grade": 0,
+    "reason": "Windows path normalization is unrelated to whitespace wrapping.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "58-61",
+        "finding": "Windows path normalization is unrelated to whitespace wrapping."
+      }
+    ]
+  },
+  {
+    "queryId": "q064",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Source navigation",
+    "grade": 0,
+    "reason": "Source-view context and line-number sizing do not address language badges wrapping with labels.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "223-228",
+        "finding": "Source-view context and line-number sizing do not address language badges wrapping with labels."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/cli#CLI#check#links",
+    "grade": 1,
+    "reason": "Gives validation command and link-definition requirements, without visual row styling.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "98-101",
+        "finding": "Frozen 72fbf5c section: Gives validation command and link-definition requirements, without visual row styling."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/markdown#Markdown#Alerts",
+    "grade": 0,
+    "reason": "Alert callouts are not reference-definition badges or rows.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "29-32",
+        "finding": "Frozen 72fbf5c section: Alert callouts are not reference-definition badges or rows."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/markdown#Markdown#Relative Links",
+    "grade": 1,
+    "reason": "Specifies reference-definition and URL validation, a secondary clause, but not the requested presentation.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "172-198",
+        "finding": "Frozen 72fbf5c section: Specifies reference-definition and URL validation, a secondary clause, but not the requested presentation."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/parser#Parser#Footnotes",
+    "grade": 0,
+    "reason": "Footnote AST extension is a different syntax from link reference definitions.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "25-28",
+        "finding": "Frozen 72fbf5c section: Footnote AST extension is a different syntax from link reference definitions."
+      }
+    ]
+  },
+  {
+    "queryId": "q065",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#GitHub Repository Boundaries",
+    "grade": 0,
+    "reason": "Literal GitHub autolinks are unrelated to rendering definition rows.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "261-269",
+        "finding": "Frozen 72fbf5c section: Literal GitHub autolinks are unrelated to rendering definition rows."
+      }
+    ]
+  },
+  {
+    "queryId": "q066",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Renders inline code in firstParagraph",
+    "grade": 0,
+    "reason": "Inline-code preview extraction is not Git word-diff overlap policy.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "17-20",
+        "finding": "Inline-code preview extraction is not Git word-diff overlap policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q066",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Typography and Strikethrough",
+    "grade": 0,
+    "reason": "Typography/strikethrough examples do not explain when Git changes use word or block replacement.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "7-14",
+        "finding": "Typography/strikethrough examples do not explain when Git changes use word or block replacement."
+      }
+    ]
+  },
+  {
+    "queryId": "q067",
+    "sectionId": "lat.md/view/specs#View Tests#Shows a local table of contents",
+    "grade": 0,
+    "reason": "TOC rail/dropdown sizing does not address mobile prose overflow or code-block containment.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "174-185",
+        "finding": "TOC rail/dropdown sizing does not address mobile prose overflow or code-block containment. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/markdown#Markdown#Leading Paragraph",
+    "grade": 0,
+    "reason": "Leading paragraph rules do not specify TOC hierarchy or appearance.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "199-206",
+        "finding": "Leading paragraph rules do not specify TOC hierarchy or appearance. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/markdown#Markdown#Tables",
+    "grade": 0,
+    "reason": "Pipe tables are unrelated to the table of contents.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "5-10",
+        "finding": "Pipe tables are unrelated to the table of contents. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/tests/section#Section#Reference summaries preserve leading paragraphs",
+    "grade": 0,
+    "reason": "Reference-summary paragraph preservation does not describe TOC headings.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "46-49",
+        "finding": "Reference-summary paragraph preservation does not describe TOC headings. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Populates position and firstParagraph fields",
+    "grade": 0,
+    "reason": "Source positions and paragraph extraction do not specify TOC root inclusion or styling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "13-16",
+        "finding": "Source positions and paragraph extraction do not specify TOC root inclusion or styling. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q068",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Document tree protocol",
+    "grade": 0,
+    "reason": "General tree rendering does not describe H1 TOC entries or indentation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "41-58",
+        "finding": "General tree rendering does not describe H1 TOC entries or indentation. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/tests/section#Section#Reference summaries preserve leading paragraphs",
+    "grade": 0,
+    "reason": "Reference-preview paragraph truncation is unrelated to local TOC activation.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "46-49",
+        "finding": "Reference-preview paragraph truncation is unrelated to local TOC activation."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Responsive layout",
+    "grade": 1,
+    "reason": "TOC fragment offsets and mobile selection behavior are useful neighboring context, not end-of-document activation logic.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "201-212",
+        "finding": "TOC fragment offsets and mobile selection behavior are useful neighboring context, not end-of-document activation logic."
+      }
+    ]
+  },
+  {
+    "queryId": "q069",
+    "sectionId": "lat.md/view/specs#View Tests#Adapts navigation to mobile screens",
+    "grade": 1,
+    "reason": "Specifies preserved active TOC state and fragment offsets on mobile, but not short-section scroll synchronization.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "186-199",
+        "finding": "Specifies preserved active TOC state and fragment offsets on mobile, but not short-section scroll synchronization."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/markdown#Markdown#Emoji Shortcodes",
+    "grade": 0,
+    "reason": "Emoji shortcode images do not identify the TOC icon or its license.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "37-40",
+        "finding": "Frozen 72fbf5c section: Emoji shortcode images do not identify the TOC icon or its license."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/markdown#Markdown#Tables",
+    "grade": 0,
+    "reason": "Markdown tables are unrelated to the table-of-contents icon.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "5-10",
+        "finding": "Frozen 72fbf5c section: Markdown tables are unrelated to the table-of-contents icon."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/tests/roundtrip#Roundtrip#Covered features",
+    "grade": 0,
+    "reason": "Markdown roundtrip coverage does not describe TOC icons.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/roundtrip.md",
+        "lines": "7-11",
+        "finding": "Frozen 72fbf5c section: Markdown roundtrip coverage does not describe TOC icons."
+      }
+    ]
+  },
+  {
+    "queryId": "q070",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Markdown navigation",
+    "grade": 1,
+    "reason": "TOC alignment, sizing and presentation are useful styling context, but no icon-source/license attribution.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "165-200",
+        "finding": "Frozen 72fbf5c section: TOC alignment, sizing and presentation are useful styling context, but no icon-source/license attribution."
+      }
+    ]
+  },
+  {
+    "queryId": "q071",
+    "sectionId": "lat.md/external-sources#External Sources#Browser Integration#Live UI",
+    "grade": 0,
+    "reason": "External live document rendering does not explain exported JSON layouts or CDN caching.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "425-430",
+        "finding": "Frozen 72fbf5c section: External live document rendering does not explain exported JSON layouts or CDN caching."
+      }
+    ]
+  },
+  {
+    "queryId": "q071",
+    "sectionId": "lat.md/view/specs#View Tests#Selects server deployment targets",
+    "grade": 1,
+    "reason": "Identifies Node/Vercel packaging and artifact locations, useful deployment context but no JSON waterfall/cache details.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "84-89",
+        "finding": "Frozen 72fbf5c section: Identifies Node/Vercel packaging and artifact locations, useful deployment context but no JSON waterfall/cache details."
+      }
+    ]
+  },
+  {
+    "queryId": "q072",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Build targets#Server export",
+    "grade": 1,
+    "reason": "Describes public route artifact and static fallback layout, but not canonical entry URL or index.html redirects.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "91-110",
+        "finding": "Frozen 72fbf5c section: Describes public route artifact and static fallback layout, but not canonical entry URL or index.html redirects."
+      }
+    ]
+  },
+  {
+    "queryId": "q073",
+    "sectionId": "lat.md/view/specs#View Tests#Builds this repository's site directly",
+    "grade": 1,
+    "reason": "Specifies portable artifact and direct Vercel output workflow, useful deployment context without Node File Trace asset selection details.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "100-111",
+        "finding": "Specifies portable artifact and direct Vercel output workflow, useful deployment context without Node File Trace asset selection details. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q074",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live project index",
+    "grade": 1,
+    "reason": "Identifies the supported-source discovery used for browser watch scope and incremental scans; useful scan architecture navigation, but no overwrite/marker policy.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "133-150",
+        "finding": "Identifies the supported-source discovery used for browser watch scope and incremental scans; useful scan architecture navigation, but no overwrite/marker policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/cli#CLI#init",
+    "grade": 0,
+    "reason": "Project initialization and embedding setup do not answer deployment cache policy.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "168-190",
+        "finding": "Frozen 72fbf5c section: Project initialization and embedding setup do not answer deployment cache policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Cache Invalidation",
+    "grade": 0,
+    "reason": "External-source provider cache invalidation is unrelated to deployed static-asset HTTP caching.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "331-352",
+        "finding": "Frozen 72fbf5c section: External-source provider cache invalidation is unrelated to deployed static-asset HTTP caching."
+      }
+    ]
+  },
+  {
+    "queryId": "q075",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Live project index",
+    "grade": 0,
+    "reason": "Live snapshot invalidation differs from CDN asset cache-control policy.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "133-150",
+        "finding": "Frozen 72fbf5c section: Live snapshot invalidation differs from CDN asset cache-control policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/cli#CLI#search#Backend selection",
+    "grade": 0,
+    "reason": "Embedding backend selection does not address serverless request handling, ephemeral artifact cache, or excluded live features.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "356-389",
+        "finding": "Embedding backend selection does not address serverless request handling, ephemeral artifact cache, or excluded live features. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers",
+    "grade": 0,
+    "reason": "External content retrieval providers are unrelated to deployment execution.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "265-276",
+        "finding": "External content retrieval providers are unrelated to deployment execution. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_search works offline without a key",
+    "grade": 0,
+    "reason": "Offline MCP search is a different runtime and does not establish serverless behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "43-44",
+        "finding": "Offline MCP search is a different runtime and does not establish serverless behavior. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/website#Website#Current State",
+    "grade": 0,
+    "reason": "Legacy website static export and Next rewrites do not describe the requested serverless search runtime.",
+    "evidence": [
+      {
+        "path": "lat.md/website.md",
+        "lines": "9-17",
+        "finding": "Legacy website static export and Next rewrites do not describe the requested serverless search runtime. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q077",
+    "sectionId": "lat.md/dev-process#Dev Process#Publishing#Publish Workflow",
+    "grade": 0,
+    "reason": "npm release automation does not describe portable-server hosting or runtime filesystem requirements.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "177-186",
+        "finding": "npm release automation does not describe portable-server hosting or runtime filesystem requirements."
+      }
+    ]
+  },
+  {
+    "queryId": "q077",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Rejects unknown generated WASM glue",
+    "grade": 0,
+    "reason": "Build-time guard for changed wasm-bindgen glue does not explain hosting compatibility or runtime filesystem needs.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "101-104",
+        "finding": "Build-time guard for changed wasm-bindgen glue does not explain hosting compatibility or runtime filesystem needs."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/cli#CLI#check",
+    "grade": 0,
+    "reason": "Validation command behavior does not answer UI build overwrite policy.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "66-93",
+        "finding": "Validation command behavior does not answer UI build overwrite policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Cache Invalidation",
+    "grade": 0,
+    "reason": "External cache deletion and ownership is a different subsystem from build destinations.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "331-352",
+        "finding": "External cache deletion and ownership is a different subsystem from build destinations."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_expand expands refs",
+    "grade": 0,
+    "reason": "MCP reference expansion is unrelated to output-directory overwrite.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "20-22",
+        "finding": "MCP reference expansion is unrelated to output-directory overwrite."
+      }
+    ]
+  },
+  {
+    "queryId": "q078",
+    "sectionId": "lat.md/view/specs#View Tests#Builds Vercel output directly",
+    "grade": 0,
+    "reason": "Vercel artifact assembly describes output content and routing, not existing-output or overwrite behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "90-99",
+        "finding": "Vercel artifact assembly describes output content and routing, not existing-output or overwrite behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/cli#CLI#search#Backend selection",
+    "grade": 1,
+    "reason": "Stored-model/backend policy gives embedding runtime context, but not server preindexing or cold-start behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "356-389",
+        "finding": "Frozen 72fbf5c section: Stored-model/backend policy gives embedding runtime context, but not server preindexing or cold-start behavior."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/search-design#Search Redesign#Incremental indexing",
+    "grade": 1,
+    "reason": "Distinguishes incremental work and unchanged-project bypass, useful cost background but not server-build preindexing.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "15-26",
+        "finding": "Frozen 72fbf5c section: Distinguishes incremental work and unchanged-project bypass, useful cost background but not server-build preindexing."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/search-design#Search Redesign#Validation snapshot",
+    "grade": 1,
+    "reason": "Documents warm retrieval measurements and explicit exclusions, useful performance context; no server startup measurement.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "188-198",
+        "finding": "Frozen 72fbf5c section: Documents warm retrieval measurements and explicit exclusions, useful performance context; no server startup measurement."
+      }
+    ]
+  },
+  {
+    "queryId": "q079",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Skips an unbuilt search index",
+    "grade": 1,
+    "reason": "Query-only sessions avoid loading an embedder if index is absent, a narrow runtime-context detail.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "93-96",
+        "finding": "Frozen 72fbf5c section: Query-only sessions avoid loading an embedder if index is absent, a narrow runtime-context detail."
+      }
+    ]
+  },
+  {
+    "queryId": "q080",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput renders source ref line ranges",
+    "grade": 0,
+    "reason": "CLI source-reference line-range formatting does not address static JSON duplication.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "54-57",
+        "finding": "CLI source-reference line-range formatting does not address static JSON duplication. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q080",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Document tree protocol",
+    "grade": 1,
+    "reason": "Explains structured source/highlighted presentation and static tree traversal, useful format context without the file/view deduplication contract.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "41-58",
+        "finding": "Explains structured source/highlighted presentation and static tree traversal, useful format context without the file/view deduplication contract. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q081",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Execution",
+    "grade": 2,
+    "reason": "Specifies profiled parser imports, zero-duration cache-hit skip events and worker behavior for CLI check.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "69-80",
+        "finding": "Specifies profiled parser imports, zero-duration cache-hit skip events and worker behavior for CLI check. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q081",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Validation diagnostics",
+    "grade": 0,
+    "reason": "Browser external-fragment diagnostics do not specify CLI check flags or profiling phases.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "88-91",
+        "finding": "Browser external-fragment diagnostics do not specify CLI check flags or profiling phases. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q081",
+    "sectionId": "lat.md/tests/search#Search#RAG Tests#Finds performance section for latency query",
+    "grade": 0,
+    "reason": "Retrieval latency fixture is unrelated to check profiling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "51-55",
+        "finding": "Retrieval latency fixture is unrelated to check profiling. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/cli#CLI#expand",
+    "grade": 1,
+    "reason": "Documents a pipe-oriented agent integration and exact text-output format, useful terminal integration context but not JSON support.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "135-149",
+        "finding": "Documents a pipe-oriented agent integration and exact text-output format, useful terminal integration context but not JSON support."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/cli#CLI#refs#Scope",
+    "grade": 1,
+    "reason": "Points to structured findRefs results and shared MCP use, a useful programmatic alternative, without claiming a CLI JSON flag.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "58-65",
+        "finding": "Points to structured findRefs results and shared MCP use, a useful programmatic alternative, without claiming a CLI JSON flag."
+      }
+    ]
+  },
+  {
+    "queryId": "q082",
+    "sectionId": "lat.md/tests/tests#Tests#Conventions",
+    "grade": 0,
+    "reason": "Generic testing conventions and a suite index do not explain machine-readable CLI output.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/tests.md",
+        "lines": "5-37",
+        "finding": "Generic testing conventions and a suite index do not explain machine-readable CLI output."
+      }
+    ]
+  },
+  {
+    "queryId": "q084",
+    "sectionId": "lat.md/cli#CLI#init#VS Code Copilot",
+    "grade": 0,
+    "reason": "Copilot-specific MCP setup is not Codex initialization or lifecycle parity.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "223-230",
+        "finding": "Frozen 72fbf5c section: Copilot-specific MCP setup is not Codex initialization or lifecycle parity."
+      }
+    ]
+  },
+  {
+    "queryId": "q084",
+    "sectionId": "lat.md/tests/config#Configuration",
+    "grade": 0,
+    "reason": "Generic user-config tests do not establish Codex hooks or skills setup.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/config.md",
+        "lines": "6-9",
+        "finding": "Frozen 72fbf5c section: Generic user-config tests do not establish Codex hooks or skills setup."
+      }
+    ]
+  },
+  {
+    "queryId": "q084",
+    "sectionId": "lat.md/tests/hook#Hook#Codex stop hook returns a block decision",
+    "grade": 2,
+    "reason": "Directly specifies Codex/Claude stop continuation payload parity.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "56-59",
+        "finding": "Frozen 72fbf5c section: Directly specifies Codex/Claude stop continuation payload parity."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/external-sources#External Sources#Cache and Invalidation#Automatic Synchronization",
+    "grade": 0,
+    "reason": "External file synchronization and cache generations are unrelated to init-version metadata.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "361-376",
+        "finding": "External file synchronization and cache generations are unrelated to init-version metadata."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/external-sources#External Sources#Command Integration#Validation",
+    "grade": 0,
+    "reason": "External configuration validation is unrelated to init-version warnings.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "381-386",
+        "finding": "External configuration validation is unrelated to init-version warnings."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/tests/init#Init#Embedding setup#Fresh init pins local embeddings",
+    "grade": 1,
+    "reason": "Explains that init stamps the current version even on the no-agent path; useful context, but does not explain why clone-local metadata is missing.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "14-19",
+        "finding": "Explains that init stamps the current version even on the no-agent path; useful context, but does not explain why clone-local metadata is missing."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/tests/init#Init#Lat-owned build output ignore",
+    "grade": 0,
+    "reason": "Ignoring build output does not explain the lat_init.json warning.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "64-66",
+        "finding": "Ignoring build output does not explain the lat_init.json warning."
+      }
+    ]
+  },
+  {
+    "queryId": "q085",
+    "sectionId": "lat.md/tests/mcp#MCP#lat_check reports errors",
+    "grade": 0,
+    "reason": "Missing index-file MCP errors do not explain missing init-version metadata.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/mcp.md",
+        "lines": "34-36",
+        "finding": "Missing index-file MCP errors do not explain missing init-version metadata."
+      }
+    ]
+  },
+  {
+    "queryId": "q086",
+    "sectionId": "lat.md/tests/hook#Hook#Supports projects outside Git",
+    "grade": 1,
+    "reason": "Defines the boundary outside Git where diff-based Stop-hook analysis is skipped, useful scope context but not untracked-file counting.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "16-19",
+        "finding": "Defines the boundary outside Git where diff-based Stop-hook analysis is skipped, useful scope context but not untracked-file counting."
+      }
+    ]
+  },
+  {
+    "queryId": "q087",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Populates position and firstParagraph fields",
+    "grade": 0,
+    "reason": "Extracting paragraph metadata does not test generated template validity or required leading paragraphs.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "13-16",
+        "finding": "Extracting paragraph metadata does not test generated template validity or required leading paragraphs."
+      }
+    ]
+  },
+  {
+    "queryId": "q087",
+    "sectionId": "lat.md/tests/section-parsing#Section Parsing#Renders inline code in firstParagraph",
+    "grade": 0,
+    "reason": "Preserving inline code in a preview does not validate generated instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-parsing.md",
+        "lines": "17-20",
+        "finding": "Preserving inline code in a preview does not validate generated instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q087",
+    "sectionId": "lat.md/tests/section-preview#Section Preview Formatting#Formats section with firstParagraph",
+    "grade": 0,
+    "reason": "Formatting section previews does not establish generated template Markdown validity.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section-preview.md",
+        "lines": "9-12",
+        "finding": "Formatting section previews does not establish generated template Markdown validity."
+      }
+    ]
+  },
+  {
+    "queryId": "q088",
+    "sectionId": "lat.md/cli#CLI#Configuration File",
+    "grade": 2,
+    "reason": "Specifies persisted per-repository embedding preference and configuration/key precedence, a substantial requested component.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "273-285",
+        "finding": "Frozen 72fbf5c section: Specifies persisted per-repository embedding preference and configuration/key precedence, a substantial requested component."
+      }
+    ]
+  },
+  {
+    "queryId": "q089",
+    "sectionId": "lat.md/tests/hook#Hook#Blocks with both messages when check fails and diff needs sync",
+    "grade": 0,
+    "reason": "Generic stop failure messaging does not specify nested-project Git diff scope.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "36-39",
+        "finding": "Frozen 72fbf5c section: Generic stop failure messaging does not specify nested-project Git diff scope."
+      }
+    ]
+  },
+  {
+    "queryId": "q090",
+    "sectionId": "lat.md/tests/hook#Hook#Blocks when lat check fails",
+    "grade": 1,
+    "reason": "Confirms validation failures block the hook, useful half of the behavior but not non-Git success handling.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/hook.md",
+        "lines": "20-23",
+        "finding": "Confirms validation failures block the hook, useful half of the behavior but not non-Git success handling. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/dev-process#Dev Process#Publishing#Release Process",
+    "grade": 0,
+    "reason": "Release versioning and merge sequence do not specify OS matrix or preview-deployment workflow.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "163-176",
+        "finding": "Frozen 72fbf5c section: Release versioning and merge sequence do not specify OS matrix or preview-deployment workflow."
+      }
+    ]
+  },
+  {
+    "queryId": "q091",
+    "sectionId": "lat.md/view/specs#View Tests",
+    "grade": 0,
+    "reason": "Generic browser test-suite overview provides neither CI platforms nor preview process.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "6-9",
+        "finding": "Frozen 72fbf5c section: Generic browser test-suite overview provides neither CI platforms nor preview process."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/tests/check-links#Check Links#Rejects undefined shortcut references",
+    "grade": 0,
+    "reason": "Undefined Markdown shortcut references are unrelated to Dart dot shorthand.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/check-links.md",
+        "lines": "14-17",
+        "finding": "Undefined Markdown shortcut references are unrelated to Dart dot shorthand. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/tests/ref-resolution#Ref Resolution#Bare heading in code is error",
+    "grade": 1,
+    "reason": "Gives general dangling-code-ref rejection semantics, but no Dart shorthand or annotation-specific regression coverage.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/ref-resolution.md",
+        "lines": "86-89",
+        "finding": "Gives general dangling-code-ref rejection semantics, but no Dart shorthand or annotation-specific regression coverage. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/tests/tests#Tests#Conventions",
+    "grade": 0,
+    "reason": "Generic test organization provides no Dart-specific regression behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/tests.md",
+        "lines": "5-37",
+        "finding": "Generic test organization provides no Dart-specific regression behavior. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q092",
+    "sectionId": "lat.md/view/specs#View Tests#Highlights source syntax safely",
+    "grade": 0,
+    "reason": "Dart syntax highlighting is not grammar extraction or annotation-adjacent code-reference testing.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "348-351",
+        "finding": "Dart syntax highlighting is not grammar extraction or annotation-adjacent code-reference testing. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/tests/analysis-tests#Parser Analysis Tests#Recovers from malformed source cache entries",
+    "grade": 0,
+    "reason": "Generic malformed source-cache recovery does not describe Java symbols, registration, or parser integration.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/analysis-tests.md",
+        "lines": "50-52",
+        "finding": "Generic malformed source-cache recovery does not describe Java symbols, registration, or parser integration."
+      }
+    ]
+  },
+  {
+    "queryId": "q093",
+    "sectionId": "lat.md/tests/section#Section#formatSectionOutput marks source snippets as inline code",
+    "grade": 0,
+    "reason": "Snippet Markdown formatting does not explain Java parser symbol support.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "58-61",
+        "finding": "Snippet Markdown formatting does not explain Java parser symbol support."
+      }
+    ]
+  },
+  {
+    "queryId": "q094",
+    "sectionId": "lat.md/dev-process#Dev Process#Publishing",
+    "grade": 1,
+    "reason": "Frozen publishing section identifies embedding engine/model packages and shipped dist/weights, useful packaging context but no WASM glue or loader tracing.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "155-162",
+        "finding": "Frozen publishing section identifies embedding engine/model packages and shipped dist/weights, useful packaging context but no WASM glue or loader tracing. Read from frozen commit 72fbf5c."
+      }
+    ]
+  },
+  {
+    "queryId": "q096",
+    "sectionId": "lat.md/markdown#Markdown#Wiki Links#Source Code Links",
+    "grade": 0,
+    "reason": "Parsing Rust source links does not describe Rust build prerequisites.",
+    "evidence": [
+      {
+        "path": "lat.md/markdown.md",
+        "lines": "136-165",
+        "finding": "Frozen 72fbf5c section: Parsing Rust source links does not describe Rust build prerequisites."
+      }
+    ]
+  },
+  {
+    "queryId": "q096",
+    "sectionId": "lat.md/website#Website",
+    "grade": 1,
+    "reason": "Frozen website architecture explains avoiding workspace Rust/WASM/model builds via pinned packages, a limited alternative-build context.",
+    "evidence": [
+      {
+        "path": "lat.md/website.md",
+        "lines": "1-8",
+        "finding": "Frozen 72fbf5c section: Frozen website architecture explains avoiding workspace Rust/WASM/model builds via pinned packages, a limited alternative-build context."
+      }
+    ]
+  },
+  {
+    "queryId": "q097",
+    "sectionId": "lat.md/dev-process#Dev Process#Testing#Continuous Integration",
+    "grade": 1,
+    "reason": "Describes prerequisite CI/build validation before releases, limited release-process context but no packaging footprint or version pins.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "104-111",
+        "finding": "Frozen 72fbf5c section: Describes prerequisite CI/build validation before releases, limited release-process context but no packaging footprint or version pins."
+      }
+    ]
+  },
+  {
+    "queryId": "q098",
+    "sectionId": "lat.md/tests/external-tests#External Sources#Browser and static export#Canonical static export",
+    "grade": 0,
+    "reason": "Publishing canonical external content in static export is unrelated to npm prereleases or dist-tags.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/external-tests.md",
+        "lines": "84-87",
+        "finding": "Publishing canonical external content in static export is unrelated to npm prereleases or dist-tags."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/cli#CLI#init#OpenCode",
+    "grade": 1,
+    "reason": "Describes optional OpenCode integration during initialization, but no basic install command.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "231-239",
+        "finding": "Frozen 72fbf5c section: Describes optional OpenCode integration during initialization, but no basic install command."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/cli#CLI#init#Pi",
+    "grade": 1,
+    "reason": "Useful optional agent-specific initialization context, but no basic install command.",
+    "evidence": [
+      {
+        "path": "lat.md/cli.md",
+        "lines": "203-211",
+        "finding": "Frozen 72fbf5c section: Useful optional agent-specific initialization context, but no basic install command."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/dev-process#Dev Process",
+    "grade": 0,
+    "reason": "Contributor-workflow overview provides no end-user installation or setup step.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "1-4",
+        "finding": "Frozen 72fbf5c section: Contributor-workflow overview provides no end-user installation or setup step."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/view/architecture#Browser Architecture",
+    "grade": 0,
+    "reason": "Deployment-target architecture overview is not end-user installation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "1-4",
+        "finding": "Frozen 72fbf5c section: Deployment-target architecture overview is not end-user installation."
+      }
+    ]
+  },
+  {
+    "queryId": "q099",
+    "sectionId": "lat.md/view/demo#Markdown Rendering Demo#Lat Links",
+    "grade": 0,
+    "reason": "Example links are not setup instructions.",
+    "evidence": [
+      {
+        "path": "lat.md/view/demo.md",
+        "lines": "270-281",
+        "finding": "Frozen 72fbf5c section: Example links are not setup instructions."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/dev-process#Dev Process#Tooling",
+    "grade": 0,
+    "reason": "Workspace language/toolchain inventory does not state generated-template wording policy.",
+    "evidence": [
+      {
+        "path": "lat.md/dev-process.md",
+        "lines": "29-34",
+        "finding": "Workspace language/toolchain inventory does not state generated-template wording policy."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/external-sources#External Sources#Design Boundaries#Stable Fragments",
+    "grade": 0,
+    "reason": "Named external fragment policy does not discuss instruction templates.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "480-485",
+        "finding": "Named external fragment policy does not discuss instruction templates."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/tests/init#Init#Generated instructions",
+    "grade": 1,
+    "reason": "Generated-instruction validity is a nearby template contract, but says nothing about enumerating supported languages.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/init.md",
+        "lines": "56-59",
+        "finding": "Generated-instruction validity is a nearby template contract, but says nothing about enumerating supported languages."
+      }
+    ]
+  },
+  {
+    "queryId": "q100",
+    "sectionId": "lat.md/view/specs#View Tests#Serves source definitions securely",
+    "grade": 0,
+    "reason": "Source-route security does not discuss generated instructions or language-list policy.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "278-281",
+        "finding": "Source-route security does not discuss generated instructions or language-list policy."
+      }
+    ]
+  }
+]

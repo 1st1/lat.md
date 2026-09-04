@@ -130,6 +130,10 @@ Adding blank lines changes source locations without re-embedding unchanged conte
 
 A word replacement within one passage embeds only that passage, preserves the other passage hashes in the same section, and updates searchable evidence.
 
+### Rescores the candidate union without inventing matches
+
+Cross-channel scoring recovers a positive match omitted by initial overfetch, preserves true zero matches and semantic thresholds, retains the original section union, and keeps the baseline default reproducible.
+
 ### Publishes only successful generations
 
 A failed replacement leaves the existing manifest and complete searchable generation intact.
