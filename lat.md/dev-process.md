@@ -80,6 +80,8 @@ The root scripts provide focused checks and builds as well as the complete CI-eq
 
 Set `LAT_FORCE_WEIGHTS=1` when running `pnpm build:weights` to download and convert the model again instead of reusing existing artifacts.
 
+The workspace includes [[packages/stemmer]], a compact English Snowball stemmer built from Rust to WASM. The package build shares the pinned wasm-bindgen toolchain with the embedding engine. Its third-party notices include the wrapper's MIT and Snowball algorithms' BSD-3-Clause licenses. Upstream GPL-licensed test data is not compiled into or shipped with the npm package.
+
 ## Testing
 
 Vitest is the test runner. Tests live in the top-level `tests/` directory.

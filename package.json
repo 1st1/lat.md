@@ -43,7 +43,7 @@
     "setup:rust": "pnpm --filter @lat.md/embed setup:rust",
     "build:wasm": "pnpm --filter @lat.md/embed build:wasm",
     "build:weights": "pnpm --filter @lat.md/embed-minilm-fp16 build:weights",
-    "build:packages": "pnpm --filter @lat.md/server build && pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",
+    "build:packages": "pnpm --filter @lat.md/server build && pnpm --filter @lat.md/stemmer build && pnpm --filter @lat.md/embed build && pnpm --filter @lat.md/embed-minilm-fp16 build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm --filter @lat.md/server build && tsc --noEmit && tsc --noEmit -p view/tsconfig.json",
