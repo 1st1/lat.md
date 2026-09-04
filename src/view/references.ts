@@ -115,14 +115,11 @@ export function linkedSection(
     .join('/');
   let destination: URL;
   try {
-    destination = new URL(url, `http://lat.local/docs/${encodedSourcePath}`);
+    destination = new URL(url, `http://lat.local/${encodedSourcePath}`);
   } catch {
     return null;
   }
-  if (
-    destination.origin !== 'http://lat.local' ||
-    !destination.pathname.startsWith('/docs/')
-  ) {
+  if (destination.origin !== 'http://lat.local') {
     return null;
   }
 
@@ -130,7 +127,7 @@ export function linkedSection(
   let fragment: string;
   try {
     path = destination.pathname
-      .slice('/docs/'.length)
+      .slice(1)
       .split('/')
       .map(decodeURIComponent)
       .join('/');

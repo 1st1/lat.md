@@ -28,7 +28,9 @@ The live server's default-self Content Security Policy permits OpenFreeMap tile 
 
 Read APIs accept only walked vault files or supported project source paths and reject traversal and escaping symlinks.
 
-Local Markdown documents use extensionless `/docs/...` browser routes. Appending `.md` addresses the exact Markdown source instead, with `text/markdown` from the live server and a physical `.md` file in static exports so agents can read the vault without the React protocol.
+Local Markdown routes mirror vault-relative paths without a fixed prefix: `guide.md` becomes `/guide`, and the entry document owns `/` in live and exported UIs. Raw Markdown remains at `/<file>.md`, with `text/markdown` from servers and physical files in exports.
+
+Document paths cannot shadow reserved UI namespaces (`api`, `assets`, `data`, `code`, `external`, `resources`, `graph`, and `search`) or generated HTML files. There is no special `docs/` namespace or compatibility alias.
 
 Relative links to non-Markdown files inside the vault become `/resources/...` routes. The live server reads only real files contained by the vault, while static and server builds copy only resources reached from rendered documents.
 
@@ -72,11 +74,11 @@ Each document route embeds the snapshot manifest and its own document response a
 
 The browser reads the snapshot manifest instead of `/api/*`, never opens an event stream, and hides Git, search, and runtime command controls. Documents contain no Git diff projection, while graph nodes contain no Git status.
 
-`--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path, so deploying the output directory at a host's root serves the UI from that subpath. `/` is the default.
+`--base /path/` prefixes routes, assets, and data and nests the physical payload under the same path. `/` is the default; `--base docs/` normalizes to `/docs/`, without adding another document prefix.
 
 Vite emits lazy chunks, imported CSS, fonts, and renderer dependencies relative to their owning JavaScript or stylesheet. Generated route shells anchor only the entry assets at the configured base, so nested deployments do not leak requests to root `/assets/`.
 
-Relative Markdown links are rewritten against their source document and then to static UI routes, so export directories do not change their target or accidentally request raw Markdown. The entry document owns `/`; `index.html` is only its physical file, and the former `/docs/...` route redirects to the canonical root.
+Relative Markdown links are resolved against their source document before applying the deployment base, preserving nested links and fragments. The entry document owns the base root; `index.html` is only its physical file, and its filename route redirects home.
 
 Builds reject any existing destination, including an empty directory or prior export. `--force` allows intentional replacement; the builder stages the complete artifact beside the destination and moves it only after generation succeeds, retrying transient filesystem locks.
 
@@ -188,7 +190,7 @@ Every section heading exposes a burger-icon action menu, with a numeric badge on
 
 The topmost section menu in a local Markdown document links to the raw `.md` route. External documents and document previews outside their normal local route omit this action.
 
-Raw-file links preserve the deployment base and `/docs/` source path in live, static, and server builds. An exported homepage at `/` still links to its `/docs/<file>.md` source rather than appending `.md` to the homepage URL.
+Raw-file links preserve the deployment base in live, static, and server builds. A homepage at `/` links to its `/<file>.md` source rather than appending `.md` to the homepage URL.
 
 In live views, the menu can invoke [[src/cli/section.ts#sectionCommand|the shared `lat section` command path]] with plain styling. Its modal defaults to the React projection of the shared document tree and can switch to raw output; static exports omit only this execution action.
 

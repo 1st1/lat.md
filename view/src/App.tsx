@@ -698,6 +698,8 @@ export function App() {
   }
 
   function navigate(url: URL): void {
+    const path = documentPath(url.pathname);
+    if (path) url.pathname = documentUrl(path);
     const returnTo = currentLocation();
     const preservesDocument =
       page?.kind === 'markdown' &&

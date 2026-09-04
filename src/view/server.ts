@@ -33,8 +33,9 @@ import { createViewStore, type ViewStore } from './store.js';
 import { rewriteClientAssetUrls } from './client-shell.js';
 import {
   documentResourcePath,
-  documentUrl,
+  documentPath,
   rawDocumentPath,
+  validateDocumentRoutes,
 } from './document-route.js';
 
 const DEFAULT_HOST = '127.0.0.1';
@@ -179,9 +180,14 @@ async function sendClientShell(
   res: ServerResponse,
   path: string,
   headOnly: boolean,
+  entry: string,
 ): Promise<void> {
   try {
-    const body = rewriteClientAssetUrls(await readFile(path, 'utf8'), '/');
+    const html = rewriteClientAssetUrls(await readFile(path, 'utf8'), '/');
+    const config = `<meta name="lat-live-entry" content="${encodeURIComponent(entry)}">`;
+    const body = html.includes('</head>')
+      ? html.replace('</head>', `${config}</head>`)
+      : `${config}${html}`;
     res.setHeader('Cache-Control', 'no-cache');
     send(res, 200, 'text/html; charset=utf-8', body, headOnly);
   } catch (error) {
@@ -204,6 +210,12 @@ export async function createViewApp(
     watch: options.watch,
     externalCa: options.externalCa,
   });
+  try {
+    validateDocumentRoutes(store.getIndex().files);
+  } catch (error) {
+    await store.close();
+    throw error;
+  }
   const search =
     options.search ??
     createViewSearch(ctx.latDir, undefined, () => store.markdownGeneration);
@@ -243,8 +255,21 @@ export async function createViewApp(
           );
           return;
         }
-        res.statusCode = 302;
-        res.setHeader('Location', documentUrl(entry));
+        await sendClientShell(
+          res,
+          join(clientDir, 'index.html'),
+          headOnly,
+          entry,
+        );
+        return;
+      }
+
+      const index = store.getIndex();
+      const routePath = url.pathname.replace(/\/$/, '');
+      const markdownPath = documentPath(routePath);
+      if (markdownPath === index.entry) {
+        res.statusCode = 308;
+        res.setHeader('Location', `/${url.search}`);
         res.end();
         return;
       }
@@ -532,11 +557,16 @@ export async function createViewApp(
       if (
         url.pathname === '/search' ||
         url.pathname === '/graph' ||
-        url.pathname.startsWith('/docs/') ||
+        (markdownPath !== null && index.files.includes(markdownPath)) ||
         url.pathname.startsWith('/code/') ||
         url.pathname.startsWith('/external/')
       ) {
-        await sendClientShell(res, join(clientDir, 'index.html'), headOnly);
+        await sendClientShell(
+          res,
+          join(clientDir, 'index.html'),
+          headOnly,
+          index.entry,
+        );
         return;
       }
 

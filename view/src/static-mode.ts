@@ -46,6 +46,21 @@ export function isStaticView(): boolean {
   return staticViewBasePath() !== null;
 }
 
+/** Resolve the homepage in both a live shell and a portable snapshot. */
+export function viewEntryPath(): string | null {
+  const config = staticViewConfig();
+  if (config) return config.entry ?? null;
+  if (typeof document === 'undefined') return null;
+  const entry = document.querySelector<HTMLMetaElement>(
+    'meta[name="lat-live-entry"]',
+  )?.content;
+  try {
+    return entry ? decodeURIComponent(entry) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Return the optional dynamic search endpoint attached to a static build. */
 export function staticViewSearchApi(): string | null {
   return staticViewConfig()?.searchApi ?? null;
@@ -65,11 +80,15 @@ export function staticViewAssetUrl(
 /** Strip the configured deployment prefix and static route trailing slash. */
 export function viewPathname(pathname: string): string {
   const config = staticViewConfig();
-  if (!config) return pathname;
+  if (!config) {
+    const entry = viewEntryPath();
+    if (pathname === '/' && entry) return documentUrl(entry);
+    return pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname;
+  }
   const { basePath } = config;
   const prefix = basePath === '/' ? '' : basePath.slice(0, -1);
   const unprefixed =
-    prefix && pathname.startsWith(prefix)
+    prefix && (pathname === prefix || pathname.startsWith(`${prefix}/`))
       ? pathname.slice(prefix.length) || '/'
       : pathname;
   const route =
