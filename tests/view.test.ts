@@ -2044,7 +2044,7 @@ describe('lat ui', () => {
       /\.document-toc-link \{[^}]*box-shadow: inset 1px 0 var\(--panel-border\);/,
     );
     expect(styles).toMatch(
-      /\.document-toc-indicator \{[^}]*left: calc\(var\(--toc-depth\) \* 13px\);/,
+      /\.document-toc-indicator \{[^}]*left: calc\(var\(--toc-depth\) \* 13px\);\s*width: 1px;/,
     );
     expect(styles).toMatch(
       /\.document-toc-indicator \{[^}]*transition:[^}]*transform 200ms ease-out/,
