@@ -175,4 +175,4 @@ Across the frozen 100-query audit, rebuilding changes top-one results for one qu
 
 OPTIMIZE INDEX repairs small update examples but skips the single-segment deletion case and differs from rebuilt rankings in the audit. Rebuilding only the derived FTS index takes about 8 ms on 716 passages without embedding work; larger-corpus costs remain unmeasured.
 
-The planned repair is transactionally rebuilding FTS after replacement/deletion batches, plus one-time maintenance for existing indexes, while preserving embedding reuse and no-op searches. Integration tests must compare incremental edits, deletions, and rollback with a fresh index. This investigation does not change production indexing or the frozen ranking experiment.
+Indexing now transactionally rebuilds FTS after replacement/deletion batches. The live-statistics lexical version repairs existing indexes once without embedding calls. Tests compare incremental edits and deletions with fresh scores, and verify rebuild/maintenance rollback. No-op searches and embedding reuse remain intact; the historical ranking experiment stays frozen.

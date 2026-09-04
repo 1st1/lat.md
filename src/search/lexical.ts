@@ -1,7 +1,7 @@
 import { stemWords, STEMMER_VERSION } from '@lat.md/stemmer';
 import { CREATE_PASSAGE_FTS, type SearchDb } from './db.js';
 
-export const LEXICAL_VERSION = `${STEMMER_VERSION}:unicode-words-v1`;
+export const LEXICAL_VERSION = `${STEMMER_VERSION}:unicode-words-v1:live-statistics-v1`;
 
 /** Same analysis for indexed fields and queries; exact identifiers bypass it. */
 export function lexicalTokens(text: string): string[] {
