@@ -17,7 +17,7 @@ Lat bundles `sigma` and `graphology` from development dependencies and loads the
 Graph mode replaces the document layout with a full-viewport graph workspace while preserving the selected document or source URL.
 
 - The graph uses the full left half; its logo, active Graph toggle, semantic filter, and node count float over the canvas instead of reserving a panel header. Git and page Search controls stay hidden in this mode. The right half begins directly with the node preview and has no inspector title bar.
-- The sidebar background covers the viewport, split equally between the graph and an independently scrollable inspector.
+- The graph draws across the desktop viewport behind the independently scrollable right-half inspector. Its translucent background softly blurs and desaturates the graph underneath without changing the sharpness or color of the content itself.
 - Enabling Graph on a document or represented source selects that node immediately. A section URL selects its owning document; with no represented node, the inspector explains how to choose one.
 - The browser URL always remains the exact document, section, source, or code-line target. Node and inspector navigation use ordinary history entries, so reload, copied URLs, Back, and Forward retain their normal meaning while Graph stays active.
 - The graph icon only toggles a namespaced `localStorage` presentation setting; it does not rewrite history. Disabling Graph reveals the same selected target in the file/source layout immediately, and the persisted setting restores Graph after reload.
@@ -45,7 +45,7 @@ Documents form the graph backbone, while code nodes appear when source definitio
 - `source:<project-path>#<symbol>` represents a source definition targeted by a wiki link. A file-only source target omits the symbol.
 - `code-ref:<project-path>:<line>` represents the cached code snippet containing an `@lat:` mention and links to its target document.
 
-Each node includes `id`, `kind`, `label`, canonical `url`, breadcrumbs, reference counts, and optional Git state, error count, source signature, or snippet. Node radius grows logarithmically with incoming references, so backlinks—not outgoing links—determine prominence.
+Each node includes `id`, `kind`, `label`, canonical `url`, breadcrumbs, reference counts, and optional Git state, error count, source signature, or snippet. Circle area grows linearly with incoming references above a minimum visible area, so backlinks—not outgoing links—determine prominence. Selection never inflates that quantitative size.
 
 A local document's incoming count sums the displayed direct backlink counts for its root and every nested section. Repeated links from one paragraph to the same section count once; links to different sections count separately. Same-document references and code mentions contribute too. Other nodes use incoming edge occurrence weights.
 
@@ -75,7 +75,9 @@ The graph canvas and inspector share route state but keep rendering responsibili
 
 The client caches the on-demand graph projection. A deterministic linear-time layout places documents on a ring and clusters code around its strongest document neighbor, without physics or animation.
 
-Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neighbors, render documents in Vercel blue and code in warm orange, and keep the selected node labeled. Every visible label uses white text and shadow on an 80%-opaque black plate; highly referenced nodes receive default labels.
+The graph uses restrained layers: neutral nodes and fine connections provide context, while selection and hover reveal document-blue and code-orange neighbors and directional arrows. Background edges stay visible during pan and zoom. Labels use theme-aware text with a narrow background halo rather than opaque cards; collision handling keeps ordinary labels from overlapping.
+
+Selected and hovered labels include exact incoming reference counts. A canvas note explains whether size represents reference area or semantic relevance. This follows [Tufte's layering and smallest effective difference principles](https://www.edwardtufte.com/notebook/analytical-design-and-human-factors/) without removing the underlying relationships.
 
 Outlined, translucent nodes remain distinguishable when overlapping. The circle shader premultiplies alpha for Sigma's blending mode but keeps picking IDs opaque. Edges and muted nodes use renderer-safe hex colors rather than CSS border tokens.
 
@@ -88,6 +90,8 @@ A node click navigates to its canonical document or source URL and renders the r
 Plain internal links inside the inspector keep Graph active and navigate to their normal exact routes. Same-document fragments resolve against the preview and scroll without refetching the document; modified clicks retain normal browser behavior.
 
 The graph pane remains fixed while the inspector scrolls from the top edge. The preview keeps current Git rendering, validation markers, backlinks, source context, and code expansion without wrapping them in another title toolbar.
+
+The left half remains the interaction and Fit area even though the canvas extends behind the inspector. Camera framing preserves its left-side center and relative zoom across resizing and mode changes. The inspector intercepts pointer input; narrow screens retain separate, opaque stacked panes.
 
 ## Initial scope
 

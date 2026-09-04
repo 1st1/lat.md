@@ -25,7 +25,8 @@ export function graphDisplayLabel(
 
 export function graphNodeSize(backlinks: number): number {
   const count = Number.isFinite(backlinks) ? Math.max(0, backlinks) : 0;
-  return 5 + Math.log2(count + 1) * 3;
+  // Circle area, rather than radius, encodes references above a visible baseline.
+  return 1.2 * Math.sqrt(9 + count * 3.75);
 }
 
 function polarPosition(angle: number, radius: number): GraphPosition {
@@ -160,8 +161,8 @@ export function graphSearchNodeSizes(
   if (values.length === 0) return new Map();
   const minimum = Math.min(...values);
   const maximum = Math.max(...values);
-  const sizeMinimum = 5;
-  const sizeMaximum = 14;
+  const sizeMinimum = 6;
+  const sizeMaximum = 16.8;
   const spread = maximum - minimum;
 
   return new Map(

@@ -59,9 +59,11 @@
   --graph-document: #0070f3;
   --graph-code: #d97706;
   /* Sigma needs renderer-safe colors, independent of translucent CSS borders. */
-  --graph-edge: #b8b8b8;
-  --graph-edge-muted: #d4d4d4;
-  --graph-edge-active: #999999;
+  --graph-document-rest: #666666;
+  --graph-code-rest: #999999;
+  --graph-edge: #cccccc;
+  --graph-edge-muted: #dddddd;
+  --graph-edge-active: #888888;
   --graph-node-muted: #c4c4c4;
   --map-control-filter: none;
   --brand-filter: brightness(0);
@@ -101,9 +103,11 @@
     --git-notification: #f0a044;
     --graph-document: rgb(82, 168, 255);
     --graph-code: #f5a623;
-    --graph-edge: #505050;
-    --graph-edge-muted: #383838;
-    --graph-edge-active: #686868;
+    --graph-document-rest: #999999;
+    --graph-code-rest: #737373;
+    --graph-edge: #383838;
+    --graph-edge-muted: #242424;
+    --graph-edge-active: #626262;
     --graph-node-muted: #404040;
     --map-control-filter: invert(1);
     --brand-filter: none;
@@ -2660,8 +2664,7 @@ a.wiki-link-active {
 }
 
 .graph-pane {
-  overflow: hidden;
-  border-right: 1px solid var(--panel-border);
+  overflow: visible;
 }
 
 .graph-canvas-shell,
@@ -2841,6 +2844,17 @@ a.wiki-link-active {
   opacity: 0.42;
 }
 
+.graph-encoding-note {
+  position: absolute;
+  bottom: 58px;
+  left: 18px;
+  right: 18px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+  pointer-events: none;
+}
+
 .graph-no-results {
   position: absolute;
   z-index: 3;
@@ -2855,6 +2869,20 @@ a.wiki-link-active {
 
 .graph-inspector {
   background: var(--panel);
+}
+
+@media (min-width: 64rem) {
+  .graph-canvas {
+    right: auto;
+    width: 200%;
+  }
+
+  .graph-inspector {
+    z-index: 1;
+    background: color-mix(in srgb, var(--panel) 60%, transparent);
+    -webkit-backdrop-filter: blur(2px) grayscale(1);
+    backdrop-filter: blur(2px) grayscale(1);
+  }
 }
 
 .graph-inspector-scroll {
@@ -3340,6 +3368,7 @@ a.wiki-link-active {
     height: min(58vh, 520px);
     height: min(58svh, 520px);
     min-height: 320px;
+    overflow: hidden;
     border-right: 0;
     border-bottom: 1px solid var(--panel-border);
   }
