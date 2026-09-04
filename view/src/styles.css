@@ -669,7 +669,7 @@ a {
   position: absolute;
   top: 0;
   left: calc(var(--toc-depth) * 13px);
-  width: 2px;
+  width: 1px;
   pointer-events: none;
   background: var(--link);
   border-radius: 2px;
