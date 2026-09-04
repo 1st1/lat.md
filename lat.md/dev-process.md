@@ -115,6 +115,8 @@ The repository's site project exports the root vault through `lat ui build serve
 
 `pnpm build:site` compiles the shared server, downloads the exact published WASM and model artifacts matching this checkout, builds Lat, and writes the server artifact to `.lat-build/server/`.
 
+Both `build:site` and `build:site:source` copy the curated repository-root [[llms.txt]] into the artifact's `public/` directory through [[scripts/copy-site-assets.mjs]]. The Vercel build carries it into static output at `/llms.txt`. This is specific to Lat's own site; ordinary user exports do not include it.
+
 ```bash
 pnpm install --frozen-lockfile
 pnpm build:site
