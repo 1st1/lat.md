@@ -1,0 +1,20 @@
+[
+  {
+    "arm": "old",
+    "file": "old-index.db.gz",
+    "sha256": "24e4c89f2cc15f0fc01603f6dffb1507a824f35267e6eff32c301ee67b64629b",
+    "localArchive": "/tmp/lat-012-comparison/archives/old-index.db.gz"
+  },
+  {
+    "arm": "new",
+    "file": "new-index.db.gz",
+    "sha256": "e7d63d858720c180af928fd7274ad3d513dcbc2b300a8323855649821781935d",
+    "localArchive": "/tmp/lat-012-comparison/archives/new-index.db.gz"
+  },
+  {
+    "arm": "release",
+    "file": "release-index.db.gz",
+    "sha256": "d0c5dab526d1839dfe02c8f0c3e6c8a1cc6fce59fd6453bf49e92ea5e9559663",
+    "localArchive": "/tmp/lat-012-comparison/archives/release-index.db.gz"
+  }
+]

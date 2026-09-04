@@ -1,0 +1,69 @@
+Warning: No init version recorded — run lat init to set up agent hooks and configuration.
+
+- lat.md/cli.md:350: broken link [[src/search/search.ts#DEFAULT_MIN_SIMILARITY]] — symbol "DEFAULT_MIN_SIMILARITY" not found in "src/search/search.ts"
+
+- lat.md/cli.md:409: broken link [[src/search/chunks.ts]] — repository file or directory "src/search/chunks.ts" not found
+
+- lat.md/search-design.md:124: broken link [[src/search/cache.ts]] — repository file or directory "src/search/cache.ts" not found
+
+- lat.md/search-design.md:148: broken link [[tests/cases/hybrid/judgments.json]] — repository file or directory "tests/cases/hybrid/judgments.json" not found
+
+- lat.md/search-design.md:174: broken link [[src/search/lexical.ts]] — repository file or directory "src/search/lexical.ts" not found
+
+- lat.md/search-design.md:192: broken link [[tests/cases/hybrid/evaluation-local.json]] — repository file or directory "tests/cases/hybrid/evaluation-local.json" not found
+
+- lat.md/search-design.md:194: broken link [[tests/cases/hybrid/evaluation-stemmed.json]] — repository file or directory "tests/cases/hybrid/evaluation-stemmed.json" not found
+
+- lat.md/search-design.md:196: broken link [[tests/cases/hybrid/benchmark-local.json]] — repository file or directory "tests/cases/hybrid/benchmark-local.json" not found
+
+- lat.md/tests/search.md:44: broken link [[src/search/search.ts#DEFAULT_MIN_SIMILARITY]] — symbol "DEFAULT_MIN_SIMILARITY" not found in "src/search/search.ts"
+
+- lat.md/tests/search.md:107: broken link [[tests/hybrid-search.test.ts]] — repository file or directory "tests/hybrid-search.test.ts" not found
+
+- lat.md/view/architecture.md:233: broken link [[view/src/SearchResultCard.tsx]] — repository file or directory "view/src/SearchResultCard.tsx" not found
+
+- lat.md/tests/search.md:109: section "lat.md/tests/search#Search#Hybrid Retrieval#Preserves complete passage coverage" requires a code mention but none found
+
+- lat.md/tests/search.md:113: section "lat.md/tests/search#Search#Hybrid Retrieval#Rejects local embedding truncation" requires a code mention but none found
+
+- lat.md/tests/search.md:117: section "lat.md/tests/search#Search#Hybrid Retrieval#Retrieves lexical evidence independently" requires a code mention but none found
+
+- lat.md/tests/search.md:121: section "lat.md/tests/search#Search#Hybrid Retrieval#Collapses before rank fusion" requires a code mention but none found
+
+- lat.md/tests/search.md:125: section "lat.md/tests/search#Search#Hybrid Retrieval#Reuses vectors after source movement" requires a code mention but none found
+
+- lat.md/tests/search.md:129: section "lat.md/tests/search#Search#Hybrid Retrieval#Reuses unchanged chunks within edited sections" requires a code mention but none found
+
+- lat.md/tests/search.md:133: section "lat.md/tests/search#Search#Hybrid Retrieval#Publishes only successful generations" requires a code mention but none found
+
+- lat.md/tests/search.md:137: section "lat.md/tests/search#Search#Hybrid Retrieval#Preserves FTS rollback and portable copies" requires a code mention but none found
+
+- lat.md/tests/search.md:141: section "lat.md/tests/search#Search#Hybrid Retrieval#Switches preview without changing relevance" requires a code mention but none found
+
+- lat.md/tests/search.md:145: section "lat.md/tests/search#Search#Hybrid Retrieval#Archives legacy caches without overwriting backups" requires a code mention but none found
+
+- lat.md/tests/search.md:149: section "lat.md/tests/search#Search#Hybrid Retrieval#Serializes concurrent index writers" requires a code mention but none found
+
+- lat.md/tests/search.md:153: section "lat.md/tests/search#Search#Hybrid Retrieval#Rejects invalid vectors before changing the index" requires a code mention but none found
+
+- lat.md/tests/search.md:157: section "lat.md/tests/search#Search#Hybrid Retrieval#Validates hosted input and response ordering" requires a code mention but none found
+
+- lat.md/tests/search.md:161: section "lat.md/tests/search#Search#Hybrid Retrieval#Overfetches toward unique sections" requires a code mention but none found
+
+- lat.md/tests/search.md:165: section "lat.md/tests/search#Search#Hybrid Retrieval#Keeps readers alive across process boundaries" requires a code mention but none found
+
+- lat.md/tests/search.md:169: section "lat.md/tests/search#Search#Hybrid Retrieval#Stems English lexical fields and queries" requires a code mention but none found
+
+- lat.md/tests/search.md:173: section "lat.md/tests/search#Search#Hybrid Retrieval#Upgrades lexical indexes without embedding again" requires a code mention but none found
+
+- lat.md/tests/search.md:177: section "lat.md/tests/search#Search#Hybrid Retrieval#Packages stemmer runtime assets" requires a code mention but none found
+
+- lat.md/view/specs.md:230: section "lat.md/view/specs#View Tests#Formats hybrid search results" requires a code mention but none found
+
+- lat.md/view/specs.md:236: section "lat.md/view/specs#View Tests#Expands matching passages" requires a code mention but none found
+
+- lat.md/view/specs.md:240: section "lat.md/view/specs#View Tests#Highlights search destination passages" requires a code mention but none found
+
+- lat.md/view/specs.md:244: section "lat.md/view/specs#View Tests#Validates search highlight ranges" requires a code mention but none found
+
+33 errors found

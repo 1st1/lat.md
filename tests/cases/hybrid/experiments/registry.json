@@ -1,13 +1,15 @@
 {
   "version": 1,
   "bestValidated": {
-    "checkpoint": "18cc9ce",
+    "checkpoint": "74658ec6302b10a535df208e326ca2514b89a4ef",
     "policy": {
       "candidateScoring": "retrieved",
       "rrfK": 60,
       "lexicalWeight": 1,
       "semanticWeight": 1
-    }
+    },
+    "previousCheckpoint": "18cc9ce",
+    "reason": "Current baseline formula with repaired FTS maintenance, validated against fresh pre-RAG indexes in experiment002."
   },
   "experiments": [
     {
@@ -18,6 +20,14 @@
       "reason": "Development winner regressed validation pooled nDCG@5; baseline policy retained.",
       "implementationCommit": "43c0a1b3ab4a1d5dff8da1796d0b258f1e70dd22",
       "verifiedRun": "001-union-rrf/runs/2026-09-04T20-26-02.681Z-51b96a32.json.gz"
+    },
+    {
+      "id": "002-pre-rag-comparison",
+      "status": "completed",
+      "currentCheckpoint": "74658ec6302b10a535df208e326ca2514b89a4ef",
+      "preRagCheckpoint": "b1391996e836a07e4bdaa636a366c5cd99d1449c",
+      "report": "002-pre-rag-comparison/README.md",
+      "reason": "Same-corpus direct-answer@5 rises81/100 to91/100; no policy tuning during comparison."
     }
   ]
 }
