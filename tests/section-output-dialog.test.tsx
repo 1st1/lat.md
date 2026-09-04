@@ -61,8 +61,8 @@ describe('SectionOutputDialog', () => {
       ),
     );
     expect(presentationButtons.map((button) => button.textContent)).toEqual([
-      'raw',
-      'formatted',
+      'Raw',
+      'Formatted',
     ]);
     expect(presentationButtons[1].getAttribute('aria-pressed')).toBe('true');
     expect(

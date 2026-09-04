@@ -121,7 +121,7 @@ export function DocumentToc({
     <aside className="document-toc" data-expanded={expanded || undefined}>
       <div className="document-toc-title document-toc-heading">
         <TocIcon />
-        <span>On this page</span>
+        <span>On This Page</span>
       </div>
       <button
         aria-controls="document-table-of-contents"
@@ -131,13 +131,13 @@ export function DocumentToc({
         type="button"
       >
         <TocIcon />
-        <span>On this page</span>
+        <span>On This Page</span>
         <span aria-hidden="true" className="document-toc-chevron">
           ›
         </span>
       </button>
       <nav
-        aria-label="On this page"
+        aria-label="On This Page"
         className="document-toc-list"
         id="document-table-of-contents"
         ref={navigationRef}

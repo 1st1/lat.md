@@ -177,6 +177,10 @@ Markdown documents expose their H1 plus nested subsection headings in a sticky r
 
 The fixed-width desktop rail fills the available viewport height without programmatic resizing. Its list stays content-height when short and scrolls without a visible scrollbar when long; fixed link metrics never compress, and short final sections activate in sequence.
 
+The active indicator stays within the desktop rail; dropdowns omit it. The compact dropdown and expanded list align with the reading column's right edge, and its trigger matches View/Edit's height and vertical center.
+
+On wide screens, View/Edit stays at the reading column's right edge with or without a TOC, including Edit mode. A missing compact TOC lets the header span the reading column without changing the prose width limit.
+
 Sections containing rendered Git changes carry an orange disc when Git is enabled, while sections owning validation errors carry a red disc. Both remain visible together when both states apply.
 
 ## Adapts navigation to mobile screens
@@ -185,7 +189,13 @@ Below 64rem, files remain reachable through a sticky two-row header and a scroll
 
 The overlay exposes its expanded state, uses touch-sized file targets, locks document scrolling while open, and closes on navigation, Escape, or a return to desktop width. Content gutters narrow, code scrolls horizontally without browser text inflation, and the graph stacks above its inspector.
 
-When the desktop TOC rail no longer fits, a compact `On this page` control shares an aligned metadata row and expands its links in a bounded overlay without moving content. On mobile it becomes a full-width row below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
+The Files and TOC icons, metadata, and reading text share a consistent left gutter across tablet and phone widths.
+
+Long unbroken text and inline code wrap within the reading column, while fenced code retains local horizontal scrolling. Map-loading error messages wrap inside their panel and keep Retry reachable without widening the page.
+
+When the desktop TOC rail no longer fits, a compact `On This Page` control shares an aligned metadata row and expands its links in a bounded overlay without moving content. On mobile it becomes a full-width row below the app header, retains active and Git/error states, closes after selection or Escape, and offsets fragment targets.
+
+Desktop header controls align vertically, including read-only documents without a presentation switch.
 
 ## Renders the graph workspace
 
@@ -193,13 +203,21 @@ Graph mode consumes a cached projection of documents, source targets, and code m
 
 The client renders a 50/50 graph and inspector. The logo and Graph toggle retain their normal desktop positions while floating over the graph with the semantic filter; Git and page Search are hidden. The right panel begins with the node preview and has no toolbar.
 
+Switching between graph and regular view preserves the logo and toolbar's vertical position at every breakpoint.
+
 The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
 
 Plain document, section, source, and code-reference links navigate through their normal URLs without leaving Graph, so Back and Forward work without mode-specific history. Relative fragments resolve against the previewed document without refetching its content.
 
 Document and code radii grow only with incoming references. Every rendered label stays white over an 80%-opaque black plate with a text shadow in normal, selected, and hover states.
 
-The graph payload is prefetched after UI startup and a linear-time deterministic layout requires no force simulation, so toggling Graph paints immediately without a partial-page loading state, settling animation, or blocking pause.
+Local document counts sum direct backlinks to all headings, including nested sections and same-document links, with heading-badge paragraph deduplication. Visible edges retain occurrence weights and omit self-loops.
+
+Renderer-safe colors and premultiplied alpha keep edges visible and overlapping circles distinct without corrupting picking IDs. Selection stays emphasized while other nodes are hovered.
+
+Node positions remain fixed during pointer dragging; only the camera pans. Hover highlighting, click navigation, and zoom remain enabled.
+
+Graph uses a cached projection and a deterministic layout without force simulation or settling animation.
 
 Graph search debounces through the embedding-backed `/api/search` service used by `lat search`. Matching sections filter to their owning documents and adjacent code nodes without rendering a result popup. Their radii normalize by hit score; clearing search restores backlink sizing.
 
@@ -312,6 +330,10 @@ Focused source views place reference context before the highlighted definition, 
 ## Highlights source syntax safely
 
 Supported languages, including Dart and Java, become structured line trees without HTML serialization. HTML-like source remains inert text and multiline tokens retain their styling across every line.
+
+## Uses Geist syntax colors
+
+Code fences and source views share light/dark syntax roles. Keywords, strings, constants, and functions retain distinct colors; parameters, properties, punctuation, and string substitutions stay neutral.
 
 ## Builds a nested file tree
 

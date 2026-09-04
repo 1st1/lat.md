@@ -17,6 +17,7 @@ import { linkedSection } from './references.js';
 import type {
   ViewCodeReferenceFile,
   ViewParsedMarkdownFile,
+  ViewReferenceIndex,
 } from './references.js';
 import { viewSourceTarget } from './source-target.js';
 import type { ViewGitSnapshot } from './git.js';
@@ -66,6 +67,7 @@ export function buildViewGraph(
   diagnostics: ReadonlyMap<string, readonly ViewDocumentError[]>,
   git: ViewGitSnapshot,
   generation: number,
+  references: ViewReferenceIndex,
   external?: ExternalResolver,
 ): ViewGraph {
   const files = [...markdownFiles].sort((left, right) =>
@@ -131,7 +133,13 @@ export function buildViewGraph(
       breadcrumbs: pathBreadcrumbs(file.path),
       documentPath: file.path,
       sectionId: root?.id,
-      inDegree: 0,
+      inDegree: flat.reduce(
+        (count, section) =>
+          count +
+          (references.incomingBySection.get(section.id.toLowerCase())?.length ??
+            0),
+        0,
+      ),
       outDegree: 0,
       ...(git.files.get(file.path)?.status
         ? { gitStatus: git.files.get(file.path)?.status }
@@ -303,7 +311,9 @@ export function buildViewGraph(
     const source = nodes.get(edge.from);
     const target = nodes.get(edge.to);
     if (source) source.outDegree += edge.weight;
-    if (target) target.inDegree += edge.weight;
+    // Local documents use the sum of their headings' displayed backlink counts,
+    // not visual edge weights (which omit self-links and count repeat links).
+    if (target && !target.documentPath) target.inDegree += edge.weight;
   }
 
   return {

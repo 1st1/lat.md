@@ -28,16 +28,23 @@ type EditorStatus = {
 };
 
 const markdownHighlightStyle = HighlightStyle.define([
-  { tag: tags.heading, color: 'var(--syntax-title)', fontWeight: '700' },
-  { tag: [tags.link, tags.url], color: 'var(--link)' },
+  { tag: tags.heading, color: 'var(--syntax-markup)', fontWeight: '700' },
+  { tag: [tags.link, tags.url], color: 'var(--syntax-string)' },
   { tag: tags.emphasis, fontStyle: 'italic' },
   { tag: tags.strong, fontWeight: '700' },
   {
-    tag: [tags.keyword, tags.atom, tags.bool],
+    tag: tags.keyword,
     color: 'var(--syntax-keyword)',
   },
   { tag: [tags.string, tags.inserted], color: 'var(--syntax-string)' },
-  { tag: tags.number, color: 'var(--syntax-number)' },
+  { tag: [tags.number, tags.atom, tags.bool], color: 'var(--syntax-number)' },
+  { tag: tags.function(tags.variableName), color: 'var(--syntax-title)' },
+  { tag: tags.typeName, color: 'var(--syntax-title)' },
+  {
+    tag: [tags.variableName, tags.propertyName, tags.attributeName],
+    color: 'var(--text)',
+  },
+  { tag: tags.punctuation, color: 'var(--text)' },
   { tag: [tags.comment, tags.quote], color: 'var(--syntax-comment)' },
   { tag: [tags.monospace, tags.processingInstruction], color: 'var(--muted)' },
   { tag: tags.invalid, color: 'var(--danger)' },

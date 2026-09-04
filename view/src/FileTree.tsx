@@ -213,7 +213,7 @@ export function FileTree({
             <circle cx="12" cy="12" r="8.5" />
             <path d="M3.5 12h17M12 3.5c2.2 2.3 3.4 5.1 3.4 8.5s-1.2 6.2-3.4 8.5M12 3.5C9.8 5.8 8.6 8.6 8.6 12s1.2 6.2 3.4 8.5" />
           </svg>
-          <span>External sources</span>
+          <span>External Sources</span>
         </div>
       )}
       {externalTree.map((node) => (

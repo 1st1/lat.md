@@ -96,8 +96,8 @@ describe('MarkdownEditor', () => {
       ),
     );
     expect(modeButtons.map((button) => button.textContent)).toEqual([
-      'view',
-      'edit',
+      'View',
+      'Edit',
     ]);
     expect(modeButtons[1].getAttribute('aria-pressed')).toBe('true');
     expect(modeButtons[0].querySelector('svg')).toBeNull();

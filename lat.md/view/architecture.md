@@ -14,9 +14,13 @@ The bundled Lat wordmark is the default top-left brand in both clients. Vite emi
 
 The browser uses a monochrome visual system: pure black or white foundations, neutral surfaces and borders, and restrained controls. Color is reserved for links, graph categories, syntax, and semantic Git or diagnostic state.
 
+The shared client uses Geist typography and system-selected light/dark themes. Geist Sans and Geist Mono ship as self-hosted Vite assets in live, static, and server deployments, including nested bases. Controls retain visible keyboard focus.
+
 The installed runtime uses Node HTTP and prebuilt Vite assets. Browser renderer inputs remain development dependencies because Vite emits their code, styles, and fonts into the published lazy assets instead of making npm consumers install redundant source packages.
 
 The server highlighter similarly bundles Lowlight with only Lat's supported Highlight.js grammars, keeping the full language set out of production dependencies.
+
+Code fences, source views, and the Markdown editor share syntax color roles in both themes while retaining their own tokenizers. Parameters, variables, and properties stay neutral rather than inheriting enclosing function colors.
 
 Rich Markdown fences keep authored source as inert text nodes in document payloads. React-owned Mermaid, map, and 3D components lazily load browser-only renderers, so live and static documents degrade to readable code when a renderer cannot load or rejects input.
 
@@ -164,7 +168,7 @@ Whenever cached changes exist, the toggle keeps an orange notification dot wheth
 
 Generated document links omit `.md`; the same route with `.md` is deliberately left to the browser as raw source. Relative links authored with `.md` are normalized to the extensionless UI route before rendering.
 
-Markdown and source metadata rows align with the sidebar header, while source metadata retains clear space before the code panel.
+Desktop sidebar controls, document metadata, presentation switches, and TOC titles align vertically. Source metadata retains clear space before the code panel.
 
 Rendered sections use heading scale and whitespace without horizontal separators between headings.
 
@@ -200,7 +204,7 @@ Below 64rem, the browser replaces desktop navigation rails with a persistent, to
 
 The first row keeps the logo and Git, Search, and Graph actions. A second row shows the current route and opens the file tree as an independently scrolling viewport overlay; navigation, Escape, or returning to desktop closes it and restores document scrolling.
 
-Mobile content uses narrower gutters, fixed heading metrics, wrapped links, and horizontally scrollable code instead of shrinking text. The desktop TOC collapses into a sticky `On this page` row with its own scrollable list and preserved section state.
+Mobile navigation, document text, and `On This Page` share a consistent left gutter across tablet and phone widths. Long text, inline code, and error messages wrap without widening the viewport; code blocks scroll locally. The TOC becomes a sticky row with its own scrollable list.
 
 Selecting a collapsed TOC entry closes the list before positioning the heading. Its sticky-header offset keeps direct fragments visible below both mobile navigation rows and the TOC trigger.
 
@@ -232,4 +236,4 @@ Escape clears a non-empty query, then returns to the page that opened search. Cl
 
 [[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
 
-The client preloads the graph projection, ships its WebGL renderer in the main UI, and uses deterministic document/code clusters so the persisted presentation mode switches without I/O or layout work. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates cosine scores into result sizing.
+The graph renderer and projection load on demand; deterministic document/code clusters avoid force simulation. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates cosine scores into result sizing.

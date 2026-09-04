@@ -32,7 +32,7 @@ export function CodeBlock({
     ? currentResult.copied
       ? 'Copied!'
       : 'Copy failed. Try again.'
-    : 'Copy code';
+    : 'Copy Code';
   return (
     <div className="code-block">
       {children}
@@ -60,7 +60,7 @@ export function CodeBlock({
           {currentResult
             ? currentResult.copied
               ? 'Copied!'
-              : 'Retry copy'
+              : 'Retry Copy'
             : 'Copy'}
         </span>
       </button>

@@ -57,6 +57,8 @@ import {
   validateDocumentRoutes,
   rewriteDocumentLink,
 } from '../src/view/document-route.js';
+import { buildViewGraph } from '../src/view/graph.js';
+import { buildViewReferenceIndex } from '../src/view/references.js';
 import { renderMarkdown as renderMarkdownTree } from '../src/view/markdown.js';
 import type {
   ViewDocument,
@@ -1155,7 +1157,7 @@ describe('lat ui', () => {
           );
           const links = [
             ...rendered.matchAll(
-              /<a class="section-back-reference-action" href="([^"]+)">View Markdown file<\/a>/g,
+              /<a class="section-back-reference-action" href="([^"]+)">View Markdown File<\/a>/g,
             ),
           ];
           expect(links).toHaveLength(1);
@@ -1242,6 +1244,79 @@ describe('lat ui', () => {
 
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
+    const graphClient = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'GraphView.tsx'),
+      'utf8',
+    );
+    const graphStyles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    for (const token of [
+      '--graph-edge',
+      '--graph-edge-muted',
+      '--graph-edge-active',
+      '--graph-node-muted',
+    ]) {
+      const colors = Array.from(
+        graphStyles.matchAll(new RegExp(`${token}: ([^;]+);`, 'g')),
+        (match) => match[1],
+      );
+      expect(colors).toHaveLength(2);
+      for (const color of colors) expect(color).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(graphClient).toMatch(
+        new RegExp(`colorValue\\(\\s*styles,\\s*'${token}'`),
+      );
+    }
+    expect(graphClient).toContain('color: mutedEdgeColor');
+    expect(graphClient).toContain('color: activeEdgeColor');
+    expect(graphClient).toContain('color: mutedNodeColor');
+    expect(graphClient).not.toContain("sigma.on('downNode'");
+    expect(graphClient).not.toContain('graph.mergeNodeAttributes');
+    expect(graphClient).toContain("sigma.on('clickNode'");
+    expect(graphClient).toMatch(
+      /nodeProgramClasses:\s*\{\s*circle: GraphNodeProgram</,
+    );
+    const nodeProgram = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'graph-node-program.ts'),
+      'utf8',
+    );
+    expect(nodeProgram).toContain('...super.getDefinition()');
+    expect(nodeProgram).toMatch(
+      /#ifdef PICKING_MODE\s*\/\/[^\n]*\n\s*gl_FragColor = v_color;/,
+    );
+    expect(nodeProgram).toContain('vec4(color * alpha, alpha)');
+    expect(nodeProgram).toContain('inset / (2.0 * u_correctionRatio)');
+    const fillOpacities = [...nodeProgram.matchAll(/return (0\.\d+);/g)].map(
+      (match) => Number(match[1]),
+    );
+    expect(fillOpacities).toEqual([0.8, 0.96]);
+    expect(fillOpacities[1] / fillOpacities[0]).toBeCloseTo(1.2);
+    expect(graphClient).toContain("type: isSelected ? 'selected' : 'circle'");
+    expect(graphClient).toContain('zIndex: isSelected ? 4 : 3');
+    expect(
+      graphClient.indexOf('if (isSelected || node === focus)'),
+    ).toBeLessThan(graphClient.indexOf('if (focus && node !== focus'));
+    expect(graphClient).not.toContain("colorValue(styles, '--panel-border'");
+    expect(graphStyles).toMatch(
+      /\.graph-kind-filters label span,\s*\.graph-fit \{[^}]*border: 0;/,
+    );
+    expect(graphStyles).toMatch(
+      /\.graph-topbar \{[^}]*height: calc\(56px \+ var\(--header-row-height\)\);/,
+    );
+    for (const height of [34, 42]) {
+      expect(graphStyles).toMatch(
+        new RegExp(
+          `\\.app-shell,\\s*\\.graph-shell \\{\\s*--header-row-height: ${height}px;`,
+        ),
+      );
+    }
+    expect(graphStyles).toMatch(
+      /\.graph-topbar-graph \{\s*min-height: 48px;\s*padding: 0 16px;/,
+    );
+    expect(graphStyles).toMatch(
+      /\.graph-topbar-graph \.graph-header \{\s*min-height: 48px;/,
+    );
     const shell = await fetch(new URL('/graph', view.url));
     expect(shell.status).toBe(200);
     expect(await shell.text()).toContain('lat ui shell');
@@ -1278,7 +1353,54 @@ describe('lat ui', () => {
     ).toMatchObject({ inDegree: 1, outDegree: 10 });
     expect(
       graph.nodes.find((node) => node.id === 'document:guide.md'),
-    ).toMatchObject({ inDegree: 8, outDegree: 2 });
+    ).toMatchObject({ inDegree: 7, outDegree: 2 });
+
+    const countFiles = [
+      analyzeMarkdownFile(
+        '/project/lat.md/target.md',
+        '# Target\n\nRoot overview.\n\n## Child\n\n[Deep](#deep).\n\n### Deep\n\nNested overview.\n',
+        '/project/lat.md',
+        '/project',
+      ),
+      analyzeMarkdownFile(
+        '/project/lat.md/from.md',
+        '# From\n\n[Root](target.md) [Child](target.md#child) [Deep](target.md#deep) [Repeated](target.md#deep).\n',
+        '/project/lat.md',
+        '/project',
+      ),
+    ];
+    const countSections = countFiles.flatMap((file) => file.sections);
+    const countReferences = buildViewReferenceIndex(
+      countFiles,
+      [],
+      countSections,
+    );
+    expect(
+      [...countReferences.incomingBySection.values()]
+        .map((refs) => refs.length)
+        .sort(),
+    ).toEqual([1, 1, 2]);
+    const countGraph = buildViewGraph(
+      countFiles,
+      [],
+      countSections,
+      new Map(),
+      { available: false, files: new Map() },
+      1,
+      countReferences,
+    );
+    expect(
+      countGraph.nodes.find((node) => node.id === 'document:target.md'),
+    ).toMatchObject({ inDegree: 4, outDegree: 0 });
+    expect(
+      countGraph.nodes.find((node) => node.id === 'document:from.md'),
+    ).toMatchObject({ inDegree: 0, outDegree: 4 });
+    expect(countGraph.edges).toHaveLength(1);
+    expect(countGraph.edges[0]).toMatchObject({
+      from: 'document:from.md',
+      to: 'document:target.md',
+      weight: 4,
+    });
 
     expect(graphUrl('document:guide.md')).toBe(
       '/graph?node=document%3Aguide.md',
@@ -1383,12 +1505,18 @@ describe('lat ui', () => {
     ).toBe(true);
     expect(validGraphPosition({ x: Number.NaN, y: 1 })).toBe(false);
     expect(graphNodeSize(0)).toBe(5);
-    expect(graphNodeSize(7)).toBeGreaterThan(graphNodeSize(1));
+    expect(graphNodeSize(1)).toBe(8);
+    expect(graphNodeSize(7)).toBe(14);
     expect(graphNodeSize(-1)).toBe(5);
     const positions = staticGraphPositions(graph);
     expect(positions.size).toBe(graph.nodes.length);
     expect([...positions.values()].every(validGraphPosition)).toBe(true);
     expect([...staticGraphPositions(graph)]).toEqual([...positions]);
+    const clusterCenter = positions.get('document:guide.md')!;
+    const satellite = positions.get('code-ref:src/app.ts:5')!;
+    expect(
+      Math.hypot(satellite.x - clusterCenter.x, satellite.y - clusterCenter.y),
+    ).toBeCloseTo(6.4);
     const searchScores = graphSearchNodeScores(
       graph,
       new Map([['guide.md', 0.82]]),
@@ -1799,6 +1927,11 @@ describe('lat ui', () => {
     );
     expect(styles).toContain('.external-link-icon');
     expect(styles).toContain('.external-source-link-unavailable');
+    expect(styles).toMatch(
+      /\.markdown ul > li::marker \{\s*color: var\(--gray-500\);\s*\}/,
+    );
+    expect(styles).toMatch(/\.markdown ul \{\s*padding-left: 1\.75em;/);
+    expect(styles).toMatch(/\.markdown ul > li \+ li \{\s*margin-top: 0\.5em;/);
     expect(styles).toContain('-webkit-mask:');
     expect(styles.match(/\.markdown a\s*\{([^}]*)\}/)?.[1]).toContain(
       'text-decoration-line: underline;',
@@ -1808,6 +1941,11 @@ describe('lat ui', () => {
     );
     expect(styles).toContain("input[type='checkbox']");
     expect(styles).toContain('.markdown details:not(.maplibregl-ctrl-attrib)');
+    const disclosureTitleStyles = styles.match(
+      /\.markdown details:not\(\.maplibregl-ctrl-attrib\) > summary \{([^}]*)\}/,
+    )?.[1];
+    expect(disclosureTitleStyles).toContain('-webkit-user-select: none;');
+    expect(disclosureTitleStyles).toContain('user-select: none;');
     expect(styles).toContain('.markdown .markdown-alert-caution');
     expect(styles).toContain('[data-footnotes]');
     expect(styles).toContain('img.markdown-emoji');
@@ -1838,6 +1976,20 @@ describe('lat ui', () => {
 
   // @lat: [[lat.md/view/specs#View Tests#Shows a local table of contents]]
   it('builds nested document navigation and tracks the active heading', async () => {
+    const styles = readFileSync(
+      join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
+      'utf8',
+    );
+    expect(styles).toMatch(
+      /\.document-toc-link \{[^}]*box-shadow: inset 1px 0 var\(--panel-border\);/,
+    );
+    expect(styles).toMatch(/\.document-toc-link::before \{[^}]*left: 0;/);
+    expect(styles).toMatch(
+      /\.document-toc-link:first-child::before \{\s*top: 0;[^}]*border-top-left-radius: 0;[^}]*border-top-right-radius: 0;/,
+    );
+    expect(styles).toMatch(
+      /\.document-toc-link:last-child::before \{\s*bottom: 0;[^}]*border-bottom-left-radius: 0;[^}]*border-bottom-right-radius: 0;/,
+    );
     const content =
       '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
     const analysis = analyzeMarkdownFile('guide.md', content, '.', '.');
@@ -1985,6 +2137,25 @@ describe('lat ui', () => {
     expect(app).toContain('aria-controls="mobile-file-navigation"');
     expect(app).toContain("body.classList.add('mobile-navigation-open')");
     expect(styles).toContain('@media (width < 64rem)');
+    expect(styles).toMatch(
+      /@media \(width < 64rem\)[\s\S]*?\.app-shell \{\s*--mobile-gutter: 18px;/,
+    );
+    expect(styles).toMatch(
+      /\.mobile-navigation-trigger \{[^}]*padding: 0 var\(--mobile-gutter\);/,
+    );
+    expect(styles).toMatch(
+      /\.main \{\s*padding: 28px var\(--mobile-gutter\) 80px;/,
+    );
+    expect(styles.match(/--mobile-gutter:/g)).toHaveLength(1);
+    expect(styles).toMatch(
+      /@media \(max-width: 1340px\) \{\s*\.document-layout:not\(:has\(> \.document-toc\)\) > \.document-column,/,
+    );
+    expect(styles).toMatch(
+      /\.document-layout:not\(:has\(> \.document-toc\)\) > \.document-column,\s*\.document-layout:not\(:has\(> \.document-toc\)\) \.document-header \{\s*grid-column: 1 \/ -1;/,
+    );
+    expect(styles).toMatch(
+      /\.document-layout:not\(:has\(> \.document-toc\)\) \.document-header \{\s*max-width: none;/,
+    );
     expect(styles).toContain(
       ".sidebar[data-mobile-navigation-open='true'] nav",
     );
@@ -2001,7 +2172,19 @@ describe('lat ui', () => {
       /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?grid-template-areas:[\s\S]*?'metadata toc'[\s\S]*?'document document'/,
     );
     expect(styles).toMatch(
-      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.sidebar-header \{[\s\S]*?min-height: 42px;[\s\S]*?\.document-toc-toggle \{[\s\S]*?min-height: 42px;/,
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?--header-row-height: 42px;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-layout \{[^}]*max-width: 760px;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc \{[^}]*align-self: center;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.app-shell \.document-toc-toggle \{\s*min-height: 34px;/,
+    );
+    expect(styles).toMatch(
+      /@media \(min-width: 64rem\) \{[\s\S]*?--header-row-height: 34px;[\s\S]*?\.app-shell \.sidebar-header,\s*\.app-shell \.document-header-line,\s*\.app-shell \.document-metadata,\s*\.app-shell \.document-toc-title \{\s*min-height: var\(--header-row-height\);/,
     );
     expect(styles).toMatch(
       /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc-list \{[\s\S]*?position: absolute;[\s\S]*?top: 100%;/,
@@ -2010,7 +2193,13 @@ describe('lat ui', () => {
       /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc \{[^}]*position: relative;[^}]*top: 0;/,
     );
     expect(styles).toMatch(
-      /@media \(min-width: 64rem\) and \(max-width: 1340px\)[\s\S]*?\.document-toc-states \{[^}]*padding-right: 14px;/,
+      /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-list \{[^}]*padding: 8px 14px 8px 0;/,
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-link \{\s*box-shadow: none;/,
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-link::before \{\s*display: none;/,
     );
     expect(styles).toMatch(
       /@media \(width < 64rem\)[\s\S]*?\.document-toc-toggle \{[\s\S]*?border-top: 0;/,
@@ -2018,6 +2207,14 @@ describe('lat ui', () => {
     expect(styles).toMatch(
       /\.source-code \{[^}]*-webkit-text-size-adjust: 100%;[^}]*text-size-adjust: 100%;/,
     );
+    expect(styles).toMatch(
+      /\.markdown \.markdown-map-error \{[^}]*flex-wrap: wrap;/,
+    );
+    expect(styles).toMatch(
+      /\.markdown \.markdown-map-error > span \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/,
+    );
+    expect(styles).toMatch(/\.markdown \{[^}]*overflow-wrap: anywhere;/);
+    expect(styles).toMatch(/\.markdown pre code \{[^}]*overflow-wrap: normal;/);
   });
 
   // @lat: [[lat.md/view/specs#View Tests#Exposes code-mention frontmatter as metadata]]
@@ -2255,12 +2452,12 @@ describe('lat ui', () => {
     expect(rendered).not.toContain('<span>Refs</span>');
     expect(rendered).toContain('section-back-reference-count">5</span>');
     expect(rendered).toContain('id="section-back-references-1"');
-    expect(rendered).toContain('Copy link to the section');
-    expect(rendered).toContain('Copy section ID');
+    expect(rendered).toContain('Copy Link to the Section');
+    expect(rendered).toContain('Copy Section ID');
     expect(rendered).toContain('href="/guide.md"');
-    expect(rendered.match(/View Markdown file/g)).toHaveLength(1);
+    expect(rendered.match(/View Markdown File/g)).toHaveLength(1);
     const rawHref = rendered.match(
-      /<a class="section-back-reference-action" href="([^"]+)">View Markdown file<\/a>/,
+      /<a class="section-back-reference-action" href="([^"]+)">View Markdown File<\/a>/,
     )?.[1];
     expect(rawHref).toBe('/guide.md');
     const raw = await fetch(new URL(rawHref!, view.url));
@@ -2268,7 +2465,7 @@ describe('lat ui', () => {
     expect(await raw.text()).toBe(
       readFileSync(join(latDir, document.path), 'utf8'),
     );
-    expect(rendered).toContain('Show <code>lat section</code> output');
+    expect(rendered).toContain('Show <code>lat section</code> Output');
     expect(rendered).toContain('section-back-reference-breadcrumb');
     expect(rendered).toContain('section-back-reference-breadcrumb-label');
     expect(rendered).toContain('href="/code/src/app.ts?at=5"');
@@ -2300,7 +2497,13 @@ describe('lat ui', () => {
       /\.section-back-reference-action \{[\s\S]*?color: var\(--muted\);/,
     );
     expect(styles).toMatch(
-      /\.section-back-reference-action:hover \{\s*color: color-mix\(in srgb, var\(--muted\) 82%, white\);\s*\}/,
+      /\.section-back-reference-action:hover \{\s*color: var\(--text\);\s*\}/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-item \{\s*padding: 10px 13px;/,
+    );
+    expect(styles).toMatch(
+      /\.section-back-reference-item \.section-back-reference-paragraph p \{\s*margin: 5px 0 0;/,
     );
 
     const emptyResponse = await fetch(
@@ -2324,10 +2527,10 @@ describe('lat ui', () => {
     expect(emptyRendered).toContain('aria-label="Section menu"');
     expect(emptyRendered).toContain('No references to this section');
     expect(emptyRendered).not.toContain('section-back-reference-count');
-    expect(emptyRendered).toContain('Copy link to the section');
-    expect(emptyRendered).toContain('Copy section ID');
-    expect(emptyRendered).not.toContain('View Markdown file');
-    expect(emptyRendered).toContain('Show <code>lat section</code> output');
+    expect(emptyRendered).toContain('Copy Link to the Section');
+    expect(emptyRendered).toContain('Copy Section ID');
+    expect(emptyRendered).not.toContain('View Markdown File');
+    expect(emptyRendered).toContain('Show <code>lat section</code> Output');
 
     const staticRendered = renderToStaticMarkup(
       createElement(MarkdownContent, {
@@ -2336,8 +2539,8 @@ describe('lat ui', () => {
         tree: emptyDocument.tree,
       }),
     );
-    expect(staticRendered).toContain('Copy section ID');
-    expect(staticRendered).not.toContain('lat section</code> output');
+    expect(staticRendered).toContain('Copy Section ID');
+    expect(staticRendered).not.toContain('lat section</code> Output');
 
     const navigate = vi.fn();
     const clipboard = { writeText: vi.fn(async () => {}) };
