@@ -82,6 +82,8 @@ import {
   centeredDocumentTocScrollTop,
   documentTocActivationLine,
   documentTocIndentationDepth,
+  documentTocActiveGroup,
+  nextDocumentTocScrollTop,
 } from '../view/src/document-toc.js';
 import {
   buildExternalFileTree,
@@ -1983,12 +1985,14 @@ describe('lat ui', () => {
     expect(styles).toMatch(
       /\.document-toc-link \{[^}]*box-shadow: inset 1px 0 var\(--panel-border\);/,
     );
-    expect(styles).toMatch(/\.document-toc-link::before \{[^}]*left: 0;/);
     expect(styles).toMatch(
-      /\.document-toc-link:first-child::before \{\s*top: 0;[^}]*border-top-left-radius: 0;[^}]*border-top-right-radius: 0;/,
+      /\.document-toc-indicator \{[^}]*left: calc\(var\(--toc-depth\) \* 13px\);/,
     );
     expect(styles).toMatch(
-      /\.document-toc-link:last-child::before \{\s*bottom: 0;[^}]*border-bottom-left-radius: 0;[^}]*border-bottom-right-radius: 0;/,
+      /\.document-toc-indicator \{[^}]*transition:[^}]*transform 200ms ease-out/,
+    );
+    expect(styles).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.document-toc-indicator,[^}]*transition: none;/,
     );
     const content =
       '# Guide\n\nOverview.\n\n## Features\n\nDetails.\n\n### `strict`\n\nMore details.';
@@ -2036,6 +2040,37 @@ describe('lat ui', () => {
     expect(
       [1, 2, 3].map((depth) => documentTocIndentationDepth(depth, 2)),
     ).toEqual([0, 0, 1]);
+    const nestedToc = [
+      { id: 'title', depth: 1 },
+      { id: 'intro', depth: 2 },
+      { id: 'features', depth: 2 },
+      { id: 'first', depth: 3 },
+      { id: 'deep', depth: 5 },
+      { id: 'second', depth: 3 },
+      { id: 'next', depth: 2 },
+    ];
+    for (const id of ['features', 'first', 'deep', 'second']) {
+      expect([...documentTocActiveGroup(nestedToc, id).groupIds]).toEqual([
+        'features',
+        'first',
+        'deep',
+        'second',
+      ]);
+    }
+    expect([...documentTocActiveGroup(nestedToc, 'deep').ancestorIds]).toEqual([
+      'features',
+      'first',
+    ]);
+    expect([
+      ...documentTocActiveGroup(nestedToc, 'second').ancestorIds,
+    ]).toEqual(['features']);
+    expect([...documentTocActiveGroup(nestedToc, 'next').groupIds]).toEqual([
+      'next',
+    ]);
+    expect([...documentTocActiveGroup(nestedToc, 'title').groupIds]).toEqual([
+      'title',
+    ]);
+    expect(documentTocActiveGroup([], 'missing').groupIds.size).toBe(0);
     expect(
       activeDocumentTocId(
         ['features', 'strict'],
@@ -2092,6 +2127,20 @@ describe('lat ui', () => {
         itemTop: 300,
       }),
     ).toBe(210);
+    const firstFrame = nextDocumentTocScrollTop(0, 300, 16);
+    expect(firstFrame).toBeGreaterThan(0);
+    expect(firstFrame).toBeLessThan(300);
+    const retargeted = nextDocumentTocScrollTop(firstFrame, 500, 16);
+    expect(retargeted).toBeGreaterThan(firstFrame);
+    expect(retargeted).toBeLessThan(500);
+    expect(nextDocumentTocScrollTop(retargeted, 0, 16)).toBeLessThan(
+      retargeted,
+    );
+    expect(nextDocumentTocScrollTop(firstFrame, 300, 16)).toBeCloseTo(
+      nextDocumentTocScrollTop(0, 300, 32),
+    );
+    expect(nextDocumentTocScrollTop(299.8, 300, 16)).toBe(300);
+    expect(nextDocumentTocScrollTop(0, 300, 0)).toBe(0);
     expect(
       centeredDocumentTocScrollTop({
         containerHeight: 200,
@@ -2199,7 +2248,7 @@ describe('lat ui', () => {
       /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-link \{\s*box-shadow: none;/,
     );
     expect(styles).toMatch(
-      /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-link::before \{\s*display: none;/,
+      /@media \(max-width: 1340px\)[\s\S]*?\.document-toc-indicator \{\s*display: none;/,
     );
     expect(styles).toMatch(
       /@media \(width < 64rem\)[\s\S]*?\.document-toc-toggle \{[\s\S]*?border-top: 0;/,

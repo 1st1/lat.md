@@ -602,6 +602,7 @@ a {
 }
 
 .document-toc-list {
+  position: relative;
   display: block;
   max-height: calc(100% - 38px);
   margin-top: 14px;
@@ -660,29 +661,25 @@ a {
   background: currentColor;
 }
 
-.document-toc-link::before {
+.document-toc-indicator {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  width: 2px;
-  content: '';
-  background: transparent;
-  border-radius: 2px;
-}
-
-.document-toc-link:first-child::before {
   top: 0;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  left: calc(var(--toc-depth) * 13px);
+  width: 2px;
+  pointer-events: none;
+  background: var(--link);
+  border-radius: 2px;
+  transition:
+    transform 200ms ease-out,
+    height 200ms ease-out,
+    opacity 140ms ease;
 }
 
-.document-toc-link:last-child::before {
-  bottom: 0;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+.document-toc-link[data-active-group='true'] {
+  color: color-mix(in srgb, var(--muted) 65%, var(--text));
 }
 
+.document-toc-link[data-active-ancestor='true'],
 .document-toc-link:hover {
   color: var(--text);
 }
@@ -693,10 +690,6 @@ a {
 
 .document-toc-link[aria-current='location'] {
   color: var(--link);
-}
-
-.document-toc-link[aria-current='location']::before {
-  background: var(--link);
 }
 
 .document-metadata {
@@ -2905,6 +2898,7 @@ a.wiki-link-active {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .document-toc-indicator,
   .document-toc-link,
   .document-toc-chevron {
     transition: none;
@@ -3004,7 +2998,7 @@ a.wiki-link-active {
     box-shadow: none;
   }
 
-  .document-toc-link::before {
+  .document-toc-indicator {
     display: none;
   }
 }
