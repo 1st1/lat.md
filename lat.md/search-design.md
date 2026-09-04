@@ -125,6 +125,8 @@ CLI exposes --min-similarity and --preview passage|intro|both; MCP exposes minSi
 
 Build a judged query set before tuning the ranking model. Label both relevant content and acceptable answer sections, including cases where the preferred granularity is a parent.
 
+[[search-audit#Retrieval Tuning Assessment]] records controlled repository probes and a synthetic cross-check. It prioritizes lexical coverage and passage/context experiments; production formula changes remain unimplemented pending broader judgments.
+
 Include exact names and identifiers, paraphrases, deep tail matches, missing or misleading introductions, oversized code blocks, terms split across passages or children, duplicate headings, irrelevant hubs, and genuinely unrelated queries.
 
 Measure unique-section candidate recall, nDCG at 5 and 10, exact-target reciprocal rank, evidence coverage, parent/child redundancy, latency, indexing time, and cache size. Stratify by section length and depth, and evaluate local and hosted embeddings separately with held-out queries.
