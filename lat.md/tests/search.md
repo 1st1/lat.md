@@ -126,6 +126,10 @@ Repeated passage owners collapse before ranks are assigned, and equal channel sc
 
 Adding blank lines changes source locations without re-embedding unchanged contextual inputs.
 
+### Reuses unchanged chunks within edited sections
+
+A word replacement within one passage embeds only that passage, preserves the other passage hashes in the same section, and updates searchable evidence.
+
 ### Publishes only successful generations
 
 A failed replacement leaves the existing manifest and complete searchable generation intact.

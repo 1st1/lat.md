@@ -12,6 +12,18 @@ Store section identity, parent, source range, heading path, introduction, and di
 
 Keep passage source offsets, ordinal, block type, content hash, and embedding-input hash. Source identity and embedding-cache identity are separate: equal text can reuse vectors without merging distinct source locations. Ancestor heading edits invalidate affected contextual embeddings; backlink edits do not.
 
+## Incremental indexing
+
+Reuse embeddings by the SHA-256 hash of the complete contextual input and embedding fingerprint. Small edits need new vectors only for changed inputs, even inside a larger section.
+
+The fingerprint includes model name, dimensions, tokenizer identity, input limit, and chunk policy. Source offsets are excluded from embedding identity. Packing changes can affect subsequent passages, and heading changes can affect descendant context. Identical bodies with different context do not share vectors.
+
+Normal indexing reuses stored hashes, but explicit `lat reindex` builds an empty generation and embeds every input. Unreferenced hashes are deleted after updates, so this is an active-index cache, not a permanent cache for historical text or undo operations.
+
+Unchanged projects bypass chunking through their project fingerprint. When anything changes, the current implementation chunks all files again and rewrites all passage metadata for changed sections, including source-offset changes. Embedding reuse does not eliminate this work.
+
+[[search-audit#Indexing performance]] measures these costs. Prioritize caching per-file chunk layouts by content and embedding fingerprint, then narrowing metadata writes for offset-only changes. Preserve source-span correctness and contextual invalidation when implementing either optimization.
+
 ## Chunk boundaries
 
 Pack adjacent Markdown blocks within one owner section using model-aware token budgets. Preserve paragraphs, lists, tables, and code blocks where possible, with explicit fallbacks for oversized blocks.
