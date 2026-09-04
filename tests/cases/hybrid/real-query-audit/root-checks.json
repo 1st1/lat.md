@@ -1,0 +1,92 @@
+[
+  {
+    "queryId": "q001",
+    "check": "Current CLI parity",
+    "command": "node --import tsx src/cli/index.ts search --debug --limit 10 'how to format links to external source files'",
+    "finding": "CLI top-ten section ordering exactly equals frozen-index helper output."
+  },
+  {
+    "queryId": "q023",
+    "check": "Local versus external extension rules",
+    "command": "rg -n 'extension|prefix|local-path|relative' lat.md/external-sources.md lat.md/markdown.md; read corresponding section ranges",
+    "finding": "markdown.md:122\u2013134 permits unsupported and extensionless local repository paths. external-sources.md:39\u201369 instead applies configured default extensions and supported external formats. Agent's partial verdict is justified: external Resolution Rules ranks eighth, behind three local-path results."
+  },
+  {
+    "queryId": "q027",
+    "check": "Prefix scoping answer exists",
+    "command": "Read lat.md/external-sources.md:39\u201369 and canonical configuration",
+    "finding": "Resolution Rules explicitly says source prefix is prepended before repository access, but this section ranks ninth for the subdirectory/prefix query. Managed Checkout answers another facet at rank one; this is partial task coverage rather than zero relevant retrieval."
+  },
+  {
+    "queryId": "q051",
+    "check": "Browser symptom versus CLI terminology",
+    "command": "rg -n 'Firefox|SectionMenu|stopPropagation|onClick|refresh' view/src/MarkdownContent.tsx lat.md/view/architecture.md lat.md/view/specs.md; read specs.md:286-303",
+    "finding": "Section menu and refresh specifications are real indexed navigation context omitted from top ten. Source has local menu toggle state, but no Firefox-specific diagnosis was established. Poor navigation relevance is supported; an indexed root-cause answer is not."
+  },
+  {
+    "queryId": "q045",
+    "check": "Breadcrumb-disambiguation source-only detail",
+    "command": "Read view/src/graph-layout.ts:5-24 and compare indexed graph metadata docs",
+    "finding": "graphDisplayLabel prefixes a source directory or previous breadcrumb. Indexed Nodes describes metadata but not this precise algorithm; do not count this as a proven ranking miss."
+  },
+  {
+    "queryId": "q047",
+    "check": "Stale cosine wording",
+    "command": "Read lat.md/view/graph.md:80-86 and view/src/GraphView.tsx:692-707",
+    "finding": "Retrieved graph documentation says cosine score; implementation uses result.rankScore. Correct topic retrieval does not ensure current documentation accuracy."
+  },
+  {
+    "queryIds": [
+      "q015",
+      "q017"
+    ],
+    "check": "Evidence range verification",
+    "command": "rg shortcut/definition patterns and read src/lattice.ts:340-429",
+    "finding": "Confirmed escape/malformed-definition scanner evidence. Corrected two source evidence range endpoints from 433 to actual EOF 429; judgments unchanged."
+  },
+  {
+    "queryIds": [
+      "q079",
+      "q086"
+    ],
+    "check": "Evidence endpoints",
+    "command": "Read src/view/preindexed-search.ts:29-60 and tests/hook.test.ts:409-474",
+    "finding": "Confirmed shared session lifecycle and untracked-file Git fixtures. Corrected two evidence endpoints that exceeded EOF by four lines; judgments unchanged."
+  },
+  {
+    "queryId": "q076",
+    "check": "Serverless exclusions are documented",
+    "command": "rg -n 'ephemeral|watcher|Git|serverless|temporary|temp' lat.md/view/architecture.md lat.md/view/specs.md src/view/server-deployment.ts; read architecture.md:91-110 and specs.md:60-73",
+    "finding": "Portable-server spec explicitly covers writable temporary search index, reusable runtime, and disabled Git/events/repository access. Both this spec and Server export architecture are absent from top ten, confirming missed core context."
+  },
+  {
+    "queryId": "q063",
+    "check": "Browser link visual rule",
+    "command": "Read lat.md/view/architecture.md:165-180 and lat.md/view/specs.md:268-277",
+    "finding": "Underline styling and muted-path/target segmentation are documented. Architecture is rank seven; exact wiki-link spec is absent from top ten. Default results instead emphasize reference counts and parsing."
+  },
+  {
+    "queryId": "q092",
+    "check": "Dart grammar evidence",
+    "command": "Read tests/dart-source-parser.test.ts",
+    "finding": "Confirmed enum/.red grammar test and corrected source range to actual EOF; judgment unchanged."
+  },
+  {
+    "queryId": "q099",
+    "check": "Headingless installation guidance",
+    "command": "Read lat.md/lat.md preamble and README.md installation instructions; compare sections.json inventory",
+    "finding": "Exact npm installation command exists in headingless vault index text and outside-vault README, with no corresponding indexed section. This is a coverage boundary, not recoverable by reranking current section candidates."
+  },
+  {
+    "queryId": "q097",
+    "check": "Package publication documentation",
+    "command": "rg -n 'Publishing|four|stemmer' lat.md/dev-process.md .github/workflows/publish.yml",
+    "finding": "Publishing docs still describe four packages, while workflow includes the fifth package @lat.md/stemmer. Correctly retrieved page contains stale package count."
+  },
+  {
+    "queryId": "q076",
+    "check": "Deeper retrieval with unchanged candidate budget",
+    "command": "Query frozen shared search with limit50 (target budget remains50), assert original top10 preserved",
+    "finding": "Server export appears at fused rank42 with semantic rank9 and no lexical candidate contribution; portable-server spec is rank45 with semantic rank14 and no lexical contribution. Evidence points to fusion/candidate interaction, not merely a missing semantic match."
+  }
+]

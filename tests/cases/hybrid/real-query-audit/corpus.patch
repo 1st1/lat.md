@@ -1,0 +1,13 @@
+--- a/lat.md/search-audit.md
++++ b/lat.md/search-audit.md
+@@ -102,0 +103,10 @@
++
++## Real query corpus
++
++Local Codex tool-call history supplies realistic agent search queries for future relevance evaluation. Keep private invocation exports separate from committed fixtures, and add expected-result labels before scoring retrieval quality.
++
++A 2026-09-04 local extraction scanned 79 session logs and selected 24 sessions whose working directories contain a `lat` path component. Fifteen sessions contain 664 search invocations with 652 distinct query strings, spanning July 29 through September 4. One help-only call is excluded.
++
++Extract shell invocations from recorded tool calls, including repository CLI equivalents and commands assembled in arrays or loops. Exclude prose, patches, quoted examples, and heredoc contents. Retain timestamp, working directory, session and call identifiers, and source-log line for provenance. Recorded invocations do not establish successful execution or relevant results.
++
++Four searches ran outside the main Lat checkout; filter working directories when choosing this repository's evaluation inputs. Queries are mostly agent-written keyword searches, with diagnostics and repetitions, rather than a pure sample of short user questions. Match them to the appropriate document snapshot and manually judge relevant sections before forming development and held-out sets.

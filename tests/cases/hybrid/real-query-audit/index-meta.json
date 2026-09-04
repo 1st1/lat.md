@@ -1,0 +1,18 @@
+[
+  {
+    "key": "lexical_version",
+    "value": "snowball-english-rust-stemmers-1.2.0-v1:unicode-words-v1"
+  },
+  {
+    "key": "fingerprint",
+    "value": "owned-blocks-v1:local:minilm-l6-v2:384:256:be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037"
+  },
+  {
+    "key": "project_hash",
+    "value": "9734ac0d32918dfc5ecadf3a3523e99b313a97b26a11c45f3c69b63ce750a527"
+  },
+  {
+    "key": "embedding_model",
+    "value": "local:minilm-l6-v2:384"
+  }
+]

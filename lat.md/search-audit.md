@@ -102,3 +102,51 @@ A diagnostic hybrid edit took 858 ms: project analysis 110 ms, token counting 58
 Full embedding time increases about 23%, while total rebuild time decreases about 15% because non-embedding work drops from approximately 3.45 s to 1.17 s. The old path performs individual section writes and maintains a vector index; the new path batches writes in a transaction. This comparison does not isolate every database change.
 
 [[rag-architecture#Incremental indexing]] defines current cache guarantees and the remaining work of regenerating chunk layouts when source changes. Do not infer one embedding per paragraph, whole-section re-embedding on every edit, or historical hash retention from these measurements.
+
+## Real query corpus
+
+Local Codex tool-call history supplies realistic agent search queries for future relevance evaluation. Keep private invocation exports separate from committed fixtures, and add expected-result labels before scoring retrieval quality.
+
+A 2026-09-04 local extraction scanned 79 session logs and selected 24 sessions whose working directories contain a `lat` path component. Fifteen sessions contain 664 search invocations with 652 distinct query strings, spanning July 29 through September 4. One help-only call is excluded.
+
+Extract shell invocations from recorded tool calls, including repository CLI equivalents and commands assembled in arrays or loops. Exclude prose, patches, quoted examples, and heredoc contents. Retain timestamp, working directory, session and call identifiers, and source-log line for provenance. Recorded invocations do not establish successful execution or relevant results.
+
+Four searches ran outside the main Lat checkout; filter working directories when choosing this repository's evaluation inputs. Queries are mostly agent-written keyword searches, with diagnostics and repetitions, rather than a pure sample of short user questions. Match them to the appropriate document snapshot and manually judge relevant sections before forming development and held-out sets.
+
+### 100-query agent audit
+
+Ten local agents evaluated 100 historical queries against a frozen 506-section index, then investigated answers with repository grep and source/test reads. Results distinguish ranking misses from missing or stale documentation.
+
+[[tests/cases/hybrid/real-query-audit]] records exact queries, top-ten results, 990 graded sections, 201 grep evidence entries, 156 source/test evidence entries, root verification, and corpus fingerprints. The sample deliberately balances ten topics; it is not a random or human-labeled benchmark.
+
+Default-five verdicts are 77 good, 16 partial, one poor, and six without a clear indexed answer. A direct answer to at least one substantial facet appears first for 75 queries, within five for 91, and within ten for 92. This weaker criterion does not establish complete answers to compound questions.
+
+Fusion can bury relevant semantic candidates: for the serverless/ephemeral-cache query, Server export ranks ninth semantically but 42nd after fusion with no lexical candidate contribution. Graph-edge semantics ranks sixth semantically but 22nd overall for the ordinary-versus-wiki-link question. Segmented-link styling and external path rules also fall below the default five.
+
+Prioritize experiments on missing-channel fusion behavior and intent qualifiers, then judge multiple requested facets. A larger displayed limit alone adds a first direct answer for only one query in this sample. Candidate rescoring and reranking remain hypotheses; no production formulas changed during evaluation.
+
+Coverage issues include installation guidance in the headingless vault index preamble and exact behavior documented only in source/tests. Decide how headingless content becomes a returnable section. Current graph sizing uses hybrid `rankScore`, and Publishing includes `@lat.md/stemmer` with manifest/workflow references. The frozen audit retains the earlier stale wording as evidence; its corpus is not a current product reference.
+
+### Next ranking experiments
+
+Test fusion and intent-sensitive reranking before changing chunk sizes or adding authority boosts. Preserve the audit baseline and separate missing document coverage from ranking quality.
+
+First distinguish truncated channel lists from true nonmatches. Score both channels for their candidate union before fusion, retaining eligibility thresholds: a genuine zero lexical match must not receive an invented RRF contribution. Compare this with current retrieval and a small weighted-RRF grid, rather than assuming a particular constant fixes the observed misses.
+
+If scope and exclusion errors persist, test a local reranker over the channel candidate union before narrowing to a small fused shortlist. Reranking only the fused top 20 cannot rescue the verified Server export answer at rank 42. Include heading context and matched passages, and evaluate distinctions such as external versus local, styling versus parsing, and no Git/watchers.
+
+Use known answer-section coverage, direct-answer presence, irrelevant results, and latency together. Judge newly surfaced candidates rather than treating unjudged sections as irrelevant. Keep additional unseen queries for confirmation; the 100-query sample is a development audit once it informs tuning.
+
+Independently make headingless page text and pre-heading introductions addressable by retrieval, with page-level identity where no authored section exists. This restores missing coverage that fusion cannot supply; source-only knowledge remains a separate scope decision.
+
+### Fast replay of agent judgments
+
+Reuse the saved query intents, section grades, discovered answer targets, and source evidence when comparing ranking variants. Repeat manual investigation only for newly surfaced or materially changed content.
+
+The audit retains all 100 queries, 990 graded query-section pairs, 201 grep commands with findings, and 156 source/test evidence entries. Evidence records include paths and line ranges; they are findings summaries, not a complete archive of terminal output. Corpus hashes and the baseline patch identify the evaluated document content.
+
+Twenty-nine grep-discovered target pairs across 21 queries lie outside the graded top ten. Preserve them as known answer/navigation targets, but assign explicit relevance grades before mixing them into graded metrics: some are partial context rather than direct answers. Treat all other unseen pairs as unjudged, not irrelevant.
+
+A replay runner should match result section IDs to saved query-specific grades, report known-target ranks and judged-result coverage, and emit a queue of unjudged results for focused review. Cache query embeddings and complete channel candidates/scores for cheap fusion sweeps; the current durable artifacts retain only top-ten result details and selected deeper-target diagnostics, not the complete candidate pool or query vectors.
+
+Use the frozen corpus for controlled ranking comparisons. Revalidate labels when section contents change; source references and saved findings make that review narrower than repeating the original grep investigation.

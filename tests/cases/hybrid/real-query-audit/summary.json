@@ -1,0 +1,243 @@
+{
+  "completed": 100,
+  "errors": [],
+  "all": {
+    "queries": 100,
+    "verdicts": {
+      "good": 77,
+      "no_indexed_answer": 6,
+      "partial": 16,
+      "poor": 1
+    },
+    "directAnswerAt1": 75,
+    "directAnswerAt5": 91,
+    "directAnswerAt10": 92,
+    "mrrAt10": 0.8157619047619048,
+    "meanDirectPrecisionAt5": 0.46399999999999997,
+    "meanUsefulPrecisionAt5": 0.8059999999999999,
+    "top5GradeCounts": {
+      "1": 171,
+      "2": 232,
+      "0": 92
+    }
+  },
+  "indexedAnswerSubset": {
+    "queries": 93,
+    "verdicts": {
+      "good": 77,
+      "partial": 16
+    },
+    "directAnswerAt1": 75,
+    "directAnswerAt5": 91,
+    "directAnswerAt10": 92,
+    "mrrAt10": 0.877163338453661,
+    "meanDirectPrecisionAt5": 0.4989247311827957,
+    "meanUsefulPrecisionAt5": 0.8279569892473119,
+    "top5GradeCounts": {
+      "1": 153,
+      "2": 232,
+      "0": 80
+    }
+  },
+  "answerExists": {
+    "indexed": 93,
+    "absent": 2,
+    "source_only": 3,
+    "ambiguous": 2
+  },
+  "byTopic": {
+    "search": {
+      "queries": 10,
+      "verdicts": {
+        "good": 8,
+        "no_indexed_answer": 1,
+        "partial": 1
+      },
+      "directAnswerAt1": 7,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.7833333333333333,
+      "meanDirectPrecisionAt5": 0.48,
+      "meanUsefulPrecisionAt5": 0.72,
+      "top5GradeCounts": {
+        "1": 12,
+        "2": 24,
+        "0": 9
+      }
+    },
+    "markdown_links": {
+      "queries": 10,
+      "verdicts": {
+        "good": 8,
+        "partial": 2
+      },
+      "directAnswerAt1": 8,
+      "directAnswerAt5": 10,
+      "directAnswerAt10": 10,
+      "mrrAt10": 0.8833333333333334,
+      "meanDirectPrecisionAt5": 0.62,
+      "meanUsefulPrecisionAt5": 0.9400000000000001,
+      "top5GradeCounts": {
+        "2": 31,
+        "1": 16,
+        "0": 3
+      }
+    },
+    "external_sources": {
+      "queries": 10,
+      "verdicts": {
+        "good": 6,
+        "partial": 4
+      },
+      "directAnswerAt1": 7,
+      "directAnswerAt5": 10,
+      "directAnswerAt10": 10,
+      "mrrAt10": 0.82,
+      "meanDirectPrecisionAt5": 0.52,
+      "meanUsefulPrecisionAt5": 0.82,
+      "top5GradeCounts": {
+        "0": 9,
+        "2": 26,
+        "1": 15
+      }
+    },
+    "analysis_performance": {
+      "queries": 10,
+      "verdicts": {
+        "good": 9,
+        "partial": 1
+      },
+      "directAnswerAt1": 10,
+      "directAnswerAt5": 10,
+      "directAnswerAt10": 10,
+      "mrrAt10": 1.0,
+      "meanDirectPrecisionAt5": 0.52,
+      "meanUsefulPrecisionAt5": 0.86,
+      "top5GradeCounts": {
+        "2": 26,
+        "1": 17,
+        "0": 7
+      }
+    },
+    "graph": {
+      "queries": 10,
+      "verdicts": {
+        "good": 9,
+        "no_indexed_answer": 1
+      },
+      "directAnswerAt1": 8,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.85,
+      "meanDirectPrecisionAt5": 0.45999999999999996,
+      "meanUsefulPrecisionAt5": 0.9,
+      "top5GradeCounts": {
+        "2": 23,
+        "1": 22,
+        "0": 5
+      }
+    },
+    "navigation": {
+      "queries": 10,
+      "verdicts": {
+        "poor": 1,
+        "good": 9
+      },
+      "directAnswerAt1": 9,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.9,
+      "meanDirectPrecisionAt5": 0.32,
+      "meanUsefulPrecisionAt5": 0.7,
+      "top5GradeCounts": {
+        "0": 15,
+        "1": 19,
+        "2": 16
+      }
+    },
+    "rendering": {
+      "queries": 10,
+      "verdicts": {
+        "good": 7,
+        "partial": 1,
+        "no_indexed_answer": 2
+      },
+      "directAnswerAt1": 5,
+      "directAnswerAt5": 7,
+      "directAnswerAt10": 8,
+      "mrrAt10": 0.5842857142857143,
+      "meanDirectPrecisionAt5": 0.3,
+      "meanUsefulPrecisionAt5": 0.62,
+      "top5GradeCounts": {
+        "1": 16,
+        "2": 15,
+        "0": 19
+      }
+    },
+    "deployment": {
+      "queries": 10,
+      "verdicts": {
+        "good": 8,
+        "partial": 2
+      },
+      "directAnswerAt1": 7,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.7833333333333333,
+      "meanDirectPrecisionAt5": 0.42000000000000004,
+      "meanUsefulPrecisionAt5": 0.78,
+      "top5GradeCounts": {
+        "2": 21,
+        "0": 11,
+        "1": 18
+      }
+    },
+    "hooks_cli": {
+      "queries": 10,
+      "verdicts": {
+        "good": 7,
+        "no_indexed_answer": 1,
+        "partial": 2
+      },
+      "directAnswerAt1": 7,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.7533333333333333,
+      "meanDirectPrecisionAt5": 0.54,
+      "meanUsefulPrecisionAt5": 0.8800000000000001,
+      "top5GradeCounts": {
+        "2": 27,
+        "1": 17,
+        "0": 6
+      }
+    },
+    "development": {
+      "queries": 10,
+      "verdicts": {
+        "partial": 3,
+        "good": 6,
+        "no_indexed_answer": 1
+      },
+      "directAnswerAt1": 7,
+      "directAnswerAt5": 9,
+      "directAnswerAt10": 9,
+      "mrrAt10": 0.8,
+      "meanDirectPrecisionAt5": 0.4600000000000001,
+      "meanUsefulPrecisionAt5": 0.8400000000000001,
+      "top5GradeCounts": {
+        "2": 23,
+        "0": 8,
+        "1": 19
+      }
+    }
+  },
+  "failureModes": {
+    "none": 58,
+    "lexical-noise": 18,
+    "compound-query": 20,
+    "coverage-gap": 9,
+    "historical-drift": 12,
+    "semantic-mismatch": 5,
+    "granularity": 3
+  }
+}

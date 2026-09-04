@@ -22,7 +22,7 @@ jobs:
           cache: pnpm
       - run: npm install -g npm@latest
 
-      # Rust toolchain for the WASM engine build.
+      # Rust toolchain for the WASM embedding engine and stemmer builds.
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
@@ -31,7 +31,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # buildall = shared server + WASM engine + fp16 weights, then top-level lat.
+      # buildall includes the shared server, stemmer, embedding engine, weights, and CLI.
       - run: pnpm buildall
       - run: pnpm vitest run --reporter=verbose
 
