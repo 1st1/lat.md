@@ -41,7 +41,7 @@ The 18 policies cross retrieved/union candidates, k=10/20/60, and semantic weigh
 
 The development winner fails validation. The follow-up candidate needs fresh confirmation; choosing it now would tune against validation. Union fills truncated positive channel matches, but provides no top-five quality gain at baseline settings. It preserves true lexical zeroes and the semantic eligibility floor.
 
-The initial uncontended benchmark (`latency-2026-09-04T20-18-06.263Z.json`, Apple M4 Pro) measured engine medians 2.24 ms baseline / 3.74 ms union, and warm total medians 15.69 / 17.72 ms. These are small-corpus local measurements, not a scaling guarantee. The 20:24 benchmark ran concurrently with tests and is retained only as parity evidence, not a latency comparison.
+The initial uncontended benchmark (`latency-2026-09-04T20-18-06.263Z.json`, Apple M4 Pro) measured engine medians 2.24 ms baseline / 3.74 ms union, and warm total medians 15.69 / 17.72 ms. The committed-code replay (`43c0a1b`) took 0.46 s and its benchmark (`latency-2026-09-04T20-26-09.440Z.json`) measured engine medians 2.95 / 6.05 ms and warm total medians 17.96 / 20.49 ms. Timing varies across runs; both show added cost. These are small-corpus local measurements, not a scaling guarantee. The 20:24 benchmark ran concurrently with tests and is retained only as parity evidence, not a latency comparison.
 
 ## Exact index state matters
 
@@ -56,3 +56,5 @@ git worktree add ../lat-rag-baseline 18cc9ce
 ```
 
 Keep accepted policy changes in separate commits so they can be reverted independently of the experiment harness. This experiment does not change the production policy.
+
+The final committed-code run and validation summary are recorded in `verification.json`: 347 tests passed (one skipped), root/view typechecks passed, and `lat check` passed.
