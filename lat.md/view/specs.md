@@ -9,7 +9,9 @@ Functional specifications for the local browser, deployable builds, client navig
 
 ## Serves the document index and browser shell
 
-The loopback server exposes the visible Markdown index, redirects its root to the extensionless vault-index route, and serves the client shell for extensionless document routes.
+The loopback server exposes the visible Markdown index and renders its entry at `/`. Other documents use their extensionless vault-relative paths, without a fixed prefix; missing routes return 404.
+
+The live shell identifies its entry without enabling static mode. Reserved UI namespaces and generated-file collisions are rejected rather than silently shadowing documents.
 
 Requesting the same route with `.md` returns the exact known vault file as `text/markdown`; missing or escaping paths remain unavailable. `HEAD` returns the same source headers without a body.
 
@@ -27,7 +29,7 @@ The server anchors Vite's relative entry assets at `/assets/`, so every live doc
 
 Without an explicit output, it writes `.lat-build/static/`.
 
-Every local document also emits its exact source at the corresponding `.md` URL, while generated, relative, search, backlink, and graph navigation all target the extensionless React route.
+Documents use root-relative extensionless routes, with only the configured base as a prefix. Generated, relative, search, backlink, and graph links follow this mapping; each document also emits its exact source at the corresponding `.md` URL.
 
 The build copies each vault-local resource reached from a rendered document once, preserves its vault-relative path, and rewrites its URL under the configured deployment base.
 
@@ -43,11 +45,17 @@ Every source file stores its raw text and highlighted lines once. Request-specif
 
 `lat ui build static --logo-text <text>` persists the same plain-text override in the static manifest; without it, the exported client uses the bundled Lat wordmark.
 
-An absolute `--base` path nests the payload under that path as well as prefixing its URLs, so the output directory itself remains the deployment root.
+A `--base` path, with or without a leading slash, nests the payload under that path as well as prefixing its URLs. Root and nested builds keep document routes, raw Markdown, entry navigation, and assets consistent without an implicit `/docs/` segment.
 
 Entry assets use that base, while lazy JavaScript, CSS, fonts, and renderer chunks resolve relative to their owning production asset. Rich fences therefore work at both root and nested deployments.
 
 Any existing output path is rejected before snapshot work begins, including an empty directory or prior export. `--force` explicitly replaces it, but only after the complete successor has staged successfully. Transient busy-file errors during the final move are retried; destinations that could contain the project remain forbidden.
+
+## Mounts documents at the configured base
+
+Live, static, and server UIs render the entry at the mount root and other documents at extensionless vault-relative paths. Only an explicit build base adds a prefix; real `docs/` folders remain ordinary content.
+
+Root and nested builds preserve encoded filenames, relative links, fragments, raw Markdown, and assets. Reserved UI routes and file/directory collisions fail explicitly, with no legacy document aliases.
 
 ## Builds a portable server deployment
 
@@ -59,7 +67,7 @@ The generated package directly imports and constructs its pinned Express version
 
 The entrypoint passes literal module-relative manifest and index URLs as real runtime inputs and injects a search-engine factory made from ordinary embedding-engine and model imports. The runtime derives the sibling `public/` directory from the manifest instead of exposing it to file tracing; CDN-aware hosts publish that root directory without duplicating it inside the function. Package-owned code loads its own WASM and model assets, so file tracing follows the actual runtime graph without include globs or tracing-only expressions.
 
-Its static fallback preserves configured base paths, extensionless UI routes, and exact raw `.md` files on non-CDN hosts. `/` renders the configured entry document directly; `index.html` is only the physical file, and the former `/docs/...` route redirects to the root.
+Its static fallback preserves configured base paths, extensionless UI routes, and exact raw `.md` files on non-CDN hosts. `/` renders the configured entry document directly; `index.html` is only the physical file, and its filename route redirects home.
 
 The static client exposes Search only when the build advertises an endpoint. Editing, Git state, event streams, repository access, and the runtime section command remain disabled.
 
@@ -233,7 +241,7 @@ Every section exposes a burger-icon menu with a count only when references exist
 
 Muted actions stack below the references with “Copy link to the section” first. They can also copy the canonical ID accepted by `lat section`. The topmost local Markdown section links to the raw `.md` file, while external documents omit that action.
 
-Following the menu link returns the exact source from both the live UI and generated Node server. Exported homepages retain their `/docs/<file>.md` source route, and nested deployments preserve their base path.
+Following the menu link returns the exact source from both the live UI and generated Node server. Homepages retain their `/<file>.md` source route, and nested deployments preserve their base path.
 
 In live views, the output modal defaults to the shared React tree renderer and offers a raw-text toggle; static exports omit this runtime-only action.
 

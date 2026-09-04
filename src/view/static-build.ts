@@ -41,6 +41,7 @@ import {
   documentPath,
   documentUrl,
   rawDocumentPath,
+  validateDocumentRoutes,
 } from './document-route.js';
 
 const defaultClientDir = fileURLToPath(new URL('./client/', import.meta.url));
@@ -69,12 +70,13 @@ function isInside(parent: string, child: string): boolean {
 }
 
 export function normalizeStaticViewBasePath(value: string): string {
-  const parsed = new URL(value || '/', 'http://lat.local');
+  const path = value.startsWith('/') ? value : `/${value}`;
+  const parsed = new URL(path, 'http://lat.local');
   if (
     parsed.origin !== 'http://lat.local' ||
     parsed.search ||
     parsed.hash ||
-    !value.startsWith('/')
+    value.includes('://')
   ) {
     throw new Error('Static UI base path must be an absolute URL path');
   }
@@ -113,7 +115,7 @@ export function staticViewUrl(
   basePath: string,
   entryPath?: string,
 ): string {
-  if (!value || value.startsWith('#')) return value;
+  if (!value || !value.startsWith('/') || value.startsWith('//')) return value;
   let url: URL;
   try {
     url = new URL(decodeHtmlUrlAttribute(value), 'http://lat.local');
@@ -122,10 +124,11 @@ export function staticViewUrl(
   }
   if (url.origin !== 'http://lat.local') return value;
 
-  if (url.pathname.startsWith('/docs/')) {
+  const markdownPath = documentPath(url.pathname.replace(/\/$/, ''));
+  if (markdownPath || rawDocumentPath(url.pathname)) {
     const route = url.pathname.slice(1).replace(/\/+$/, '');
     const suffix = `${url.search}${url.hash}`;
-    if (entryPath && documentPath(url.pathname) === entryPath) {
+    if (entryPath && markdownPath === entryPath) {
       return `${basePath}${suffix}`;
     }
     return `${basePath}${route}${suffix}`;
@@ -141,6 +144,9 @@ export function staticViewUrl(
   }
   if (url.pathname === '/graph') {
     return `${basePath}graph/${url.search}${url.hash}`;
+  }
+  if (url.pathname === '/' || url.pathname === '/search') {
+    return `${basePath}${url.pathname.slice(1)}${url.search}${url.hash}`;
   }
   return value;
 }
@@ -665,7 +671,7 @@ const REDIRECT_SCRIPT_PATH = 'data/redirect.js';
 const REDIRECT_SCRIPT = `const meta = document.querySelector('meta[name="lat-redirect"]');
 if (meta) {
   try {
-    window.location.replace(decodeURIComponent(meta.content) + window.location.hash);
+    window.location.replace(decodeURIComponent(meta.content) + window.location.search + window.location.hash);
   } catch {}
 }
 `;
@@ -733,6 +739,7 @@ export async function buildStaticView(
     await mkdir(payloadDir, { recursive: true });
     await cp(clientDir, payloadDir, { recursive: true });
     const index = { ...store.getIndex(), git: null, logoText };
+    validateDocumentRoutes(index.files);
     const shell = clientShell(
       clientHtml,
       basePath,
@@ -881,10 +888,10 @@ export async function buildStaticView(
         rewritten,
       );
       const source = await store.getDocumentSource(path);
-      const rawPath = join(payloadDir, 'docs', ...path.split('/'));
+      const rawPath = join(payloadDir, ...path.split('/'));
       await mkdir(dirname(rawPath), { recursive: true });
       await writeFile(rawPath, source.content);
-      const route = `docs/${path.slice(0, -'.md'.length)}`;
+      const route = path.slice(0, -'.md'.length);
       documentBootstraps.set(route, {
         request: viewStaticDocumentRequest(path),
         document: rewritten,
@@ -996,7 +1003,7 @@ export async function buildStaticView(
       );
     }
     await writeJson(join(payloadDir, 'data/manifest.json'), manifest);
-    const entryRoute = `docs/${index.entry.slice(0, -'.md'.length)}`;
+    const entryRoute = index.entry.slice(0, -'.md'.length);
     const entryBootstrap = documentBootstraps.get(entryRoute);
     if (!entryBootstrap) {
       throw new Error(`Static UI entry document is missing: ${index.entry}`);

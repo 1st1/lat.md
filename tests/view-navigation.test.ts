@@ -144,13 +144,13 @@ describe('directory index navigation', () => {
     expect(
       [...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1]),
     ).toEqual([
-      '/docs/lat',
-      '/docs/zeta',
-      '/docs/docs/docs',
-      '/docs/docs/docs',
-      '/docs/docs/setup',
-      '/docs/docs/api',
-      '/docs/alpha',
+      '/lat',
+      '/zeta',
+      '/docs/docs',
+      '/docs/docs',
+      '/docs/setup',
+      '/docs/api',
+      '/alpha',
     ]);
     expect(await checkIndex(latDir)).toEqual([]);
 

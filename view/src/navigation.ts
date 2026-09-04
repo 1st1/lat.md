@@ -1,6 +1,6 @@
 import type { ViewGraph, ViewGraphNode } from '../../src/view/protocol';
 import { isDocumentPath } from '../../src/document-formats';
-import { staticViewRoute, viewPathname } from './static-mode';
+import { staticViewRoute, viewPathname, viewEntryPath } from './static-mode';
 import {
   documentPath as routeDocumentPath,
   documentUrl as routeDocumentUrl,
@@ -18,7 +18,9 @@ type DocumentScroller = {
 
 export function documentUrl(path: string): string {
   const route = routeDocumentUrl(path);
-  return staticViewRoute(route.slice(1)) ?? route;
+  return (
+    staticViewRoute(route.slice(1)) ?? (path === viewEntryPath() ? '/' : route)
+  );
 }
 
 export function documentPath(pathname: string): string | null {
