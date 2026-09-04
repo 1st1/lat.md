@@ -162,3 +162,17 @@ The topic-stratified split contains 80 development and 20 validation queries (73
 The development winner uses retrieved candidates, k=10, and equal weights: development nDCG rises from 0.80455 to 0.81307, but validation falls from 0.84381 to 0.84082. It fails the gate. Under baseline weights and k=60, union rescoring gives identical top-five quality while adding 1.5–3.1 ms median engine time across two measurements on the 716-passage corpus.
 
 The k=20, semantic-weight=1.5 variant is promising for fresh-query confirmation; selecting it after the development winner failed would use validation for tuning. Production remains retrieved candidates, k=60, equal weights. See [[tests/cases/hybrid/experiments/001-union-rrf/README.md]] for commands, measurements, and limitations, and [[tests/cases/hybrid/experiments/registry.json]] for the baseline checkpoint.
+
+## FTS history-dependent scoring
+
+Incremental FTS updates retain historical scoring statistics, so identical live content can rank differently after a rebuild. A standalone engine probe isolates this behavior from Lat's indexing and embedding code.
+
+The recorded FTS probe reproduced drift on Turso 0.7.2 using three rows and same-value SQL updates. Ten repeated updates reverse two lexical results. Checkpoint/reopen preserves the change; DROP/CREATE restores the original scores with identical table contents. Single-process and multiprocess WAL modes agree.
+
+The pinned [Turso source](https://github.com/tursodatabase/turso/blob/046e9cbf67d22491e8ecc941ec2891b02a9f3cad/core/index_method/fts.rs) disables automatic segment merging. [Tantivy 0.26.1 BM25](https://docs.rs/tantivy/0.26.1/src/tantivy/query/bm25.rs.html) includes deleted versions in segment statistics until compaction. This is inherited scoring behavior, not evidence of corrupted source rows; Lat's section replacements expose it during ordinary editing.
+
+Across the frozen 100-query audit, rebuilding changes top-one results for one query, top-five ordering for two, and top-ten ordering or membership for eleven. The two changed top fives retain identical members and direct-answer coverage. Raw results, reproduction commands, and qualifications are in [[tests/cases/hybrid/fts-history/README.md]].
+
+OPTIMIZE INDEX repairs small update examples but skips the single-segment deletion case and differs from rebuilt rankings in the audit. Rebuilding only the derived FTS index takes about 8 ms on 716 passages without embedding work; larger-corpus costs remain unmeasured.
+
+The planned repair is transactionally rebuilding FTS after replacement/deletion batches, plus one-time maintenance for existing indexes, while preserving embedding reuse and no-op searches. Integration tests must compare incremental edits, deletions, and rollback with a fresh index. This investigation does not change production indexing or the frozen ranking experiment.
