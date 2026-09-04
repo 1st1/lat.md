@@ -676,6 +676,14 @@ export async function renderMarkdown(
   });
 
   const hast = await documentTreeProcessor.run(tree);
+  // Attach source ranges after sanitization, before positions are discarded.
+  visit(hast, 'element', (node) => {
+    if (!/^(p|pre|li|tr|h[1-6])$/.test(node.tagName) || !node.position) return;
+    node.properties['data-source-start-line'] =
+      node.position.start.line + (options.lineOffset ?? 0);
+    node.properties['data-source-end-line'] =
+      node.position.end.line + (options.lineOffset ?? 0);
+  });
   return {
     tree: decorateExternalSiteLinks(toViewDocumentTree(hast)),
     title,

@@ -2457,6 +2457,13 @@ a.wiki-link-active {
   clip: rect(0, 0, 0, 0);
 }
 
+.markdown .search-match {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  box-shadow: -3px 0 0 var(--accent);
+  border-radius: 3px;
+  scroll-margin-block: 100px;
+}
+
 .search-page {
   width: 100%;
   max-width: 760px;
@@ -2525,6 +2532,8 @@ a.wiki-link-active {
 }
 
 .search-result {
+  position: relative;
+  z-index: 0;
   display: block;
   padding: 16px 18px;
   color: var(--text);
@@ -2536,6 +2545,10 @@ a.wiki-link-active {
     border-color 120ms ease,
     background 120ms ease,
     transform 120ms ease;
+}
+
+.search-result:has(.search-result-score[open]) {
+  z-index: 3;
 }
 
 .search-result:hover {
@@ -2579,6 +2592,192 @@ a.wiki-link-active {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.search-result-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.search-result-link {
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.search-result-link:hover h2 {
+  color: var(--link);
+}
+.search-result-link:focus-visible,
+.search-result-score summary:focus-visible,
+.search-passage-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+.search-result-rank {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+.search-result .search-result-breadcrumbs {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.search-result-score {
+  position: relative;
+  flex: 0 0 auto;
+}
+.search-result-score summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+}
+.search-result-score summary strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.search-score-details {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 260px;
+  padding: 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.search-score-details p {
+  margin: 0;
+  font-size: 12px;
+}
+.search-score-details dl {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+.search-score-details dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+}
+.search-score-details dt {
+  color: var(--muted);
+}
+.search-score-details dd {
+  margin: 0;
+  font-family: var(--font-mono);
+}
+.search-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.search-passage {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.search-passage-collapsed {
+  max-height: 10em;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, black 75%, transparent);
+}
+.search-passage p {
+  color: inherit;
+  margin: 8px 0;
+}
+.search-passage > :first-child {
+  margin-top: 0;
+}
+.search-passage code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--muted) 10%, transparent);
+}
+.search-passage pre {
+  margin: 10px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+}
+.search-passage pre code {
+  padding: 0;
+  background: none;
+  white-space: pre;
+}
+.search-passage ul,
+.search-passage ol {
+  margin: 8px 0;
+  padding-left: 22px;
+}
+.search-passage blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--panel-border);
+  color: var(--muted);
+}
+.search-preview-table {
+  overflow-x: auto;
+}
+.search-passage table {
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.search-passage td,
+.search-passage th {
+  padding: 5px 9px;
+  border: 1px solid var(--panel-border);
+  text-align: left;
+}
+.search-passage-toggle {
+  margin-top: 8px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--link);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+@media (max-width: 520px) {
+  .search-result {
+    padding: 14px;
+  }
+  .search-result-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .search-result-score summary {
+    text-align: left;
+    min-height: 36px;
+  }
+  .search-result-score[open] {
+    width: 100%;
+  }
+  .search-score-details {
+    position: static;
+    width: auto;
+    margin-top: 8px;
+    box-shadow: none;
+  }
 }
 
 .state {
