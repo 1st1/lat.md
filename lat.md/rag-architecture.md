@@ -140,4 +140,6 @@ The committed evaluation fixtures measure section retrieval and preserve the dis
 
 [[tests/cases/hybrid/evaluation-local.json]], [[tests/cases/hybrid/evaluation-stemmed.json]], and [[tests/cases/hybrid/benchmark-local.json]] retain their original measured snapshots. They are evidence, not current runtime settings. Benchmark and evaluation runners are not shipped in this repository; retained artifacts describe historical measurements, while the linked automated tests verify runtime behavior.
 
+[[search-audit]] records repository investigations, measured results, and experiment choices. Architecture and runtime defaults are defined here; the audit preserves the evidence behind tuning decisions.
+
 The runtime does not implement ancestor promotion, backlink authority, summary vectors, whole-section FTS, synonym dictionaries, candidate-union rescoring, learned reranking, or automatic neighboring-passage expansion. Hierarchy and source spans support section identity and evidence; they are not extra relevance votes.
