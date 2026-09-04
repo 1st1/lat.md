@@ -150,6 +150,11 @@ import {
   viewPathname,
 } from '../view/src/static-mode.js';
 import viewViteConfig from '../view/vite.config.js';
+import { matrixFromCamera, multiplyVec2 } from 'sigma/utils';
+import {
+  graphFitCamera,
+  graphViewportCamera,
+} from '../view/src/graph-camera.js';
 import {
   deterministicGraphPosition,
   graphDisplayLabel,
@@ -1246,6 +1251,38 @@ describe('lat ui', () => {
 
   // @lat: [[lat.md/view/specs#View Tests#Renders the graph workspace]]
   it('serves the cached graph projection and graph shell', async () => {
+    const desktop = { width: 1600, height: 1000, activeWidth: 800 };
+    const mobile = { width: 390, height: 520, activeWidth: 390 };
+    for (const dimensions of [
+      { width: 1, height: 1 },
+      { width: 3, height: 1 },
+      { width: 1, height: 3 },
+    ]) {
+      const fit = graphFitCamera(desktop, dimensions);
+      const projected = multiplyVec2(
+        matrixFromCamera(fit, desktop, dimensions, 40),
+        { x: 0.5, y: 0.5 },
+      );
+      expect(((projected.x + 1) * desktop.width) / 2).toBeCloseTo(400, 3);
+      expect(((1 - projected.y) * desktop.height) / 2).toBeCloseTo(500, 3);
+      const state = { x: 0.6, y: 0.3, ratio: 0.4, angle: 0.2 };
+      const resized = graphViewportCamera(state, mobile, desktop, dimensions);
+      const restored = graphViewportCamera(
+        resized,
+        desktop,
+        mobile,
+        dimensions,
+      );
+      for (const key of ['x', 'y', 'ratio', 'angle'] as const) {
+        expect(restored[key]).toBeCloseTo(state[key]);
+      }
+      expect(graphFitCamera(mobile, dimensions)).toEqual({
+        x: 0.5,
+        y: 0.5,
+        angle: 0,
+        ratio: 1,
+      });
+    }
     const graphClient = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'GraphView.tsx'),
       'utf8',
@@ -1254,6 +1291,13 @@ describe('lat ui', () => {
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),
       'utf8',
     );
+    expect(graphStyles).toMatch(
+      /\.graph-canvas \{\s*right: auto;\s*width: 200%;/,
+    );
+    expect(graphStyles).toContain('backdrop-filter: blur(2px) grayscale(1)');
+    expect(graphStyles).toContain('var(--panel) 60%, transparent');
+    expect(graphClient).toContain("sigma.on('resize'");
+    expect(graphClient).toContain("sigma.setSetting('zoomToSizeRatioFunction'");
     for (const token of [
       '--graph-edge',
       '--graph-edge-muted',
@@ -1273,6 +1317,12 @@ describe('lat ui', () => {
     expect(graphClient).toContain('color: mutedEdgeColor');
     expect(graphClient).toContain('color: activeEdgeColor');
     expect(graphClient).toContain('color: mutedNodeColor');
+    expect(graphClient).toContain('hideEdgesOnMove: false');
+    expect(graphClient).toContain("type: 'line'");
+    expect(graphClient).toContain("type: 'arrow'");
+    expect(graphClient).toContain('context.strokeText(data.label');
+    expect(graphClient).not.toContain('renderedData.size +');
+    expect(graphClient).toContain('Area: incoming refs · includes subsections');
     expect(graphClient).not.toContain("sigma.on('downNode'");
     expect(graphClient).not.toContain('graph.mergeNodeAttributes');
     expect(graphClient).toContain("sigma.on('clickNode'");
@@ -1506,10 +1556,16 @@ describe('lat ui', () => {
       validGraphPosition(deterministicGraphPosition('code-ref:src/app.ts:5')),
     ).toBe(true);
     expect(validGraphPosition({ x: Number.NaN, y: 1 })).toBe(false);
-    expect(graphNodeSize(0)).toBe(5);
-    expect(graphNodeSize(1)).toBe(8);
-    expect(graphNodeSize(7)).toBe(14);
-    expect(graphNodeSize(-1)).toBe(5);
+    expect(graphNodeSize(0)).toBeCloseTo(3.6);
+    expect(graphNodeSize(1)).toBeCloseTo(1.2 * Math.sqrt(12.75));
+    expect(graphNodeSize(7)).toBeCloseTo(1.2 * Math.sqrt(35.25));
+    expect(graphNodeSize(-1)).toBeCloseTo(3.6);
+    expect(graphNodeSize(Infinity)).toBeCloseTo(3.6);
+    expect(graphNodeSize(Number.NaN)).toBeCloseTo(3.6);
+    // Equal reference increments produce equal area increments, not radius.
+    expect(graphNodeSize(20) ** 2 - graphNodeSize(10) ** 2).toBeCloseTo(
+      graphNodeSize(10) ** 2 - graphNodeSize(0) ** 2,
+    );
     const positions = staticGraphPositions(graph);
     expect(positions.size).toBe(graph.nodes.length);
     expect([...positions.values()].every(validGraphPosition)).toBe(true);
@@ -1538,11 +1594,13 @@ describe('lat ui', () => {
       ),
     ).toEqual(
       new Map([
-        ['weak', 5],
-        ['strong', 14],
+        ['weak', 6],
+        ['strong', 16.8],
       ]),
     );
-    expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(14);
+    expect(graphSearchNodeSizes(new Map([['only', 0.5]])).get('only')).toBe(
+      16.8,
+    );
 
     const styles = readFileSync(
       join(import.meta.dirname, '..', 'view', 'src', 'styles.css'),

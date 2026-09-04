@@ -209,13 +209,15 @@ Graph mode consumes a cached projection of documents, source targets, and code m
 
 The client renders a 50/50 graph and inspector. The logo and Graph toggle retain their normal desktop positions while floating over the graph with the semantic filter; Git and page Search are hidden. The right panel begins with the node preview and has no toolbar.
 
+On desktop the canvas extends behind the translucent inspector, whose backdrop filter blurs and desaturates only the underlying graph. Camera framing and Fit retain the left-half interaction area, and resizing preserves relative zoom and its center. The inspector keeps its own scrolling and pointer input; mobile panes stay stacked and opaque.
+
 Switching between graph and regular view preserves the logo and toolbar's vertical position at every breakpoint.
 
 The graph button persists a namespaced `localStorage` presentation setting without changing the current URL or browser history. Toggling it off immediately reveals the exact selected target in the normal file/source layout, and reload restores the stored mode.
 
 Plain document, section, source, and code-reference links navigate through their normal URLs without leaving Graph, so Back and Forward work without mode-specific history. Relative fragments resolve against the previewed document without refetching its content.
 
-Document and code radii grow only with incoming references. Every rendered label stays white over an 80%-opaque black plate with a text shadow in normal, selected, and hover states.
+Document and code areas grow linearly with incoming references above a visible baseline, without size inflation on selection. Focus labels report exact counts; theme-aware text halos replace opaque label plates. Background edges are fine lines, with arrows reserved for focused relationships.
 
 Local document counts sum direct backlinks to all headings, including nested sections and same-document links, with heading-badge paragraph deduplication. Visible edges retain occurrence weights and omit self-loops.
 
