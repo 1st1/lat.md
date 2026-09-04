@@ -81,7 +81,7 @@ Outlined, translucent nodes remain distinguishable when overlapping. The circle 
 
 The selected node keeps a stronger fill, visible label, and foreground position even while another node is hovered. Unrelated connections stay visible rather than disappearing during selection.
 
-With no semantic filter, node radius reflects incoming references. Search preserves each hit's cosine score, rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set.
+Without a search filter, node radius reflects incoming references. [[view/src/GraphView.tsx]] uses each hit's hybrid `rankScore` from the [[search-design#Result contract]], rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set. Cosine similarity is a separate optional diagnostic; it does not control graph sizing.
 
 A node click navigates to its canonical document or source URL and renders the right pane with existing APIs and presentation: documents reuse the Markdown payload, while source and code-reference nodes reuse the source payload and focused line or symbol.
 

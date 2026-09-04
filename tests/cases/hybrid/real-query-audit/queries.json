@@ -1,0 +1,902 @@
+[
+  {
+    "id": "q001",
+    "batch": 1,
+    "topic": "search",
+    "query": "how to format links to external source files",
+    "count": 3,
+    "firstSeen": "2026-09-04T18:06:11.090Z",
+    "lastSeen": "2026-09-04T18:19:43.909Z"
+  },
+  {
+    "id": "q002",
+    "batch": 1,
+    "topic": "search",
+    "query": "how to add images in wiki",
+    "count": 2,
+    "firstSeen": "2026-09-04T18:35:08.478Z",
+    "lastSeen": "2026-09-04T18:35:29.911Z"
+  },
+  {
+    "id": "q003",
+    "batch": 1,
+    "topic": "search",
+    "query": "banana recipes and tropical weather",
+    "count": 2,
+    "firstSeen": "2026-08-31T23:34:12.691Z",
+    "lastSeen": "2026-08-31T23:34:12.691Z"
+  },
+  {
+    "id": "q004",
+    "batch": 1,
+    "topic": "search",
+    "query": "Application-side stemming option",
+    "count": 1,
+    "firstSeen": "2026-09-04T18:17:30.019Z",
+    "lastSeen": "2026-09-04T18:17:30.019Z"
+  },
+  {
+    "id": "q005",
+    "batch": 1,
+    "topic": "search",
+    "query": "RAG search embeddings chunking ranking backlinks",
+    "count": 1,
+    "firstSeen": "2026-09-04T16:43:39.619Z",
+    "lastSeen": "2026-09-04T16:43:39.619Z"
+  },
+  {
+    "id": "q006",
+    "batch": 1,
+    "topic": "search",
+    "query": "Search Redesign storage chunking retrieval",
+    "count": 1,
+    "firstSeen": "2026-09-04T17:06:32.395Z",
+    "lastSeen": "2026-09-04T17:06:32.395Z"
+  },
+  {
+    "id": "q007",
+    "batch": 1,
+    "topic": "search",
+    "query": "chunk hash incremental embedding reuse indexing performance",
+    "count": 1,
+    "firstSeen": "2026-09-04T18:46:36.334Z",
+    "lastSeen": "2026-09-04T18:46:36.334Z"
+  },
+  {
+    "id": "q008",
+    "batch": 1,
+    "topic": "search",
+    "query": "cosine similarity score range negative values vector search formula",
+    "count": 1,
+    "firstSeen": "2026-08-31T23:44:14.527Z",
+    "lastSeen": "2026-08-31T23:44:14.527Z"
+  },
+  {
+    "id": "q009",
+    "batch": 1,
+    "topic": "search",
+    "query": "oversized Markdown chunk boundaries fallback",
+    "count": 1,
+    "firstSeen": "2026-09-04T16:54:20.985Z",
+    "lastSeen": "2026-09-04T16:54:20.985Z"
+  },
+  {
+    "id": "q010",
+    "batch": 1,
+    "topic": "search",
+    "query": "stored embedding model local remote mismatch reindex prompt backend selection database vectors",
+    "count": 1,
+    "firstSeen": "2026-08-21T23:15:04.922Z",
+    "lastSeen": "2026-08-21T23:15:04.922Z"
+  },
+  {
+    "id": "q011",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "Obsidian GitHub heading slug markdown fragment compatibility",
+    "count": 1,
+    "firstSeen": "2026-08-24T17:31:31.419Z",
+    "lastSeen": "2026-08-24T17:31:31.419Z"
+  },
+  {
+    "id": "q012",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "allow optional md extension on local and external wiki links external source default file extension schema validation implicit path resolution",
+    "count": 1,
+    "firstSeen": "2026-08-28T18:24:39.065Z",
+    "lastSeen": "2026-08-28T18:24:39.065Z"
+  },
+  {
+    "id": "q013",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "allow wiki links to arbitrary repository files and directories validate existence unsupported formats navigation",
+    "count": 1,
+    "firstSeen": "2026-09-01T02:13:33.095Z",
+    "lastSeen": "2026-09-01T02:13:33.095Z"
+  },
+  {
+    "id": "q014",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "difference ordinary markdown relative links wiki links section anchors refs graph validation",
+    "count": 1,
+    "firstSeen": "2026-08-24T16:54:48.868Z",
+    "lastSeen": "2026-08-24T16:54:48.868Z"
+  },
+  {
+    "id": "q015",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "escaping opening bracket prevents Markdown shortcut reference link parsing",
+    "count": 1,
+    "firstSeen": "2026-08-29T00:26:54.572Z",
+    "lastSeen": "2026-08-29T00:26:54.572Z"
+  },
+  {
+    "id": "q016",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "heading fragment resolution markdown links wiki links section command slug compatibility validation tests",
+    "count": 1,
+    "firstSeen": "2026-08-24T17:37:12.359Z",
+    "lastSeen": "2026-08-24T17:37:12.359Z"
+  },
+  {
+    "id": "q017",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "lat check Markdown packed reference definitions multiple definitions one line missed broken links",
+    "count": 1,
+    "firstSeen": "2026-08-29T00:21:35.530Z",
+    "lastSeen": "2026-08-29T00:21:35.530Z"
+  },
+  {
+    "id": "q018",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "ordinary Markdown links require GitHub heading fragments wiki links accept both formats test spec",
+    "count": 1,
+    "firstSeen": "2026-08-24T17:58:20.037Z",
+    "lastSeen": "2026-08-24T17:58:20.037Z"
+  },
+  {
+    "id": "q019",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "section ids heading matching normalization wiki links slug anchors duplicate headings unicode punctuation",
+    "count": 1,
+    "firstSeen": "2026-08-24T17:22:52.974Z",
+    "lastSeen": "2026-08-24T17:22:52.974Z"
+  },
+  {
+    "id": "q020",
+    "batch": 2,
+    "topic": "markdown_links",
+    "query": "wiki link grammar parser alias divider source code links resolution external handle prefix colon fragment",
+    "count": 1,
+    "firstSeen": "2026-08-27T22:31:08.235Z",
+    "lastSeen": "2026-08-27T22:31:08.235Z"
+  },
+  {
+    "id": "q021",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external AsciiDoc fragment aliases underscore slug heading IDs local checkout validation goufs",
+    "count": 1,
+    "firstSeen": "2026-08-28T23:42:58.427Z",
+    "lastSeen": "2026-08-28T23:42:58.427Z"
+  },
+  {
+    "id": "q022",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external cache metadata local strategy local-path delete sibling cache directory external link resolution",
+    "count": 1,
+    "firstSeen": "2026-08-28T00:21:50.054Z",
+    "lastSeen": "2026-08-28T00:21:50.054Z"
+  },
+  {
+    "id": "q023",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external link extensionless markdown path unsupported file extension exact repository path",
+    "count": 1,
+    "firstSeen": "2026-08-28T18:15:05.550Z",
+    "lastSeen": "2026-08-28T18:15:05.550Z"
+  },
+  {
+    "id": "q024",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external source cache directory per handle sidecar commit invalidation valid handle names prefix strategy fetch URL",
+    "count": 1,
+    "firstSeen": "2026-08-27T23:59:07.591Z",
+    "lastSeen": "2026-08-27T23:59:07.591Z"
+  },
+  {
+    "id": "q025",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external source error messages diagnostics clarity actionable configuration retrieval failures",
+    "count": 1,
+    "firstSeen": "2026-08-28T23:33:47.653Z",
+    "lastSeen": "2026-08-28T23:33:47.653Z"
+  },
+  {
+    "id": "q026",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external source fragments RST reStructuredText line ranges named headings code symbols content drift",
+    "count": 1,
+    "firstSeen": "2026-08-28T00:07:02.876Z",
+    "lastSeen": "2026-08-28T00:07:02.876Z"
+  },
+  {
+    "id": "q027",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external source repository subdirectory root path monorepo short links sparse checkout source handle",
+    "count": 1,
+    "firstSeen": "2026-08-27T21:43:54.671Z",
+    "lastSeen": "2026-08-27T21:43:54.671Z"
+  },
+  {
+    "id": "q028",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external source strategy fetch checkout fetch-url template validation commit path placeholders GitHub GitLab inference",
+    "count": 1,
+    "firstSeen": "2026-08-27T23:48:15.438Z",
+    "lastSeen": "2026-08-27T23:48:15.438Z"
+  },
+  {
+    "id": "q029",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "external sources supported document formats markdown parser file extensions section anchors reStructuredText AsciiDoc",
+    "count": 1,
+    "firstSeen": "2026-08-28T22:46:07.954Z",
+    "lastSeen": "2026-08-28T22:46:07.954Z"
+  },
+  {
+    "id": "q030",
+    "batch": 3,
+    "topic": "external_sources",
+    "query": "get-source command remote repository URL pinned revision local override agent clone command sparse checkout external source resolution",
+    "count": 1,
+    "firstSeen": "2026-08-27T21:40:28.030Z",
+    "lastSeen": "2026-08-27T21:40:28.030Z"
+  },
+  {
+    "id": "q031",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "Markdown analysis worker executor bounded queue worker count implementation detail performance",
+    "count": 1,
+    "firstSeen": "2026-08-28T22:28:11.190Z",
+    "lastSeen": "2026-08-28T22:28:11.190Z"
+  },
+  {
+    "id": "q032",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "TypeScript fallback bounded worker pool parallel file reads code reference scanning performance",
+    "count": 1,
+    "firstSeen": "2026-08-31T20:03:38.975Z",
+    "lastSeen": "2026-08-31T20:03:38.975Z"
+  },
+  {
+    "id": "q033",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "central supported source file extensions parser languages code mentions ripgrep fallback test coverage",
+    "count": 1,
+    "firstSeen": "2026-08-31T19:50:43.840Z",
+    "lastSeen": "2026-08-31T19:50:43.840Z"
+  },
+  {
+    "id": "q034",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "check profile parser cache external document timing metrics",
+    "count": 1,
+    "firstSeen": "2026-08-31T19:03:38.782Z",
+    "lastSeen": "2026-08-31T19:03:38.782Z"
+  },
+  {
+    "id": "q035",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "check validators run concurrently source grepping project analysis",
+    "count": 1,
+    "firstSeen": "2026-08-31T20:02:12.522Z",
+    "lastSeen": "2026-08-31T20:02:12.522Z"
+  },
+  {
+    "id": "q036",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "directory walking ignore-walk gitignore ripgrep fallback performance file discovery",
+    "count": 1,
+    "firstSeen": "2026-08-31T20:16:16.747Z",
+    "lastSeen": "2026-08-31T20:16:16.747Z"
+  },
+  {
+    "id": "q037",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "how lat finds lat.md directory symlink project root discovery",
+    "count": 1,
+    "firstSeen": "2026-08-28T18:10:17.742Z",
+    "lastSeen": "2026-08-28T18:10:17.742Z"
+  },
+  {
+    "id": "q038",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "parsed cache filename hash prefix full path identity collision readable suffix content hash",
+    "count": 1,
+    "firstSeen": "2026-09-01T03:59:53.768Z",
+    "lastSeen": "2026-09-01T03:59:53.768Z"
+  },
+  {
+    "id": "q039",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "parser cache version first-line version content hash invalidation serialized markdown analysis",
+    "count": 1,
+    "firstSeen": "2026-08-29T21:39:49.718Z",
+    "lastSeen": "2026-08-29T21:39:49.718Z"
+  },
+  {
+    "id": "q040",
+    "batch": 4,
+    "topic": "analysis_performance",
+    "query": "source file discovery API code reference scanning UI live update scope ripgrep fallback",
+    "count": 1,
+    "firstSeen": "2026-08-31T23:01:07.059Z",
+    "lastSeen": "2026-08-31T23:01:07.059Z"
+  },
+  {
+    "id": "q041",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph ForceAtlas animation layout worker settled positions",
+    "count": 1,
+    "firstSeen": "2026-08-26T00:06:16.131Z",
+    "lastSeen": "2026-08-26T00:06:16.131Z"
+  },
+  {
+    "id": "q042",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph document nodes blue code nodes orange category colors Sigma legend",
+    "count": 1,
+    "firstSeen": "2026-08-26T22:19:37.134Z",
+    "lastSeen": "2026-08-26T22:19:37.134Z"
+  },
+  {
+    "id": "q043",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph instant render cached layout semantic embeddings search filter graph nodes",
+    "count": 1,
+    "firstSeen": "2026-08-26T00:18:23.515Z",
+    "lastSeen": "2026-08-26T00:18:23.515Z"
+  },
+  {
+    "id": "q044",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph mode inspector links should remain in graph select nodes in place sticky graph route navigation",
+    "count": 1,
+    "firstSeen": "2026-08-27T04:06:23.442Z",
+    "lastSeen": "2026-08-27T04:06:23.442Z"
+  },
+  {
+    "id": "q045",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph node label breadcrumbs context disambiguation",
+    "count": 1,
+    "firstSeen": "2026-08-25T22:56:48.496Z",
+    "lastSeen": "2026-08-25T22:56:48.496Z"
+  },
+  {
+    "id": "q046",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph presentation mode localStorage normal document source URLs browser history toggle persisted static base namespace",
+    "count": 1,
+    "firstSeen": "2026-08-27T04:20:43.683Z",
+    "lastSeen": "2026-08-27T04:20:43.683Z"
+  },
+  {
+    "id": "q047",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph search resize visible nodes by semantic hit score while filtering results",
+    "count": 1,
+    "firstSeen": "2026-08-26T03:54:10.047Z",
+    "lastSeen": "2026-08-26T03:54:10.047Z"
+  },
+  {
+    "id": "q048",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph section nodes document code node size backlinks label rendering",
+    "count": 1,
+    "firstSeen": "2026-08-25T23:58:59.301Z",
+    "lastSeen": "2026-08-25T23:58:59.301Z"
+  },
+  {
+    "id": "q049",
+    "batch": 5,
+    "topic": "graph",
+    "query": "graph view documents linked sections source code references split inspector route architecture",
+    "count": 1,
+    "firstSeen": "2026-08-25T20:29:40.552Z",
+    "lastSeen": "2026-08-25T20:29:40.552Z"
+  },
+  {
+    "id": "q050",
+    "batch": 5,
+    "topic": "graph",
+    "query": "section back references count distinct linking paragraphs wiki code locations",
+    "count": 1,
+    "firstSeen": "2026-08-25T00:45:02.341Z",
+    "lastSeen": "2026-08-25T00:45:02.341Z"
+  },
+  {
+    "id": "q051",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "Firefox refs label heading context panel opens then closes delayed refresh selection state",
+    "count": 1,
+    "firstSeen": "2026-08-29T00:01:15.120Z",
+    "lastSeen": "2026-08-29T00:01:15.120Z"
+  },
+  {
+    "id": "q052",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "H1 page TOC click scroll document to top fragment navigation",
+    "count": 1,
+    "firstSeen": "2026-08-26T22:28:36.031Z",
+    "lastSeen": "2026-08-26T22:28:36.031Z"
+  },
+  {
+    "id": "q053",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "Safari back swipe history scroll restoration page temporarily hidden interaction",
+    "count": 1,
+    "firstSeen": "2026-08-26T23:51:42.812Z",
+    "lastSeen": "2026-08-26T23:51:42.812Z"
+  },
+  {
+    "id": "q054",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "browser search query history back button URL state",
+    "count": 1,
+    "firstSeen": "2026-08-24T23:47:30.703Z",
+    "lastSeen": "2026-08-24T23:47:30.703Z"
+  },
+  {
+    "id": "q055",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "code view context highlighted lines collapse non-highlighted code buffer expand",
+    "count": 1,
+    "firstSeen": "2026-08-24T22:52:03.794Z",
+    "lastSeen": "2026-08-24T22:52:03.794Z"
+  },
+  {
+    "id": "q056",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "expanding collapsed source lines preserve scroll position above",
+    "count": 1,
+    "firstSeen": "2026-08-24T23:33:20.686Z",
+    "lastSeen": "2026-08-24T23:33:20.686Z"
+  },
+  {
+    "id": "q057",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "history scroll restoration back navigation",
+    "count": 1,
+    "firstSeen": "2026-08-25T00:14:25.698Z",
+    "lastSeen": "2026-08-25T00:14:25.698Z"
+  },
+  {
+    "id": "q058",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "lat view protocol document metadata frontmatter require code mention browser rendering tests",
+    "count": 1,
+    "firstSeen": "2026-08-24T22:15:14.032Z",
+    "lastSeen": "2026-08-24T22:15:14.032Z"
+  },
+  {
+    "id": "q059",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "same-document fragment navigation table of contents repaint remount hash links client router",
+    "count": 1,
+    "firstSeen": "2026-08-26T19:28:38.493Z",
+    "lastSeen": "2026-08-26T19:28:38.493Z"
+  },
+  {
+    "id": "q060",
+    "batch": 6,
+    "topic": "navigation",
+    "query": "sidebar validation error marker directory ancestor propagation",
+    "count": 1,
+    "firstSeen": "2026-08-25T17:30:26.383Z",
+    "lastSeen": "2026-08-25T17:30:26.383Z"
+  },
+  {
+    "id": "q061",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "Markdown local linked resources images static UI export copy assets",
+    "count": 1,
+    "firstSeen": "2026-09-01T17:26:40.798Z",
+    "lastSeen": "2026-09-01T17:26:40.798Z"
+  },
+  {
+    "id": "q062",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "UI markdown code blocks clipboard copy button",
+    "count": 1,
+    "firstSeen": "2026-09-03T23:32:53.181Z",
+    "lastSeen": "2026-09-03T23:32:53.181Z"
+  },
+  {
+    "id": "q063",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "browser segmented wiki link underline color rendering and view tests",
+    "count": 1,
+    "firstSeen": "2026-08-24T21:25:49.613Z",
+    "lastSeen": "2026-08-24T21:25:49.613Z"
+  },
+  {
+    "id": "q064",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "code file language icon prevent line break before first word link label whitespace wrapping browser",
+    "count": 1,
+    "firstSeen": "2026-08-27T05:23:51.752Z",
+    "lastSeen": "2026-08-27T05:23:51.752Z"
+  },
+  {
+    "id": "q065",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "current Markdown reference definition rendering muted list compact monospace label badges URL title validation Git annotations",
+    "count": 1,
+    "firstSeen": "2026-08-28T16:15:31.189Z",
+    "lastSeen": "2026-08-28T16:15:31.189Z"
+  },
+  {
+    "id": "q066",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "git diff inline word overlap threshold line blocks rewritten paragraph",
+    "count": 1,
+    "firstSeen": "2026-08-26T23:43:32.377Z",
+    "lastSeen": "2026-08-26T23:43:32.377Z"
+  },
+  {
+    "id": "q067",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "iPhone mobile horizontal overflow rendered markdown code blocks document column viewport",
+    "count": 1,
+    "firstSeen": "2026-08-27T15:54:48.919Z",
+    "lastSeen": "2026-08-27T15:54:48.919Z"
+  },
+  {
+    "id": "q068",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "local table of contents include document top-level title h1 first entry no indentation bold",
+    "count": 1,
+    "firstSeen": "2026-08-26T17:39:16.687Z",
+    "lastSeen": "2026-08-26T17:39:16.687Z"
+  },
+  {
+    "id": "q069",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "local table of contents scroll sync short sections active heading bottom of document",
+    "count": 1,
+    "firstSeen": "2026-08-26T17:27:46.009Z",
+    "lastSeen": "2026-08-26T17:27:46.009Z"
+  },
+  {
+    "id": "q070",
+    "batch": 7,
+    "topic": "rendering",
+    "query": "table of contents icon open source license UI icon style",
+    "count": 1,
+    "firstSeen": "2026-08-26T17:35:08.436Z",
+    "lastSeen": "2026-08-26T17:35:08.436Z"
+  },
+  {
+    "id": "q071",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "static UI JSON payload CDN caching server deployment document data manifest performance",
+    "count": 2,
+    "firstSeen": "2026-09-01T18:04:27.318Z",
+    "lastSeen": "2026-09-01T18:13:41.999Z"
+  },
+  {
+    "id": "q072",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "static export canonical root URL index.html entry document redirect",
+    "count": 2,
+    "firstSeen": "2026-09-02T00:58:52.075Z",
+    "lastSeen": "2026-09-02T00:59:15.092Z"
+  },
+  {
+    "id": "q073",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "Node File Trace Vercel deployment asset tracing server bundle",
+    "count": 1,
+    "firstSeen": "2026-09-01T23:27:18.355Z",
+    "lastSeen": "2026-09-01T23:27:18.355Z"
+  },
+  {
+    "id": "q074",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "UI build output overwrite force generated marker tracked files code reference scanning git repository",
+    "count": 1,
+    "firstSeen": "2026-09-01T20:28:00.819Z",
+    "lastSeen": "2026-09-01T20:28:00.819Z"
+  },
+  {
+    "id": "q075",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "Vercel CDN immutable content hashed static assets cache control index revalidation deployment protection",
+    "count": 1,
+    "firstSeen": "2026-09-02T00:22:46.785Z",
+    "lastSeen": "2026-09-02T00:22:46.785Z"
+  },
+  {
+    "id": "q076",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "Vercel serverless function live Lat UI request response API ephemeral search cache no Git no watchers",
+    "count": 1,
+    "firstSeen": "2026-09-01T05:01:57.903Z",
+    "lastSeen": "2026-09-01T05:01:57.903Z"
+  },
+  {
+    "id": "q077",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "deploy portable Express server build Cloudflare Workers Render hosting filesystem SQLite WASM",
+    "count": 1,
+    "firstSeen": "2026-09-01T21:44:27.393Z",
+    "lastSeen": "2026-09-01T21:44:27.393Z"
+  },
+  {
+    "id": "q078",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "lat ui build output directory already exists overwrite generated marker refuse destination",
+    "count": 1,
+    "firstSeen": "2026-08-26T20:56:50.279Z",
+    "lastSeen": "2026-08-26T20:56:50.279Z"
+  },
+  {
+    "id": "q079",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "server build semantic search cold start preindexed embedding runtime performance",
+    "count": 1,
+    "firstSeen": "2026-09-01T18:28:12.368Z",
+    "lastSeen": "2026-09-01T18:28:12.368Z"
+  },
+  {
+    "id": "q080",
+    "batch": 8,
+    "topic": "deployment",
+    "query": "static UI export size source views duplicated highlighted code JSON context references bundle output",
+    "count": 1,
+    "firstSeen": "2026-08-26T21:03:37.546Z",
+    "lastSeen": "2026-08-26T21:03:37.546Z"
+  },
+  {
+    "id": "q081",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "CLI check command options diagnostics timing profiling validation phases output tests",
+    "count": 1,
+    "firstSeen": "2026-08-28T19:22:51.798Z",
+    "lastSeen": "2026-08-28T19:22:51.798Z"
+  },
+  {
+    "id": "q082",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "CLI machine-readable JSON output for search locate refs section graph commands and interactive terminal integrations",
+    "count": 1,
+    "firstSeen": "2026-08-11T17:52:22.605Z",
+    "lastSeen": "2026-08-11T17:52:22.605Z"
+  },
+  {
+    "id": "q083",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "Claude UserPromptSubmit Stop hooks integration and adding Codex lifecycle hooks",
+    "count": 1,
+    "firstSeen": "2026-08-11T18:01:16.902Z",
+    "lastSeen": "2026-08-11T18:01:16.902Z"
+  },
+  {
+    "id": "q084",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "Codex init setup MCP skills hooks Claude UserPromptSubmit Stop parity tests",
+    "count": 1,
+    "firstSeen": "2026-08-11T18:14:24.756Z",
+    "lastSeen": "2026-08-11T18:14:24.756Z"
+  },
+  {
+    "id": "q085",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "No init version recorded warning lat_init.json cache committed checkout lat.md repository",
+    "count": 1,
+    "firstSeen": "2026-08-31T23:16:59.125Z",
+    "lastSeen": "2026-08-31T23:16:59.125Z"
+  },
+  {
+    "id": "q086",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "Stop hook safely count relevant untracked lat.md source files gitignore tests",
+    "count": 1,
+    "firstSeen": "2026-09-01T01:21:57.323Z",
+    "lastSeen": "2026-09-01T01:21:57.323Z"
+  },
+  {
+    "id": "q087",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "generated AGENTS template valid section leading paragraphs lat init",
+    "count": 1,
+    "firstSeen": "2026-08-29T17:46:51.396Z",
+    "lastSeen": "2026-08-29T17:46:51.396Z"
+  },
+  {
+    "id": "q088",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "init embedding backend prompt preserve hosted non-interactive config persistence README init version CLI styler",
+    "count": 1,
+    "firstSeen": "2026-08-21T23:41:07.963Z",
+    "lastSeen": "2026-08-21T23:41:07.963Z"
+  },
+  {
+    "id": "q089",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "nested lat project inside larger git worktree project root stop hook diff scope",
+    "count": 1,
+    "firstSeen": "2026-09-01T03:51:02.477Z",
+    "lastSeen": "2026-09-01T03:51:02.477Z"
+  },
+  {
+    "id": "q090",
+    "batch": 9,
+    "topic": "hooks_cli",
+    "query": "stop hook exits cleanly when project is not a git repository while still validating lat.md",
+    "count": 1,
+    "firstSeen": "2026-09-01T03:39:36.418Z",
+    "lastSeen": "2026-09-01T03:39:36.418Z"
+  },
+  {
+    "id": "q091",
+    "batch": 10,
+    "topic": "development",
+    "query": "CI operating system matrix Windows Linux pull request preview deployment",
+    "count": 1,
+    "firstSeen": "2026-09-01T23:56:05.053Z",
+    "lastSeen": "2026-09-01T23:56:05.053Z"
+  },
+  {
+    "id": "q092",
+    "batch": 10,
+    "topic": "development",
+    "query": "Dart 3.7 dot shorthand grammar code reference annotation dangling errors tests",
+    "count": 1,
+    "firstSeen": "2026-08-31T22:06:12.613Z",
+    "lastSeen": "2026-08-31T22:06:12.613Z"
+  },
+  {
+    "id": "q093",
+    "batch": 10,
+    "topic": "development",
+    "query": "Java source parser symbols code references tests source formats",
+    "count": 1,
+    "firstSeen": "2026-08-31T22:13:28.455Z",
+    "lastSeen": "2026-08-31T22:13:28.455Z"
+  },
+  {
+    "id": "q094",
+    "batch": 10,
+    "topic": "development",
+    "query": "WASM engine loader generated glue model asset paths embedding package build",
+    "count": 1,
+    "firstSeen": "2026-09-02T04:49:14.792Z",
+    "lastSeen": "2026-09-02T04:49:14.792Z"
+  },
+  {
+    "id": "q095",
+    "batch": 10,
+    "topic": "development",
+    "query": "Windows backslash code refs path resolution check code-refs locate regression",
+    "count": 1,
+    "firstSeen": "2026-07-29T22:51:59.127Z",
+    "lastSeen": "2026-07-29T22:51:59.127Z"
+  },
+  {
+    "id": "q096",
+    "batch": 10,
+    "topic": "development",
+    "query": "development setup Rust native linker build tools prerequisite",
+    "count": 1,
+    "firstSeen": "2026-08-25T17:04:59.692Z",
+    "lastSeen": "2026-08-25T17:04:59.692Z"
+  },
+  {
+    "id": "q097",
+    "batch": 10,
+    "topic": "development",
+    "query": "npm publishing package dependencies install size versions",
+    "count": 1,
+    "firstSeen": "2026-08-31T22:40:11.867Z",
+    "lastSeen": "2026-08-31T22:40:11.867Z"
+  },
+  {
+    "id": "q098",
+    "batch": 10,
+    "topic": "development",
+    "query": "publishing prerelease beta npm dist tags release workflow versioning",
+    "count": 1,
+    "firstSeen": "2026-08-11T18:26:36.822Z",
+    "lastSeen": "2026-08-11T18:26:36.822Z"
+  },
+  {
+    "id": "q099",
+    "batch": 10,
+    "topic": "development",
+    "query": "quick start install Lat",
+    "count": 1,
+    "firstSeen": "2026-09-03T23:15:12.882Z",
+    "lastSeen": "2026-09-03T23:15:12.882Z"
+  },
+  {
+    "id": "q100",
+    "batch": 10,
+    "topic": "development",
+    "query": "whether generated instruction templates should enumerate supported source languages or stay generic",
+    "count": 1,
+    "firstSeen": "2026-08-31T21:59:48.863Z",
+    "lastSeen": "2026-08-31T21:59:48.863Z"
+  }
+]
