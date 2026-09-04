@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { toViewDocumentTree } from '../src/view/document-tree.js';
 import { highlightCode, highlightSource } from '../src/view/highlight.js';
 import type {
@@ -37,6 +38,62 @@ function treeTags(tree: ViewDocumentTree): string[] {
 }
 
 describe('source highlighting', () => {
+  // @lat: [[lat.md/view/specs#View Tests#Uses Geist syntax colors]]
+  it('shares Geist light and dark syntax roles across code and source views', () => {
+    const styles = readFileSync(
+      new URL('../view/src/styles.css', import.meta.url),
+      'utf8',
+    );
+    const palette = {
+      comment: ['oklch(0.42 0 0)', 'oklch(0.706 0 0)'],
+      keyword: ['oklch(53.5% 0.2058 2.84)', 'oklch(69.36% 0.2223 3.91)'],
+      number: ['oklch(53.18% 0.2399 256.99)', 'oklch(71.7% 0.1648 250.79)'],
+      string: ['oklch(51.75% 0.1453 147.65)', 'oklch(73.1% 0.2158 148.29)'],
+      title: ['oklch(47.18% 0.2579 304)', 'oklch(69.87% 0.2037 309.51)'],
+      markup: ['oklch(52.79% 0.1496 54.65)', 'oklch(77.21% 0.1991 64.28)'],
+    };
+    for (const [role, colors] of Object.entries(palette)) {
+      const declarations = Array.from(
+        styles.matchAll(new RegExp(`--syntax-${role}: ([^;]+);`, 'g')),
+        (match) => match[1],
+      );
+      expect(declarations).toEqual(colors);
+    }
+    const rules = new Map(
+      Array.from(
+        styles
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .matchAll(/([^{}]+)\{([^{}]*)\}/g),
+      ).flatMap(([, selectors, declarations]) =>
+        selectors.split(',').map((selector) => [selector.trim(), declarations]),
+      ),
+    );
+    const roles = {
+      comment: 'syntax-comment',
+      keyword: 'syntax-keyword',
+      literal: 'syntax-number',
+      number: 'syntax-number',
+      string: 'syntax-string',
+      title: 'syntax-title',
+      built_in: 'syntax-title',
+      params: 'text',
+      attr: 'text',
+      attribute: 'text',
+      punctuation: 'text',
+      subst: 'text',
+    };
+    for (const scope of ['markdown', 'source-code']) {
+      for (const [token, role] of Object.entries(roles)) {
+        expect(rules.get(`.${scope} .hljs-${token}`)).toContain(
+          `color: var(--${role});`,
+        );
+      }
+    }
+    expect(rules.get('.markdown .language-json .hljs-keyword')).toContain(
+      'color: var(--syntax-number);',
+    );
+  });
+
   // @lat: [[lat.md/view/specs#View Tests#Highlights source syntax safely]]
   it('emits safe structured lines and preserves multiline tokens', () => {
     const lines = highlightSource(

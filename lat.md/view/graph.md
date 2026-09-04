@@ -10,7 +10,7 @@ The first version adopts the useful interaction model of Obsidian's graph while 
 
 [Sigma.js](https://www.sigmajs.org/docs/) renders the graph with WebGL, Graphology supplies the graph model, and typed [node events](https://www.sigmajs.org/docs/advanced/events/) cover hover and click selection. A custom D3 canvas would make Lat own rendering, labels, hit testing, and camera controls.
 
-Lat uses `sigma` and `graphology` directly as development dependencies. The renderer ships with the main client and the graph payload is prefetched after startup, so switching modes does not wait for a chunk, request, or force simulation.
+Lat bundles `sigma` and `graphology` from development dependencies and loads the renderer and graph payload on demand, keeping ordinary document startup independent of graph rendering.
 
 ## Product shape
 
@@ -22,6 +22,7 @@ Graph mode replaces the document layout with a full-viewport graph workspace whi
 - The browser URL always remains the exact document, section, source, or code-line target. Node and inspector navigation use ordinary history entries, so reload, copied URLs, Back, and Forward retain their normal meaning while Graph stays active.
 - The graph icon only toggles a namespaced `localStorage` presentation setting; it does not rewrite history. Disabling Graph reveals the same selected target in the file/source layout immediately, and the persisted setting restores Graph after reload.
 - Narrow screens stack a bounded graph above the inspector instead of forcing two narrow columns.
+- Switching modes preserves the logo and toolbar's vertical position at every breakpoint.
 
 ```text
 ┌ lat.md  Git  Search  Graph  Filter…         │ selected node    ┐
@@ -46,6 +47,8 @@ Documents form the graph backbone, while code nodes appear when source definitio
 
 Each node includes `id`, `kind`, `label`, canonical `url`, breadcrumbs, reference counts, and optional Git state, error count, source signature, or snippet. Node radius grows logarithmically with incoming references, so backlinks—not outgoing links—determine prominence.
 
+A local document's incoming count sums the displayed direct backlink counts for its root and every nested section. Repeated links from one paragraph to the same section count once; links to different sections count separately. Same-document references and code mentions contribute too. Other nodes use incoming edge occurrence weights.
+
 ### Edges
 
 Edges preserve direction and provenance while collapsing duplicate visual lines.
@@ -54,7 +57,7 @@ Edges preserve direction and provenance while collapsing duplicate visual lines.
 - Source wiki links connect their containing document to a source node.
 - `@lat:` mentions connect a code-reference node to the target section's owning document.
 - Collapse equal `from`, `to`, and `kind` triples into one edge with an occurrence weight. Keep `wiki`, `markdown`, `source`, and `code-mention` kinds so filters and styling remain possible.
-- Omit unresolved and ambiguous targets, plus links whose endpoints collapse into the same document. Section resolution preserves authored meaning without adding section or containment nodes that make the graph dense or inflating backlinks with self-links.
+- Omit unresolved and ambiguous targets, plus visible edges whose endpoints collapse into the same document. Same-document references still contribute to the page's section backlink total without drawing self-loops.
 
 ## Server projection
 
@@ -70,9 +73,13 @@ Whenever [[src/view/store.ts#createViewStore]] replaces its snapshot, it rebuild
 
 The graph canvas and inspector share route state but keep rendering responsibilities separate.
 
-The client prefetches the graph projection after startup and includes `GraphView` in its main bundle. A deterministic linear-time layout places documents on a ring and clusters code around its strongest document neighbor, so Sigma can paint immediately without physics or animation.
+The client caches the on-demand graph projection. A deterministic linear-time layout places documents on a ring and clusters code around its strongest document neighbor, without physics or animation.
 
 Sigma reducers dim unrelated nodes and edges on hover, emphasize immediate neighbors, render documents in Vercel blue and code in warm orange, and keep the selected node labeled. Every visible label uses white text and shadow on an 80%-opaque black plate; highly referenced nodes receive default labels.
+
+Outlined, translucent nodes remain distinguishable when overlapping. The circle shader premultiplies alpha for Sigma's blending mode but keeps picking IDs opaque. Edges and muted nodes use renderer-safe hex colors rather than CSS border tokens.
+
+The selected node keeps a stronger fill, visible label, and foreground position even while another node is hovered. Unrelated connections stay visible rather than disappearing during selection.
 
 With no semantic filter, node radius reflects incoming references. Search preserves each hit's cosine score, rolls a document's strongest section hit into its graph node, gives adjacent code that score, and normalizes visible radii across the current result set.
 
@@ -86,7 +93,7 @@ The graph pane remains fixed while the inspector scrolls from the top edge. The 
 
 The initial workspace favors direct exploration over a large settings surface.
 
-It includes pan, zoom, node drag, hover-neighbor highlighting, click selection, fit/reset, kind toggles for documents and code, embedding search, and directed edge arrows.
+It includes pan, zoom, hover-neighbor highlighting, click selection, fit/reset, kind toggles for documents and code, embedding search, and directed edge arrows. Individual nodes cannot be dragged; their layout stays stable while dragging pans the graph.
 
 The text input follows the app buttons and debounces through the same indexed embedding search as `lat search`. Matching sections map to their document nodes and adjacent code nodes, filtering only the canvas with no result list or dropdown.
 

@@ -241,7 +241,7 @@ function SectionMenu({
       >
         {count > 0 ? (
           <>
-            <div className="section-back-reference-header">Referenced from</div>
+            <div className="section-back-reference-header">Referenced From</div>
             <div className="section-back-reference-list">
               {section.references.map((reference, referenceIndex) =>
                 reference.kind === 'markdown' ? (
@@ -269,11 +269,11 @@ function SectionMenu({
             onClick={stop(() => onCopySectionLink?.(section.headingId))}
             type="button"
           >
-            Copy link to the section
+            Copy Link to the Section
           </button>
           {index === 0 && viewMarkdownUrl && (
             <a className="section-back-reference-action" href={viewMarkdownUrl}>
-              View Markdown file
+              View Markdown File
             </a>
           )}
           <button
@@ -283,7 +283,7 @@ function SectionMenu({
             )}
             type="button"
           >
-            Copy section ID
+            Copy Section ID
           </button>
           {sectionOutputEnabled && (
             <button
@@ -291,7 +291,7 @@ function SectionMenu({
               onClick={stop(() => onShowSectionOutput?.(section.sectionId))}
               type="button"
             >
-              Show <code>lat section</code> output
+              Show <code>lat section</code> Output
             </button>
           )}
         </div>

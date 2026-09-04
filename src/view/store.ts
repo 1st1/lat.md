@@ -328,6 +328,7 @@ async function buildSnapshot(
       diagnostics,
       git,
       generation,
+      references,
       external,
     ),
     diagnostics,

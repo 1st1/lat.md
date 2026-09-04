@@ -68,7 +68,7 @@ export function SectionOutputDialog({
           <div className="section-output-heading">
             <div className="section-output-title-line">
               <h2 id="section-output-title">
-                <code>lat section</code> output
+                <code>lat section</code> Output
               </h2>
               <div
                 aria-label="Section output presentation"
@@ -82,7 +82,7 @@ export function SectionOutputDialog({
                     onClick={() => setPresentation(value)}
                     type="button"
                   >
-                    {value}
+                    {value === 'raw' ? 'Raw' : 'Formatted'}
                   </button>
                 ))}
               </div>

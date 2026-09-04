@@ -1,27 +1,37 @@
 :root {
-  color: #171717;
-  background: #fff;
-  font-family:
-    Geist,
-    'Geist Sans',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  --font-sans:
+    'Geist Variable', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:
+    'Geist Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+  font-family: var(--font-sans);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   color-scheme: light dark;
-  --background: #fff;
-  --panel: #fafafa;
-  --sidebar: #fafafa;
-  --sidebar-selection: #eaeaea;
-  --panel-border: #eaeaea;
-  --text: #171717;
-  --muted: #666;
-  --accent: #171717;
-  --accent-soft: #ededed;
+  /* Geist neutral scale: surfaces, interaction states, borders, then text. */
+  --background-100: #fff;
+  --background-200: #fafafa;
+  --gray-100: #f2f2f2;
+  --gray-200: #ebebeb;
+  --gray-300: #e6e6e6;
+  --gray-400: #ebebeb;
+  --gray-500: #c9c9c9;
+  --gray-600: #a8a8a8;
+  --gray-700: #8f8f8f;
+  --gray-800: #7d7d7d;
+  --gray-900: #666;
+  --gray-1000: #171717;
+  --gray-alpha-400: rgb(0 0 0 / 8%);
+  --background: var(--background-100);
+  --panel: var(--background-100);
+  --sidebar: var(--background-200);
+  --sidebar-selection: var(--gray-200);
+  --panel-border: var(--gray-alpha-400);
+  --text: var(--gray-1000);
+  --muted: var(--gray-900);
+  --accent: var(--gray-1000);
+  --accent-soft: var(--gray-100);
   --link: #0070f3;
   --danger: #e5484d;
   --danger-soft: #ffebe9;
@@ -31,11 +41,11 @@
   --success: #2e7d46;
   --success-soft: #e9f9ee;
   --git-notification: #e47f19;
-  --code: #f5f5f5;
-  --context-surface: #f7f7f7;
-  --inline-code: #ededed;
-  --reference-control: #e5e5e5;
-  --reference-control-hover: #ededed;
+  --code: var(--background-200);
+  --context-surface: var(--background-200);
+  --inline-code: var(--gray-100);
+  --reference-control: var(--gray-100);
+  --reference-control-hover: var(--gray-200);
   --section-menu-control: color-mix(
     in srgb,
     var(--reference-control) 70%,
@@ -48,28 +58,38 @@
   );
   --graph-document: #0070f3;
   --graph-code: #d97706;
+  /* Sigma needs renderer-safe colors, independent of translucent CSS borders. */
+  --graph-edge: #b8b8b8;
+  --graph-edge-muted: #d4d4d4;
+  --graph-edge-active: #999999;
+  --graph-node-muted: #c4c4c4;
   --map-control-filter: none;
-  --syntax-built-in: #9a3f75;
-  --syntax-comment: #737373;
-  --syntax-keyword: #6c4bc2;
-  --syntax-number: #a85414;
-  --syntax-string: #397348;
-  --syntax-title: #26649a;
+  --brand-filter: brightness(0);
+  /* Geistdocs Shiki roles, shared by Lowlight and the Markdown editor. */
+  --syntax-comment: oklch(0.42 0 0);
+  --syntax-keyword: oklch(53.5% 0.2058 2.84);
+  --syntax-number: oklch(53.18% 0.2399 256.99);
+  --syntax-string: oklch(51.75% 0.1453 147.65);
+  --syntax-title: oklch(47.18% 0.2579 304);
+  --syntax-markup: oklch(52.79% 0.1496 54.65);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    color: #ededed;
-    background: #000;
-    --background: #000;
-    --panel: #0a0a0a;
-    --sidebar: #000;
-    --sidebar-selection: #242424;
-    --panel-border: #262626;
-    --text: #ededed;
-    --muted: #888;
-    --accent: #fff;
-    --accent-soft: #1f1f1f;
+    --background-100: #000;
+    --background-200: #0a0a0a;
+    --sidebar: var(--background-100);
+    --gray-100: #1a1a1a;
+    --gray-200: #1f1f1f;
+    --gray-300: #292929;
+    --gray-400: #2e2e2e;
+    --gray-500: #454545;
+    --gray-600: #878787;
+    --gray-700: #8f8f8f;
+    --gray-800: #7d7d7d;
+    --gray-900: #a1a1a1;
+    --gray-1000: #ededed;
+    --gray-alpha-400: rgb(255 255 255 / 14%);
     --link: rgb(82, 168, 255);
     --danger: #ff6166;
     --danger-soft: #2a1314;
@@ -79,20 +99,20 @@
     --success: #62c073;
     --success-soft: #12261a;
     --git-notification: #f0a044;
-    --code: #111;
-    --context-surface: #111;
-    --inline-code: #1f1f1f;
-    --reference-control: #262626;
-    --reference-control-hover: #303030;
     --graph-document: rgb(82, 168, 255);
     --graph-code: #f5a623;
+    --graph-edge: #505050;
+    --graph-edge-muted: #383838;
+    --graph-edge-active: #686868;
+    --graph-node-muted: #404040;
     --map-control-filter: invert(1);
-    --syntax-built-in: #e6a2cc;
-    --syntax-comment: #888;
-    --syntax-keyword: #c2adff;
-    --syntax-number: #efb271;
-    --syntax-string: #9fd0a5;
-    --syntax-title: #8fc6ef;
+    --brand-filter: none;
+    --syntax-comment: oklch(0.706 0 0);
+    --syntax-keyword: oklch(69.36% 0.2223 3.91);
+    --syntax-number: oklch(71.7% 0.1648 250.79);
+    --syntax-string: oklch(73.1% 0.2158 148.29);
+    --syntax-title: oklch(69.87% 0.2037 309.51);
+    --syntax-markup: oklch(77.21% 0.1991 64.28);
   }
 }
 
@@ -116,6 +136,25 @@ body {
 
 a {
   color: var(--link);
+}
+
+:where(a, button, input, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+
+.document-mode-switch button:focus-visible,
+.section-output-presentation button:focus-visible {
+  outline-offset: -3px;
+}
+
+.markdown table,
+.document-flag,
+.section-back-reference-count,
+.wiki-link-ref-count,
+.source-line-number,
+.graph-node-count {
+  font-variant-numeric: tabular-nums;
 }
 
 .app-shell {
@@ -177,7 +216,7 @@ a {
   align-items: center;
   overflow: hidden;
   color: var(--text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 21px;
   font-weight: 750;
   letter-spacing: -0.04em;
@@ -191,6 +230,7 @@ a {
   width: auto;
   height: 21px;
   flex: none;
+  filter: var(--brand-filter);
 }
 
 .brand span {
@@ -302,8 +342,9 @@ a {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   cursor: pointer;
   list-style: none;
   border-radius: 7px;
@@ -366,8 +407,8 @@ a {
   gap: 8px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 20px;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -477,10 +518,12 @@ a {
   gap: 4px;
   color: var(--muted);
   font: inherit;
-  font-size: 11px;
-  line-height: 1.2;
+  min-height: 32px;
+  font-size: 13px;
+  line-height: 20px;
   cursor: pointer;
-  background: transparent;
+  background-color: transparent;
+  background-clip: padding-box;
   border: 0;
 }
 
@@ -495,18 +538,14 @@ a {
   stroke-width: 1.15;
 }
 
-.document-mode-switch button + button {
-  border-left: 1px solid var(--panel-border);
-}
-
 .document-mode-switch button:hover {
   color: var(--text);
-  background: var(--reference-control-hover);
+  background-color: var(--reference-control-hover);
 }
 
 .document-mode-switch button[aria-pressed='true'] {
   color: var(--text);
-  background: var(--reference-control);
+  background-color: var(--reference-control);
 }
 
 .document-layout {
@@ -539,10 +578,10 @@ a {
   padding: 0;
   align-items: center;
   gap: 9px;
-  color: var(--muted);
+  color: var(--text);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 650;
+  font-size: 14px;
+  font-weight: 500;
   text-align: left;
   background: transparent;
   border: 0;
@@ -568,7 +607,6 @@ a {
   margin-top: 14px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-left: 1px solid var(--panel-border);
   scrollbar-width: none;
 }
 
@@ -579,16 +617,17 @@ a {
 .document-toc-link {
   position: relative;
   display: flex;
-  padding: 7px 0 7px calc(14px + var(--toc-depth) * 13px);
+  padding: 7px 0 7px calc(15px + var(--toc-depth) * 13px);
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 12.5px;
-  font-weight: 520;
-  line-height: 17px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
   text-decoration: none;
   transition: color 140ms ease;
   overflow-wrap: anywhere;
+  box-shadow: inset 1px 0 var(--panel-border);
 }
 
 .document-toc-link-label {
@@ -625,11 +664,23 @@ a {
   position: absolute;
   top: 4px;
   bottom: 4px;
-  left: -1px;
+  left: 0;
   width: 2px;
   content: '';
   background: transparent;
   border-radius: 2px;
+}
+
+.document-toc-link:first-child::before {
+  top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.document-toc-link:last-child::before {
+  bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .document-toc-link:hover {
@@ -660,14 +711,14 @@ a {
   min-width: 0;
   overflow-wrap: anywhere;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
 }
 
 .document-flag {
   padding: 3px 8px;
   color: var(--accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.025em;
@@ -681,7 +732,7 @@ a {
   padding: 3px 8px;
   align-items: center;
   color: var(--danger);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.025em;
@@ -699,15 +750,7 @@ a {
 .document-error-panel {
   margin-top: 12px;
   overflow: hidden;
-  font-family:
-    Geist,
-    'Geist Sans',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
   background: color-mix(in srgb, var(--danger-soft) 55%, var(--background));
   border: 1px solid var(--danger-border);
   border-radius: 8px;
@@ -716,7 +759,7 @@ a {
 .document-error-header {
   padding: 9px 13px 7px;
   color: var(--danger);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.08em;
@@ -741,7 +784,7 @@ a {
 
 .document-error-location {
   color: var(--danger);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
 }
@@ -769,7 +812,7 @@ a {
   min-height: 30px;
   padding: 8px 12px 7px;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   line-height: 14px;
   border-bottom: 1px solid var(--panel-border);
@@ -819,7 +862,7 @@ a {
 }
 
 .markdown-editor .cm-scroller {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--editor-font-size);
   line-height: 1.6;
   overflow: auto;
@@ -947,15 +990,7 @@ a {
   max-width: 760px;
   margin: 12px 16px 12px 4.25rem;
   overflow: visible;
-  font-family:
-    Geist,
-    'Geist Sans',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
   background: var(--context-surface);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
@@ -972,7 +1007,7 @@ a {
   align-items: center;
   gap: 12px;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -1008,7 +1043,7 @@ a {
   align-items: center;
   gap: 6px;
   color: var(--accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 650;
   line-height: 1.3;
@@ -1049,7 +1084,7 @@ a {
   gap: 5px;
   overflow: hidden;
   color: var(--link);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
@@ -1107,7 +1142,7 @@ a {
   max-width: 100%;
   padding: 10px 0;
   overflow-x: auto;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.55;
   -webkit-text-size-adjust: 100%;
@@ -1200,63 +1235,76 @@ a {
 .markdown .hljs-comment,
 .markdown .hljs-quote {
   color: var(--syntax-comment);
-  font-style: italic;
 }
 
 .source-code .hljs-keyword,
-.source-code .hljs-literal,
-.source-code .hljs-selector-tag,
-.source-code .hljs-section,
-.markdown .hljs-keyword,
-.markdown .hljs-literal,
-.markdown .hljs-selector-tag,
-.markdown .hljs-section {
+.markdown .hljs-keyword {
   color: var(--syntax-keyword);
 }
 
 .source-code .hljs-string,
 .source-code .hljs-regexp,
 .source-code .hljs-addition,
-.source-code .hljs-attribute,
+.source-code .hljs-link,
 .markdown .hljs-string,
 .markdown .hljs-regexp,
 .markdown .hljs-addition,
-.markdown .hljs-attribute {
+.markdown .hljs-link {
   color: var(--syntax-string);
 }
 
 .source-code .hljs-number,
 .source-code .hljs-symbol,
-.source-code .hljs-bullet,
+.source-code .hljs-literal,
+.source-code .hljs-variable.language_,
 .markdown .hljs-number,
 .markdown .hljs-symbol,
-.markdown .hljs-bullet {
+.markdown .hljs-literal,
+.markdown .hljs-variable.language_ {
+  color: var(--syntax-number);
+}
+
+/* The JSON grammar classifies true, false, and null as keywords. */
+.markdown .language-json .hljs-keyword {
   color: var(--syntax-number);
 }
 
 .source-code .hljs-title,
-.source-code .hljs-function,
-.source-code .hljs-class,
 .source-code .hljs-type,
+.source-code .hljs-built_in,
+.source-code .hljs-name,
+.source-code .hljs-selector-tag,
 .markdown .hljs-title,
-.markdown .hljs-function,
-.markdown .hljs-class,
-.markdown .hljs-type {
+.markdown .hljs-type,
+.markdown .hljs-built_in,
+.markdown .hljs-name,
+.markdown .hljs-selector-tag {
   color: var(--syntax-title);
 }
 
-.source-code .hljs-built_in,
-.source-code .hljs-variable.language_,
-.source-code .hljs-meta,
-.markdown .hljs-built_in,
-.markdown .hljs-variable.language_,
-.markdown .hljs-meta {
-  color: var(--syntax-built-in);
+.source-code .hljs-bullet,
+.source-code .hljs-section,
+.markdown .hljs-bullet,
+.markdown .hljs-section {
+  color: var(--syntax-markup);
+}
+
+.source-code .hljs-params,
+.source-code .hljs-attr,
+.source-code .hljs-attribute,
+.source-code .hljs-punctuation,
+.source-code .hljs-subst,
+.markdown .hljs-params,
+.markdown .hljs-attr,
+.markdown .hljs-attribute,
+.markdown .hljs-punctuation,
+.markdown .hljs-subst {
+  color: var(--text);
 }
 
 .source-code .hljs-deletion,
 .markdown .hljs-deletion {
-  color: #bd3d3d;
+  color: var(--danger);
 }
 
 .source-code .hljs-emphasis,
@@ -1272,16 +1320,19 @@ a {
 .markdown {
   max-width: 760px;
   font-size: 16px;
-  line-height: 1.72;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .markdown h1,
 .markdown h2,
 .markdown h3,
-.markdown h4 {
-  margin: 2em 0 0.65em;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  margin: 40px 0 16px;
+  font-weight: 450;
+  letter-spacing: -0.02em;
   scroll-margin-top: 24px;
 }
 
@@ -1295,7 +1346,7 @@ a {
   justify-content: center;
   gap: 5px;
   color: var(--accent);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 650;
   line-height: 1.3;
@@ -1337,15 +1388,7 @@ a {
 .section-back-reference-panel {
   margin: -0.15em 0 1.5em;
   overflow: hidden;
-  font-family:
-    Geist,
-    'Geist Sans',
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--font-sans);
   background: var(--context-surface);
   border: 1px solid var(--panel-border);
   border-radius: 8px;
@@ -1358,11 +1401,8 @@ a {
 .section-back-reference-header {
   padding: 9px 13px 7px;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .section-back-reference-empty {
@@ -1374,18 +1414,18 @@ a {
 
 .section-back-reference-actions {
   display: grid;
-  gap: 7px;
+  gap: 4px;
   padding: 9px 13px;
   border-top: 1px solid var(--panel-border);
 }
 
 .section-back-reference-action {
   width: fit-content;
-  padding: 0;
+  padding: 4px 0;
   color: var(--muted);
   font: inherit;
-  font-size: 12px;
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 500;
   text-align: left;
   cursor: pointer;
   background: transparent;
@@ -1397,12 +1437,12 @@ a {
 }
 
 .section-back-reference-action:hover {
-  color: color-mix(in srgb, var(--muted) 82%, white);
+  color: var(--text);
 }
 
 .section-back-reference-action code {
   color: inherit;
-  font: inherit;
+  font-family: var(--font-mono);
 }
 
 .section-output-backdrop {
@@ -1465,7 +1505,8 @@ a {
   padding: 3px 8px;
   color: var(--muted);
   font: inherit;
-  font-size: 11px;
+  min-height: 32px;
+  font-size: 13px;
   line-height: 1.2;
   cursor: pointer;
   background: transparent;
@@ -1521,7 +1562,7 @@ a {
   overflow: auto;
   color: var(--text);
   background: var(--background);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -1566,7 +1607,7 @@ a {
 }
 
 .section-back-reference-item {
-  padding: 10px 13px 11px;
+  padding: 10px 13px;
 }
 
 .section-back-reference-item + .section-back-reference-item {
@@ -1581,7 +1622,7 @@ a {
   max-width: 100%;
   align-items: baseline;
   color: var(--link);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 650;
   line-height: 1.35;
@@ -1624,7 +1665,7 @@ a {
   overflow-wrap: anywhere;
 }
 
-.section-back-reference-paragraph p {
+.section-back-reference-item .section-back-reference-paragraph p {
   margin: 5px 0 0;
   color: var(--muted);
   font-size: 12px;
@@ -1655,15 +1696,36 @@ a {
 
 .markdown h1 {
   margin-top: 0;
-  font-size: clamp(32px, 5vw, 46px);
+  margin-bottom: 24px;
+  font-size: 40px;
+  line-height: 48px;
+  letter-spacing: -0.05em;
 }
 
 .markdown h2 {
-  font-size: 26px;
+  font-size: 24px;
+  line-height: 32px;
+  letter-spacing: -0.04em;
 }
 
 .markdown h3 {
   font-size: 20px;
+  line-height: 26px;
+}
+
+.markdown h4 {
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.markdown h5,
+.markdown h6 {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.markdown strong {
+  font-weight: 600;
 }
 
 .markdown p,
@@ -1676,6 +1738,18 @@ a {
 
 .markdown li + li {
   margin-top: 0.35em;
+}
+
+.markdown ul {
+  padding-left: 1.75em;
+}
+
+.markdown ul > li + li {
+  margin-top: 0.5em;
+}
+
+.markdown ul > li::marker {
+  color: var(--gray-500);
 }
 
 .markdown .contains-task-list,
@@ -1714,12 +1788,13 @@ a {
 .markdown th,
 .markdown td {
   padding: 8px 12px;
-  border: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  vertical-align: baseline;
 }
 
 .markdown th {
-  font-weight: 650;
-  background: var(--panel);
+  font-weight: 500;
+  vertical-align: bottom;
 }
 
 .markdown th:not([align]) {
@@ -1737,6 +1812,8 @@ a {
 .markdown details:not(.maplibregl-ctrl-attrib) > summary {
   font-weight: 650;
   cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .markdown details:not(.maplibregl-ctrl-attrib)[open] > summary {
@@ -1962,7 +2039,7 @@ a.wiki-link-code:not(.wiki-link-segmented) .code-link-leading {
   align-items: center;
   justify-content: center;
   color: var(--background);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.62em;
   font-style: normal;
   font-weight: 800;
@@ -2081,7 +2158,7 @@ a.wiki-link-active {
 
 .markdown code {
   padding: 0.16em 0.36em;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 0.9em;
   background: var(--inline-code);
   border-radius: 5px;
@@ -2096,6 +2173,7 @@ a.wiki-link-active {
 }
 
 .markdown pre code {
+  overflow-wrap: normal;
   padding: 0;
   background: transparent;
 }
@@ -2324,9 +2402,16 @@ a.wiki-link-active {
 
 .markdown .markdown-map-error {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   justify-content: space-between;
+}
+
+.markdown .markdown-map-error > span {
+  min-width: 0;
+  flex: 1 1 200px;
+  overflow-wrap: anywhere;
 }
 
 .markdown .markdown-diagram-retry {
@@ -2465,7 +2550,7 @@ a.wiki-link-active {
   gap: 5px;
   overflow: hidden;
   color: var(--link);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 650;
   white-space: nowrap;
@@ -2541,7 +2626,7 @@ a.wiki-link-active {
   z-index: 8;
   inset: 0 auto auto 0;
   width: 50%;
-  height: 84px;
+  height: calc(56px + var(--header-row-height));
   pointer-events: none;
 }
 
@@ -2662,23 +2747,35 @@ a.wiki-link-active {
   pointer-events: none;
 }
 
-.graph-kind-filters label span {
-  padding: 4px 7px;
+.graph-kind-filters label span,
+.graph-fit {
+  display: inline-flex;
+  min-height: 28px;
+  padding: 4px 8px;
+  align-items: center;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 9px;
-  font-weight: 700;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  cursor: pointer;
+  background: var(--reference-control);
+  border: 0;
+  border-radius: 6px;
+}
+
+.graph-kind-filters label span {
   text-transform: capitalize;
-  background: color-mix(in srgb, var(--background) 82%, transparent);
-  border: 1px solid var(--panel-border);
-  border-radius: 999px;
-  backdrop-filter: blur(10px);
 }
 
 .graph-kind-filters input:checked + span {
   color: var(--accent);
   background: var(--accent-soft);
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--panel-border));
+}
+
+.graph-kind-filters label:hover span,
+.graph-fit:hover {
+  background: var(--reference-control-hover);
 }
 
 .graph-kind-filters input:focus-visible + span {
@@ -2690,9 +2787,7 @@ a.wiki-link-active {
   flex: 0 0 auto;
   padding-right: 10px;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 9px;
-  font-weight: 650;
+  font-size: 12px;
   white-space: nowrap;
 }
 
@@ -2700,22 +2795,11 @@ a.wiki-link-active {
   position: absolute;
   z-index: 4;
   right: 18px;
-  bottom: 18px;
-  padding: 5px 8px;
-  color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-  background: color-mix(in srgb, var(--background) 84%, transparent);
-  border: 1px solid var(--panel-border);
-  border-radius: 6px;
-  backdrop-filter: blur(10px);
+  bottom: 20px;
 }
 
 .graph-fit:hover {
   color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--panel-border));
 }
 
 .graph-legend {
@@ -2839,6 +2923,15 @@ a.wiki-link-active {
 }
 
 @media (max-width: 1340px) {
+  .document-layout:not(:has(> .document-toc)) > .document-column,
+  .document-layout:not(:has(> .document-toc)) .document-header {
+    grid-column: 1 / -1;
+  }
+
+  .document-layout:not(:has(> .document-toc)) .document-header {
+    max-width: none;
+  }
+
   .document-layout {
     display: flex;
     flex-direction: column;
@@ -2891,7 +2984,7 @@ a.wiki-link-active {
   .document-toc-list {
     display: none;
     max-height: min(52vh, 420px);
-    padding: 8px 0;
+    padding: 8px 14px 8px 0;
     margin-top: 0;
     background: var(--panel);
     border: 1px solid var(--panel-border);
@@ -2906,20 +2999,48 @@ a.wiki-link-active {
   .document-toc[data-expanded='true'] .document-toc-list {
     display: block;
   }
+
+  .document-toc-link {
+    box-shadow: none;
+  }
+
+  .document-toc-link::before {
+    display: none;
+  }
+}
+
+@media (min-width: 64rem) {
+  .app-shell,
+  .graph-shell {
+    --header-row-height: 34px;
+  }
+
+  .app-shell .sidebar-header,
+  .app-shell .document-header-line,
+  .app-shell .document-metadata,
+  .app-shell .document-toc-title {
+    min-height: var(--header-row-height);
+  }
+
+  .app-shell .document-toc-list {
+    max-height: calc(100% - var(--header-row-height) - 14px);
+  }
 }
 
 @media (min-width: 64rem) and (max-width: 1340px) {
-  .sidebar-header {
-    min-height: 42px;
+  .app-shell,
+  .graph-shell {
+    --header-row-height: 42px;
   }
 
   .document-layout {
     display: grid;
+    max-width: 760px;
     grid-template-columns: minmax(0, 1fr) minmax(240px, 286px);
     grid-template-areas:
       'metadata toc'
       'document document';
-    column-gap: var(--document-toc-gutter);
+    column-gap: calc(var(--document-toc-gutter) * 0.375);
     row-gap: 34px;
     align-items: start;
   }
@@ -2934,13 +3055,9 @@ a.wiki-link-active {
     margin: 0;
   }
 
-  .document-metadata,
-  .document-toc-toggle {
-    min-height: 42px;
-  }
-
   .document-toc {
     grid-area: toc;
+    align-self: center;
     position: relative;
     z-index: 1;
     top: 0;
@@ -2948,15 +3065,16 @@ a.wiki-link-active {
     margin: 0;
   }
 
-  .document-toc-list {
+  .app-shell .document-toc-toggle {
+    min-height: 34px;
+  }
+
+  .app-shell .document-toc-list {
     position: absolute;
+    max-height: min(52vh, 420px);
     top: 100%;
     right: 0;
     left: 0;
-  }
-
-  .document-toc-states {
-    padding-right: 14px;
   }
 
   .markdown {
@@ -2977,6 +3095,8 @@ a.wiki-link-active {
   }
 
   .app-shell {
+    --mobile-gutter: 18px;
+
     display: block;
   }
 
@@ -3021,7 +3141,7 @@ a.wiki-link-active {
     display: flex;
     width: 100%;
     height: 56px;
-    padding: 0 18px;
+    padding: 0 var(--mobile-gutter);
     align-items: center;
     gap: 13px;
     overflow: hidden;
@@ -3070,8 +3190,7 @@ a.wiki-link-active {
     min-width: 0;
     overflow: hidden;
     color: var(--muted);
-    font-family:
-      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: var(--font-mono);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -3105,9 +3224,7 @@ a.wiki-link-active {
   }
 
   .main {
-    --mobile-gutter: clamp(20px, 5vw, 48px);
-
-    padding: 28px clamp(20px, 5vw, 48px) 80px;
+    padding: 28px var(--mobile-gutter) 80px;
   }
 
   .document-header-line {
@@ -3141,12 +3258,11 @@ a.wiki-link-active {
   .document-toc-toggle {
     min-height: 56px;
     padding: 0 var(--mobile-gutter);
-    background: color-mix(in srgb, var(--background) 94%, transparent);
+    background: var(--background);
     border-top: 0;
     border-right: 0;
     border-left: 0;
     border-radius: 0;
-    backdrop-filter: blur(12px);
   }
 
   .document-toc[data-expanded='true'] .document-toc-toggle {
@@ -3190,19 +3306,19 @@ a.wiki-link-active {
     top: 0;
     width: 100%;
     height: auto;
-    background: color-mix(in srgb, var(--panel) 92%, transparent);
+    background: var(--background);
     border-bottom: 1px solid var(--panel-border);
-    backdrop-filter: blur(12px);
     pointer-events: auto;
   }
 
   .graph-topbar-graph {
-    min-height: 64px;
-    padding: 10px 16px;
+    min-height: 48px;
+    padding: 0 16px;
     border-right: 0;
   }
 
   .graph-topbar-graph .graph-header {
+    min-height: 48px;
     flex-basis: 190px;
   }
 
@@ -3242,7 +3358,8 @@ a.wiki-link-active {
     font-size: 16px;
   }
 
-  .graph-kind-filters label span {
+  .graph-kind-filters label span,
+  .graph-fit {
     min-height: 32px;
     padding: 7px 10px;
   }
@@ -3283,19 +3400,13 @@ a.wiki-link-active {
 }
 
 @media (max-width: 600px) {
-  .main {
-    --mobile-gutter: 18px;
-
-    padding-right: 18px;
-    padding-left: 18px;
-  }
-
   .markdown {
-    font-size: 15.5px;
+    font-size: 16px;
   }
 
   .markdown h1 {
     font-size: 32px;
+    line-height: 40px;
   }
 
   .markdown h2 {

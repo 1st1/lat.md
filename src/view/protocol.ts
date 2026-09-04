@@ -97,6 +97,7 @@ export type ViewGraphNode = {
   label: string;
   url: string;
   breadcrumbs: string[];
+  /** Local documents sum direct backlink counts across every heading. Other nodes use incoming edge weights. */
   inDegree: number;
   outDegree: number;
   documentPath?: string;

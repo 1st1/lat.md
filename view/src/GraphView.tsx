@@ -10,6 +10,10 @@ import {
 } from 'react';
 import Sigma from 'sigma';
 import {
+  GraphNodeProgram,
+  GraphSelectedNodeProgram,
+} from './graph-node-program';
+import {
   createEdgeArrowProgram,
   type NodeLabelDrawingFunction,
 } from 'sigma/rendering';
@@ -81,10 +85,6 @@ function colorValue(
   fallback: string,
 ): string {
   return styles.getPropertyValue(name).trim() || fallback;
-}
-
-function withAlpha(color: string, alpha: string): string {
-  return /^#[\da-f]{6}$/i.test(color) ? `${color}${alpha}` : color;
 }
 
 const drawGraphNodeLabel: NodeLabelDrawingFunction<
@@ -197,9 +197,14 @@ function GraphCanvas({
       document: colorValue(styles, '--graph-document', '#ededed'),
       code: colorValue(styles, '--graph-code', '#737373'),
     };
-    const text = colorValue(styles, '--text', '#ededed');
-    const muted = colorValue(styles, '--muted', '#888888');
-    const edgeColor = colorValue(styles, '--panel-border', '#262626');
+    const mutedNodeColor = colorValue(styles, '--graph-node-muted', '#404040');
+    const activeEdgeColor = colorValue(
+      styles,
+      '--graph-edge-active',
+      '#686868',
+    );
+    const edgeColor = colorValue(styles, '--graph-edge', '#505050');
+    const mutedEdgeColor = colorValue(styles, '--graph-edge-muted', '#383838');
     const graph = new MultiDirectedGraph<
       GraphNodeAttributes,
       GraphEdgeAttributes
@@ -246,6 +251,13 @@ function GraphCanvas({
       {
         defaultEdgeColor: edgeColor,
         defaultEdgeType: 'arrow',
+        nodeProgramClasses: {
+          circle: GraphNodeProgram<GraphNodeAttributes, GraphEdgeAttributes>,
+          selected: GraphSelectedNodeProgram<
+            GraphNodeAttributes,
+            GraphEdgeAttributes
+          >,
+        },
         defaultDrawNodeHover: drawGraphNodeLabel,
         defaultDrawNodeLabel: drawGraphNodeLabel,
         edgeProgramClasses: {
@@ -257,8 +269,7 @@ function GraphCanvas({
         hideEdgesOnMove: true,
         labelColor: { color: '#fff' },
         labelDensity: 0.12,
-        labelFont:
-          'Geist, "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+        labelFont: getComputedStyle(document.documentElement).fontFamily,
         labelRenderedSizeThreshold: 6,
         labelSize: 11,
         labelWeight: '600',
@@ -273,21 +284,23 @@ function GraphCanvas({
           const renderedData =
             searchSize === undefined ? data : { ...data, size: searchSize };
           const focus = hoveredNode || selected.current;
-          if (focus && node !== focus && !graph.areNeighbors(node, focus)) {
+          const isSelected = node === selected.current;
+          if (isSelected || node === focus) {
             return {
               ...renderedData,
-              color: withAlpha(muted, '48'),
-              label: null,
-              zIndex: 0,
-            };
-          }
-          if (node === focus) {
-            return {
-              ...renderedData,
+              type: isSelected ? 'selected' : 'circle',
               forceLabel: true,
               highlighted: true,
               size: renderedData.size + 2.5,
-              zIndex: 3,
+              zIndex: isSelected ? 4 : 3,
+            };
+          }
+          if (focus && node !== focus && !graph.areNeighbors(node, focus)) {
+            return {
+              ...renderedData,
+              color: mutedNodeColor,
+              label: null,
+              zIndex: 0,
             };
           }
           return {
@@ -305,14 +318,14 @@ function GraphCanvas({
           if (focus && from !== focus && to !== focus) {
             return {
               ...data,
-              color: withAlpha(edgeColor, '24'),
-              size: 0.35,
+              color: mutedEdgeColor,
+              size: 0.6,
             };
           }
           return focus
             ? {
                 ...data,
-                color: withAlpha(text, '70'),
+                color: activeEdgeColor,
                 size: data.size + 0.4,
               }
             : data;
@@ -331,29 +344,6 @@ function GraphCanvas({
       sigma.refresh();
     });
     sigma.on('clickNode', ({ node }) => onSelectRef.current(node));
-
-    let draggedNode = '';
-    let dragged = false;
-
-    sigma.on('downNode', ({ node, preventSigmaDefault }) => {
-      draggedNode = node;
-      dragged = false;
-      preventSigmaDefault();
-    });
-    const mouse = sigma.getMouseCaptor();
-    mouse.on('mousemovebody', (event) => {
-      if (!draggedNode) return;
-      dragged = true;
-      event.preventSigmaDefault();
-      const position = sigma.viewportToGraph(event);
-      graph.mergeNodeAttributes(draggedNode, position);
-    });
-    mouse.on('mouseup', () => {
-      if (!draggedNode) return;
-      positionCache.set(draggedNode, graph.getNodeAttributes(draggedNode));
-      draggedNode = '';
-      if (dragged) sigma.refresh();
-    });
 
     return () => {
       savePositions();

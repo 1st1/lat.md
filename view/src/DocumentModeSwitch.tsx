@@ -26,7 +26,7 @@ export function DocumentModeSwitch({
               <path d="m8.5 3.3 1.4 1.4" />
             </svg>
           )}
-          <span>{value}</span>
+          <span>{value === 'view' ? 'View' : 'Edit'}</span>
         </button>
       ))}
     </div>

@@ -117,7 +117,7 @@ describe('MarkdownContent', () => {
       'Copied!',
     );
     await act(async () => vi.advanceTimersByTime(2500));
-    expect(buttons[0].getAttribute('aria-label')).toBe('Copy code');
+    expect(buttons[0].getAttribute('aria-label')).toBe('Copy Code');
     await act(async () => buttons[1].click());
     expect(writeText).toHaveBeenLastCalledWith('plain\ntext\n');
     expect(container.querySelector('pre')?.textContent).toBe(codeText);
@@ -132,7 +132,7 @@ describe('MarkdownContent', () => {
     const button =
       container.querySelector<HTMLButtonElement>('.code-block-copy')!;
     await act(async () => button.click());
-    expect(button.textContent).toBe('Retry copy');
+    expect(button.textContent).toBe('Retry Copy');
     expect(container.querySelector('[role="status"]')?.textContent).toBe(
       'Copy failed. Try again.',
     );
@@ -142,7 +142,7 @@ describe('MarkdownContent', () => {
       .mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { clipboard: { writeText } });
     await act(async () => button.click());
-    expect(button.textContent).toBe('Retry copy');
+    expect(button.textContent).toBe('Retry Copy');
     await act(async () => button.click());
     expect(button.textContent).toBe('Copied!');
     expect(writeText).toHaveBeenLastCalledWith(codeText);

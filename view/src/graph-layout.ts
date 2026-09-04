@@ -25,7 +25,7 @@ export function graphDisplayLabel(
 
 export function graphNodeSize(backlinks: number): number {
   const count = Number.isFinite(backlinks) ? Math.max(0, backlinks) : 0;
-  return 5 + Math.log2(count + 1) * 1.8;
+  return 5 + Math.log2(count + 1) * 3;
 }
 
 function polarPosition(angle: number, radius: number): GraphPosition {
@@ -94,7 +94,7 @@ export function staticGraphPositions(
     let ring = 0;
     while (offset < nodeIds.length) {
       const count = Math.min(12 + ring * 4, nodeIds.length - offset);
-      const radius = 4 + ring * 3.5;
+      const radius = 6.4 + ring * 5.6;
       for (let index = 0; index < count; index++) {
         const angle = baseAngle + ring * 0.31 + (index / count) * Math.PI * 2;
         const relative = polarPosition(angle, radius);
