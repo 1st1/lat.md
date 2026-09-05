@@ -1,0 +1,15 @@
+{
+  "packages/embed/dist/engine_bg.wasm": "f95681cfef453c2a4f84c965be9286725960f670de7143dc7c863f570401eba0",
+  "node_modules/@lat.md/embed-minilm-fp16/model/model.fp16.safetensors": "6638f625a0a60bdaa1e34c5fee0a17c705f13b98b43a7973e9d366106a55273d",
+  "node_modules/@lat.md/embed-minilm-fp16/model/tokenizer.json": "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037",
+  "node_modules/@lat.md/embed-minilm-fp16/model/config.json": "953f9c0d463486b10a6871cc2fd59f223b2c70184f49815e7efbcab5d8908b41",
+  "versions": {
+    "@libsql/client": "0.17.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "@lat.md/embed": "0.2.0",
+    "@lat.md/embed-minilm-fp16": "0.1.0"
+  },
+  "unmodifiedSource": true,
+  "weightMatchesCurrent": true
+}

@@ -1,0 +1,16 @@
+{
+  "currentCommit": "74658ec6302b10a535df208e326ca2514b89a4ef",
+  "preRagCommit": "b1391996e836a07e4bdaa636a366c5cd99d1449c",
+  "releaseCommit": "8d345ed24e4ebff8c348e3bf9ef9e06a17677af6",
+  "corpusCommit": "72fbf5c356f298e9d551c456174059fe16da668b",
+  "corpusPatch": "../../real-query-audit/corpus.patch",
+  "corpusHash": "291c9a2b68e4b4f33ad20aad7443d15c0c46850bd7924fe2fbfca9257582b013",
+  "queryHash": "9ac85d0f1aa95ae629e75eaf0c0a388d52cb0aa38c20cd408039e7e05bbdbb2c",
+  "evaluation": "evaluation-2026-09-04T20-47-12.659Z.json.gz",
+  "labelPairs": 1578,
+  "newlyJudgedPairs": 311,
+  "queryVectorsOldAndNewBitIdentical": true,
+  "frozenMarkdownFiles": 39,
+  "indexedSections": 506,
+  "validation": "All result pairs graded; all frozen corpus hashes and label evidence ranges verified; historical source unchanged. Historical graph validation has expected post-baseline symbol mismatches (see log)."
+}
