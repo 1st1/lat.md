@@ -104,7 +104,15 @@ export async function indexSections(
     unchanged: project.sections.length - changed.size,
   };
   if (!changed.size && !removed.length && oldFingerprint === fingerprint) {
-    await synchronizeLexical(db);
+    // Lexical maintenance can repair old generations without embedding work.
+    await db.execute('BEGIN');
+    try {
+      await synchronizeLexical(db);
+      await db.execute('COMMIT');
+    } catch (error) {
+      await db.execute('ROLLBACK');
+      throw error;
+    }
     return stats;
   }
   const storedHashes = new Set(
@@ -132,6 +140,9 @@ export async function indexSections(
     throw new Error('Embedding backend returned invalid vectors');
   const rebuildFts =
     !existing.size ||
+    // Tantivy retains deleted versions in BM25 statistics until rebuilt.
+    stats.updated > 0 ||
+    removed.length > 0 ||
     passages.filter((p) => changed.has(p.sectionId)).length > 512;
   await db.execute('BEGIN');
   try {

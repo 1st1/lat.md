@@ -110,7 +110,7 @@ Unchanged work discards its staging copy. Failed work removes staging files and 
 
 Legacy `vectors.db` is inspected and checkpointed in a short-lived libSQL process so native handles are released before Windows renames the file and archived as `vectors.db.old-12`, with numbered suffixes on collision. Migration metadata retains its model across interrupted attempts. Indexing-capable search rebuilds the new format; hooks do not perform migration. Embedding-policy changes require explicit reindexing, while lexical-policy upgrades reuse stored vectors.
 
-Initial indexing and batches replacing more than 512 passages rebuild FTS after insertion; smaller edits maintain the index incrementally in this implementation. [[src/search/lexical.ts#synchronizeLexical]] rebuilds normalized rows and FTS when the lexical version changes.
+Initial indexing, batches with more than 512 changed passages, and every replacement or deletion rebuild FTS transactionally after row changes. This removes historical document statistics from BM25; small addition-only batches maintain the index incrementally. The live-statistics lexical version repairs older indexes without regenerating embeddings. [[src/search/lexical.ts#synchronizeLexical]] rebuilds normalized rows and FTS when the lexical version changes.
 
 Tests: [[tests/search#Hybrid Retrieval#Publishes only successful generations]], [[tests/search#Hybrid Retrieval#Preserves FTS rollback and portable copies]], [[tests/search#Hybrid Retrieval#Archives legacy caches without overwriting backups]], and [[tests/search#Hybrid Retrieval#Keeps readers alive across process boundaries]].
 
