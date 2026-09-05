@@ -1,7 +1,10 @@
+import { LEXICAL_VERSION } from '../src/search/lexical.js';
+vi.mock('node:fs', () => ({ existsSync: () => true }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Section } from '../src/lattice-model.js';
 
 const mocks = vi.hoisted(() => ({
+  readManifest: vi.fn(),
   closeDb: vi.fn(),
   embedderForIndex: vi.fn(),
   ensureMeta: vi.fn(),
@@ -12,6 +15,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../src/search/db.js', () => ({
+  readManifest: mocks.readManifest,
   closeDb: mocks.closeDb,
   ensureMeta: mocks.ensureMeta,
   ensureSectionsSchema: mocks.ensureSectionsSchema,
@@ -20,6 +24,7 @@ vi.mock('../src/search/db.js', () => ({
 }));
 
 vi.mock('../src/search/embedder.js', () => ({
+  ReindexRequiredError: class extends Error {},
   embedderForIndex: mocks.embedderForIndex,
 }));
 
@@ -47,7 +52,13 @@ const section: Section = {
 describe('indexed search sessions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.openDb.mockReturnValue({ database: 'test' });
+    mocks.readManifest.mockReturnValue({ version: 1, file: 'search-test.db' });
+    mocks.openDb.mockReturnValue({
+      database: 'test',
+      execute: vi
+        .fn()
+        .mockResolvedValue({ rows: [{ value: LEXICAL_VERSION }] }),
+    });
     mocks.ensureMeta.mockResolvedValue(undefined);
     mocks.ensureSectionsSchema.mockResolvedValue(undefined);
     mocks.closeDb.mockResolvedValue(undefined);
@@ -63,14 +74,14 @@ describe('indexed search sessions', () => {
         file: section.file,
         heading: section.heading,
         content: section.firstParagraph,
-        score: 0.8,
+        rankScore: 0.8,
       },
       {
         id: 'lat.md/missing#Missing',
         file: 'lat.md/missing',
         heading: 'Missing',
         content: 'Missing from the project snapshot.',
-        score: 0.7,
+        rankScore: 0.7,
       },
     ]);
   });
@@ -90,14 +101,14 @@ describe('indexed search sessions', () => {
         file: section.file,
         heading: section.heading,
         content: section.firstParagraph,
-        score: 0.8,
+        rankScore: 0.8,
       },
       {
         id: 'lat.md/missing#Missing',
         file: 'lat.md/missing',
         heading: 'Missing',
         content: 'Missing from the project snapshot.',
-        score: 0.7,
+        rankScore: 0.7,
       },
     ]);
     expect(
@@ -105,7 +116,7 @@ describe('indexed search sessions', () => {
         results,
         new Map([[section.id.toLowerCase(), section]]),
       ),
-    ).toEqual([{ section, reason: 'semantic match', score: 0.8 }]);
+    ).toEqual([{ section, reason: 'hybrid match', rankScore: 0.8 }]);
     await session.search('second', 3);
     await session.close();
     await session.close();
@@ -114,6 +125,7 @@ describe('indexed search sessions', () => {
     expect(mocks.openDb).toHaveBeenCalledWith(
       '/project/lat.md',
       '/runtime/cache',
+      true,
     );
     expect(mocks.embedderForIndex).toHaveBeenCalledOnce();
     expect(mocks.embedderForIndex).toHaveBeenCalledWith(
@@ -121,10 +133,8 @@ describe('indexed search sessions', () => {
       '/project/lat.md',
       createSearchEngine,
     );
-    expect(mocks.ensureSectionsSchema).toHaveBeenCalledWith(
-      expect.anything(),
-      1,
-    );
+    expect(mocks.ensureSectionsSchema).not.toHaveBeenCalled();
+    expect(mocks.ensureMeta).not.toHaveBeenCalled();
     expect(mocks.searchSections).toHaveBeenNthCalledWith(
       1,
       expect.anything(),

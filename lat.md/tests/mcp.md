@@ -35,7 +35,7 @@ Calling `lat_section` with a nonexistent query returns a "No sections matching" 
 Calling `lat_check` against `basic-project` (which has no index file) returns an error response with `isError: true`.
 
 ## lat_search finds auth section
-Semantic search via `lat_search` for a login/security query returns results containing the Authentication section. Uses the RAG replay server against the `rag` fixture.
+Semantic search via `lat_search` for a login/security query returns results containing the Authentication section. Uses the local MiniLM engine against the `rag` fixture.
 
 ## lat_search finds performance section
 Semantic search for a latency/response-times query returns results containing the Performance section.

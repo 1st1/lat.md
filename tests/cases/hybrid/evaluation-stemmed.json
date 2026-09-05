@@ -1,0 +1,1187 @@
+{
+  "model": "local:minilm-l6-v2",
+  "indexingMs": 1070.641292,
+  "groups": {
+    "development": {
+      "queries": 40,
+      "recall50": 0.9722222222222222,
+      "mrr": 0.925925925925926,
+      "ndcg5": 0.9378294307539699,
+      "ndcg10": 0.9378294307539699,
+      "unrelatedFalsePositives": 1,
+      "meanQueryMs": 9.37952502500001
+    },
+    "held-out": {
+      "queries": 18,
+      "recall50": 1,
+      "mrr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "unrelatedFalsePositives": 0,
+      "meanQueryMs": 8.973377277777786
+    }
+  },
+  "records": [
+    {
+      "query": "What happens after a user stays inactive?",
+      "relevant": [
+        "Session expiration"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Password reset",
+        "Session expiration",
+        "Feature flags",
+        "Health checks",
+        "Cache invalidation",
+        "Message retries",
+        "Rate limiting"
+      ],
+      "recall50": 1,
+      "rr": 0.5,
+      "ndcg5": 0.6309297535714575,
+      "ndcg10": 0.6309297535714575,
+      "falsePositive": false,
+      "ms": 12.212708999999904
+    },
+    {
+      "query": "Session expiration",
+      "relevant": [
+        "Session expiration"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Session expiration",
+        "TLS certificates",
+        "Password reset",
+        "API credentials"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.704999999999927
+    },
+    {
+      "query": "How can someone regain access after forgetting a password?",
+      "relevant": [
+        "Password reset"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Password reset",
+        "Session expiration",
+        "Cache invalidation",
+        "Database recovery",
+        "Message retries",
+        "Rate limiting"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 17.237499999999955
+    },
+    {
+      "query": "Password reset",
+      "relevant": [
+        "Password reset"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Password reset",
+        "Session expiration",
+        "Database recovery",
+        "API credentials"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.794208000000026
+    },
+    {
+      "query": "Where should machine authentication secrets be stored?",
+      "relevant": [
+        "API credentials"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "API credentials",
+        "Webhooks",
+        "Password reset",
+        "Backups",
+        "Image uploads"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.504165999999941
+    },
+    {
+      "query": "API_TOKEN",
+      "relevant": [
+        "API credentials"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "API credentials",
+        "Webhooks"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.428584000000001
+    },
+    {
+      "query": "How do we restore data after a database failure?",
+      "relevant": [
+        "Database recovery"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Database recovery",
+        "Cache invalidation",
+        "Backups",
+        "Message retries",
+        "Deploy rollback",
+        "Health checks",
+        "Session expiration",
+        "Password reset",
+        "Rate limiting",
+        "Connection pooling"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.80320800000004
+    },
+    {
+      "query": "write-ahead log",
+      "relevant": [
+        "Database recovery"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Audit logging",
+        "Database recovery",
+        "Concurrency",
+        "Request tracing",
+        "Cache invalidation",
+        "Message retries",
+        "Long tail retrieval"
+      ],
+      "recall50": 1,
+      "rr": 0.5,
+      "ndcg5": 0.6309297535714575,
+      "ndcg10": 0.6309297535714575,
+      "falsePositive": false,
+      "ms": 8.18487499999992
+    },
+    {
+      "query": "How long are nightly snapshots kept?",
+      "relevant": [
+        "Backups"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Backups",
+        "Database recovery",
+        "Long tail retrieval",
+        "Oversized code",
+        "Session expiration",
+        "API credentials",
+        "Image uploads",
+        "TLS certificates",
+        "Audit logging"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.385292000000163
+    },
+    {
+      "query": "Backups",
+      "relevant": [
+        "Backups"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Backups",
+        "Database recovery",
+        "Deploy rollback"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.65604200000007
+    },
+    {
+      "query": "What happens when a client sends too many requests?",
+      "relevant": [
+        "Rate limiting"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Rate limiting",
+        "Connection pooling",
+        "Request tracing",
+        "Idempotency",
+        "API credentials",
+        "Message retries"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.533042000000023
+    },
+    {
+      "query": "Retry-After",
+      "relevant": [
+        "Rate limiting"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Message retries",
+        "Idempotency",
+        "Rate limiting",
+        "Session expiration",
+        "Cache invalidation",
+        "Database recovery",
+        "Long tail retrieval",
+        "Health checks",
+        "Deploy rollback",
+        "Connection pooling"
+      ],
+      "recall50": 1,
+      "rr": 0.3333333333333333,
+      "ndcg5": 0.5,
+      "ndcg10": 0.5,
+      "falsePositive": false,
+      "ms": 8.142291999999998
+    },
+    {
+      "query": "How can I follow one request across services?",
+      "relevant": [
+        "Request tracing"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Request tracing",
+        "Rate limiting",
+        "Knowledge",
+        "Idempotency",
+        "API credentials",
+        "Oversized code",
+        "Pagination",
+        "Password reset",
+        "Webhooks",
+        "Connection pooling"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.799833000000035
+    },
+    {
+      "query": "X-Trace-ID",
+      "relevant": [
+        "Request tracing"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Request tracing",
+        "Webhooks",
+        "Idempotency"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.388916999999992
+    },
+    {
+      "query": "How do updated products become visible in the cache?",
+      "relevant": [
+        "Cache invalidation"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Cache invalidation",
+        "Session expiration",
+        "Concurrency"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.475500000000011
+    },
+    {
+      "query": "Cache invalidation",
+      "relevant": [
+        "Cache invalidation"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Cache invalidation",
+        "Session expiration",
+        "Message retries"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.353791000000001
+    },
+    {
+      "query": "How do we undo a bad release?",
+      "relevant": [
+        "Deploy rollback"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Deploy rollback",
+        "Database recovery",
+        "Feature flags",
+        "Message retries",
+        "Cache invalidation"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.057000000000016
+    },
+    {
+      "query": "Deploy rollback",
+      "relevant": [
+        "Deploy rollback"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Deploy rollback",
+        "Database recovery",
+        "Backups",
+        "Feature flags",
+        "Message retries"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.4335419999999885
+    },
+    {
+      "query": "How can we release a feature to a small group first?",
+      "relevant": [
+        "Feature flags"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Feature flags"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 12.710416000000123
+    },
+    {
+      "query": "Feature flags",
+      "relevant": [
+        "Feature flags"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Feature flags"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.321916000000101
+    },
+    {
+      "query": "What happens when background work keeps failing?",
+      "relevant": [
+        "Message retries"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Message retries",
+        "Health checks",
+        "Deploy rollback",
+        "Backups",
+        "Cache invalidation"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.117666999999983
+    },
+    {
+      "query": "dead-letter",
+      "relevant": [
+        "Message retries"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Message retries",
+        "Oversized code",
+        "Cache invalidation",
+        "Health checks",
+        "Long tail retrieval"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.439959000000044
+    },
+    {
+      "query": "How do we prevent duplicate charges on retries?",
+      "relevant": [
+        "Idempotency"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Idempotency",
+        "Message retries",
+        "Rate limiting"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.663792000000058
+    },
+    {
+      "query": "Idempotency-Key",
+      "relevant": [
+        "Idempotency"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Idempotency",
+        "Webhooks"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.813708000000133
+    },
+    {
+      "query": "What is the maximum picture upload size?",
+      "relevant": [
+        "Image uploads"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Image uploads",
+        "Rate limiting"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.707000000000107
+    },
+    {
+      "query": "Image uploads",
+      "relevant": [
+        "Image uploads"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Image uploads",
+        "Deploy rollback"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.092083999999886
+    },
+    {
+      "query": "How do I fetch the next batch of records?",
+      "relevant": [
+        "Pagination"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Pagination",
+        "Cache invalidation",
+        "Database recovery",
+        "Audit logging",
+        "Idempotency",
+        "Long tail retrieval"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.411624999999958
+    },
+    {
+      "query": "next_cursor",
+      "relevant": [
+        "Pagination"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Pagination",
+        "Oversized code"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.288208000000168
+    },
+    {
+      "query": "What happens when all database connections are busy?",
+      "relevant": [
+        "Connection pooling"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Connection pooling",
+        "Health checks",
+        "Backups",
+        "Database recovery",
+        "Rate limiting",
+        "Request tracing",
+        "Cache invalidation",
+        "Deploy rollback"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.067334000000074
+    },
+    {
+      "query": "Connection pooling",
+      "relevant": [
+        "Connection pooling"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Connection pooling",
+        "Rate limiting",
+        "Request tracing",
+        "Health checks"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.531791999999996
+    },
+    {
+      "query": "When should the service begin receiving traffic?",
+      "relevant": [
+        "Health checks"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Rate limiting",
+        "Knowledge",
+        "Request tracing",
+        "Deploy rollback"
+      ],
+      "recall50": 0,
+      "rr": 0,
+      "ndcg5": 0,
+      "ndcg10": 0,
+      "falsePositive": false,
+      "ms": 10.096625000000131
+    },
+    {
+      "query": "Health checks",
+      "relevant": [
+        "Health checks"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Health checks"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.5199159999999665
+    },
+    {
+      "query": "How do we avoid expired HTTPS certificates?",
+      "relevant": [
+        "TLS certificates"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "TLS certificates",
+        "Session expiration",
+        "Password reset",
+        "API credentials",
+        "Cache invalidation"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.375499999999874
+    },
+    {
+      "query": "TLS certificates",
+      "relevant": [
+        "TLS certificates"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "TLS certificates"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.412458000000015
+    },
+    {
+      "query": "Where can I see who changed access permissions?",
+      "relevant": [
+        "Audit logging"
+      ],
+      "kind": "paraphrase",
+      "split": "development",
+      "headings": [
+        "Audit logging",
+        "Feature flags"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.23179099999993
+    },
+    {
+      "query": "Audit logging",
+      "relevant": [
+        "Audit logging"
+      ],
+      "kind": "exact",
+      "split": "development",
+      "headings": [
+        "Audit logging",
+        "Request tracing",
+        "Database recovery"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.843457999999828
+    },
+    {
+      "query": "Can literal matches qualify below the semantic cutoff?",
+      "relevant": [
+        "Search configuration"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Search configuration",
+        "Unicode handling"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.412958000000117
+    },
+    {
+      "query": "SEARCH_MIN_SIMILARITY",
+      "relevant": [
+        "Search configuration"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Search configuration"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.22720900000013
+    },
+    {
+      "query": "How should text splitting handle emoji?",
+      "relevant": [
+        "Unicode handling"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Unicode handling",
+        "Oversized code"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.492917000000034
+    },
+    {
+      "query": "UTF-8",
+      "relevant": [
+        "Unicode handling"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Unicode handling",
+        "Oversized code"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.021792000000005
+    },
+    {
+      "query": "How are commas inside exported cells represented?",
+      "relevant": [
+        "Table exports"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Table exports"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 11.578500000000076
+    },
+    {
+      "query": "Table exports",
+      "relevant": [
+        "Table exports"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Table exports"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.591499999999996
+    },
+    {
+      "query": "How do we verify that an incoming event is authentic?",
+      "relevant": [
+        "Webhooks"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Webhooks",
+        "API credentials",
+        "Idempotency",
+        "Request tracing",
+        "Audit logging"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 12.445207999999866
+    },
+    {
+      "query": "Webhooks",
+      "relevant": [
+        "Webhooks"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Webhooks",
+        "Rate limiting"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.891583000000082
+    },
+    {
+      "query": "Can reads continue while an index is rebuilt?",
+      "relevant": [
+        "Concurrency"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Concurrency",
+        "Connection pooling",
+        "Database recovery",
+        "Long tail retrieval",
+        "Message retries",
+        "Cache invalidation",
+        "Backups"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.983332999999902
+    },
+    {
+      "query": "search-write.lock",
+      "relevant": [
+        "Concurrency"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Concurrency",
+        "Cache invalidation",
+        "Search configuration",
+        "Database recovery",
+        "Long tail retrieval",
+        "Oversized code"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 8.411124999999856
+    },
+    {
+      "query": "What is the emergency recovery phrase?",
+      "relevant": [
+        "Long tail retrieval"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Long tail retrieval",
+        "Database recovery",
+        "Message retries",
+        "Password reset",
+        "Idempotency"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 10.068667000000005
+    },
+    {
+      "query": "violet submarine",
+      "relevant": [
+        "Long tail retrieval"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Long tail retrieval"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 6.454707999999982
+    },
+    {
+      "query": "Where is RECOVERY_MODE enabled?",
+      "relevant": [
+        "Oversized code"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out",
+      "headings": [
+        "Oversized code",
+        "Database recovery",
+        "Feature flags",
+        "Long tail retrieval",
+        "Password reset",
+        "Health checks",
+        "Deploy rollback"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 9.64104199999997
+    },
+    {
+      "query": "RECOVERY_MODE",
+      "relevant": [
+        "Oversized code"
+      ],
+      "kind": "exact",
+      "split": "held-out",
+      "headings": [
+        "Oversized code",
+        "Database recovery",
+        "Long tail retrieval",
+        "Password reset",
+        "Deploy rollback",
+        "Health checks"
+      ],
+      "recall50": 1,
+      "rr": 1,
+      "ndcg5": 1,
+      "ndcg10": 1,
+      "falsePositive": false,
+      "ms": 7.2902500000000146
+    },
+    {
+      "query": "medieval pottery glazing",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 8.384374999999864
+    },
+    {
+      "query": "humpback whale migration routes",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development",
+      "headings": [
+        "Deploy rollback"
+      ],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": true,
+      "ms": 8.907709000000068
+    },
+    {
+      "query": "neutrino mass experiments",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 8.107041999999865
+    },
+    {
+      "query": "sourdough starter feeding",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 8.041125000000193
+    },
+    {
+      "query": "ancient roman aqueduct dimensions",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 7.622749999999996
+    },
+    {
+      "query": "Brazilian rainforest bird species",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 7.741708000000017
+    },
+    {
+      "query": "mountaineering oxygen requirements",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 7.555291000000125
+    },
+    {
+      "query": "fossil ammonite classification",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out",
+      "headings": [],
+      "recall50": null,
+      "rr": null,
+      "ndcg5": null,
+      "ndcg10": null,
+      "falsePositive": false,
+      "ms": 8.090249999999969
+    },
+    {
+      "query": "What are the operational recovery procedures?",
+      "relevant": [
+        "Knowledge"
+      ],
+      "kind": "parent-scope",
+      "deferred": true,
+      "split": "held-out",
+      "headings": [
+        "Long tail retrieval",
+        "Database recovery",
+        "Knowledge",
+        "Deploy rollback",
+        "TLS certificates",
+        "Health checks",
+        "Message retries",
+        "Backups",
+        "Password reset",
+        "Idempotency"
+      ],
+      "recall50": 1,
+      "rr": 0.3333333333333333,
+      "ndcg5": 0.5,
+      "ndcg10": 0.5,
+      "falsePositive": false,
+      "ms": 9.985000000000127
+    },
+    {
+      "query": "Summarize authentication and access management",
+      "relevant": [
+        "Knowledge"
+      ],
+      "kind": "parent-scope",
+      "deferred": true,
+      "split": "held-out",
+      "headings": [
+        "API credentials",
+        "Audit logging",
+        "Password reset",
+        "Long tail retrieval"
+      ],
+      "recall50": 0,
+      "rr": 0,
+      "ndcg5": 0,
+      "ndcg10": 0,
+      "falsePositive": false,
+      "ms": 9.895250000000033
+    }
+  ]
+}

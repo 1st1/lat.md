@@ -14,7 +14,7 @@ import {
 import { indexSections } from '../src/search/index.js';
 import {
   DEFAULT_SEARCH_LIMIT,
-  DEFAULT_SEARCH_THRESHOLD,
+  DEFAULT_MIN_SIMILARITY,
   searchSections,
 } from '../src/search/search.js';
 import { runSearch } from '../src/cli/search.js';
@@ -22,7 +22,8 @@ import { formatResultList } from '../src/format.js';
 import { plainStyler, type CmdContext } from '../src/context.js';
 import type { Section } from '../src/lattice-model.js';
 import { startReplayServer, hasReplayData } from './rag-replay-server.js';
-import type { Client } from '@libsql/client';
+import { execFileSync } from 'node:child_process';
+import type { SearchDb as Client } from '../src/search/db.js';
 import type { Server } from 'node:http';
 
 // Passthrough spy on `readFile` so the indexing test below can count how many
@@ -104,31 +105,30 @@ describe('search (rag, local)', () => {
     );
     expect(results.length).toBeGreaterThan(0);
     expect(results[0].id).toContain('Authentication');
-    expect(Number.isFinite(results[0].score)).toBe(true);
-    expect(results[0].score).toBeGreaterThanOrEqual(results.at(-1)!.score);
+    expect(Number.isFinite(results[0].rankScore)).toBe(true);
+    expect(results[0].rankScore).toBeGreaterThanOrEqual(
+      results.at(-1)!.rankScore,
+    );
   });
 
   // @lat: [[search#RAG Tests#Filters results below the similarity threshold]]
   it('filters results below the similarity threshold', async () => {
-    const query = 'how do we handle user login and security?';
     const results = await searchSections(
       db,
-      query,
+      'xylophonically',
       embedder,
-      DEFAULT_SEARCH_LIMIT,
+      100,
       0,
     );
-    const threshold = (results[0].score + results[1].score) / 2;
     const filtered = await searchSections(
       db,
-      query,
+      'xylophonically',
       embedder,
-      DEFAULT_SEARCH_LIMIT,
-      threshold,
+      100,
+      1,
     );
-
-    expect(filtered.map((result) => result.id)).toEqual([results[0].id]);
-    expect(filtered[0].score).toBeGreaterThanOrEqual(threshold);
+    expect(results.length).toBeGreaterThan(0);
+    expect(filtered).toEqual([]);
   });
 
   // @lat: [[search#RAG Tests#Finds performance section for latency query]]
@@ -187,7 +187,9 @@ describe('search result formatting', () => {
     endLine: 8,
     firstParagraph: 'Authentication uses signed sessions.',
   };
-  const matches = [{ section, reason: 'semantic match', score: 0.8123456789 }];
+  const matches = [
+    { section, reason: 'semantic match', rankScore: 0.8123456789 },
+  ];
 
   // @lat: [[search#RAG Tests#Debug output includes similarity scores]]
   it('shows scores only when debug output is requested', () => {
@@ -198,7 +200,7 @@ describe('search result formatting', () => {
 
     expect(normal).toContain('(semantic match)');
     expect(normal).not.toContain('score:');
-    expect(debug).toContain('(semantic match, score: 0.812346)');
+    expect(debug).toContain('score: 0.812346');
   });
 });
 
@@ -211,73 +213,33 @@ describe('search threshold policy', () => {
     const embedder = {
       name: 'test',
       dimensions: 1,
+      maxInputTokens: 100,
+      tokenizerFingerprint: 'test',
+      countTokens: () => 1,
       embed: vi.fn().mockResolvedValue([[1]]),
     };
-
     await searchSections(db, 'query', embedder);
-
+    expect(DEFAULT_SEARCH_LIMIT).toBe(5);
     expect(db.execute).toHaveBeenCalledWith(
-      expect.objectContaining({ args: ['[1]', '[1]', DEFAULT_SEARCH_LIMIT] }),
+      expect.objectContaining({ args: ['[1]', 100] }),
     );
   });
-
   // @lat: [[search#RAG Tests#Applies the shared default similarity threshold]]
-  it('applies the shared default unless a caller overrides it', async () => {
-    const db = {
-      execute: vi.fn().mockResolvedValue({
-        rows: [
-          {
-            id: 'relevant',
-            file: 'relevant.md',
-            heading: 'Relevant',
-            content: 'Relevant match',
-            score: DEFAULT_SEARCH_THRESHOLD,
-          },
-          {
-            id: 'weak',
-            file: 'weak.md',
-            heading: 'Weak',
-            content: 'Weak match',
-            score: DEFAULT_SEARCH_THRESHOLD - 0.01,
-          },
-          {
-            id: 'negative',
-            file: 'negative.md',
-            heading: 'Negative',
-            content: 'Negative match',
-            score: -0.1,
-          },
-          {
-            id: 'zero',
-            file: 'zero.md',
-            heading: 'Zero',
-            content: 'Zero match',
-            score: 0,
-          },
-        ],
-      }),
-    } as unknown as Client;
-    const embedder: Embedder = {
+  it('uses a permissive semantic floor and validates overrides', async () => {
+    expect(DEFAULT_MIN_SIMILARITY).toBe(0.2);
+    const db = { execute: vi.fn() } as unknown as Client;
+    const embedder = {
       name: 'test',
       dimensions: 1,
-      embed: vi.fn().mockResolvedValue([[1]]),
+      maxInputTokens: 100,
+      tokenizerFingerprint: 'test',
+      countTokens: () => 1,
+      embed: vi.fn(),
     };
-
-    const defaults = await searchSections(db, 'query', embedder);
-    const overridden = await searchSections(
-      db,
-      'query',
-      embedder,
-      DEFAULT_SEARCH_LIMIT,
-      0,
+    await expect(searchSections(db, 'query', embedder, 5, NaN)).rejects.toThrow(
+      'min-similarity',
     );
-
-    expect(defaults.map((result) => result.id)).toEqual(['relevant']);
-    expect(overridden.map((result) => result.id)).toEqual([
-      'relevant',
-      'weak',
-      'zero',
-    ]);
+    expect(embedder.embed).not.toHaveBeenCalled();
   });
 });
 
@@ -294,16 +256,12 @@ describe('search (rag, legacy cache upgrade)', () => {
 
     // Seed a populated 1536-dim table (as an old remote build would leave) with
     // no meta.embedding_model recorded.
-    const seed = openDb(latDir);
-    await ensureMeta(seed);
-    await ensureSectionsSchema(seed, 1536);
-    const bogus = JSON.stringify(new Array(1536).fill(0.1));
-    await seed.execute({
-      sql: `INSERT INTO sections (id, file, heading, content, content_hash, embedding, updated_at)
-            VALUES (?, ?, ?, ?, ?, vector(?), ?)`,
-      args: ['stale#Old', 'stale.md', 'Old', 'stale', 'deadbeef', bogus, 0],
-    });
-    await closeDb(seed);
+    const { mkdirSync } = await import('node:fs');
+    mkdirSync(join(latDir, '.cache'), { recursive: true });
+    execFileSync(process.execPath, [
+      join(import.meta.dirname, 'support', 'seed-legacy.mjs'),
+      join(latDir, '.cache', 'vectors.db'),
+    ]);
 
     // Clear the env so the rebuild resolves to the local 384-dim model — the
     // dimension mismatch that previously threw a raw libsql error at query time.
@@ -326,7 +284,7 @@ describe('search (rag, legacy cache upgrade)', () => {
         'how do we handle user login and security?',
         5,
         undefined,
-        { threshold: 0 },
+        { minSimilarity: 0 },
       );
       expect(result.matches.length).toBeGreaterThan(0);
       expect(result.matches[0].section.id).toContain('Authentication');
@@ -347,7 +305,13 @@ describe('search (rag, legacy cache upgrade)', () => {
 // so the hosted code path stays covered without a live key. Re-cook: pnpm cook-test-rag
 
 const capturing = !!process.env._LAT_TEST_CAPTURE_EMBEDDINGS;
-const replayDir = join(import.meta.dirname, 'cases', 'rag', 'replay-data');
+const replayDir = join(
+  import.meta.dirname,
+  'cases',
+  'rag',
+  'replay-data',
+  'owned-blocks-v1',
+);
 const canRunHosted = capturing || hasReplayData(replayDir);
 
 describe.skipIf(!canRunHosted)('search (rag, hosted replay)', () => {

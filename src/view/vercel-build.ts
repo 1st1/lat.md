@@ -11,6 +11,10 @@ import {
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { nodeFileTrace } from '@vercel/nft';
 import { LAT_UI_CONTENT_SECURITY_POLICY } from '@lat.md/server';
+import {
+  MANIFEST_FILE,
+  readManifest as readSearchManifest,
+} from '../search/db.js';
 
 type FileTraceResult = {
   fileList: Set<string>;
@@ -155,6 +159,17 @@ export async function buildVercelOutput(
   for (const warning of trace.warnings) {
     options.warn?.(`Node file trace: ${warning.message}`);
   }
+
+  // NFT cannot discover a database filename read dynamically from JSON.
+  const searchManifest = readSearchManifest(join(artifactDir, 'server-data'));
+  if (!searchManifest) {
+    throw new Error(
+      'Missing hybrid search index manifest; rebuild this deployment.',
+    );
+  }
+  trace.fileList.add('server-data/server.json');
+  trace.fileList.add(`server-data/${MANIFEST_FILE}`);
+  trace.fileList.add(`server-data/${searchManifest.file}`);
 
   await mkdir(dirname(outputDir), { recursive: true });
   const stagingDir = await mkdtemp(
