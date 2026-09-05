@@ -1,0 +1,573 @@
+{
+  "description": "Source-authored relevance judgments fixed independently of retrieval output. Parent-scope queries measure deferred functionality.",
+  "documents": [
+    {
+      "heading": "Session expiration",
+      "body": "Sessions expire after thirty minutes without activity. A refresh token can renew the login session."
+    },
+    {
+      "heading": "Password reset",
+      "body": "Users recover forgotten passwords using a one-time email link that expires in fifteen minutes."
+    },
+    {
+      "heading": "API credentials",
+      "body": "API_TOKEN authenticates machine requests. Store credentials in environment variables and rotate them monthly."
+    },
+    {
+      "heading": "Database recovery",
+      "body": "Restore the most recent database snapshot, then replay the write-ahead log to recover committed transactions."
+    },
+    {
+      "heading": "Backups",
+      "body": "Database backups run nightly and are retained for thirty days in a separate region."
+    },
+    {
+      "heading": "Rate limiting",
+      "body": "Each client may send one hundred requests per minute. Excess traffic receives HTTP 429 and a Retry-After header."
+    },
+    {
+      "heading": "Request tracing",
+      "body": "Trace IDs connect logs across service boundaries. Include X-Trace-ID in every downstream request."
+    },
+    {
+      "heading": "Cache invalidation",
+      "body": "Invalidate cached product records immediately after a successful write. Cache misses load records from the database."
+    },
+    {
+      "heading": "Deploy rollback",
+      "body": "Roll back a failed deployment by routing traffic to the previous healthy image. Keep the database schema backward compatible."
+    },
+    {
+      "heading": "Feature flags",
+      "body": "Feature flags enable a change for a small percentage of users before a full rollout. Disable the flag if error rates rise."
+    },
+    {
+      "heading": "Message retries",
+      "body": "Failed queue messages use exponential backoff. After five attempts move the message to the dead-letter queue."
+    },
+    {
+      "heading": "Idempotency",
+      "body": "Idempotency-Key identifies retried payment requests. Reuse the recorded response instead of charging the customer twice."
+    },
+    {
+      "heading": "Image uploads",
+      "body": "Uploaded images are limited to ten megabytes. Decode and resize images before storing the resulting thumbnails."
+    },
+    {
+      "heading": "Pagination",
+      "body": "List endpoints use opaque cursors. Pass next_cursor from the response to fetch the following page."
+    },
+    {
+      "heading": "Connection pooling",
+      "body": "Reuse database connections through a pool of twenty connections per process. Queue requests while the pool is exhausted."
+    },
+    {
+      "heading": "Health checks",
+      "body": "The readiness endpoint fails until the database connection is ready. Liveness only checks whether the process responds."
+    },
+    {
+      "heading": "TLS certificates",
+      "body": "Renew TLS certificates automatically before expiry. Alert operators seven days before a certificate expires."
+    },
+    {
+      "heading": "Audit logging",
+      "body": "Record permission changes and administrator actions in an append-only audit log with actor and timestamp."
+    },
+    {
+      "heading": "Search configuration",
+      "body": "Set SEARCH_MIN_SIMILARITY to control the minimum semantic match. Lexical evidence can qualify independently."
+    },
+    {
+      "heading": "Unicode handling",
+      "body": "Decode input as UTF-8 and preserve complete Unicode code points when splitting text. Never leave an unmatched surrogate."
+    },
+    {
+      "heading": "Table exports",
+      "body": "CSV exports quote cells containing commas and escape embedded quotation marks by doubling them."
+    },
+    {
+      "heading": "Webhooks",
+      "body": "Verify the webhook signature using the shared signing secret before processing the event payload."
+    },
+    {
+      "heading": "Concurrency",
+      "body": "Writers acquire search-write.lock before publishing an index. Readers continue using the previous complete generation."
+    },
+    {
+      "heading": "Long tail retrieval",
+      "body": "General information.\n\nThis paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. This paragraph describes routine daily operations without any special recovery procedure. \n\nThe emergency recovery phrase is violet submarine protocol."
+    },
+    {
+      "heading": "Oversized code",
+      "body": "The following code contains a long configuration line.\n\n```text\npadding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;padding_value=0;RECOVERY_MODE=enabled\n```"
+    }
+  ],
+  "queries": [
+    {
+      "query": "What happens after a user stays inactive?",
+      "relevant": [
+        "Session expiration"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Session expiration",
+      "relevant": [
+        "Session expiration"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How can someone regain access after forgetting a password?",
+      "relevant": [
+        "Password reset"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Password reset",
+      "relevant": [
+        "Password reset"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "Where should machine authentication secrets be stored?",
+      "relevant": [
+        "API credentials"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "API_TOKEN",
+      "relevant": [
+        "API credentials"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do we restore data after a database failure?",
+      "relevant": [
+        "Database recovery"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "write-ahead log",
+      "relevant": [
+        "Database recovery"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How long are nightly snapshots kept?",
+      "relevant": [
+        "Backups"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Backups",
+      "relevant": [
+        "Backups"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "What happens when a client sends too many requests?",
+      "relevant": [
+        "Rate limiting"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Retry-After",
+      "relevant": [
+        "Rate limiting"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How can I follow one request across services?",
+      "relevant": [
+        "Request tracing"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "X-Trace-ID",
+      "relevant": [
+        "Request tracing"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do updated products become visible in the cache?",
+      "relevant": [
+        "Cache invalidation"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Cache invalidation",
+      "relevant": [
+        "Cache invalidation"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do we undo a bad release?",
+      "relevant": [
+        "Deploy rollback"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Deploy rollback",
+      "relevant": [
+        "Deploy rollback"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How can we release a feature to a small group first?",
+      "relevant": [
+        "Feature flags"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Feature flags",
+      "relevant": [
+        "Feature flags"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "What happens when background work keeps failing?",
+      "relevant": [
+        "Message retries"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "dead-letter",
+      "relevant": [
+        "Message retries"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do we prevent duplicate charges on retries?",
+      "relevant": [
+        "Idempotency"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Idempotency-Key",
+      "relevant": [
+        "Idempotency"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "What is the maximum picture upload size?",
+      "relevant": [
+        "Image uploads"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Image uploads",
+      "relevant": [
+        "Image uploads"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do I fetch the next batch of records?",
+      "relevant": [
+        "Pagination"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "next_cursor",
+      "relevant": [
+        "Pagination"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "What happens when all database connections are busy?",
+      "relevant": [
+        "Connection pooling"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Connection pooling",
+      "relevant": [
+        "Connection pooling"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "When should the service begin receiving traffic?",
+      "relevant": [
+        "Health checks"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Health checks",
+      "relevant": [
+        "Health checks"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "How do we avoid expired HTTPS certificates?",
+      "relevant": [
+        "TLS certificates"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "TLS certificates",
+      "relevant": [
+        "TLS certificates"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "Where can I see who changed access permissions?",
+      "relevant": [
+        "Audit logging"
+      ],
+      "kind": "paraphrase",
+      "split": "development"
+    },
+    {
+      "query": "Audit logging",
+      "relevant": [
+        "Audit logging"
+      ],
+      "kind": "exact",
+      "split": "development"
+    },
+    {
+      "query": "Can literal matches qualify below the semantic cutoff?",
+      "relevant": [
+        "Search configuration"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "SEARCH_MIN_SIMILARITY",
+      "relevant": [
+        "Search configuration"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "How should text splitting handle emoji?",
+      "relevant": [
+        "Unicode handling"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "UTF-8",
+      "relevant": [
+        "Unicode handling"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "How are commas inside exported cells represented?",
+      "relevant": [
+        "Table exports"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "Table exports",
+      "relevant": [
+        "Table exports"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "How do we verify that an incoming event is authentic?",
+      "relevant": [
+        "Webhooks"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "Webhooks",
+      "relevant": [
+        "Webhooks"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "Can reads continue while an index is rebuilt?",
+      "relevant": [
+        "Concurrency"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "search-write.lock",
+      "relevant": [
+        "Concurrency"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "What is the emergency recovery phrase?",
+      "relevant": [
+        "Long tail retrieval"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "violet submarine",
+      "relevant": [
+        "Long tail retrieval"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "Where is RECOVERY_MODE enabled?",
+      "relevant": [
+        "Oversized code"
+      ],
+      "kind": "paraphrase",
+      "split": "held-out"
+    },
+    {
+      "query": "RECOVERY_MODE",
+      "relevant": [
+        "Oversized code"
+      ],
+      "kind": "exact",
+      "split": "held-out"
+    },
+    {
+      "query": "medieval pottery glazing",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development"
+    },
+    {
+      "query": "humpback whale migration routes",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development"
+    },
+    {
+      "query": "neutrino mass experiments",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development"
+    },
+    {
+      "query": "sourdough starter feeding",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "development"
+    },
+    {
+      "query": "ancient roman aqueduct dimensions",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out"
+    },
+    {
+      "query": "Brazilian rainforest bird species",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out"
+    },
+    {
+      "query": "mountaineering oxygen requirements",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out"
+    },
+    {
+      "query": "fossil ammonite classification",
+      "relevant": [],
+      "kind": "unrelated",
+      "split": "held-out"
+    },
+    {
+      "query": "What are the operational recovery procedures?",
+      "relevant": [
+        "Knowledge"
+      ],
+      "kind": "parent-scope",
+      "deferred": true,
+      "split": "held-out"
+    },
+    {
+      "query": "Summarize authentication and access management",
+      "relevant": [
+        "Knowledge"
+      ],
+      "kind": "parent-scope",
+      "deferred": true,
+      "split": "held-out"
+    }
+  ]
+}

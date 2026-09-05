@@ -238,4 +238,4 @@ Escape clears a non-empty query, then returns to the page that opened search. Cl
 
 [[graph#Graph View]] projects cached documents, source targets, and code mentions into a stable directed graph without rescanning at request time. Resolved section relationships roll up to their owning documents.
 
-The graph renderer and projection load on demand; deterministic document/code clusters avoid force simulation. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates cosine scores into result sizing.
+The graph renderer and projection load on demand; deterministic document/code clusters avoid force simulation. Normal document/source URLs own selection and history; the embedding filter reuses `/api/search` and propagates relative hybrid rank scores into result sizing.

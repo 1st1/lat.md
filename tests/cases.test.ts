@@ -171,20 +171,22 @@ describe('cli command surface', () => {
     const search = runCli('basic-project', ['search', '--help']);
     expect(search.exitCode).toBe(0);
     expect(search.stdout).toContain('--debug');
-    expect(search.stdout).toContain('show result similarity scores');
-    expect(search.stdout).toContain('--threshold <score>');
-    expect(search.stdout).toContain('default: 0.35');
+    expect(search.stdout).toContain(
+      'show retrieval scores and candidate diagnostics',
+    );
+    expect(search.stdout).toContain('--min-similarity <score>');
+    expect(search.stdout).toContain('default: 0.2');
 
     for (const threshold of ['-0.1', '1.1']) {
       const invalidThreshold = runCli('basic-project', [
         'search',
         'query',
-        '--threshold',
+        '--min-similarity',
         threshold,
       ]);
       expect(invalidThreshold.exitCode).toBe(1);
       expect(invalidThreshold.stderr).toContain(
-        'threshold must be a number from 0 to 1',
+        'min-similarity must be a number from 0 to 1',
       );
     }
   });

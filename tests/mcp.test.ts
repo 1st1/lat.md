@@ -133,17 +133,12 @@ describe('mcp', () => {
 const replayDir = join(casesDir, 'rag', 'replay-data');
 const canRunSearch = hasReplayData(replayDir);
 
-describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
+describe('mcp search (rag)', () => {
   let client: Client;
-  let server: Server;
+  let server: Server | undefined;
   let tmp: string;
 
   beforeAll(async () => {
-    // Start replay server
-    const replay = await startReplayServer(replayDir);
-    server = replay.server;
-    const replayKey = `REPLAY_LAT_LLM_KEY::${replay.url}`;
-
     // Copy rag fixture to tmp so .cache doesn't pollute the repo
     tmp = mkdtempSync(join(tmpdir(), 'lat-mcp-rag-'));
     cpSync(join(casesDir, 'rag'), tmp, { recursive: true });
@@ -152,7 +147,13 @@ describe.skipIf(!canRunSearch)('mcp search (rag)', () => {
       command: 'node',
       args: [cliPath, 'mcp'],
       cwd: tmp,
-      env: { ...process.env, LAT_LLM_KEY: replayKey },
+      env: {
+        ...process.env,
+        LAT_LLM_KEY: '',
+        LAT_LLM_KEY_FILE: '',
+        LAT_LLM_KEY_HELPER: '',
+        XDG_CONFIG_HOME: tmp,
+      },
     });
     client = new Client({ name: 'test', version: '0.1' });
     await client.connect(transport);

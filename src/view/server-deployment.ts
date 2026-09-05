@@ -1,3 +1,7 @@
+import {
+  readManifest as readSearchManifest,
+  MANIFEST_FILE,
+} from '../search/db.js';
 import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import type { ServerResponse } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -120,7 +124,16 @@ async function prepareServerView(
     }
     await mkdir(runtimeCacheDir, { recursive: true });
     try {
-      await copyFile(indexFile, join(runtimeCacheDir, 'vectors.db'));
+      const indexManifest = readSearchManifest(dirname(indexFile));
+      if (!indexManifest)
+        throw new Error(
+          'Missing hybrid search index manifest; rebuild this deployment.',
+        );
+      await copyFile(
+        join(dirname(indexFile), indexManifest.file),
+        join(runtimeCacheDir, indexManifest.file),
+      );
+      await copyFile(indexFile, join(runtimeCacheDir, MANIFEST_FILE));
     } catch (error) {
       if (ownsCache) {
         await removeRuntimeCache(runtimeCacheDir);
