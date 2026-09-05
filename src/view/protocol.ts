@@ -1,3 +1,4 @@
+import type { SearchEvidence } from '../search/types.js';
 export type ViewGitFileStatus = 'modified' | 'new';
 
 export type ViewGitState = {
@@ -38,7 +39,12 @@ export type ViewSearchResult = {
   breadcrumbs: string[];
   description: string;
   url: string;
-  score: number;
+  rankScore: number;
+  introduction: string;
+  evidence: SearchEvidence[];
+  semanticSimilarity?: number;
+  semanticRank?: number;
+  lexicalRank?: number;
 };
 
 export type ViewSearchResponse = {

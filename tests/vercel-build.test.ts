@@ -95,13 +95,16 @@ describe('Vercel UI builds', () => {
       join(dataDir, 'server.json'),
       JSON.stringify({ version: 1, basePath: '/project/', sections: [] }),
     );
-    writeFileSync(join(dataDir, 'vectors.db'), 'vectors');
+    writeFileSync(join(dataDir, 'search-fixture.db'), 'vectors');
+    writeFileSync(
+      join(dataDir, 'search-index.json'),
+      JSON.stringify({ version: 1, file: 'search-fixture.db' }),
+    );
     writeFileSync(dependencyFile, 'export default true');
 
     const traced = [
       'app.mjs',
       'server-data/server.json',
-      'server-data/vectors.db',
       'node_modules/example/index.js',
     ];
     try {
@@ -122,7 +125,7 @@ describe('Vercel UI builds', () => {
           },
         },
       );
-      expect(result.files).toBe(traced.length);
+      expect(result.files).toBe(traced.length + 2);
       expect(result.functionPath).toBe(
         join('functions', 'project', 'api', 'search.func'),
       );
@@ -139,7 +142,10 @@ describe('Vercel UI builds', () => {
         'export default',
       );
       expect(
-        readFileSync(join(functionDir, 'server-data', 'vectors.db'), 'utf8'),
+        readFileSync(
+          join(functionDir, 'server-data', 'search-fixture.db'),
+          'utf8',
+        ),
       ).toBe('vectors');
       expect(
         readFileSync(
@@ -147,6 +153,14 @@ describe('Vercel UI builds', () => {
           'utf8',
         ),
       ).toContain('export default true');
+      expect(
+        JSON.parse(
+          readFileSync(
+            join(functionDir, 'server-data', 'search-index.json'),
+            'utf8',
+          ),
+        ),
+      ).toEqual({ version: 1, file: 'search-fixture.db' });
       expect(existsSync(join(functionDir, 'public'))).toBe(false);
       expect(
         JSON.parse(readFileSync(join(functionDir, '.vc-config.json'), 'utf8')),
@@ -244,6 +258,22 @@ describe('Vercel UI builds', () => {
       ).rejects.toThrow(
         `Vercel build output already exists: ${outputDir}. Use force to replace it.`,
       );
+      rmSync(join(dataDir, 'search-fixture.db'));
+      await expect(
+        buildVercelOutput(
+          artifactDir,
+          outputDir,
+          { force: true },
+          {
+            async traceFiles() {
+              return { fileList: new Set(traced), warnings: new Set() };
+            },
+          },
+        ),
+      ).rejects.toThrow(/ENOENT/);
+      expect(
+        existsSync(join(functionDir, 'server-data', 'search-fixture.db')),
+      ).toBe(true);
     } finally {
       rmSync(buildRoot, { recursive: true, force: true });
     }

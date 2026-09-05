@@ -21,8 +21,13 @@ export function viewSearchResult(
     title: section.heading,
     path,
     breadcrumbs: [...fileBreadcrumbs, ...section.id.split('#').slice(1)],
-    description: section.firstParagraph,
+    description: match.evidence?.[0]?.text ?? section.firstParagraph,
+    introduction: section.firstParagraph,
+    evidence: match.evidence ?? [],
+    semanticSimilarity: match.semanticSimilarity,
+    semanticRank: match.semanticRank,
+    lexicalRank: match.lexicalRank,
     url: documentUrl(path, section.githubSlug ?? ''),
-    score: match.score ?? 0,
+    rankScore: match.rankScore ?? 0,
   };
 }

@@ -9,6 +9,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { availableParallelism } from 'node:os';
 import { Worker } from 'node:worker_threads';
 import type { Embedder, ModelManifest } from './index.js';
@@ -128,6 +129,11 @@ export async function createLocalEmbedder(
   return {
     name: `local:${model.id}`,
     dimensions: model.dimensions,
+    maxInputTokens: model.maxTokens,
+    tokenizerFingerprint: createHash('sha256')
+      .update(readFileSync(model.tokenizerPath))
+      .digest('hex'),
+    countTokens: (text) => mainEngine().count_tokens(text),
     embed: async (texts, onProgress) => {
       if (texts.length === 0) return [];
 

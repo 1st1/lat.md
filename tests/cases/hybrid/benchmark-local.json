@@ -1,0 +1,70 @@
+{
+  "hardware": {
+    "cpu": "Apple M4 Pro",
+    "cpus": 14,
+    "memoryBytes": 51539607552,
+    "node": "v24.19.0"
+  },
+  "results": [
+    {
+      "sections": 10000,
+      "chunks": 10000,
+      "dimensions": 384,
+      "indexingMs": 442.028333,
+      "coldQueryMs": 46.58954099999994,
+      "warmP95Ms": 28.901417000000038,
+      "cacheBytes": 24145920,
+      "targetMet": null
+    },
+    {
+      "sections": 10000,
+      "chunks": 50000,
+      "dimensions": 384,
+      "indexingMs": 1827.3499169999998,
+      "coldQueryMs": 197.48804199999995,
+      "warmP95Ms": 140.4786250000002,
+      "cacheBytes": 118222848,
+      "targetMet": true
+    },
+    {
+      "sections": 10000,
+      "chunks": 100000,
+      "dimensions": 384,
+      "indexingMs": 3626.9471670000003,
+      "coldQueryMs": 415.6437499999993,
+      "warmP95Ms": 282.35000000000036,
+      "cacheBytes": 235958272,
+      "targetMet": null
+    },
+    {
+      "sections": 10000,
+      "chunks": 10000,
+      "dimensions": 1536,
+      "indexingMs": 655.4970830000002,
+      "coldQueryMs": 58.511708,
+      "warmP95Ms": 49.85304200000064,
+      "cacheBytes": 85622784,
+      "targetMet": null
+    },
+    {
+      "sections": 10000,
+      "chunks": 50000,
+      "dimensions": 1536,
+      "indexingMs": 2938.5289999999986,
+      "coldQueryMs": 291.34145799999897,
+      "warmP95Ms": 250.67829100000017,
+      "cacheBytes": 425668608,
+      "targetMet": true
+    },
+    {
+      "sections": 10000,
+      "chunks": 100000,
+      "dimensions": 1536,
+      "indexingMs": 6116.183291999998,
+      "coldQueryMs": 608.0160000000033,
+      "warmP95Ms": 517.1758750000008,
+      "cacheBytes": 850866176,
+      "targetMet": null
+    }
+  ]
+}

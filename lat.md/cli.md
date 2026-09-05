@@ -345,18 +345,17 @@ Implementation: [[src/mcp/server.ts]]
 
 ## search
 
-Semantic search across `lat.md` sections using vector embeddings. Works **offline by default** — no
-API key required.
+Hybrid lexical and semantic search returns ranked sections with matching source passages. Local embeddings work offline; hosted models remain available through the existing backend selection rules.
 
-Usage: `lat search [query] [--limit=<n>] [--threshold=<score>] [--debug]`
+Usage: `lat search [query] [--limit <n>] [--min-similarity <score>] [--preview passage|intro|both] [--debug]`.
 
-Query is optional — `lat search` with no query just builds the index on first use. `lat search` only reads; rebuilding is [[cli#reindex]]. Results include a navigation hint footer suggesting `lat locate`, `lat refs`, and `lat search` for further exploration — this makes the tools self-documenting so agents discover them organically.
+With no query, search builds or updates the index. With a query it checks document freshness before retrieval. Unchanged projects reuse their published index without embedding or copying a generation. Read-only prompt hooks never build or migrate.
 
-`--debug` appends each result's cosine-similarity score, rounded to six decimal places. Scores stay hidden by default, including in the MCP `lat_search` output.
+The semantic minimum defaults to 0.20 ([[src/search/search.ts#DEFAULT_MIN_SIMILARITY]]). Lexical evidence qualifies independently. The limit defaults to five ([[src/search/search.ts#DEFAULT_SEARCH_LIMIT]]); the UI requests ten. Empty queries return no matches and oversized embedding queries fail explicitly.
 
-Search returns at most `--limit` results ([[src/search/search.ts#DEFAULT_SEARCH_LIMIT]] by default) whose cosine-similarity score is at least `--threshold` ([[src/search/search.ts#DEFAULT_SEARCH_THRESHOLD]] by default). The accepted threshold range is `0` to `1`; lower it to favor recall or raise it to favor precision. The vector-search core owns both defaults: CLI, MCP, and prompt-hook retrieval share them unless their interfaces supply an explicit override, while the UI deliberately requests its own named limit.
+Passage previews are the default. `--preview intro` restores introduction previews; `both` displays both without changing ranking. `--debug` includes hybrid rank score, channel ranks and contributions, cosine similarity, and candidate-budget diagnostics. Hybrid scores are not confidence values.
 
-Core search logic in [[src/cli/search.ts#runSearch]] (returns matched sections), used by both the CLI command and [[cli#mcp]] `lat_search` tool. [[src/search/query.ts#openIndexedSearchSession]] reuses one database handle and embedder when a runtime serves multiple queries. Indexing/storage internals are in `src/search/`; all embedding generation lives in the `@lat.md/embed` package (see [[cli#search#Embeddings]]).
+CLI and MCP share [[src/cli/search.ts#runSearch]]. The MCP argument is `minSimilarity`; the old threshold option is removed. [[src/search/query.ts#openIndexedSearchSession]] owns one published database generation and embedder for repeated runtime queries.
 
 ### Backend selection
 
@@ -394,51 +393,23 @@ Implementation: [[src/search/embedder.ts]], [[src/config.ts]]
 
 ### Embeddings
 
-All embedding generation is isolated in the `@lat.md/embed` package, exposed through one
-[[packages/embed/src/index.ts#createEmbedder]] entry point returning an `Embedder`
-(`{ name, dimensions, embed() }`). Two backends:
-
-- **local** — a candle (Rust) BERT engine compiled to WebAssembly ([[packages/embed/src/local.ts#createLocalEmbedder]]), driven by a `ModelManifest` from a weights package (`@lat.md/embed-minilm-fp16`, fp16 weights up-cast to fp32 at load). Pure WASM, no native binaries; the ESM loader reads its binary through a module-relative URL and initializes generated glue explicitly so deployment tracers retain the asset. Masked-mean pooling + L2 normalization matches `sentence-transformers`. Texts are embedded one at a time; large jobs fan out across `worker_threads` (one engine per CPU, [[packages/embed/src/worker.ts]]) while small jobs run inline.
-- **remote** — direct `fetch()` to an OpenAI-compatible `/v1/embeddings` endpoint, batching up to 2048 texts per request ([[packages/embed/src/remote.ts#detectProvider]]).
+[[rag-architecture#Embedding backends]] defines the shared local and hosted embedder contract, tokenizer limits, and model selection. This command uses that implementation for indexing and query vectors.
 
 ### Storage
 
-Uses `@libsql/client` in local file mode. Under Node, file URLs load the native `libsql` platform binding, so database handles follow native OS lifetime and locking rules.
-
-Vector search is built into libsql via `F32_BLOB` column type, `libsql_vector_idx` for indexing, and `vector_top_k()` for KNN queries. Returned candidates retain their exact cosine similarity as a score for downstream consumers.
-
-Single `sections` table holds metadata, content, content hash, and the embedding vector. No separate vector table needed. The `meta` table records the embedding model + dimensions the index was built with ([[src/search/db.ts#getStoredModel]], e.g. `local:minilm-l6-v2:384` or `openai:1536`). This record is authoritative for [[cli#search#Backend selection]] — vectors from different models are not comparable, so a model change never silently rebuilds; [[cli#reindex]] drops (via [[src/search/db.ts#dropSections]]) and rebuilds explicitly.
-
-The database is stored at `lat.md/.cache/vectors.db` and should not be committed (included in `.gitignore` template).
-
-Implementation: [[src/search/db.ts]]
+[[rag-architecture#Storage and migration]] defines the embedded database, published generations, writer locking, and legacy migration used by search.
 
 ### Indexing
 
-Sections come from `loadAllSections()` + `flattenSections()`. Each file is read once ([[src/search/index.ts#loadFileLines]]) and each section's raw markdown (`startLine`–`endLine`, not just `firstParagraph`) is sliced from it for richer semantic signal.
-
-Never read per section: that is O(sections × file size), and a 3.5 MB file holding 12k sections cost ~95 s per search before the query even ran.
-
-Content freshness is tracked via SHA-256 hashes. On each run:
-
-1. Parse all sections, compute hashes
-2. Compare against stored hashes in the DB
-3. Only re-embed new or changed sections (saves API cost / local compute)
-4. Delete DB rows for sections that no longer exist
-
-On first run, automatically indexes all sections. A full rebuild is [[cli#reindex]].
-
-Implementation: [[src/search/index.ts]]
+[[rag-architecture#Coverage and ownership]], [[rag-architecture#Chunk boundaries]], and [[rag-architecture#Incremental indexing]] define passage construction and vector reuse. Ordinary search updates the index; explicit reindexing rebuilds it.
 
 ### Vector Search
 
-Embeds the user's query via the active embedder, then runs a `vector_top_k()` KNN query joined back to the sections table.
-
-Implementation: [[src/search/search.ts]]
+[[rag-architecture#Lexical analysis]] and [[rag-architecture#Candidate retrieval and fusion]] define the shared retrieval algorithm. [[rag-architecture#Result contract]] describes scores and evidence returned to command, MCP, and browser consumers.
 
 ## reindex
 
-Rebuilds the embedding index — the single write/rebuild path (`lat search` only reads). Usage:
+Explicitly rebuilds the complete hybrid index; ordinary search also performs incremental indexing. Usage:
 `lat reindex [--local] [--remote] [--yes]`.
 
 Backend selection honors the **durable per-repo preference**: a repo pinned to local rebuilds local

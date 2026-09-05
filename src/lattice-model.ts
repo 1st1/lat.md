@@ -1,3 +1,4 @@
+import type { SearchEvidence, SearchDiagnostics } from './search/types.js';
 import GithubSlugger from 'github-slugger';
 import { toPosix } from './path.js';
 
@@ -291,7 +292,13 @@ const MAX_DISTANCE_RATIO = 0.4;
 export type SectionMatch = {
   section: Section;
   reason: string;
-  score?: number;
+  rankScore?: number;
+  semanticSimilarity?: number;
+  lexicalScore?: number;
+  semanticRank?: number;
+  lexicalRank?: number;
+  evidence?: SearchEvidence[];
+  diagnostics?: SearchDiagnostics;
 };
 
 export function findSections(

@@ -52,6 +52,7 @@ jobs:
           }
           publish_if_new packages/embed-minilm-fp16
           publish_if_new packages/embed
+          publish_if_new packages/stemmer
           publish_if_new packages/server
           publish_if_new .
 

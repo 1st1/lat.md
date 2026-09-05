@@ -1,6 +1,6 @@
 {
   "name": "@lat.md/embed",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Embedding generation for lat.md — local candle/WASM MiniLM engine and OpenAI-compatible remote backends behind one interface",
   "type": "module",
   "license": "MIT",
@@ -35,6 +35,7 @@
     "build:wasm": "pnpm setup:rust && node scripts/build-wasm.mjs",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "js-tiktoken": "^1.0.21"
+  }
 }
