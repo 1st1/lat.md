@@ -235,6 +235,24 @@ Search debounces hybrid queries and renders matching passages linked to section 
 
 The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search. Clicking the active Search icon closes the search immediately without clearing first.
 
+## Formats hybrid search results
+
+Search cards show result rank, ancestor breadcrumbs, section title, match channels, source lines, and a precise hybrid score. Optional details distinguish cosine similarity and channel ranks without presenting confidence percentages.
+
+Evidence renders prose, emphasis, code, lists, and tables. Raw HTML remains inert text, and preview images or links do not trigger external loads or unintended navigation. Missing semantic evidence is shown as absent rather than zero similarity.
+
+## Expands matching passages
+
+Long search passages can expand and collapse without leaving the results page. The control exposes its expanded state and keeps the section link independently navigable.
+
+## Highlights search destination passages
+
+Search result links carry the preview's source ranges while retaining the section anchor. The document highlights matching rendered paragraphs and code blocks, leaving unrelated content unchanged; ordinary navigation removes the highlights.
+
+## Validates search highlight ranges
+
+Malformed, reversed, zero, and unsafe source-line ranges are ignored. Nested matches highlight the smallest overlapping block instead of an entire containing list, and results without evidence keep ordinary section URLs.
+
 ## Exposes code-mention frontmatter as metadata
 
 Documents expose [[markdown#Frontmatter#require-code-mention]] separately from the rendered document tree so the browser can badge files that require code references.
