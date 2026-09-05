@@ -1,0 +1,4525 @@
+{
+  "provenance": {
+    "queriesHash": "9ac85d0f1aa95ae629e75eaf0c0a388d52cb0aa38c20cd408039e7e05bbdbb2c",
+    "commit": "18cc9ce918e73c816290901949ee70ee3d8d9836",
+    "sourceHashes": {
+      "src/search/search.ts": "e41edfe3454a3eb4246ed1fb600b3f4f4581a53daaf7837c60ba6dbcf8140212",
+      "scripts/experiment-search.mjs": "5f0f288d4b9347ac61489de3d4ab6c71d661bd61117fdd39ecc5036dacba2823"
+    },
+    "configHash": "37051ddba23bdc0c050aad324922a9e3ebd2c0316cde35785c8494f725378a12",
+    "corpusHash": "291c9a2b68e4b4f33ad20aad7443d15c0c46850bd7924fe2fbfca9257582b013"
+  },
+  "cpu": "Apple M4 Pro",
+  "metrics": [
+    {
+      "phase": "engine-only",
+      "policy": "retrieved",
+      "count": 300,
+      "medianMs": 2.2440829999998186,
+      "p95Ms": 2.4680829999999787
+    },
+    {
+      "phase": "engine-only",
+      "policy": "union",
+      "count": 300,
+      "medianMs": 3.73599999999999,
+      "p95Ms": 4.277416999999787
+    },
+    {
+      "phase": "warm-total",
+      "policy": "retrieved",
+      "count": 20,
+      "medianMs": 15.694083000000319,
+      "p95Ms": 20.865332999999737
+    },
+    {
+      "phase": "warm-total",
+      "policy": "union",
+      "count": 20,
+      "medianMs": 17.71670800000038,
+      "p95Ms": 22.724874999999884
+    }
+  ],
+  "samples": [
+    {
+      "id": "q001",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 15.02208300000001
+    },
+    {
+      "id": "q001",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.436250000000001
+    },
+    {
+      "id": "q002",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.780916999999988
+    },
+    {
+      "id": "q002",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.678875000000005
+    },
+    {
+      "id": "q003",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 1.8589589999999987
+    },
+    {
+      "id": "q003",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 1.8042079999999885
+    },
+    {
+      "id": "q004",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.289208000000002
+    },
+    {
+      "id": "q004",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.533332999999999
+    },
+    {
+      "id": "q005",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.562958000000009
+    },
+    {
+      "id": "q005",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.180082999999996
+    },
+    {
+      "id": "q006",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.258958999999976
+    },
+    {
+      "id": "q006",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.679666999999995
+    },
+    {
+      "id": "q007",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5821669999999983
+    },
+    {
+      "id": "q007",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3421249999999816
+    },
+    {
+      "id": "q008",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3094169999999963
+    },
+    {
+      "id": "q008",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6687499999999886
+    },
+    {
+      "id": "q009",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.9010000000000105
+    },
+    {
+      "id": "q009",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4900410000000193
+    },
+    {
+      "id": "q010",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3524170000000026
+    },
+    {
+      "id": "q010",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8785839999999894
+    },
+    {
+      "id": "q011",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6390839999999685
+    },
+    {
+      "id": "q011",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3975829999999974
+    },
+    {
+      "id": "q012",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4123329999999896
+    },
+    {
+      "id": "q012",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.174167000000011
+    },
+    {
+      "id": "q013",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.430499999999995
+    },
+    {
+      "id": "q013",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.698249999999973
+    },
+    {
+      "id": "q014",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4274579999999446
+    },
+    {
+      "id": "q014",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.943708000000015
+    },
+    {
+      "id": "q015",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.611750000000029
+    },
+    {
+      "id": "q015",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4773329999999874
+    },
+    {
+      "id": "q016",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.5079999999999814
+    },
+    {
+      "id": "q016",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.563832999999988
+    },
+    {
+      "id": "q017",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.141291000000024
+    },
+    {
+      "id": "q017",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4559999999999604
+    },
+    {
+      "id": "q018",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2991670000000113
+    },
+    {
+      "id": "q018",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8937500000000114
+    },
+    {
+      "id": "q019",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.9395830000000274
+    },
+    {
+      "id": "q019",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.247250000000008
+    },
+    {
+      "id": "q020",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3041670000000067
+    },
+    {
+      "id": "q020",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.238374999999962
+    },
+    {
+      "id": "q021",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.361916000000008
+    },
+    {
+      "id": "q021",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2770830000000046
+    },
+    {
+      "id": "q022",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.366416000000015
+    },
+    {
+      "id": "q022",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.06654199999997
+    },
+    {
+      "id": "q023",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.248166999999967
+    },
+    {
+      "id": "q023",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3291659999999865
+    },
+    {
+      "id": "q024",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2797499999999786
+    },
+    {
+      "id": "q024",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8795000000000073
+    },
+    {
+      "id": "q025",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.039583999999991
+    },
+    {
+      "id": "q025",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.223374999999976
+    },
+    {
+      "id": "q026",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.6445830000000115
+    },
+    {
+      "id": "q026",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.234208000000024
+    },
+    {
+      "id": "q027",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.078833999999972
+    },
+    {
+      "id": "q027",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2048750000000155
+    },
+    {
+      "id": "q028",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2374169999999935
+    },
+    {
+      "id": "q028",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7421249999999873
+    },
+    {
+      "id": "q029",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.010749999999973
+    },
+    {
+      "id": "q029",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2669160000000375
+    },
+    {
+      "id": "q030",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3387499999999477
+    },
+    {
+      "id": "q030",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.949457999999993
+    },
+    {
+      "id": "q031",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.046291999999994
+    },
+    {
+      "id": "q031",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1452500000000327
+    },
+    {
+      "id": "q032",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.181542000000036
+    },
+    {
+      "id": "q032",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8412500000000023
+    },
+    {
+      "id": "q033",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.942542000000003
+    },
+    {
+      "id": "q033",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3284160000000043
+    },
+    {
+      "id": "q034",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.283333999999968
+    },
+    {
+      "id": "q034",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.696042000000034
+    },
+    {
+      "id": "q035",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.163083000000029
+    },
+    {
+      "id": "q035",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.129415999999992
+    },
+    {
+      "id": "q036",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1299169999999776
+    },
+    {
+      "id": "q036",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7250000000000227
+    },
+    {
+      "id": "q037",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5880000000000223
+    },
+    {
+      "id": "q037",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.157542000000035
+    },
+    {
+      "id": "q038",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.305458999999985
+    },
+    {
+      "id": "q038",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7989169999999604
+    },
+    {
+      "id": "q039",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.821708000000001
+    },
+    {
+      "id": "q039",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.4075000000000273
+    },
+    {
+      "id": "q040",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2872500000000286
+    },
+    {
+      "id": "q040",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.9539589999999976
+    },
+    {
+      "id": "q041",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.096416999999974
+    },
+    {
+      "id": "q041",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1396669999999745
+    },
+    {
+      "id": "q042",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.20554199999998
+    },
+    {
+      "id": "q042",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.3632920000000013
+    },
+    {
+      "id": "q043",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.720790999999963
+    },
+    {
+      "id": "q043",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2882920000000126
+    },
+    {
+      "id": "q044",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.278165999999999
+    },
+    {
+      "id": "q044",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7827500000000214
+    },
+    {
+      "id": "q045",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.3782919999999876
+    },
+    {
+      "id": "q045",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.180749999999989
+    },
+    {
+      "id": "q046",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3053339999999025
+    },
+    {
+      "id": "q046",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6084580000000415
+    },
+    {
+      "id": "q047",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.649624999999901
+    },
+    {
+      "id": "q047",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2359159999999747
+    },
+    {
+      "id": "q048",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.253749999999968
+    },
+    {
+      "id": "q048",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8642919999999776
+    },
+    {
+      "id": "q049",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.09766599999989
+    },
+    {
+      "id": "q049",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2934999999999945
+    },
+    {
+      "id": "q050",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3067499999999654
+    },
+    {
+      "id": "q050",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.775000000000091
+    },
+    {
+      "id": "q051",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5494999999999663
+    },
+    {
+      "id": "q051",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2502080000000433
+    },
+    {
+      "id": "q052",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.254957999999988
+    },
+    {
+      "id": "q052",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5410000000000537
+    },
+    {
+      "id": "q053",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.260250000000042
+    },
+    {
+      "id": "q053",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.367666999999983
+    },
+    {
+      "id": "q054",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2264169999999694
+    },
+    {
+      "id": "q054",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.689416000000051
+    },
+    {
+      "id": "q055",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6387500000000728
+    },
+    {
+      "id": "q055",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2267499999999245
+    },
+    {
+      "id": "q056",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1872500000000628
+    },
+    {
+      "id": "q056",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.388667000000055
+    },
+    {
+      "id": "q057",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.24187500000005
+    },
+    {
+      "id": "q057",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1303329999999505
+    },
+    {
+      "id": "q058",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3198750000000246
+    },
+    {
+      "id": "q058",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.9709159999999883
+    },
+    {
+      "id": "q059",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.78774999999996
+    },
+    {
+      "id": "q059",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2374159999999392
+    },
+    {
+      "id": "q060",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.188083000000006
+    },
+    {
+      "id": "q060",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.4350839999999607
+    },
+    {
+      "id": "q061",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6477919999999813
+    },
+    {
+      "id": "q061",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.23858400000006
+    },
+    {
+      "id": "q062",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.1682919999999513
+    },
+    {
+      "id": "q062",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.474666999999954
+    },
+    {
+      "id": "q063",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6780410000000074
+    },
+    {
+      "id": "q063",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2202909999999747
+    },
+    {
+      "id": "q064",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2978749999999764
+    },
+    {
+      "id": "q064",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.899041000000011
+    },
+    {
+      "id": "q065",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7970829999999296
+    },
+    {
+      "id": "q065",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2955830000000788
+    },
+    {
+      "id": "q066",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2099170000000186
+    },
+    {
+      "id": "q066",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.630916999999954
+    },
+    {
+      "id": "q067",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5643340000000308
+    },
+    {
+      "id": "q067",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2258339999999635
+    },
+    {
+      "id": "q068",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3037910000000466
+    },
+    {
+      "id": "q068",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.9764160000000857
+    },
+    {
+      "id": "q069",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.73599999999999
+    },
+    {
+      "id": "q069",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3261250000000473
+    },
+    {
+      "id": "q070",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.226083000000017
+    },
+    {
+      "id": "q070",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.6180420000000595
+    },
+    {
+      "id": "q071",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.591666000000032
+    },
+    {
+      "id": "q071",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.167167000000063
+    },
+    {
+      "id": "q072",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.158541000000014
+    },
+    {
+      "id": "q072",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.452833999999939
+    },
+    {
+      "id": "q073",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.545749999999998
+    },
+    {
+      "id": "q073",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.105042000000026
+    },
+    {
+      "id": "q074",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2502499999999372
+    },
+    {
+      "id": "q074",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.945333000000005
+    },
+    {
+      "id": "q075",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.565249999999992
+    },
+    {
+      "id": "q075",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.184792000000016
+    },
+    {
+      "id": "q076",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.270167000000015
+    },
+    {
+      "id": "q076",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.020667000000003
+    },
+    {
+      "id": "q077",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.451459
+    },
+    {
+      "id": "q077",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.155540999999971
+    },
+    {
+      "id": "q078",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.240000000000009
+    },
+    {
+      "id": "q078",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8264999999998963
+    },
+    {
+      "id": "q079",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.631582999999978
+    },
+    {
+      "id": "q079",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2401669999999285
+    },
+    {
+      "id": "q080",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2929579999999987
+    },
+    {
+      "id": "q080",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8672500000000127
+    },
+    {
+      "id": "q081",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8783750000000055
+    },
+    {
+      "id": "q081",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.268332999999984
+    },
+    {
+      "id": "q082",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.348875000000021
+    },
+    {
+      "id": "q082",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.086750000000052
+    },
+    {
+      "id": "q083",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.1767079999999623
+    },
+    {
+      "id": "q083",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.158042000000023
+    },
+    {
+      "id": "q084",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2313329999999496
+    },
+    {
+      "id": "q084",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.465832999999975
+    },
+    {
+      "id": "q085",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.757415999999921
+    },
+    {
+      "id": "q085",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.28283399999998
+    },
+    {
+      "id": "q086",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3926249999999527
+    },
+    {
+      "id": "q086",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.068125000000009
+    },
+    {
+      "id": "q087",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8255420000000413
+    },
+    {
+      "id": "q087",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.222917000000052
+    },
+    {
+      "id": "q088",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.273708000000056
+    },
+    {
+      "id": "q088",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.704791
+    },
+    {
+      "id": "q089",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8506669999999303
+    },
+    {
+      "id": "q089",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2637500000000728
+    },
+    {
+      "id": "q090",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2968329999999924
+    },
+    {
+      "id": "q090",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.913499999999999
+    },
+    {
+      "id": "q091",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5154999999999745
+    },
+    {
+      "id": "q091",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2226670000000013
+    },
+    {
+      "id": "q092",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.266791000000012
+    },
+    {
+      "id": "q092",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7810419999999567
+    },
+    {
+      "id": "q093",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.7151249999999436
+    },
+    {
+      "id": "q093",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.241207999999915
+    },
+    {
+      "id": "q094",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2760829999999714
+    },
+    {
+      "id": "q094",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.628415999999902
+    },
+    {
+      "id": "q095",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.567875000000072
+    },
+    {
+      "id": "q095",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.185000000000059
+    },
+    {
+      "id": "q096",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.150833000000034
+    },
+    {
+      "id": "q096",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.5074160000000347
+    },
+    {
+      "id": "q097",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.1177089999999907
+    },
+    {
+      "id": "q097",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.100125000000048
+    },
+    {
+      "id": "q098",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.3079999999999927
+    },
+    {
+      "id": "q098",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.368750000000091
+    },
+    {
+      "id": "q099",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 3.8555000000000064
+    },
+    {
+      "id": "q099",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2846250000000055
+    },
+    {
+      "id": "q100",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 2.2473750000000337
+    },
+    {
+      "id": "q100",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 0,
+      "elapsedMs": 4.601083000000017
+    },
+    {
+      "id": "q001",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3551250000000437
+    },
+    {
+      "id": "q001",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8407079999999496
+    },
+    {
+      "id": "q002",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.3859580000000733
+    },
+    {
+      "id": "q002",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1112499999999272
+    },
+    {
+      "id": "q003",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 1.8069169999999986
+    },
+    {
+      "id": "q003",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 1.7967079999999669
+    },
+    {
+      "id": "q004",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.4187500000000455
+    },
+    {
+      "id": "q004",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.136665999999991
+    },
+    {
+      "id": "q005",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.266750000000002
+    },
+    {
+      "id": "q005",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.419125000000008
+    },
+    {
+      "id": "q006",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.443166999999903
+    },
+    {
+      "id": "q006",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.195333000000005
+    },
+    {
+      "id": "q007",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2383330000000115
+    },
+    {
+      "id": "q007",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.484874999999988
+    },
+    {
+      "id": "q008",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.3788750000001073
+    },
+    {
+      "id": "q008",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1747500000000173
+    },
+    {
+      "id": "q009",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.4654160000000047
+    },
+    {
+      "id": "q009",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.5214999999999463
+    },
+    {
+      "id": "q010",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.548000000000002
+    },
+    {
+      "id": "q010",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1944160000000466
+    },
+    {
+      "id": "q011",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1733749999999645
+    },
+    {
+      "id": "q011",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.439666000000102
+    },
+    {
+      "id": "q012",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.9897909999999683
+    },
+    {
+      "id": "q012",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.311374999999998
+    },
+    {
+      "id": "q013",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2760840000000826
+    },
+    {
+      "id": "q013",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.066041999999925
+    },
+    {
+      "id": "q014",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.756083999999987
+    },
+    {
+      "id": "q014",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.220207999999957
+    },
+    {
+      "id": "q015",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.231583999999998
+    },
+    {
+      "id": "q015",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.531082999999967
+    },
+    {
+      "id": "q016",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8575839999999744
+    },
+    {
+      "id": "q016",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2607080000000224
+    },
+    {
+      "id": "q017",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.269416999999976
+    },
+    {
+      "id": "q017",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.799666000000002
+    },
+    {
+      "id": "q018",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.810124999999971
+    },
+    {
+      "id": "q018",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2791670000000295
+    },
+    {
+      "id": "q019",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2575840000000653
+    },
+    {
+      "id": "q019",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.5638750000000528
+    },
+    {
+      "id": "q020",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.746584000000098
+    },
+    {
+      "id": "q020",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2762500000000045
+    },
+    {
+      "id": "q021",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2229999999999563
+    },
+    {
+      "id": "q021",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6672499999999673
+    },
+    {
+      "id": "q022",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8542919999999867
+    },
+    {
+      "id": "q022",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.224292000000105
+    },
+    {
+      "id": "q023",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2517500000000155
+    },
+    {
+      "id": "q023",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.7540840000000344
+    },
+    {
+      "id": "q024",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.733041999999955
+    },
+    {
+      "id": "q024",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.261333000000036
+    },
+    {
+      "id": "q025",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2488329999999905
+    },
+    {
+      "id": "q025",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.899208999999928
+    },
+    {
+      "id": "q026",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.7452919999999494
+    },
+    {
+      "id": "q026",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1484170000001086
+    },
+    {
+      "id": "q027",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.156500000000051
+    },
+    {
+      "id": "q027",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.618874999999889
+    },
+    {
+      "id": "q028",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6091670000000704
+    },
+    {
+      "id": "q028",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2516249999998763
+    },
+    {
+      "id": "q029",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2664589999999407
+    },
+    {
+      "id": "q029",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8864999999998417
+    },
+    {
+      "id": "q030",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.872041999999965
+    },
+    {
+      "id": "q030",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2189579999999296
+    },
+    {
+      "id": "q031",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.158584000000019
+    },
+    {
+      "id": "q031",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6837920000000395
+    },
+    {
+      "id": "q032",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6841660000000047
+    },
+    {
+      "id": "q032",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.196916000000101
+    },
+    {
+      "id": "q033",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2392079999999623
+    },
+    {
+      "id": "q033",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.132791999999881
+    },
+    {
+      "id": "q034",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.4957079999999223
+    },
+    {
+      "id": "q034",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.02274999999986
+    },
+    {
+      "id": "q035",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1283339999999953
+    },
+    {
+      "id": "q035",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.790666999999985
+    },
+    {
+      "id": "q036",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6180830000000697
+    },
+    {
+      "id": "q036",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.25587500000006
+    },
+    {
+      "id": "q037",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.154708000000028
+    },
+    {
+      "id": "q037",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.828166999999894
+    },
+    {
+      "id": "q038",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.2218749999999545
+    },
+    {
+      "id": "q038",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2462920000000395
+    },
+    {
+      "id": "q039",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.6887500000000273
+    },
+    {
+      "id": "q039",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.354416000000128
+    },
+    {
+      "id": "q040",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.370916999999963
+    },
+    {
+      "id": "q040",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.396792000000005
+    },
+    {
+      "id": "q041",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1872079999998277
+    },
+    {
+      "id": "q041",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.149499999999989
+    },
+    {
+      "id": "q042",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.364915999999994
+    },
+    {
+      "id": "q042",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2737909999998465
+    },
+    {
+      "id": "q043",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2209579999998823
+    },
+    {
+      "id": "q043",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.689666999999872
+    },
+    {
+      "id": "q044",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.9482080000000224
+    },
+    {
+      "id": "q044",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.4928339999999025
+    },
+    {
+      "id": "q045",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.5636249999997744
+    },
+    {
+      "id": "q045",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8135829999998805
+    },
+    {
+      "id": "q046",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.727292000000034
+    },
+    {
+      "id": "q046",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.237416999999823
+    },
+    {
+      "id": "q047",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3713330000000497
+    },
+    {
+      "id": "q047",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.349958000000015
+    },
+    {
+      "id": "q048",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.7129589999999553
+    },
+    {
+      "id": "q048",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.164250000000038
+    },
+    {
+      "id": "q049",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.239958000000115
+    },
+    {
+      "id": "q049",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.302625000000035
+    },
+    {
+      "id": "q050",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.1124999999999545
+    },
+    {
+      "id": "q050",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2024589999998625
+    },
+    {
+      "id": "q051",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.22854099999995
+    },
+    {
+      "id": "q051",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6296250000000327
+    },
+    {
+      "id": "q052",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.9393749999999272
+    },
+    {
+      "id": "q052",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.364708000000064
+    },
+    {
+      "id": "q053",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1424999999999272
+    },
+    {
+      "id": "q053",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.2474589999999353
+    },
+    {
+      "id": "q054",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.3185000000000855
+    },
+    {
+      "id": "q054",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3223749999999654
+    },
+    {
+      "id": "q055",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.9824579999999514
+    },
+    {
+      "id": "q055",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 5.014208000000053
+    },
+    {
+      "id": "q056",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.913583000000017
+    },
+    {
+      "id": "q056",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1732500000000528
+    },
+    {
+      "id": "q057",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1475419999999303
+    },
+    {
+      "id": "q057",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.5037499999998545
+    },
+    {
+      "id": "q058",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.070541000000048
+    },
+    {
+      "id": "q058",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.504667000000154
+    },
+    {
+      "id": "q059",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2894169999999576
+    },
+    {
+      "id": "q059",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.823333000000048
+    },
+    {
+      "id": "q060",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6088340000001153
+    },
+    {
+      "id": "q060",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1575000000000273
+    },
+    {
+      "id": "q061",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.319332999999915
+    },
+    {
+      "id": "q061",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6495840000000044
+    },
+    {
+      "id": "q062",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.567250000000058
+    },
+    {
+      "id": "q062",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2101249999998345
+    },
+    {
+      "id": "q063",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2584170000000086
+    },
+    {
+      "id": "q063",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.7917500000000928
+    },
+    {
+      "id": "q064",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.912708000000066
+    },
+    {
+      "id": "q064",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3557499999999436
+    },
+    {
+      "id": "q065",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3810419999999795
+    },
+    {
+      "id": "q065",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.887042000000065
+    },
+    {
+      "id": "q066",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.624625000000151
+    },
+    {
+      "id": "q066",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.207583999999997
+    },
+    {
+      "id": "q067",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2584999999999127
+    },
+    {
+      "id": "q067",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.892208999999866
+    },
+    {
+      "id": "q068",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8651250000000346
+    },
+    {
+      "id": "q068",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.360916999999972
+    },
+    {
+      "id": "q069",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2763340000001335
+    },
+    {
+      "id": "q069",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.789792000000034
+    },
+    {
+      "id": "q070",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6160840000000007
+    },
+    {
+      "id": "q070",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1836249999998927
+    },
+    {
+      "id": "q071",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.262917000000016
+    },
+    {
+      "id": "q071",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.589166999999861
+    },
+    {
+      "id": "q072",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.74675000000002
+    },
+    {
+      "id": "q072",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2084169999998267
+    },
+    {
+      "id": "q073",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3460000000000036
+    },
+    {
+      "id": "q073",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.7754999999999654
+    },
+    {
+      "id": "q074",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.2860840000000735
+    },
+    {
+      "id": "q074",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.5240830000000187
+    },
+    {
+      "id": "q075",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.5384169999999813
+    },
+    {
+      "id": "q075",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.716207999999824
+    },
+    {
+      "id": "q076",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.9167919999999867
+    },
+    {
+      "id": "q076",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3307089999998425
+    },
+    {
+      "id": "q077",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.4581249999998818
+    },
+    {
+      "id": "q077",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.164708000000019
+    },
+    {
+      "id": "q078",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.099083000000064
+    },
+    {
+      "id": "q078",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2914170000001377
+    },
+    {
+      "id": "q079",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1965000000000146
+    },
+    {
+      "id": "q079",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8828750000000127
+    },
+    {
+      "id": "q080",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.8947079999998095
+    },
+    {
+      "id": "q080",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.230792000000065
+    },
+    {
+      "id": "q081",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.230291999999963
+    },
+    {
+      "id": "q081",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.831292000000076
+    },
+    {
+      "id": "q082",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.9895409999999174
+    },
+    {
+      "id": "q082",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.4680829999999787
+    },
+    {
+      "id": "q083",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1344159999998737
+    },
+    {
+      "id": "q083",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.2246670000001814
+    },
+    {
+      "id": "q084",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.4869999999998527
+    },
+    {
+      "id": "q084",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1944579999999405
+    },
+    {
+      "id": "q085",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.272958000000017
+    },
+    {
+      "id": "q085",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.815708000000086
+    },
+    {
+      "id": "q086",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.008334000000104
+    },
+    {
+      "id": "q086",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.278332999999975
+    },
+    {
+      "id": "q087",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2917500000000928
+    },
+    {
+      "id": "q087",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.434750000000122
+    },
+    {
+      "id": "q088",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.75262500000008
+    },
+    {
+      "id": "q088",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.329042000000072
+    },
+    {
+      "id": "q089",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.3420840000001135
+    },
+    {
+      "id": "q089",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 4.2097499999999854
+    },
+    {
+      "id": "q090",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.847208000000137
+    },
+    {
+      "id": "q090",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.356999999999971
+    },
+    {
+      "id": "q091",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.116999999999962
+    },
+    {
+      "id": "q091",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.417707999999948
+    },
+    {
+      "id": "q092",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6787919999999303
+    },
+    {
+      "id": "q092",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.1595420000001013
+    },
+    {
+      "id": "q093",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2256250000000364
+    },
+    {
+      "id": "q093",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.681959000000006
+    },
+    {
+      "id": "q094",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.5778329999998277
+    },
+    {
+      "id": "q094",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.212208000000146
+    },
+    {
+      "id": "q095",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.2017499999999472
+    },
+    {
+      "id": "q095",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.597250000000031
+    },
+    {
+      "id": "q096",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.434500000000071
+    },
+    {
+      "id": "q096",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.155375000000049
+    },
+    {
+      "id": "q097",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.185375000000022
+    },
+    {
+      "id": "q097",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.1952920000001086
+    },
+    {
+      "id": "q098",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.260667000000012
+    },
+    {
+      "id": "q098",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.138584000000037
+    },
+    {
+      "id": "q099",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.176957999999786
+    },
+    {
+      "id": "q099",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6644169999999576
+    },
+    {
+      "id": "q100",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 3.6522500000000946
+    },
+    {
+      "id": "q100",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 1,
+      "elapsedMs": 2.195083000000068
+    },
+    {
+      "id": "q001",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6195000000000164
+    },
+    {
+      "id": "q001",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.222291999999925
+    },
+    {
+      "id": "q002",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.123209000000088
+    },
+    {
+      "id": "q002",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.124625000000151
+    },
+    {
+      "id": "q003",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 1.7826250000000528
+    },
+    {
+      "id": "q003",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 1.7737919999999576
+    },
+    {
+      "id": "q004",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1688340000000608
+    },
+    {
+      "id": "q004",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.2136250000000928
+    },
+    {
+      "id": "q005",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.3278750000001764
+    },
+    {
+      "id": "q005",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1602920000000267
+    },
+    {
+      "id": "q006",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1912079999999605
+    },
+    {
+      "id": "q006",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.32816600000001
+    },
+    {
+      "id": "q007",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.454584000000068
+    },
+    {
+      "id": "q007",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.227624999999989
+    },
+    {
+      "id": "q008",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.200459000000137
+    },
+    {
+      "id": "q008",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.2512919999999212
+    },
+    {
+      "id": "q009",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.543292000000065
+    },
+    {
+      "id": "q009",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3539590000000317
+    },
+    {
+      "id": "q010",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.235500000000002
+    },
+    {
+      "id": "q010",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.591957999999977
+    },
+    {
+      "id": "q011",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.440166999999974
+    },
+    {
+      "id": "q011",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.0670840000000226
+    },
+    {
+      "id": "q012",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3209170000000086
+    },
+    {
+      "id": "q012",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.268708000000061
+    },
+    {
+      "id": "q013",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.19420799999989
+    },
+    {
+      "id": "q013",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.414541999999983
+    },
+    {
+      "id": "q014",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.6352079999999205
+    },
+    {
+      "id": "q014",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.443207999999913
+    },
+    {
+      "id": "q015",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5732920000000377
+    },
+    {
+      "id": "q015",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1720000000000255
+    },
+    {
+      "id": "q016",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.288332999999966
+    },
+    {
+      "id": "q016",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.898875000000089
+    },
+    {
+      "id": "q017",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8695410000000265
+    },
+    {
+      "id": "q017",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.287292000000207
+    },
+    {
+      "id": "q018",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3940829999999096
+    },
+    {
+      "id": "q018",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.094583000000057
+    },
+    {
+      "id": "q019",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.678083999999899
+    },
+    {
+      "id": "q019",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.263832999999977
+    },
+    {
+      "id": "q020",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.330791999999974
+    },
+    {
+      "id": "q020",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8525419999998576
+    },
+    {
+      "id": "q021",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.742375000000038
+    },
+    {
+      "id": "q021",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2352089999999407
+    },
+    {
+      "id": "q022",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2951660000001084
+    },
+    {
+      "id": "q022",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.863540999999941
+    },
+    {
+      "id": "q023",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8852090000000317
+    },
+    {
+      "id": "q023",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2536250000000564
+    },
+    {
+      "id": "q024",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.427208000000064
+    },
+    {
+      "id": "q024",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.822208000000046
+    },
+    {
+      "id": "q025",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8547500000001946
+    },
+    {
+      "id": "q025",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2294999999999163
+    },
+    {
+      "id": "q026",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2071670000000267
+    },
+    {
+      "id": "q026",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.790499999999838
+    },
+    {
+      "id": "q027",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.956042000000025
+    },
+    {
+      "id": "q027",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1926249999999072
+    },
+    {
+      "id": "q028",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.284458000000086
+    },
+    {
+      "id": "q028",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.730542000000014
+    },
+    {
+      "id": "q029",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.9195420000000922
+    },
+    {
+      "id": "q029",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2642499999999472
+    },
+    {
+      "id": "q030",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3160420000001523
+    },
+    {
+      "id": "q030",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7865410000001702
+    },
+    {
+      "id": "q031",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6428330000001097
+    },
+    {
+      "id": "q031",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.525624999999991
+    },
+    {
+      "id": "q032",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2916669999999613
+    },
+    {
+      "id": "q032",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.94724999999994
+    },
+    {
+      "id": "q033",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.9623750000000655
+    },
+    {
+      "id": "q033",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.243291999999883
+    },
+    {
+      "id": "q034",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2076250000000073
+    },
+    {
+      "id": "q034",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5848340000000007
+    },
+    {
+      "id": "q035",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.793666999999914
+    },
+    {
+      "id": "q035",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3037910000000466
+    },
+    {
+      "id": "q036",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.4288340000000517
+    },
+    {
+      "id": "q036",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7124169999999594
+    },
+    {
+      "id": "q037",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.746042000000216
+    },
+    {
+      "id": "q037",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2081249999998818
+    },
+    {
+      "id": "q038",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3329580000001897
+    },
+    {
+      "id": "q038",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.083624999999984
+    },
+    {
+      "id": "q039",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.815791999999874
+    },
+    {
+      "id": "q039",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.253541999999925
+    },
+    {
+      "id": "q040",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3630000000000564
+    },
+    {
+      "id": "q040",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.277416999999787
+    },
+    {
+      "id": "q041",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.2290839999998298
+    },
+    {
+      "id": "q041",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2933340000001863
+    },
+    {
+      "id": "q042",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3923749999999018
+    },
+    {
+      "id": "q042",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.3959160000001702
+    },
+    {
+      "id": "q043",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6985830000000988
+    },
+    {
+      "id": "q043",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.241708000000017
+    },
+    {
+      "id": "q044",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2605419999999867
+    },
+    {
+      "id": "q044",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5787499999999
+    },
+    {
+      "id": "q045",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.36258399999997
+    },
+    {
+      "id": "q045",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2282920000000104
+    },
+    {
+      "id": "q046",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3154159999999138
+    },
+    {
+      "id": "q046",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.829915999999912
+    },
+    {
+      "id": "q047",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6906669999998485
+    },
+    {
+      "id": "q047",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2291660000000775
+    },
+    {
+      "id": "q048",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.370042000000012
+    },
+    {
+      "id": "q048",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.826999999999998
+    },
+    {
+      "id": "q049",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.9729590000001735
+    },
+    {
+      "id": "q049",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2809169999998176
+    },
+    {
+      "id": "q050",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.241125000000011
+    },
+    {
+      "id": "q050",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.740124999999807
+    },
+    {
+      "id": "q051",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5658750000000055
+    },
+    {
+      "id": "q051",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2509580000000824
+    },
+    {
+      "id": "q052",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2434169999999085
+    },
+    {
+      "id": "q052",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5201250000000073
+    },
+    {
+      "id": "q053",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.249416999999994
+    },
+    {
+      "id": "q053",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.201416999999992
+    },
+    {
+      "id": "q054",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.239332999999988
+    },
+    {
+      "id": "q054",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.9302909999998974
+    },
+    {
+      "id": "q055",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6035420000000613
+    },
+    {
+      "id": "q055",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.199500000000171
+    },
+    {
+      "id": "q056",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3120420000000195
+    },
+    {
+      "id": "q056",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.443749999999909
+    },
+    {
+      "id": "q057",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.265250000000151
+    },
+    {
+      "id": "q057",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2639590000001135
+    },
+    {
+      "id": "q058",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3141669999999976
+    },
+    {
+      "id": "q058",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.027250000000095
+    },
+    {
+      "id": "q059",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8709160000000793
+    },
+    {
+      "id": "q059",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3008749999999054
+    },
+    {
+      "id": "q060",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.24087499999996
+    },
+    {
+      "id": "q060",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6332910000000993
+    },
+    {
+      "id": "q061",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.663917000000083
+    },
+    {
+      "id": "q061",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.216000000000122
+    },
+    {
+      "id": "q062",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1905420000000504
+    },
+    {
+      "id": "q062",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.499749999999949
+    },
+    {
+      "id": "q063",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.677874999999858
+    },
+    {
+      "id": "q063",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3837919999998576
+    },
+    {
+      "id": "q064",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2914579999999205
+    },
+    {
+      "id": "q064",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.9147499999999127
+    },
+    {
+      "id": "q065",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8923749999999018
+    },
+    {
+      "id": "q065",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3020830000000387
+    },
+    {
+      "id": "q066",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2152079999998477
+    },
+    {
+      "id": "q066",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.645957999999837
+    },
+    {
+      "id": "q067",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6948339999999007
+    },
+    {
+      "id": "q067",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.23958400000015
+    },
+    {
+      "id": "q068",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2204169999999976
+    },
+    {
+      "id": "q068",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8512909999999465
+    },
+    {
+      "id": "q069",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.713666000000103
+    },
+    {
+      "id": "q069",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.215750000000071
+    },
+    {
+      "id": "q070",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1842920000001413
+    },
+    {
+      "id": "q070",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.518500000000131
+    },
+    {
+      "id": "q071",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.447208000000046
+    },
+    {
+      "id": "q071",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1156250000001364
+    },
+    {
+      "id": "q072",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1805829999998423
+    },
+    {
+      "id": "q072",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.4821669999998903
+    },
+    {
+      "id": "q073",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.63799999999992
+    },
+    {
+      "id": "q073",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.158332999999857
+    },
+    {
+      "id": "q074",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.315166999999974
+    },
+    {
+      "id": "q074",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.959082999999964
+    },
+    {
+      "id": "q075",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5667080000000624
+    },
+    {
+      "id": "q075",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.23824999999988
+    },
+    {
+      "id": "q076",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.353166999999985
+    },
+    {
+      "id": "q076",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.091040999999905
+    },
+    {
+      "id": "q077",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.4102920000000267
+    },
+    {
+      "id": "q077",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.09900000000016
+    },
+    {
+      "id": "q078",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1897089999999935
+    },
+    {
+      "id": "q078",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7382500000001073
+    },
+    {
+      "id": "q079",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5305410000000848
+    },
+    {
+      "id": "q079",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.190417000000025
+    },
+    {
+      "id": "q080",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2440829999998186
+    },
+    {
+      "id": "q080",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7622089999999844
+    },
+    {
+      "id": "q081",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.76887499999998
+    },
+    {
+      "id": "q081",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.24612500000012
+    },
+    {
+      "id": "q082",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2825000000000273
+    },
+    {
+      "id": "q082",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.038165999999819
+    },
+    {
+      "id": "q083",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.1926670000000286
+    },
+    {
+      "id": "q083",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1057499999999436
+    },
+    {
+      "id": "q084",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2003330000000005
+    },
+    {
+      "id": "q084",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.3685830000001715
+    },
+    {
+      "id": "q085",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.744374999999991
+    },
+    {
+      "id": "q085",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.217750000000251
+    },
+    {
+      "id": "q086",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2422919999999067
+    },
+    {
+      "id": "q086",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 4.187209000000166
+    },
+    {
+      "id": "q087",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8120410000001357
+    },
+    {
+      "id": "q087",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2150830000000497
+    },
+    {
+      "id": "q088",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2401660000000447
+    },
+    {
+      "id": "q088",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6947500000001128
+    },
+    {
+      "id": "q089",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8472090000000208
+    },
+    {
+      "id": "q089",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.2061250000001564
+    },
+    {
+      "id": "q090",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.256332999999813
+    },
+    {
+      "id": "q090",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.8663329999999405
+    },
+    {
+      "id": "q091",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.3730829999999514
+    },
+    {
+      "id": "q091",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.0659590000000208
+    },
+    {
+      "id": "q092",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1872079999998277
+    },
+    {
+      "id": "q092",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.6178750000003674
+    },
+    {
+      "id": "q093",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.605333999999857
+    },
+    {
+      "id": "q093",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1558749999999236
+    },
+    {
+      "id": "q094",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.181750000000193
+    },
+    {
+      "id": "q094",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.560374999999567
+    },
+    {
+      "id": "q095",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7707080000000133
+    },
+    {
+      "id": "q095",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1530000000002474
+    },
+    {
+      "id": "q096",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1782499999999345
+    },
+    {
+      "id": "q096",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.408625000000029
+    },
+    {
+      "id": "q097",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.1996250000001965
+    },
+    {
+      "id": "q097",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.178291000000172
+    },
+    {
+      "id": "q098",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1429580000003625
+    },
+    {
+      "id": "q098",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.3152909999998883
+    },
+    {
+      "id": "q099",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.5067080000003443
+    },
+    {
+      "id": "q099",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.1501249999996617
+    },
+    {
+      "id": "q100",
+      "policy": "retrieved",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 2.3955839999998716
+    },
+    {
+      "id": "q100",
+      "policy": "union",
+      "phase": "engine-only",
+      "round": 2,
+      "elapsedMs": 3.7064579999996567
+    },
+    {
+      "id": "q001",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 17.289290999999594
+    },
+    {
+      "id": "q001",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 13.359375
+    },
+    {
+      "id": "q006",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 11.376792000000023
+    },
+    {
+      "id": "q006",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 12.919083000000228
+    },
+    {
+      "id": "q011",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 15.656124999999975
+    },
+    {
+      "id": "q011",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 14.242416000000048
+    },
+    {
+      "id": "q016",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 19.14908299999979
+    },
+    {
+      "id": "q016",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 21.735666000000037
+    },
+    {
+      "id": "q021",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 22.724874999999884
+    },
+    {
+      "id": "q021",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 20.865332999999737
+    },
+    {
+      "id": "q026",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.005333999999948
+    },
+    {
+      "id": "q026",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 19.700041000000056
+    },
+    {
+      "id": "q031",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.344333000000006
+    },
+    {
+      "id": "q031",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 16.438124999999673
+    },
+    {
+      "id": "q036",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 17.040707999999995
+    },
+    {
+      "id": "q036",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.96829200000002
+    },
+    {
+      "id": "q041",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 13.68612499999972
+    },
+    {
+      "id": "q041",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 12.497749999999996
+    },
+    {
+      "id": "q046",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 19.178082999999788
+    },
+    {
+      "id": "q046",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 20.707000000000335
+    },
+    {
+      "id": "q051",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.65854199999967
+    },
+    {
+      "id": "q051",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 17.314957999999933
+    },
+    {
+      "id": "q056",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 11.882833000000119
+    },
+    {
+      "id": "q056",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 13.26458300000013
+    },
+    {
+      "id": "q061",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 15.642707999999857
+    },
+    {
+      "id": "q061",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 13.66558299999997
+    },
+    {
+      "id": "q066",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 14.967333000000053
+    },
+    {
+      "id": "q066",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 16.43120799999997
+    },
+    {
+      "id": "q071",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.162249999999858
+    },
+    {
+      "id": "q071",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 18.08470800000032
+    },
+    {
+      "id": "q076",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 22.899250000000393
+    },
+    {
+      "id": "q076",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 24.12316600000031
+    },
+    {
+      "id": "q081",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 17.71670800000038
+    },
+    {
+      "id": "q081",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 15.694083000000319
+    },
+    {
+      "id": "q086",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 19.023333000000093
+    },
+    {
+      "id": "q086",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 21.14583300000004
+    },
+    {
+      "id": "q091",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 14.549499999999625
+    },
+    {
+      "id": "q091",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 12.881124999999884
+    },
+    {
+      "id": "q096",
+      "policy": "retrieved",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 14.28125
+    },
+    {
+      "id": "q096",
+      "policy": "union",
+      "phase": "warm-total",
+      "round": 0,
+      "elapsedMs": 15.171166999999969
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "file": "runs/2026-09-04T20-26-02.681Z-51b96a32.json.gz",
+  "provenance": {
+    "sourceDirty": false,
+    "queriesHash": "9ac85d0f1aa95ae629e75eaf0c0a388d52cb0aa38c20cd408039e7e05bbdbb2c",
+    "commit": "43c0a1b3ab4a1d5dff8da1796d0b258f1e70dd22",
+    "sourceHashes": {
+      "src/search/search.ts": "e41edfe3454a3eb4246ed1fb600b3f4f4581a53daaf7837c60ba6dbcf8140212",
+      "src/search/lexical.ts": "efa8ce8ea39d77b15099412a5be43f37ded89aba64fa82f6ec23143cffdb1904",
+      "src/search/chunks.ts": "a849dc42ac0d1640fa81050099193793da5a571e95cba1122909e9176b68d0cc",
+      "src/search/index.ts": "02e898f96023da750c63aca81b22b1aa1be5cc2214e2a6f1af107a14fd51a61b",
+      "src/search/db.ts": "ec53d922cb029842f358e2e3cb4c34d75f005b7029f1e86fd11edd4f0cb09120",
+      "src/search/embedder.ts": "d0ec61e1c650e62f260f3b155dadc75c37484914a6b8235b64a753cf253ce412",
+      "scripts/experiment-search.mjs": "89eb65071cc2821c8f0c30dc26822df1b8c18d16ccf073ad643fd6ad1c1beaa3",
+      "pnpm-lock.yaml": "c60eba441c3693ba2384e28454b25c59bca2da20f0ccc04852510050ac63a4b4"
+    },
+    "configHash": "37051ddba23bdc0c050aad324922a9e3ebd2c0316cde35785c8494f725378a12",
+    "corpusHash": "291c9a2b68e4b4f33ad20aad7443d15c0c46850bd7924fe2fbfca9257582b013"
+  },
+  "unjudgedPairs": 0
+}

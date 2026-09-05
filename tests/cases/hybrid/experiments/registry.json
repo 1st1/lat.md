@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "bestValidated": {
+    "checkpoint": "18cc9ce",
+    "policy": {
+      "candidateScoring": "retrieved",
+      "rrfK": 60,
+      "lexicalWeight": 1,
+      "semanticWeight": 1
+    }
+  },
+  "experiments": [
+    {
+      "id": "001-union-rrf",
+      "status": "not-promoted",
+      "baselineCheckpoint": "18cc9ce",
+      "report": "001-union-rrf/README.md",
+      "reason": "Development winner regressed validation pooled nDCG@5; baseline policy retained.",
+      "implementationCommit": "43c0a1b3ab4a1d5dff8da1796d0b258f1e70dd22",
+      "verifiedRun": "001-union-rrf/runs/2026-09-04T20-26-02.681Z-51b96a32.json.gz"
+    }
+  ]
+}

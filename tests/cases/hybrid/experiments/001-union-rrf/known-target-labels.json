@@ -1,0 +1,379 @@
+[
+  {
+    "queryId": "q001",
+    "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+    "grade": 2,
+    "reason": "Specifies the external handle/path/fragment syntax, portable separators, optional configured extension, supported symbol fragments, and an authored link example.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "41-67",
+        "finding": "Specifies the external handle/path/fragment syntax, portable separators, optional configured extension, supported symbol fragments, and an authored link example. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q008",
+    "sectionId": "lat.md/search-design#Search Redesign#Candidate retrieval and fusion",
+    "grade": 2,
+    "reason": "Directly supplies the current weighted RRF ranking formula and score interpretation, a substantial part of the compound intent; it does not explain the mathematical cosine range or negative values.",
+    "evidence": [
+      {
+        "path": "lat.md/search-design.md",
+        "lines": "59-69",
+        "finding": "Directly supplies the current weighted RRF ranking formula and score interpretation, a substantial part of the compound intent; it does not explain the mathematical cosine range or negative values. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q009",
+    "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Preserves complete passage coverage",
+    "grade": 1,
+    "reason": "States the coverage and token-budget invariant for oversized prose, lists, code, tables, and Unicode, but does not explain the requested fallback procedure. Useful test context rather than the algorithmic answer.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/search.md",
+        "lines": "109-111",
+        "finding": "States the coverage and token-budget invariant for oversized prose, lists, code, tables, and Unicode, but does not explain the requested fallback procedure. Useful test context rather than the algorithmic answer. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q011",
+    "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+    "grade": 2,
+    "reason": "Explicitly explains how GitHub-slug heading paths map to canonical literal IDs and are accepted in strict and lenient resolution. Answers the wiki/CLI compatibility component, though ordinary-link rules are elsewhere.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "62-70",
+        "finding": "Explicitly explains how GitHub-slug heading paths map to canonical literal IDs and are accepted in strict and lenient resolution. Answers the wiki/CLI compatibility component, though ordinary-link rules are elsewhere. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q012",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+    "grade": 2,
+    "reason": "Documents default-file-extension schema, no-leading-dot convention, allowed values, and implicit append behavior with a YAML example. Direct answer to external configuration/validation part; local .md rules are elsewhere.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "88-114",
+        "finding": "Documents default-file-extension schema, no-leading-dot convention, allowed values, and implicit append behavior with a YAML example. Direct answer to external configuration/validation part; local .md rules are elsewhere. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q014",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+    "grade": 2,
+    "reason": "Explicitly states both ordinary Markdown and wiki links produce document edges, preserves separate provenance kinds, and explains unresolved and same-document edge exclusions. Directly answers graph participation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "54-60",
+        "finding": "Explicitly states both ordinary Markdown and wiki links produce document edges, preserves separate provenance kinds, and explains unresolved and same-document edge exclusions. Directly answers graph participation. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q016",
+    "sectionId": "lat.md/tests/section#Section#CLI accepts literal and GitHub heading syntax",
+    "grade": 2,
+    "reason": "Exact test contract: lat section accepts literal Obsidian and GitHub-slugged heading paths and returns identical canonical-ID output.",
+    "evidence": [
+      {
+        "path": "lat.md/tests/section.md",
+        "lines": "22-24",
+        "finding": "Exact test contract: lat section accepts literal Obsidian and GitHub-slugged heading paths and returns identical canonical-ID output. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q019",
+    "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+    "grade": 2,
+    "reason": "Explains canonical literal IDs, accepted GitHub-slug aliases, implicit root headings, and the resolving functions. Directly covers heading normalization; duplicate and Unicode details are not stated here.",
+    "evidence": [
+      {
+        "path": "lat.md/parser.md",
+        "lines": "62-70",
+        "finding": "Explains canonical literal IDs, accepted GitHub-slug aliases, implicit root headings, and the resolving functions. Directly covers heading normalization; duplicate and Unicode details are not stated here. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q023",
+    "sectionId": "lat.md/external-sources#External Sources#Known Limitations",
+    "grade": 2,
+    "reason": "Directly states external binary files, unsupported document formats, and unsupported source languages are rejected. Answers the supported-format restriction, though optional/default extensions require another section.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "486-493",
+        "finding": "Directly states external binary files, unsupported document formats, and unsupported source languages are rejected. Answers the supported-format restriction, though optional/default extensions require another section. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration#Fetch URL Resolution",
+    "grade": 2,
+    "reason": "Gives actionable placeholder and malformed-brace diagnostics and tells users to choose a raw-file URL or checkout when HTML is returned.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "148-158",
+        "finding": "Gives actionable placeholder and malformed-brace diagnostics and tells users to choose a raw-file URL or checkout when HTML is returned. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Raw HTTP",
+    "grade": 2,
+    "reason": "States retrieval failures include source handle, path, URL, and status, directly specifying the requested diagnostic content; also lists relevant read limits.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "285-289",
+        "finding": "States retrieval failures include source handle, path, URL, and status, directly specifying the requested diagnostic content; also lists relevant read limits. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q025",
+    "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Merge Semantics",
+    "grade": 2,
+    "reason": "Explains remote mismatch diagnostics comparing configured repository with all found remotes and identifies unsupported local override keys as configuration errors.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "178-188",
+        "finding": "Explains remote mismatch diagnostics comparing configured repository with all found remotes and identifies unsupported local override keys as configuration errors. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+    "grade": 2,
+    "reason": "Defines prefix as a portable directory prepended to every authored external path, illustrated by prefix: docs. Directly answers monorepo/subdirectory link scoping.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "88-114",
+        "finding": "Defines prefix as a portable directory prepended to every authored external path, illustrated by prefix: docs. Directly answers monorepo/subdirectory link scoping. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q027",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface#Show and List",
+    "grade": 1,
+    "reason": "Shows where to inspect the configured prefix and obtain safe checkout suggestions; does not explain how prefix scopes sparse checkout or provide the suggested commands. Useful navigation for the checkout component.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "257-263",
+        "finding": "Shows where to inspect the configured prefix and obtain safe checkout suggestions; does not explain how prefix scopes sparse checkout or provide the suggested commands. Useful navigation for the checkout component. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface",
+    "grade": 2,
+    "reason": "Directly corrects historical get-source naming and lists lat external show <handle-or-external-ref> as the source-inspection command.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "202-210",
+        "finding": "Directly corrects historical get-source naming and lists lat external show <handle-or-external-ref> as the source-inspection command. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q030",
+    "sectionId": "lat.md/external-sources#External Sources#Command Surface#Show and List",
+    "grade": 2,
+    "reason": "Lists canonical/effective revision, repository, prefix, override status, and checkout suggestions in show/list output, including structured JSON Git arguments. Directly answers the requested inspection behavior.",
+    "evidence": [
+      {
+        "path": "lat.md/external-sources.md",
+        "lines": "257-263",
+        "finding": "Lists canonical/effective revision, repository, prefix, override status, and checkout suggestions in show/list output, including structured JSON Git arguments. Directly answers the requested inspection behavior. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q035",
+    "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Project snapshot",
+    "grade": 1,
+    "reason": "Explains shared immutable project-analysis indexes and separate source-scanning inputs, but never says validators run concurrently or when code scans are shared. Useful architecture context, not a concurrency answer.",
+    "evidence": [
+      {
+        "path": "lat.md/architecture-analysis.md",
+        "lines": "51-59",
+        "finding": "Explains shared immutable project-analysis indexes and separate source-scanning inputs, but never says validators run concurrently or when code scans are shared. Useful architecture context, not a concurrency answer. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q041",
+    "sectionId": "lat.md/view/graph#Graph View#Client and selection",
+    "grade": 2,
+    "reason": "Explicitly replaces the historical physics premise with cached deterministic linear-time ring-and-code-cluster layout without physics or animation.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "72-80",
+        "finding": "Explicitly replaces the historical physics premise with cached deterministic linear-time ring-and-code-cluster layout without physics or animation. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q043",
+    "sectionId": "lat.md/view/graph#Graph View#Server projection",
+    "grade": 2,
+    "reason": "Explains cached graph projection and that GET /api/graph performs no filesystem reads, scanning, Git, or layout work; refresh preserves positions. Direct answer to fast cached graph loading, not semantic filtering.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "62-70",
+        "finding": "Explains cached graph projection and that GET /api/graph performs no filesystem reads, scanning, Git, or layout work; refresh preserves positions. Direct answer to fast cached graph loading, not semantic filtering. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q049",
+    "sectionId": "lat.md/view/graph#Graph View#Server projection",
+    "grade": 2,
+    "reason": "Directly describes server graph projection from cached documents, sections, links, references, diagnostics, and Git state and its API/snapshot lifecycle. Answers the projection half of the split architecture.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "62-70",
+        "finding": "Directly describes server graph projection from cached documents, sections, links, references, diagnostics, and Git state and its API/snapshot lifecycle. Answers the projection half of the split architecture. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q050",
+    "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Nodes",
+    "grade": 2,
+    "reason": "Directly states repeated paragraph-to-same-section links count once, distinct target sections count separately, and code/same-document mentions contribute. Explains document aggregation of section backlink counts.",
+    "evidence": [
+      {
+        "path": "lat.md/view/graph.md",
+        "lines": "44-50",
+        "finding": "Directly states repeated paragraph-to-same-section links count once, distinct target sections count separately, and code/same-document mentions contribute. Explains document aggregation of section backlink counts. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/specs#View Tests#Shows section back-references",
+    "grade": 1,
+    "reason": "Identifies the section reference menu and its behavior, helping locate the component, but does not diagnose Firefox closing or state loss.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "286-294",
+        "finding": "Identifies the section reference menu and its behavior, helping locate the component, but does not diagnose Firefox closing or state loss. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Markdown navigation",
+    "grade": 1,
+    "reason": "Describes non-remounting fragment navigation and section-menu behavior, useful lifecycle context; no Firefox-specific refresh or closing diagnosis is present.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "181-199",
+        "finding": "Describes non-remounting fragment navigation and section-menu behavior, useful lifecycle context; no Firefox-specific refresh or closing diagnosis is present. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/specs#View Tests#Updates long-running views incrementally",
+    "grade": 1,
+    "reason": "Describes generation-driven route refresh and preserved URL/viewport, with internal cache writes excluded from refresh. Useful refresh context without a menu-state or Firefox root cause.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "296-302",
+        "finding": "Describes generation-driven route refresh and preserved URL/viewport, with internal cache writes excluded from refresh. Useful refresh context without a menu-state or Firefox root cause. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q051",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Document tree protocol",
+    "grade": 1,
+    "reason": "Identifies MarkdownContent as the owner of stateful React section menus. Useful implementation navigation for state loss, but no browser-specific explanation or fix.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "41-55",
+        "finding": "Identifies MarkdownContent as the owner of stateful React section menus. Useful implementation navigation for state loss, but no browser-specific explanation or fix. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q060",
+    "sectionId": "lat.md/view/specs#View Tests#Builds a nested file tree",
+    "grade": 1,
+    "reason": "Describes sidebar tree hierarchy and directory navigation, providing nearby implementation/test context, but contains no validation-marker or ancestor-error propagation rule.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "356-360",
+        "finding": "Describes sidebar tree hierarchy and directory navigation, providing nearby implementation/test context, but contains no validation-marker or ancestor-error propagation rule. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q063",
+    "sectionId": "lat.md/view/specs#View Tests#Resolves Markdown and source wiki links",
+    "grade": 2,
+    "reason": "Specifies the segmented visual behavior: unaliased links separate muted path context from final target, and badge wrapping behavior. Direct test specification for a substantial part of rendering intent; underline CSS is elsewhere.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "268-272",
+        "finding": "Specifies the segmented visual behavior: unaliased links separate muted path context from final target, and badge wrapping behavior. Direct test specification for a substantial part of rendering intent; underline CSS is elsewhere. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/view/architecture#Browser Architecture#Build targets#Server export",
+    "grade": 2,
+    "reason": "Directly explains immutable prebuilt index copied to writable runtime cache, lazy local model and warm reuse, and no Git, editing, events, or repository reads.",
+    "evidence": [
+      {
+        "path": "lat.md/view/architecture.md",
+        "lines": "99-109",
+        "finding": "Directly explains immutable prebuilt index copied to writable runtime cache, lazy local model and warm reuse, and no Git, editing, events, or repository reads. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  },
+  {
+    "queryId": "q076",
+    "sectionId": "lat.md/view/specs#View Tests#Builds a portable server deployment",
+    "grade": 2,
+    "reason": "Direct runtime test contract covers temporary database copy, no reparsing/reindexing, warm handle/embedder reuse, and disabled Git/events/editing/repository access.",
+    "evidence": [
+      {
+        "path": "lat.md/view/specs.md",
+        "lines": "60-72",
+        "finding": "Direct runtime test contract covers temporary database copy, no reparsing/reindexing, warm handle/embedder reuse, and disabled Git/events/editing/repository access. Evidence is from frozen commit 72fbf5c; the audit corpus patch changes only search-audit.md, not this section."
+      }
+    ]
+  }
+]

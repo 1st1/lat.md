@@ -65,6 +65,8 @@ Embedding reuse is keyed by the complete contextual input and embedding fingerpr
 
 Tests: [[tests/search#Hybrid Retrieval#Reuses vectors after source movement]] and [[tests/search#Hybrid Retrieval#Rejects invalid vectors before changing the index]], implemented in [[tests/hybrid-search.test.ts]].
 
+Measured reindexing costs and optimization candidates are recorded in [[search-audit#Indexing performance]].
+
 ## Lexical analysis
 
 Full-text search indexes normalized passage body, heading, and ancestor path in separate fields. Original passage text remains the source for embeddings, previews, and citations.
@@ -139,5 +141,7 @@ The committed evaluation fixtures measure section retrieval and preserve the dis
 [[tests/cases/hybrid/judgments.json]] retains 40 development and 20 held-out queries, including two parent-scope cases outside the implemented ranking scope. Synthetic benchmark results measure exact retrieval with precomputed vectors; their timing excludes embedding generation and Markdown chunking.
 
 [[tests/cases/hybrid/evaluation-local.json]], [[tests/cases/hybrid/evaluation-stemmed.json]], and [[tests/cases/hybrid/benchmark-local.json]] retain their original measured snapshots. They are evidence, not current runtime settings. Benchmark and evaluation runners are not shipped in this repository; retained artifacts describe historical measurements, while the linked automated tests verify runtime behavior.
+
+[[search-audit]] records repository investigations, measured results, and experiment choices. Architecture and runtime defaults are defined here; the audit preserves the evidence behind tuning decisions.
 
 The runtime does not implement ancestor promotion, backlink authority, summary vectors, whole-section FTS, synonym dictionaries, candidate-union rescoring, learned reranking, or automatic neighboring-passage expansion. Hierarchy and source spans support section identity and evidence; they are not extra relevance votes.

@@ -1,0 +1,315 @@
+[
+  {
+    "id": "q001",
+    "query": "how to format links to external source files",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Link Syntax#Resolution Rules",
+        "rank": 15,
+        "lexicalRank": 51,
+        "semanticRank": 6,
+        "rankScore": 0.02416052416052416
+      }
+    ]
+  },
+  {
+    "id": "q008",
+    "query": "cosine similarity score range negative values vector search formula",
+    "targets": [
+      {
+        "sectionId": "lat.md/search-design#Search Redesign#Candidate retrieval and fusion",
+        "rank": 12,
+        "lexicalRank": 34,
+        "semanticRank": 8,
+        "rankScore": 0.0253441802252816
+      }
+    ]
+  },
+  {
+    "id": "q009",
+    "query": "oversized Markdown chunk boundaries fallback",
+    "targets": [
+      {
+        "sectionId": "lat.md/tests/search#Search#Hybrid Retrieval#Preserves complete passage coverage",
+        "rank": 22,
+        "lexicalRank": 27,
+        "semanticRank": 73,
+        "rankScore": 0.01901304986604442
+      }
+    ]
+  },
+  {
+    "id": "q011",
+    "query": "Obsidian GitHub heading slug markdown fragment compatibility",
+    "targets": [
+      {
+        "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+        "rank": 27,
+        "lexicalRank": 19,
+        "semanticRank": 55,
+        "rankScore": 0.02135388002201431
+      }
+    ]
+  },
+  {
+    "id": "q012",
+    "query": "allow optional md extension on local and external wiki links external source default file extension schema validation implicit path resolution",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+        "rank": 22,
+        "lexicalRank": 24,
+        "semanticRank": 32,
+        "rankScore": 0.022774327122153208
+      }
+    ]
+  },
+  {
+    "id": "q014",
+    "query": "difference ordinary markdown relative links wiki links section anchors refs graph validation",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Edges",
+        "rank": 22,
+        "lexicalRank": 63,
+        "semanticRank": 6,
+        "rankScore": 0.023281596452328163
+      }
+    ]
+  },
+  {
+    "id": "q016",
+    "query": "heading fragment resolution markdown links wiki links section command slug compatibility validation tests",
+    "targets": [
+      {
+        "sectionId": "lat.md/tests/section#Section#CLI accepts literal and GitHub heading syntax",
+        "rank": 49,
+        "lexicalRank": 14,
+        "rankScore": 0.013513513513513514
+      }
+    ]
+  },
+  {
+    "id": "q019",
+    "query": "section ids heading matching normalization wiki links slug anchors duplicate headings unicode punctuation",
+    "targets": [
+      {
+        "sectionId": "lat.md/parser#Parser#Short Ref Resolution",
+        "rank": 39,
+        "lexicalRank": 34,
+        "semanticRank": 56,
+        "rankScore": 0.019258987527512837
+      }
+    ]
+  },
+  {
+    "id": "q023",
+    "query": "external link extensionless markdown path unsupported file extension exact repository path",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Known Limitations",
+        "rank": 37,
+        "lexicalRank": 59,
+        "semanticRank": 33,
+        "rankScore": 0.019156049516580828
+      }
+    ]
+  },
+  {
+    "id": "q025",
+    "query": "external source error messages diagnostics clarity actionable configuration retrieval failures",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration#Fetch URL Resolution",
+        "rank": 36,
+        "lexicalRank": 51,
+        "semanticRank": 58,
+        "rankScore": 0.01748358528019545
+      },
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Retrieval Providers#Raw HTTP",
+        "rank": 31,
+        "lexicalRank": 31,
+        "semanticRank": 65,
+        "rankScore": 0.018989010989010992
+      },
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Local Overrides#Merge Semantics",
+        "rank": 15,
+        "lexicalRank": 37,
+        "semanticRank": 13,
+        "rankScore": 0.024007908487501763
+      }
+    ]
+  },
+  {
+    "id": "q027",
+    "query": "external source repository subdirectory root path monorepo short links sparse checkout source handle",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Canonical Configuration",
+        "rank": 20,
+        "lexicalRank": 28,
+        "semanticRank": 22,
+        "rankScore": 0.023558758314855877
+      },
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Command Surface#Show and List",
+        "rank": null
+      }
+    ]
+  },
+  {
+    "id": "q030",
+    "query": "get-source command remote repository URL pinned revision local override agent clone command sparse checkout external source resolution",
+    "targets": [
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Command Surface",
+        "rank": 13,
+        "lexicalRank": 9,
+        "semanticRank": 22,
+        "rankScore": 0.026687875574407917
+      },
+      {
+        "sectionId": "lat.md/external-sources#External Sources#Command Surface#Show and List",
+        "rank": 23,
+        "lexicalRank": 16,
+        "semanticRank": 31,
+        "rankScore": 0.024146905725853096
+      }
+    ]
+  },
+  {
+    "id": "q035",
+    "query": "check validators run concurrently source grepping project analysis",
+    "targets": [
+      {
+        "sectionId": "lat.md/architecture-analysis#Parsed Analysis#Project snapshot",
+        "rank": 45,
+        "lexicalRank": 13,
+        "rankScore": 0.0136986301369863
+      }
+    ]
+  },
+  {
+    "id": "q041",
+    "query": "graph ForceAtlas animation layout worker settled positions",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/graph#Graph View#Client and selection",
+        "rank": 11,
+        "lexicalRank": 14,
+        "semanticRank": 10,
+        "rankScore": 0.027799227799227798
+      }
+    ]
+  },
+  {
+    "id": "q043",
+    "query": "graph instant render cached layout semantic embeddings search filter graph nodes",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/graph#Graph View#Server projection",
+        "rank": 12,
+        "lexicalRank": 21,
+        "semanticRank": 7,
+        "rankScore": 0.027271052146674038
+      }
+    ]
+  },
+  {
+    "id": "q049",
+    "query": "graph view documents linked sections source code references split inspector route architecture",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/graph#Graph View#Server projection",
+        "rank": 19,
+        "lexicalRank": 20,
+        "semanticRank": 31,
+        "rankScore": 0.02348901098901099
+      }
+    ]
+  },
+  {
+    "id": "q050",
+    "query": "section back references count distinct linking paragraphs wiki code locations",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/graph#Graph View#Graph semantics#Nodes",
+        "rank": 13,
+        "lexicalRank": 26,
+        "semanticRank": 15,
+        "rankScore": 0.024961240310077522
+      }
+    ]
+  },
+  {
+    "id": "q051",
+    "query": "Firefox refs label heading context panel opens then closes delayed refresh selection state",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/specs#View Tests#Shows section back-references",
+        "rank": null
+      },
+      {
+        "sectionId": "lat.md/view/architecture#Browser Architecture#Markdown navigation",
+        "rank": 31,
+        "lexicalRank": 61,
+        "semanticRank": 40,
+        "rankScore": 0.018264462809917358
+      },
+      {
+        "sectionId": "lat.md/view/specs#View Tests#Updates long-running views incrementally",
+        "rank": null
+      },
+      {
+        "sectionId": "lat.md/view/architecture#Browser Architecture#Document tree protocol",
+        "rank": null
+      }
+    ]
+  },
+  {
+    "id": "q060",
+    "query": "sidebar validation error marker directory ancestor propagation",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/specs#View Tests#Builds a nested file tree",
+        "rank": 45,
+        "lexicalRank": 79,
+        "semanticRank": 56,
+        "rankScore": 0.01581493425948896
+      }
+    ]
+  },
+  {
+    "id": "q063",
+    "query": "browser segmented wiki link underline color rendering and view tests",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/specs#View Tests#Resolves Markdown and source wiki links",
+        "rank": 11,
+        "lexicalRank": 13,
+        "semanticRank": 23,
+        "rankScore": 0.02574682290807064
+      }
+    ]
+  },
+  {
+    "id": "q076",
+    "query": "Vercel serverless function live Lat UI request response API ephemeral search cache no Git no watchers",
+    "targets": [
+      {
+        "sectionId": "lat.md/view/architecture#Browser Architecture#Build targets#Server export",
+        "rank": 42,
+        "semanticRank": 9,
+        "rankScore": 0.014492753623188406
+      },
+      {
+        "sectionId": "lat.md/view/specs#View Tests#Builds a portable server deployment",
+        "rank": 45,
+        "semanticRank": 14,
+        "rankScore": 0.013513513513513514
+      }
+    ]
+  }
+]
