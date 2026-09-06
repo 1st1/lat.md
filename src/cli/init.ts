@@ -20,7 +20,7 @@ import {
 } from './gen.js';
 import { getLlmKey, getRepoEmbedding, setRepoEmbedding } from '../config.js';
 import { makeStyler } from './context.js';
-import { closeDb, ensureMeta, getStoredModel, openDb } from '../search/db.js';
+import { closeDb, getStoredModel, openDb } from '../search/db.js';
 import { modelKey } from '../search/embedder.js';
 import { reindexCommand } from './reindex.js';
 import {
@@ -1089,11 +1089,30 @@ type EmbeddingBackend = 'local' | 'remote';
 async function readStoredEmbeddingModel(
   latDir: string,
 ): Promise<string | null> {
-  if (!existsSync(join(latDir, '.cache', 'vectors.db'))) return null;
+  if (!existsSync(join(latDir, '.cache', 'search-index.json'))) {
+    const old = join(latDir, '.cache', 'vectors.db');
+    if (!existsSync(old)) return null;
+    const { createClient } = await import('@libsql/client');
+    const legacy = createClient({ url: `file:${old}` });
+    try {
+      const tables = await legacy.execute(
+        "SELECT name FROM sqlite_master WHERE name='meta'",
+      );
+      if (!tables.rows.length) return null;
+      return (
+        ((
+          await legacy.execute(
+            "SELECT value FROM meta WHERE key='embedding_model'",
+          )
+        ).rows[0]?.value as string) ?? null
+      );
+    } finally {
+      legacy.close();
+    }
+  }
 
-  const db = openDb(latDir);
+  const db = openDb(latDir, undefined, true);
   try {
-    await ensureMeta(db);
     return await getStoredModel(db);
   } finally {
     await closeDb(db);

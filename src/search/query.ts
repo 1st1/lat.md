@@ -1,11 +1,10 @@
+import { LEXICAL_VERSION } from './lexical.js';
+import { ReindexRequiredError } from './embedder.js';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { readManifest } from './db.js';
 import type { Section, SectionMatch } from '../lattice-model.js';
-import {
-  closeDb,
-  ensureMeta,
-  ensureSectionsSchema,
-  getStoredModel,
-  openDb,
-} from './db.js';
+import { closeDb, getStoredModel, openDb } from './db.js';
 import { embedderForIndex, type CreateSearchEngine } from './embedder.js';
 import { searchSections, type SearchResult } from './search.js';
 
@@ -18,7 +17,7 @@ export type IndexedSearchSession = {
   search: (
     query: string,
     limit: number,
-    threshold?: number,
+    minSimilarity?: number,
   ) => Promise<SearchResult[]>;
   close: () => Promise<void>;
 };
@@ -34,8 +33,14 @@ export function resolveSearchMatches(
       ? [
           {
             section,
-            reason: 'semantic match',
-            score: result.score,
+            reason: 'hybrid match',
+            rankScore: result.rankScore,
+            semanticSimilarity: result.semanticSimilarity,
+            lexicalScore: result.lexicalScore,
+            semanticRank: result.semanticRank,
+            lexicalRank: result.lexicalRank,
+            evidence: result.evidence,
+            diagnostics: result.diagnostics,
           } satisfies SectionMatch,
         ]
       : [];
@@ -50,7 +55,10 @@ export async function openIndexedSearchSession(
     createSearchEngine?: CreateSearchEngine;
   } = {},
 ): Promise<IndexedSearchSession> {
-  const db = openDb(latDir, options.cacheDir);
+  const cacheDir = options.cacheDir ?? join(latDir, '.cache');
+  if (!existsSync(cacheDir) || !readManifest(cacheDir))
+    return { search: async () => [], close: async () => {} };
+  const db = openDb(latDir, options.cacheDir, true);
   let closed = false;
   const close = async () => {
     if (closed) return;
@@ -58,7 +66,6 @@ export async function openIndexedSearchSession(
     await closeDb(db);
   };
   try {
-    await ensureMeta(db);
     const stored = await getStoredModel(db);
     if (stored === null) {
       return {
@@ -69,16 +76,22 @@ export async function openIndexedSearchSession(
         close,
       };
     }
+    const lexicalVersion = (
+      await db.execute("SELECT value FROM meta WHERE key='lexical_version'")
+    ).rows[0]?.value;
+    if (lexicalVersion !== LEXICAL_VERSION)
+      throw new ReindexRequiredError(
+        'Search lexical index changed; run lat search to update it.',
+      );
     const embedder = await embedderForIndex(
       stored,
       latDir,
       options.createSearchEngine,
     );
-    await ensureSectionsSchema(db, embedder.dimensions);
     return {
-      async search(query, limit, threshold) {
+      async search(query, limit, minSimilarity) {
         if (closed) throw new Error('Search session is closed');
-        return searchSections(db, query, embedder, limit, threshold);
+        return searchSections(db, query, embedder, limit, minSimilarity);
       },
       close,
     };
@@ -94,11 +107,11 @@ export async function searchIndexedSections(
   query: string,
   limit: number,
   sectionById: ReadonlyMap<string, Section>,
-  options: { cacheDir?: string; threshold?: number } = {},
+  options: { cacheDir?: string; minSimilarity?: number } = {},
 ): Promise<IndexedSearchResult> {
   const session = await openIndexedSearchSession(latDir, options);
   try {
-    const results = await session.search(query, limit, options.threshold);
+    const results = await session.search(query, limit, options.minSimilarity);
     return {
       query,
       matches: resolveSearchMatches(results, sectionById),

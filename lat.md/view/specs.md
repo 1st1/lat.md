@@ -93,7 +93,7 @@ The public Vercel target and repository preview convert an installed portable se
 
 `web/public/` becomes the CDN `static/` tree. Vercel's Node File Trace selects the entrypoint, server manifest, vector index, runtime packages, WASM engine, and model weights for one base-path-specific search function without copying public content into it.
 
-Every runtime asset is reachable through a static import or `new URL(relativePath, import.meta.url)`. The embedding loader owns WASM initialization rather than relying on generated CommonJS glue to perform an opaque filesystem read.
+The Vercel packager explicitly includes the search manifest and the database it names, since static tracing cannot resolve filenames stored in JSON. Missing database files fail the build before replacing an existing output. Other runtime assets are reachable through a static import or `new URL(relativePath, import.meta.url)`. The embedding loader owns WASM initialization rather than relying on generated CommonJS glue to perform an opaque filesystem read.
 
 The generated configuration applies the shared security policy, gives content-addressed JSON and Vite assets immutable caching, resolves functions and exact static files first, and maps extensionless routes to their physical `index.html` files.
 
@@ -107,7 +107,7 @@ The Vercel build vendors this branch's `lat.md` and `@lat.md/*` packages into th
 
 `pnpm build:site:vercel` is the project's sole build command. It installs that artifact without lifecycle scripts and writes `.vercel/output` directly; the repository requires no Vercel manifest, root Express app, nested Vercel CLI build, or artifact handoff between CI systems.
 
-Hosted previews intentionally use published embedding packages. `pnpm build:site:source` validates local engine or model changes, which cannot appear in a hosted preview until their package versions are published.
+Hosted previews intentionally use published embedding packages. Chunked retrieval requires `@lat.md/embed@0.2.1` or later for the WASM token-counting API; publish that version before deploying the retrieval integration. `pnpm build:site:source` validates local engine or model changes, which cannot appear in a hosted preview until their package versions are published.
 
 ## Keeps build-only packages out of runtime dependencies
 
@@ -231,7 +231,7 @@ Graph search debounces through the embedding-backed `/api/search` service used b
 
 ## Searches sections with embeddings
 
-Search debounces embedding queries and renders ranked section summaries linked to their document anchors. Each result carries its finite cosine score so graph consumers can scale relevance without recomputing embeddings.
+Search debounces hybrid queries and renders matching passages linked to section anchors. Results carry a finite rankScore, separate optional cosine similarity, introduction text, and source evidence.
 
 The URL preserves the latest query; Back restores it, and Escape clears the query before returning to the page that opened search. Clicking the active Search icon closes the search immediately without clearing first.
 

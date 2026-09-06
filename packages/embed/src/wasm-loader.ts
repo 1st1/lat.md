@@ -10,6 +10,7 @@ import { createRequire } from 'node:module';
 export interface WasmEngine {
   embed(texts: string[]): number[][];
   dimensions(): number;
+  count_tokens(text: string): number;
   free(): void;
 }
 

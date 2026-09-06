@@ -4,6 +4,12 @@
  */
 
 import type { Embedder } from './index.js';
+import { getEncoding } from 'js-tiktoken';
+
+let tokenizer: ReturnType<typeof getEncoding> | undefined;
+const encoding = () => (tokenizer ??= getEncoding('cl100k_base'));
+const MAX_INPUT_TOKENS = 8191;
+const MAX_BATCH_TOKENS = 250000;
 
 export type RemoteProvider = {
   name: string;
@@ -78,8 +84,17 @@ async function embedViaFetch(
   onProgress?: (done: number, total: number) => void,
 ): Promise<number[][]> {
   const results: number[][] = [];
-  for (let i = 0; i < texts.length; i += MAX_BATCH) {
-    const batch = texts.slice(i, i + MAX_BATCH);
+  for (let i = 0; i < texts.length; ) {
+    const batch: string[] = [];
+    let tokens = 0;
+    while (i < texts.length && batch.length < MAX_BATCH) {
+      const count = encoding().encode(texts[i], [], []).length;
+      if (count > MAX_INPUT_TOKENS)
+        throw new Error('Embedding input exceeds model token limit');
+      if (batch.length && tokens + count > MAX_BATCH_TOKENS) break;
+      tokens += count;
+      batch.push(texts[i++]);
+    }
     const resp = await fetch(`${provider.apiBase}/embeddings`, {
       method: 'POST',
       headers: provider.headers(key),
@@ -99,7 +114,7 @@ async function embedViaFetch(
     };
     const sorted = json.data.sort((a, b) => a.index - b.index);
     for (const item of sorted) results.push(item.embedding);
-    onProgress?.(Math.min(i + MAX_BATCH, texts.length), texts.length);
+    onProgress?.(i, texts.length);
   }
   return results;
 }
@@ -109,6 +124,9 @@ export function createRemoteEmbedder(key: string): Embedder {
   return {
     name: provider.name,
     dimensions: provider.dimensions,
+    maxInputTokens: MAX_INPUT_TOKENS,
+    tokenizerFingerprint: 'cl100k_base:v1',
+    countTokens: (text) => encoding().encode(text, [], []).length,
     embed: (texts, onProgress) =>
       texts.length
         ? embedViaFetch(texts, provider, key, onProgress)

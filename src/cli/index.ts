@@ -13,7 +13,7 @@ import { resolveCheckContext, resolveContext } from './context.js';
 import type { CmdResult } from '../context.js';
 import {
   DEFAULT_SEARCH_LIMIT,
-  DEFAULT_SEARCH_THRESHOLD,
+  DEFAULT_MIN_SIMILARITY,
 } from '../search/search.js';
 
 type CheckTargetArgs = {
@@ -61,7 +61,9 @@ function configureUiRun(command: Command): Command {
 function parseSimilarityThreshold(value: string): number {
   const threshold = Number(value);
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
-    throw new InvalidArgumentError('threshold must be a number from 0 to 1');
+    throw new InvalidArgumentError(
+      'min-similarity must be a number from 0 to 1',
+    );
   }
   return threshold;
 }
@@ -429,23 +431,40 @@ program
 
 program
   .command('search')
-  .description('Semantic search across lat.md sections')
+  .description('Hybrid search across lat.md sections')
   .argument('[query]', 'search query in plain English')
   .option(
     '--limit <n>',
     `max results (default: ${DEFAULT_SEARCH_LIMIT})`,
     String(DEFAULT_SEARCH_LIMIT),
   )
-  .option('--debug', 'show result similarity scores')
   .option(
-    '--threshold <score>',
-    `minimum cosine similarity score (default: ${DEFAULT_SEARCH_THRESHOLD})`,
+    '--preview <variant>',
+    'preview passage, intro, or both',
+    (value: string) => {
+      if (!['passage', 'intro', 'both'].includes(value))
+        throw new InvalidArgumentError(
+          'preview must be passage, intro, or both',
+        );
+      return value;
+    },
+    'passage',
+  )
+  .option('--debug', 'show retrieval scores and candidate diagnostics')
+  .option(
+    '--min-similarity <score>',
+    `minimum cosine similarity score (default: ${DEFAULT_MIN_SIMILARITY})`,
     parseSimilarityThreshold,
   )
   .action(
     async (
       query: string | undefined,
-      opts: { limit: string; debug?: boolean; threshold?: number },
+      opts: {
+        limit: string;
+        debug?: boolean;
+        minSimilarity?: number;
+        preview?: 'passage' | 'intro' | 'both';
+      },
     ) => {
       const ctx = resolveContext(program.opts());
       const { searchCommand, cliProgress } = await import('./search.js');
@@ -456,7 +475,8 @@ program
         {
           limit: parseInt(opts.limit),
           debug: opts.debug,
-          threshold: opts.threshold,
+          minSimilarity: opts.minSimilarity,
+          preview: opts.preview,
         },
         progress,
       );

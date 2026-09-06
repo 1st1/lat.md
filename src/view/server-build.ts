@@ -125,7 +125,7 @@ import { createServerViewApp } from 'lat.md/server';
 const view = createServerViewApp({
   app: express(),
   manifestFile: new URL('./server-data/server.json', import.meta.url),
-  indexFile: new URL('./server-data/vectors.db', import.meta.url),
+  indexFile: new URL('./server-data/search-index.json', import.meta.url),
   createSearchEngine: () => createEmbedder({ model: minilm }),
 });
 export const close = view.close;

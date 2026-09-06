@@ -9,7 +9,7 @@
 use candle_core::{DType, Device, Tensor};
 use candle_nn::VarBuilder;
 use candle_transformers::models::bert::{BertModel, Config};
-use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
+use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer};
 use wasm_bindgen::prelude::*;
 
 const DTYPE: DType = DType::F32;
@@ -19,13 +19,14 @@ pub struct Embedder {
     bert: BertModel,
     tokenizer: Tokenizer,
     dimensions: usize,
+    max_tokens: usize,
 }
 
 #[wasm_bindgen]
 impl Embedder {
     /// Construct from raw model files. `weights` is an fp16 (or fp32) safetensors
     /// buffer; `tokenizer` is the bytes of `tokenizer.json`; `config` is the bytes
-    /// of the BERT `config.json`. Inputs longer than `max_tokens` are truncated.
+    /// of the BERT `config.json`. Inputs longer than `max_tokens` are rejected.
     #[wasm_bindgen(constructor)]
     pub fn new(
         weights: Vec<u8>,
@@ -44,21 +45,19 @@ impl Embedder {
 
         let mut tokenizer =
             Tokenizer::from_bytes(&tokenizer).map_err(|e| JsError::new(&e.to_string()))?;
+        tokenizer.with_truncation(None)
+            .map_err(|e| JsError::new(&e.to_string()))?;
         tokenizer
             .with_padding(Some(PaddingParams {
                 strategy: PaddingStrategy::BatchLongest,
                 ..Default::default()
-            }))
-            .with_truncation(Some(TruncationParams {
-                max_length: max_tokens,
-                ..Default::default()
-            }))
-            .map_err(|e| JsError::new(&e.to_string()))?;
+            }));
 
         Ok(Self {
             bert,
             tokenizer,
             dimensions,
+            max_tokens,
         })
     }
 
@@ -80,6 +79,9 @@ impl Embedder {
         let mut ids = Vec::with_capacity(encodings.len());
         let mut masks = Vec::with_capacity(encodings.len());
         for enc in &encodings {
+            if enc.get_attention_mask().iter().sum::<u32>() as usize > self.max_tokens {
+                return Err(JsError::new("Embedding input exceeds model token limit"));
+            }
             ids.push(Tensor::new(enc.get_ids(), device)?);
             masks.push(Tensor::new(enc.get_attention_mask(), device)?);
         }
@@ -108,5 +110,11 @@ impl Embedder {
     /// Embedding dimensionality (e.g. 384 for MiniLM-L6).
     pub fn dimensions(&self) -> usize {
         self.dimensions
+    }
+
+    pub fn count_tokens(&self, text: &str) -> Result<usize, JsError> {
+        let encoded = self.tokenizer.encode(text, true)
+            .map_err(|e| JsError::new(&e.to_string()))?;
+        Ok(encoded.len())
     }
 }
