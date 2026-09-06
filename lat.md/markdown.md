@@ -50,6 +50,8 @@ GitHub-style inline dollar delimiters, display dollar blocks, and `math` fences 
 
 GitHub-style `mermaid` fences render as React-owned SVG trees in the browser through Mermaid's strict security mode, with the escaped source retained as a readable fallback when loading or rendering fails.
 
+The viewer parses Mermaid's SVG as inert HTML so multiline HTML labels retain their line breaks, then filters elements and properties before creating React nodes. [[tests/markdown-rich-fence.test.ts]] exercises rendering multiline labels.
+
 ## GeoJSON and TopoJSON Maps
 
 GitHub-style `geojson` and `topojson` fences render supplied geometry over an OpenStreetMap basemap from OpenFreeMap, with pan, zoom, and automatic data bounds.

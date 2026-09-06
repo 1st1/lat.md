@@ -45,6 +45,7 @@ type SvgNode =
 
 const SVG_ELEMENTS = new Set([
   'a',
+  'br',
   'circle',
   'clipPath',
   'defs',
@@ -152,10 +153,19 @@ function svgNode(node: Node): SvgNode | null {
 }
 
 export function parseMermaidSvg(source: string): SvgNode {
-  const parsed = new DOMParser().parseFromString(source, 'image/svg+xml');
-  const error = parsed.querySelector('parsererror');
-  if (error) throw new Error('Mermaid returned invalid SVG');
-  const root = svgNode(parsed.documentElement);
+  // Mermaid serializes HTML labels inside foreignObject with HTML void tags
+  // such as <br>. Parse as inert HTML, then apply our element/property filter.
+  const parsed = new DOMParser().parseFromString(source, 'text/html');
+  const element = parsed.body.firstElementChild;
+  if (
+    !element ||
+    element.localName !== 'svg' ||
+    element.namespaceURI !== 'http://www.w3.org/2000/svg' ||
+    parsed.body.children.length !== 1
+  ) {
+    throw new Error('Mermaid did not return an SVG document');
+  }
+  const root = svgNode(element);
   if (!root || root.type !== 'element' || root.tagName !== 'svg') {
     throw new Error('Mermaid did not return an SVG document');
   }
@@ -167,7 +177,7 @@ function renderSvgNode(node: SvgNode, key: string): ReactNode {
   return createElement(
     node.tagName,
     { ...node.properties, key },
-    node.children.map((child, index) =>
+    ...node.children.map((child, index) =>
       renderSvgNode(child, `${key}.${index}`),
     ),
   );
